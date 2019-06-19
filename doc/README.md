@@ -1,4 +1,11 @@
-# labbench
+## Introduction
+
+_Certain commercial equipment, instruments, or
+materials are identified in this repository in order to specify the application
+adequately. Such identification is not intended to imply recommendation
+or endorsement by the National Institute of Standards and Technology, nor is it
+intended to imply that the materials or equipment identified are necessarily the
+best available for the purpose._
 The `labbench` python library provides tools for instrument automation and data management in scripted lab experiments.
 
 A device driver implemented with labbench is a light wrapper around another instrument control library.
@@ -21,16 +28,14 @@ The result helps researchers to meet NIST's
 and heterogeneous datasets.
 
 Additional goodies include 
-* [simplified threading for parallel execution](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.util.concurrently)
-* [convenience objects to manage testbeds made of multiple devices](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.util.Testbed)
-* [real-time heads-up displays for jupyter notebooks](http://ssm.ipages.nist.gov/labbench/labbench.html#module-labbench.notebooks)
-* [convenience functions for reading relational table data from multiple rows](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.data.read_relational)
+* simplified threading for parallel execution
+* convenience objects to manage testbeds made of multiple devices
+* real-time heads-up displays for jupyter notebooks
+* convenience functions for reading relational table data from multiple rows
 
-Information here is mostly about writing your own drivers. A collection of labbench drivers has been implemented in
-[ssmdevices](https://gitlab.nist.gov/gitlab/ssm/ssmdevices),
-which also includes application examples and documentation.
+Information here is mostly about writing your own drivers and general use of these drivers.
 
-### Design
+## Design
 Driver control over scalar instrument settings follows the [descriptor](https://docs.python.org/3/howto/descriptor.html)
 (also known as [decorator](https://en.wikipedia.org/wiki/Decorator_pattern)) design pattern.
 The implementation of these descriptors is an extension of [traitlets](https://github.com/ipython/traitlets),
@@ -44,28 +49,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 2. In a command prompt, `pip install git+https://gitlab.nist.gov/gitlab/ssm/labbench`
 3. (Optional) install an NI VISA [[1](#myfootnote1)] runtime, for example [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
 
-## Usage
-#### Getting started
-* [Using labbench drivers](examples/How to use a labbench driver by example.ipynb)
-* [Primer on device control with object-oriented scripting](examples/Object oriented programming for device control.ipynb)
-
-#### Using drivers and labbench goodies for laboratory automation
-* [Execute multiple automation functions concurrently](examples/How to run more than one function at the same time.ipynb)
-* [Log the state of instruments to an sqlite database file](examples/How to automatically log to an SQLite database.ipynb)
-* [Indicate testbed state in jupyter notebook](examples/Goodies for jupyter notebook.ipynb)
-
-#### Writing your own device driver
-* [Introduction](examples/Workflow for writing labbench drivers.ipynb)
-* VISA instruments
-* Serial port devices
-* .NET [[1](#myfootnote1)] library
-* Command line wrapper
-* Python module wrapper interface
-
-#### Reference manuals
-* [Programming reference](http://ssm.ipages.nist.gov/labbench)
-
-## Status
+## Backends
 The following types of backend classes are implemented to streamline development of new instrumentation drivers:
 * CommandLineWrapper (standard input/output wrapper for command line programs)
 * DotNet (pythonnet backend for dotnet libraries)
@@ -75,18 +59,3 @@ The following types of backend classes are implemented to streamline development
 * TelnetDevice (telnetlib backend)
 * VISADevice (pyvisa backend)
 * EmulatedVISADevice (test-only driver for testing labbench features)
-
-## Contributors
-|Name|Contact|
-|---|---|
-|Dan Kuester (maintainer)|<daniel.kuester@nist.gov>|
-|Paul Blanchard|<paul.blanchard@nist.gov>|
-|Shane Allman|shane.allman@nist.gov|
-|Yao Ma|yao.ma@nist.gov|
-
-_<a name="myfootnote1">[1]</a> Certain commercial equipment, instruments, or
-materials are identified in this repository in order to specify the application
-adequately. Such identification is not intended to imply recommendation
-or endorsement by the National Institute of Standards and Technology, nor is it
-intended to imply that the materials or equipment identified are necessarily the
-best available for the purpose._

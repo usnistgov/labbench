@@ -1,0 +1,65 @@
+# This software was developed by employees of the National Institute of
+# Standards and Technology (NIST), an agency of the Federal Government.
+# Pursuant to title 17 United States Code Section 105, works of NIST employees
+# are not subject to copyright protection in the United States and are
+# considered to be in the public domain. Permission to freely use, copy,
+# modify, and distribute this software and its documentation without fee is
+# hereby granted, provided that this notice and disclaimer of warranty appears
+# in all copies.
+#
+# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
+# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
+# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
+# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
+# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
+# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
+# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
+# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
+# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
+# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
+# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
+# PROVIDED HEREUNDER. Distributions of NIST software should also include
+# copyright and licensing statements of any third-party software that are
+# legally bundled with the code in compliance with the conditions of those
+# licenses.
+
+from __future__ import print_function
+
+if __name__ == '__main__':
+    from distutils.core import setup
+    import setuptools
+    import sys
+    sys.path.insert(0, './labbench')
+    from version import __version__
+
+    py_version_req = (3, 6)
+    if sys.version_info < py_version_req:
+        raise ValueError(
+            f"python version is {sys.version} but install requires >={'.'.join(py_version_req)}")
+
+    setup(name='labbench',
+          version=__version__,
+          description='toolkit for concise instrument automation',
+          author='Dan Kuester',
+          author_email='daniel.kuester@nist.gov',
+          url='',
+          packages=setuptools.find_packages(),
+          license='NIST',
+          install_requires=['pandas(>=0.20)',
+                            'pyserial(>=3.0)',
+                            'pyvisa(>=1.8)',
+                            'coloredlogs(>=7.0)',
+                            'future',
+                            'numpy(>=1.0)',
+                            'scipy(>=0.9)',
+                            'sortedcontainers(>=1.4)',
+                            'psutil(>=5.0)',
+                            'sqlalchemy',
+                            'GitPython(>=2.0)',
+                            'pyarrow',
+                            'traitlets(>=4)'
+                            ],
+          extras_require={'html': ['sphinx(>=1.6)','recommonmark'],
+                          'notebook': ['notebook', 'ipywidgets']},
+          )

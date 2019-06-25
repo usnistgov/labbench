@@ -1133,12 +1133,18 @@ class EmulatedVISADevice(core.Device):
                   core.Float: lambda trait: str(np.random.uniform(low=trait.min, high=trait.max)), }
 
     class state(VISADevice.state):
-        #        # Spoof the remote responses for some built-in VISA items
-        status_byte = core.Unicode(default_value='0', read_only=True)
-        identity = core.Unicode(
-            default_value='Emulated VISA Device', read_only=True, is_metadata=True)
-        options = core.Unicode(
-            default_value='Terrific Options', read_only=True, is_metadata=True)
+        pass
+
+    class settings(VISADevice.settings):
+        pass
+
+
+        # #        # Spoof the remote responses for some built-in VISA items
+        # status_byte = core.Unicode(default_value='0', read_only=True)
+        # identity = core.Unicode(
+        #     default_value='Emulated VISA Device', read_only=True, is_metadata=True)
+        # options = core.Unicode(
+        #     default_value='Terrific Options', read_only=True, is_metadata=True)
 
     # Overload methods as needed to implement RemoteDevice
     @classmethod

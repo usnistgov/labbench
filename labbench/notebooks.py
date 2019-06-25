@@ -133,7 +133,7 @@ class panel(object):
     ''' Show tables summarizing device settings and states in jupyter notebook.
     Only a single panel will be shown in a python kernel.
 
-    :param source: Either an integer indicating how far up the calling tree to search
+    :param source: Either an integer indicating how far up the calling tree to search\
     for Device instances, or a `labbench.Testbed` instance.
     :param ncols: Maximum number of devices to show on each row
     '''

@@ -48,15 +48,18 @@ __all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
 
 
 class ConcurrentException(Exception):
-    pass
+    ''' Raised on concurrency errors in `labbench.concurrently`
+    '''
 
 
 class MasterThreadException(ThreadError):
-    pass
+    ''' Raised to encapsulate a thread raised by the master thread during calls to `labbench.concurrently`
+    '''
 
 
 class ThreadEndedByMaster(ThreadError):
-    pass
+    ''' Raised in a thread to indicate the master thread requested termination
+    '''
 
 
 stop_request_event = Event()
@@ -381,6 +384,8 @@ class Call(object):
         self.queue.put(self)
 
     def set_queue(self, queue):
+        ''' Set the queue object used to communicate between threads
+        '''
         self.queue = queue
 
     @staticmethod
@@ -667,19 +672,22 @@ def sequentially(*funcs, **kws):
          The goal is to emulate the behavior of the `concurrently` function,
          with some of the same support for updating result dictionaries.
 
-        Multiple references to the same function in `funcs` only result in one
+        Multiple references to the same function in `*funcs` only result in one
         call. The `catch` and `flatten` arguments may be callables, in which
         case they are executed (and their values are treated as defaults).
 
-        :param objs:  each argument may be a callable (function or class that
+        :param objs:  each argument may be a callable (function or class that\
         defines a __call__ method), or context manager (such as a Device instance)
-        :param catch:  if `False` (the default), a `ConcurrentException` is
-        raised if any of `funcs` raise an exception; otherwise, any remaining
-        successful calls are returned as normal :param flatten:  if not callable
-        and evalues as True, updates the returned dictionary with the
-        dictionary (instead of a nested dictionary) :param nones: if not
-        callable and evalues as True, includes entries for calls that return
-        None (default is False) :return: the values returned by each function
+        :param catch:  if `False` (the default), a `ConcurrentException` is\
+        raised if any of `funcs` raise an exception; otherwise, any remaining\
+        successful calls are returned as normal
+        :param flatten:  if not callable\
+        and evalues as True, updates the returned dictionary with the\
+        dictionary (instead of a nested dictionary)
+        :param nones: if not\
+        callable and evalues as True, includes entries for calls that return\
+        None (default is False)
+        :return: the values returned by each function
         :rtype: dictionary of keyed by function.
 
         Here are some examples:
@@ -812,7 +820,7 @@ def concurrently(*objs, **kws):
          managers (such as Device instances to be connected),
          enter each context in concurrent threads.
 
-        Multiple references to the same function in `funcs` only result in one call. The `catch` and `flatten`
+        Multiple references to the same function in `objs` only result in one call. The `catch` and `flatten`
         arguments may be callables, in which case they are executed (and each flag value is treated as defaults).
 
         :param objs:  each argument may be a callable (function or class that defines a __call__ method), or context manager (such as a Device instance)
@@ -951,6 +959,15 @@ def message(sandbox, *msg):
 
 
 class ThreadSandbox(object):
+    ''' Execute all calls in the class in a separate background thread. This
+        is intended to work around challenges in threading wrapped win32com APIs.
+
+        Use it as follows:
+    
+            obj = ThreadSandbox(MyClass(myclassarg, myclasskw=myclassvalue))
+
+        Then use `obj` as a normal MyClass instance.
+    '''
     __repr_root__ = 'uninitialized ThreadSandbox'
     __dir_root__ = []
     __thread = None
@@ -1090,14 +1107,19 @@ class ConfigStore:
 
     @classmethod
     def all(cls):
+        ''' Return a dictionary of all attributes in the class
+        '''
         ret = {}
         for k, v in cls.__dict__.items():
             if isinstance(v, dict) and not k.startswith('_'):
                 ret.update([(k + '_' + k2, v2) for k2, v2 in v.items()])
         return ret
 
-    @classmethod
+    @classmethod    
     def frame(cls):
+        ''' Return a pandas DataFrame containing all attributes
+            in the class
+        '''
         df = pd.DataFrame([cls.all()]).T
         df.columns.name = 'Value'
         df.index.name = 'Parameter'
@@ -1159,6 +1181,8 @@ class FilenameDict(SortedDict):
 class ConcurrentRunner:
     ''' Concurrently runs all staticmethods or classmethods
         defined in the subclass.
+
+        This has been deprecated - don't use in new code.
     '''
 
     def __new__(cls):
@@ -1193,9 +1217,9 @@ class ConcurrentRunner:
 
 
 class Testbed(object):
-    ''' Base class for testbeds that contain multiple Device instances
-        or other objects like database managers that implement context
-        management.
+    ''' Base class for Testbeds, which is a collection of multiple Device instances,
+        database managers, etc. that together implement an automated experiment
+        in the lab.
 
         Use a `with` block with the testbed instance to connect everything
         at once like so::
@@ -1257,7 +1281,7 @@ class Testbed(object):
 
     def make(self):
         ''' Implement this method in a subclass of Testbed. It should
-            the drivers as attributes of the Testbed instance, for example::
+            set drivers as attributes of the Testbed instance, for example::
 
                 self.dev1 = MyDevice()
 

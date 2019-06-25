@@ -64,8 +64,6 @@ class CommandLineWrapper(core.Device):
         The output piped to the command line standard output is queued in a
         background thread. Call read_stdout() to retreive (and clear) this
         queued stdout.
-
-
     """
 
     class settings(core.Device.settings):
@@ -185,13 +183,19 @@ class CommandLineWrapper(core.Device):
             the executable continues running).
 
             Once the background process is running,
+
             * Retreive standard output from the executable with self.read_stdout
+
             * Write to standard input self.write_stdin
+
             * Kill the process with self.kill
+
             * Check whether the process is running with self.running
 
             Normally, the command line arguments are determined by
+
             * appending extra_arguments to the global arguments in self.settings.arguments, and
+
             * appending pairs of [key,value] from the `flags` dictionary to the
               global flags defined with command flags in local state traits in
               `self.settings`
@@ -368,12 +372,18 @@ class CommandLineWrapper(core.Device):
         return result
 
     def write_stdin(self, text):
+        """ Write characters to stdin if a background process is running. Raises
+            Exception if no background process is running.
+        """
         try:
             self.backend.stdin.write(text)
         except core.ConnectionError:
             raise Exception("process not running, could not write no stdin")
 
     def kill(self):
+        """ If a process is running in the background, kill it. Sends a logger
+            warning if no process is running.
+        """
         self.__kill = True
         backend = self.backend
         if self.running():
@@ -424,11 +434,35 @@ class CommandLineWrapper(core.Device):
 
 
 class DotNetDevice(core.Device):
+    """ This Device backend represents a wrapper around a .NET library. It is implemented
+        with pythonnet, and handlesimports.
+
+        In order to implement a DotNetDevice subclass:
+
+        * define the attribute `library = <mypythonmodule.wheredllbinariesare>`, the python module with copies of the .NET DLLs are
+
+        * define the attribute `dll_name = "mydllname.dll"`, the name of the DLL binary in the python module above
+
+        When a DotNetDevice is instantiated, it tries to load the dll according to the above specifications.
+
+        Other attributes of DotNetDevice use the following conventions
+
+        * `backend` may be set by a subclass `connect` method (otherwise it is left as None)
+
+    """
     library = None  # Must be a module
     dll_name = None
     _dlls = {}
 
     def __imports__(self):
+        """ DotNetDevice loads the DLL; importing in the
+            class definition tries to load a lot of DLLs
+            on import
+            of ssmdevices, which would 1) break platforms
+            that do not support the DLL, and 2) waste
+            memory, and 3)
+        """
+
         if hasattr(self.__class__, '__dll__') and not hasattr(self, 'dll'):
             self.dll = self.__class__.__dll__
             return
@@ -481,13 +515,6 @@ class DotNetDevice(core.Device):
             pass
 
     def connect(self):
-        """ DotNetDevice loads the DLL; importing in the
-            class definition tries to load a lot of DLLs
-            on import
-            of ssmdevices, which would 1) break platforms
-            that do not support the DLL, and 2) waste
-            memory, and 3)
-        """
         pass
 
 
@@ -501,31 +528,32 @@ class LabviewSocketInterface(core.Device):
         specific labview VI the same was as in VISA commands by
         assigning the commands implemented in the corresponding labview VI.
 
-        The resource is the ip address of the host where the labview script
+        The `resource` argument (which can also be set as `settings.resource`)
+        is the ip address of the host where the labview script
         is running. Use the tx_port and rx_port attributes to set the
         TCP/IP ports where communication is to take place.
     """
-
-    # TODO: Roll this into a settings descriptor class
-    resource = '127.0.0.1'  # IP address
-    tx_port = 61551  # 5005, LAA
-    rx_port = 61552  # 5005
-    delay = 1     # time to wait after each state write or query
-    timeout = 2
-    rx_buffer_size = 1024
 
     class state(core.Device.state):
         pass
 
     class settings(core.Device.settings):
-        pass
+        resource = core.Unicode(default_value='127.0.0.1',
+                                help='IP address where the LabView VI listens for a socket')
+        tx_port = core.Int(default_value=61551, help='TX port to send to the LabView VI')
+        rx_port = core.Int(default_value=61552, help='TX port to send to the LabView VI')
+        delay = core.Float(default_value=1, help='time to wait after each state write or query')
+        timeout = core.Float(default_value=2,
+                             help='maximum time to wait for a reply after sending before raising an Exception')
+        rx_buffer_size = core.Int(default_value=1024)
 
     def connect(self):
         self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
                         'rx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM)}
 
-        self.backend['rx'].bind((self.settings.resource, self.rx_port))
-        self.backend['rx'].settimeout(self.timeout)
+        self.backend['rx'].bind((self.settings.resource,
+                                 self.settings.rx_port))
+        self.backend['rx'].settimeout(self.settings.timeout)
         self.clear()
 
     def disconnect(self):
@@ -540,8 +568,9 @@ class LabviewSocketInterface(core.Device):
         """ Send a string over the tx socket.
         """
         self.logger.debug(f'write {repr(msg)}')
-        self.backend['tx'].sendto(msg, (self.settings.resource, self.tx_port))
-        util.sleep(self.delay)
+        self.backend['tx'].sendto(msg, (self.settings.resource,
+                                        self.settings.tx_port))
+        util.sleep(self.settings.delay)
 
     @state.setter
     def __(self, trait, value):
@@ -550,13 +579,13 @@ class LabviewSocketInterface(core.Device):
         self.write(f'{trait.command} {value} ')
 
     def read(self, convert_func=None):
-        """ Receive from the rx socket until `self.rx_buffer_size` samples
+        """ Receive from the rx socket until `self.settings.rx_buffer_size` samples
             are received or timeout happens after `self.timeout` seconds.
 
             Optionally, apply the conversion function to the value after
             it is received.
         """
-        rx, addr = self.backend['rx'].recvfrom(self.rx_buffer_size)
+        rx, addr = self.backend['rx'].recvfrom(self.settings.rx_buffer_size)
         if addr is None:
             raise Exception('received no data')
         rx_disp = rx[:min(80, len(rx))] + ('...' if len(rx) > 80 else '')
@@ -602,14 +631,22 @@ class SerialDevice(core.Device):
 
     class settings(core.Device.settings):
         # Connection settings
-        timeout = core.Float(2, min=0, is_metadata=True)
-        write_termination = core.Bytes('\n', is_metadata=True,)
-        baud_rate = core.Int(9600, min=1, is_metadata=True,)
-        parity = core.Bytes('N', is_metadata=True,)
-        stopbits = core.Float(1, min=1, max=2, step=0.5, is_metadata=True,)
-        xonxoff = core.Bool(False, is_metadata=True,)
-        rtscts = core.Bool(False, is_metadata=True,)
-        dsrdtr = core.Bool(False, is_metadata=True,)
+        timeout = core.Float(2, min=0, is_metadata=True,
+                             help='Max time to wait for a connection before raising TimeoutError.')
+        write_termination = core.Bytes('\n', is_metadata=True,
+                             help='Termination character to send after a write.')
+        baud_rate = core.Int(9600, min=1, is_metadata=True,
+                             help='Data rate of the physical serial connection.')
+        parity = core.Bytes('N', is_metadata=True,
+                            help='Parity in the physical serial connection.')
+        stopbits = core.Float(1, min=1, max=2, step=0.5, is_metadata=True,
+                            help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
+        xonxoff = core.Bool(False, is_metadata=True,
+                            help='Set `True` to enable software flow control.')
+        rtscts = core.Bool(False, is_metadata=True,
+                            help='Whether to enable hardware (RTS/CTS) flow control.')
+        dsrdtr = core.Bool(False, is_metadata=True,
+                            help='Whether to enable hardware (DSR/DTR) flow control.')
 
     def __imports__(self):
         global serial
@@ -710,11 +747,19 @@ class SerialLoggingDevice(SerialDevice):
                                   help='Number of bytes to allocate in the data retreival buffer')
 
     def configure(self):
+        """ This is called at the beginning of the logging thread that runs
+            on a call to `start`.
+
+            This is a stub that does nothing --- it should be implemented by a
+            subclass for a specific serial logger device.
+        """
         self.logger.debug(
             f'{repr(self)}: no device-specific configuration implemented')
 
     def start(self):
         """ Start a background thread that acquires log data into a queue.
+
+            :returns: None
         """
         from serial import SerialException
 
@@ -748,15 +793,27 @@ class SerialLoggingDevice(SerialDevice):
         Thread(target=accumulate).start()
 
     def stop(self):
+        """ Stops the logger acquisition if it is running. Returns silently otherwise.
+
+            :returns: None
+        """
         try:
             self._stop.set()
         except BaseException:
             pass
 
     def running(self):
+        """ Check whether the logger is running.
+
+            :returns: `True` if the logger is running
+        """
         return hasattr(self, '_stop') and not self._stop.is_set()
 
     def fetch(self):
+        """ Retrieve and return any log data in the buffer.
+
+            :returns: any bytes in the buffer
+        """
         ret = b''
         try:
             while True:
@@ -766,6 +823,8 @@ class SerialLoggingDevice(SerialDevice):
         return ret
 
     def clear(self):
+        """ Throw away any log data in the buffer.
+        """
         self.fetch()
 
     def disconnect(self):
@@ -781,18 +840,19 @@ class TelnetDevice(core.Device):
         Subclasses can read or write with the backend attribute like they
         would any other telnetlib instance.
 
-        A SerialDevice resource string is the same as the
-        platform-dependent `port` argument to new serial.Serial
-        objects.
+        A TelnetDevice `resource` string is an IP address. The port is specified
+        by `port`. These can be set when you instantiate the TelnetDevice
+        or by setting them afterward in `settings`.
 
         Subclassed devices that need state descriptors will need
-        to implement state_get and state_set methods in order to define
-        how the state descriptors set and get operations.
+        to implement `state.getter` and `state.setter` methods to implement
+        the state set and get operations (as appropriate).
     """
 
     class settings(core.Device.settings):
         # Connection settings
-        timeout = core.Float(2, min=0, is_metadata=True)
+        timeout = core.Float(2, min=0, is_metadata=True,
+                             help='maximum time to wait for a connection before ')
         port = core.Int(23, min=1, is_metadata=True)
 
     def __imports__(self):
@@ -930,15 +990,16 @@ class VISADevice(core.Device):
 
     @classmethod
     def list_resources(cls):
+        """ List the resource strings of the available devices sensed by the VISA backend.
+        """
         cls.__imports__()
         return cls._rm.list_resources()
 
     def write(self, msg):
         """ Write an SCPI command to the device with pyvisa.
 
-            Handles debug logging, and extra \\*OPC
-            commands (when in an overlap_and_block context),
-            then sends a command string to the device.
+            Handles debug logging and adjustments when in overlap_and_block
+            contexts as appropriate.
 
             :param str msg: the SCPI command to send by VISA
             :returns: None
@@ -953,9 +1014,8 @@ class VISADevice(core.Device):
         """ Query an SCPI command to the device with pyvisa,
             and return a string containing the device response.
 
-            Handles debug logging, and extra \\*OPC
-            commands (when in an overlap_and_block context),
-            then sends a command string to the device.
+            Handles debug logging and adjustments when in overlap_and_block
+            contexts as appropriate.
 
             :param str msg: the SCPI command to send by VISA
             :returns: the response to the query from the device
@@ -1011,8 +1071,11 @@ class VISADevice(core.Device):
 
     @contextlib.contextmanager
     def overlap_and_block(self, timeout=None, quiet=False):
-        """ Append ';\\*OPC' to each command sent during the block, then
-            send an '\\*OPC?' query to block until the measurement is done
+        """ A request is sent to the instrument to overlap all of the
+            VISA commands written while in this context. At the end
+            of the block, wait until the instrument confirms that all
+            operations have finished. This is the standard VISA ';\\*OPC'
+            and '\\*OPC?' behavior.
 
             This is meant to be used in `with` blocks as follows::
 
@@ -1020,14 +1083,9 @@ class VISADevice(core.Device):
                     inst.write('long running command 1')
                     inst.write('long running command 2')
 
-            At the end of the `with` block, a '\\*OPC?' query is sent
-            that blocks until the instrument signals it has finished
-            with the commands.
+            The wait happens on leaving the `with` block.
 
-            Optionally, VISA timeout exceptions can be suppressed with
-            the `quiet` argument.
-
-            :param timeout: Timeout, in milliseconds, or None to use self.backend.timeout
+            :param timeout: delay (in milliseconds) on waiting for the instrument to finish the overlapped commands before a TimeoutError after leaving the `with` block. If `None`, use self.backend.timeout.
             :param quiet: Suppress timeout exceptions if this evaluates as True
         """
         self.__opc = True
@@ -1120,7 +1178,8 @@ class Win32ComDevice(core.Device):
     """
 
     class settings(core.Device.settings):
-        com_object = core.Unicode('', is_metadata=True)  # Must be a module
+        com_object = core.Unicode('', is_metadata=True,
+                                  help='the win32com object string')  # Must be a module
         concurrency_support = core.Bool(default_value=True, read_only=False, is_metadata=True,
                                         help='whether this :class:`Device` implementation supports threading')
 

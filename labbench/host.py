@@ -86,9 +86,12 @@ class Email(core.Device):
         subject line. Stderr is also sent.
     '''
     class settings(core.Device.settings):
-        resource = core.TCPAddress(('smtp.nist.gov', 25))
-        sender = core.Unicode('jason.coder@nist.gov')
-        recipients = core.List(['daniel.kuester@nist.gov'])
+        resource = core.TCPAddress(('smtp.nist.gov', 25),
+                                   help='smtp server to use')
+        sender = core.Unicode('myemail@nist.gov',
+                              help='email address of the sender')
+        recipients = core.List(['myemail@nist.gov'],
+                               help='list of email addresses of recipients')
         success_message = core.Unicode('Test finished normally',
                                        allow_none=True,
                                        help='subject line for test success emails, or None to suppress success emails')
@@ -126,6 +129,8 @@ class Email(core.Device):
             self.send_summary()
 
     def send_summary(self):
+        ''' Sends the summary email containing the final state of the test.
+        '''
         from traceback import format_exc
 
         exc = sys.exc_info()
@@ -214,11 +219,15 @@ class Host(core.Device):
             pass
 
     def metadata(self):
+        ''' Generate the metadata associated with the host and python distribution
+        '''
         ret = super().metadata()
         ret['python_modules'] = self.__python_module_versions()
         return ret
 
     def __python_module_versions(self):
+        ''' Enumerate the versions of installed python modules
+        '''
         versions = dict([str(d).lower().split(' ')
                          for d in pip.get_installed_distributions()])
         running = dict(sorted([(k, versions[k.lower()])
@@ -240,16 +249,22 @@ class Host(core.Device):
 
     @state.time.getter
     def get_time(self):
+        ''' Get a timestamp of the current time
+        '''
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
     @state.log.getter
     def get_log(self):
+        ''' Get the current host log contents.
+        '''
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
 
     @state.git_commit_id.getter
     def get_git_commit(self):
+        ''' Try to determine the current commit hash of the current git repo
+        '''
         try:
             commit = self.repo.commit()
             return commit.hexsha
@@ -258,6 +273,8 @@ class Host(core.Device):
 
     @state.git_remote_url.getter
     def get_git_remote_url(self):
+        ''' Try to identify the remote URL of the repository of the current git repo
+        '''
         try:
             return next(self.repo.remote().urls)
         except BaseException:
@@ -265,10 +282,14 @@ class Host(core.Device):
 
     @state.hostname.getter
     def get_hostname(self):
+        ''' Get the name of the current host
+        '''
         return socket.gethostname()
 
     @state.git_browse_url.getter
     def get_git_browse_url(self):
+        ''' URL for browsing the current git repository
+        '''
         return '{}/tree/{}'.\
                format(self.state.git_remote_url, self.state.git_commit_id)
 

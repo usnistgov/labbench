@@ -72,7 +72,7 @@ class StateAggregator(object):
 
     def key(self, device_name, state_name):
         ''' Generate a name for a state based on the names of
-            a device and one of its remotelets
+            a device and one of its states or settings.
         '''
         return f'{device_name}_{state_name}'
 
@@ -98,6 +98,8 @@ class StateAggregator(object):
         self.name.update([(v.state, k) for k, v in list(mapping.items())])
 
     def observe(self, devices, changes=True, always=[], never=[]):
+        """ Deprecated - use `observe_states` instead
+        """
         warnings.warn(
             'observe has been deprecated in favor of observe_states and will be removed soon')
         self.observe_states(devices, changes, always, never)
@@ -197,10 +199,7 @@ class StateAggregator(object):
         ''' Aggregate and return the current device states as configured
             with :func:`observe`.
 
-            :returns: dictionary of aggregated states. Keys are str formatted
-            according to the :func:`key` (defaults to
-            '{device name}_{state name}'). Values are the type and value of
-            the corresponding state of the device instance.
+            :returns: dictionary of aggregated states. Keys are strings defined by :func:`key` (defaults to '{device name}_{state name}'). Values are the type and value of the corresponding state of the device instance.
         '''
 
         for device, name in list(self.name.items()):
@@ -686,8 +685,13 @@ class StatesToRelationalTable(StateAggregator):
         #. custom metadata in each queued aggregate state entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: path to use for the master database
-        :param bool overwrite: whether to overwrite the master database if it exists (otherwise, append)
+        :param str path: Base path to use for the master database
+        :param bool overwrite: Whether to overwrite the master database if it exists (otherwise, append)
+        :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+        :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
+        :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
+        :param metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
+        :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     '''
 
     index_label = 'id'
@@ -742,7 +746,10 @@ class StatesToRelationalTable(StateAggregator):
 
     def append(self, *args, **kwargs):
         ''' Add a new row of data to the list of data that awaits write
-            to disk, `self.pending`. The row is represented as a dictionary of
+            to disk.
+
+            This cache of pending data row is in the dictionary `self.pending`.
+            Each row is represented as a dictionary of
             pairs formatted as {'column_name': 'row_value'}. These
             pairs come from a combination of 1) keyword arguments passed as
             `kwargs`, 2) a single dictionary argument, and/or 3) state traits
@@ -770,11 +777,7 @@ class StatesToRelationalTable(StateAggregator):
             disk, `self.pending`. Nothing is written to disk until
             :func:`write`.
 
-            :param bool copy=True: When `True` (the default), a deep copy o
-            `data` is used
-            to avoid problems with overwriting references to data if `data` is
-            reused during test. This takes some extra time; set to `False` to
-            skip this copy operation.
+            :param bool copy=True: When `True` (the default), use a deep copy of `data` to avoid problems with overwriting references to data if `data` is reused during test. This takes some extra time; set to `False` to skip this copy operation.
 
             :return: the dictionary representation of the row added to `self.pending`.
         '''
@@ -848,15 +851,15 @@ class StatesToRelationalTable(StateAggregator):
             need to be stored in a separate file. The entry in the aggregate states table
             becomes the path to the file.
 
-            :param format: a string compatible with :func:`str.format`, with replacement
-            fields defined from the keys from the current entry of results and aggregated states.
-
-            The format string follows the syntax of python's python's built-in :func:`str.format`.
-            You may use any keys from the table to form the path. For example, consider a
-            scenario where aggregate device states includes `inst1_frequency` of `915e6`,
-            and :func:`append` has been called as `append(dut="DUT15")`. If the current
-            aggregate state entry includes inst1_frequency=915e6, then the format string
+            The format string follows the syntax of python's python's built-in :func:`str.format`.\
+            You may use any keys from the table to form the path. For example, consider a\
+            scenario where aggregate device states includes `inst1_frequency` of `915e6`,\
+            and :func:`append` has been called as `append(dut="DUT15")`. If the current\
+            aggregate state entry includes inst1_frequency=915e6, then the format string\
             '{dut}/{inst1_frequency}' means relative data path 'DUT15/915e6'.
+
+            :param format: a string compatible with :func:`str.format`, with replacement\
+            fields defined from the keys from the current entry of results and aggregated states.\
 
             :return: None
         '''
@@ -934,17 +937,19 @@ class StatesToRelationalTable(StateAggregator):
 
     def setup(self):
         ''' Open the file or database connection.
-            This is an abstract base method (it be overridden by inheriting classes)
+            This is an abstract base method (to be overridden by inheriting classes)
 
             :return: None
         '''
 
     def open(self, path=None):
+        """ This must be implemented by a subclass to open the data storage resource.
+        """
         raise NotImplementedError
 
     def close(self):
         ''' Close the file or database connection.
-            This is an abstract base method (it be overridden by inheriting classes)
+            This is an abstract base method (to be overridden by inheriting classes)
 
             :return: None
         '''
@@ -952,6 +957,23 @@ class StatesToRelationalTable(StateAggregator):
 
 
 class StatesToCSV(StatesToRelationalTable):
+    ''' Store data and states to disk into a master database formatted as a comma-separated value (CSV) file.
+
+        This extends :class:`StateAggregator` to support
+
+        #. queuing aggregate state of devices by lists of dictionaries;
+        #. custom metadata in each queued aggregate state entry; and
+        #. custom response to non-scalar data (such as relational databasing).
+
+        :param str path: Base path to use for the master database
+        :param bool overwrite: Whether to overwrite the master database if it exists (otherwise, append)
+        :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+        :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
+        :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
+        :param metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
+        :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
+    '''
+
     nonscalar_file_type = 'csv'
 
     def open(self):
@@ -1005,6 +1027,23 @@ class StatesToCSV(StatesToRelationalTable):
 
 
 class StatesToSQLite(StatesToRelationalTable):
+    ''' Store data and states to disk into an an sqlite master database.
+
+        This extends :class:`StateAggregator` to support
+
+        #. queuing aggregate state of devices by lists of dictionaries;
+        #. custom metadata in each queued aggregate state entry; and
+        #. custom response to non-scalar data (such as relational databasing).
+
+        :param str path: Base path to use for the master database
+        :param bool overwrite: Whether to overwrite the master database if it exists (otherwise, append)
+        :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+        :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
+        :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
+        :param metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
+        :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
+    '''
+
     index_label = 'id'  # Don't change this or sqlite breaks :(
     master_filename = 'master.db'
     table_name = 'master'
@@ -1293,7 +1332,8 @@ class MungeReader:
     ''' Guess the type of munging performed on the relational data, and return
         a reader suited to loading that file.
 
-        TODO: Make this smarter, perhaps by trying to read an entry from
+    '''
+    ''' TODO: Make this smarter, perhaps by trying to read an entry from
         the master database
     '''
     def __new__(cls, path):

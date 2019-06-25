@@ -44,40 +44,49 @@ import sys
 import traceback
 from traitlets import All, Undefined, TraitType
 
-__all__ = ['ConnectionError', 'DeviceNotReady', 'DeviceFatalError', 'DeviceException',
+__all__ = ['ConnectionError', 'DeviceException', 'DeviceNotReady', 'DeviceFatalError', 
            'DeviceConnectionLost', 'Undefined', 'All', 'DeviceStateError',
            'Int', 'Float', 'Unicode', 'Complex', 'Bytes', 'CaselessBytesEnum',
            'Bool', 'List', 'Dict', 'TCPAddress',
-           'CaselessStrEnum', 'Device', 'list_devices', 'logger', 'CommandNotImplementedError']
+           'CaselessStrEnum', 'Device', 'list_devices', 'logger', 'CommandNotImplementedError',
+           ]
 
 logger = logging.getLogger('labbench')
 
 
 class ConnectionError(traitlets.TraitError):
-    pass
+    """ Failure on attempt to connect to a device
+    """
 
 
 class DeviceStateError(traitlets.TraitError):
-    pass
+    """ Failure to get or set a state in `Device.state`
+    """
 
 
 class DeviceNotReady(Exception):
-    pass
+    """ Failure to communicate with the Device because it was not ready for communication
+    """
 
 
 class DeviceException(Exception):
-    pass
+    """ Generic Device exception
+    """
 
 
 class DeviceFatalError(Exception):
-    pass
+    """ A fatal error in the device
+    """
 
 
 class DeviceConnectionLost(Exception):
-    pass
+    """ Connection state has been lost unexpectedly
+    """    
 
 
 class CommandNotImplementedError(NotImplementedError):
+    """ A command that has been defined but not implemented
+    """
     pass
 
 
@@ -150,13 +159,14 @@ class HasTraits(traitlets.HasTraits, metaclass=MetaHasTraits):
 class HasSettingsTraits(HasTraits):
     @classmethod
     def define(cls, **kws):
-        ''' Return a copy of this class with default values of the traits
-            redefined according to each keyword argument. For example::
+        ''' Change default values of the settings in parent settings, without redefining the
+            full class. redefined according to each keyword argument. For example::
 
-                mylocaltraitcls.define(parameter=7)
+                MyInstrumentClass.settings.define(parameter=7)
 
-            will return a deep copy of `mylocaltraitcls` where its trait
-            named `parameter` is redefined to have `default_value=7`.
+            changes the default value of the `parameter` setting in `MyInstrumentClass.settings` to `7`.
+            This is a convenience function to avoid completely redefining `parameter` if it was defined
+            in a parent class of `MyInstrumentClass`.
         '''
 
         # Dynamically define the result to be a new subclass
@@ -265,9 +275,6 @@ class TraitMixIn(object):
 
         Order is important - the class should inherit TraitMixIn first and the
         desired traitlet type second.
-    '''
-
-    ''' Classes that use TraitMixIn as a mix-in should do so as follows:
 
         class LabbenchType(TraitMixIn,traitlets.TraitletType):
             pass
@@ -441,16 +448,57 @@ class TraitMixIn(object):
 
 
 class Int(TraitMixIn, traitlets.CInt):
+    ''' Trait for an integer value, with type and bounds checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+        :param min: lower bound for the value
+        :param max: upper bound for the value
+    '''
     doc_attrs = ('min', 'max') + TraitMixIn.doc_attrs
 
 
 class CFLoatSteppedTraitlet(traitlets.CFloat):
+    ''' Trait for a quantized floating point value, with type and bounds checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+        :param min: lower bound for the value
+        :param max: upper bound for the value
+        :param step: resolution of the floating point values                
+    '''    
     def __init__(self, *args, **kws):
         self.step = kws.pop('step', None)
         super(CFLoatSteppedTraitlet, self).__init__(*args, **kws)
 
 
 class Float(TraitMixIn, CFLoatSteppedTraitlet):
+    ''' Trait for a floating point value, with type and bounds checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+        :param min: lower bound for the value
+        :param max: upper bound for the value        
+    '''    
+
     doc_attrs = ('min', 'max', 'step') + TraitMixIn.doc_attrs
 
     def validate(self, obj, value):
@@ -463,26 +511,91 @@ class Float(TraitMixIn, CFLoatSteppedTraitlet):
 
 
 class Unicode(TraitMixIn, traitlets.CUnicode):
+    ''' Trait for a Unicode string value, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''    
+
     default_value = ''
 
 
 class Complex(TraitMixIn, traitlets.CComplex):
-    pass
+    ''' Trait for a complex numeric value, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''    
 
 
 class Bytes(TraitMixIn, traitlets.CBytes):
-    pass
+    ''' Trait for a byte string value, with type checking.
 
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''    
 
 class TCPAddress(TraitMixIn, traitlets.TCPAddress):
-    pass
+    ''' Trait for a (address, port) TCP address tuple value, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''    
 
 
 class List(TraitMixIn, traitlets.List):
+    ''' Trait for a python list value, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''
+
     default_value = []
 
 
 class EnumBytesTraitlet(traitlets.CBytes):
+    ''' Trait for an enumerated list of valid byte string values, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''
+
     def __init__(self, values=[], case_sensitive=False, **kws):
         if len(values) == 0:
             raise ValueError('Must define at least one enum value')
@@ -514,15 +627,52 @@ class EnumBytesTraitlet(traitlets.CBytes):
 
 
 class CaselessBytesEnum(TraitMixIn, EnumBytesTraitlet):
+    ''' Trait for an enumerated list of valid case-insensitive byte string values, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+        :param values: An iterable of valid byte strings to accept
+        :param case_sensitive: Whether to be case_sensitive
+    '''
+
     doc_attrs = ('values', 'case_sensitive') + TraitMixIn.doc_attrs
 
 
 class CaselessStrEnum(TraitMixIn, traitlets.CaselessStrEnum):
+    ''' Trait for an enumerated list of valid case-insensitive unicode string values, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+        :param values: An iterable of valid unicode strings to accept
+    '''
+
     doc_attrs = ('values',) + TraitMixIn.doc_attrs
 
 
 class Dict(TraitMixIn, traitlets.Dict):
-    pass
+    ''' Trait for a python dict value, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''
 
 
 # class BoolTraitlet(traitlets.CBool):
@@ -559,6 +709,18 @@ class Dict(TraitMixIn, traitlets.Dict):
 
 
 class Bool(TraitMixIn, traitlets.CBool):
+    ''' Trait for a python boolean, with type checking.
+
+        :param default_value: initial value (in `settings` only, not `state`)
+        :param allow_none: whether to allow pythonic `None` to represent a null value
+        :param read_only: True if this should not accept a set (write) operation
+        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
+        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
+        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
+        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
+        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
+    '''
+
     default_value = False
 
 
@@ -760,7 +922,9 @@ class Device(object, metaclass=DeviceMetaclass):
     '''
 
     class settings(HasSettingsTraits):
-        ''' Container for settings traits in a Device. These settings
+        """ Container for settings traits in a Device.
+
+            These settings
             are stored only on the host; setting or getting these values do not
             trigger live updates (or any communication) with the device. These
             define connection addressing information, communication settings,
@@ -772,12 +936,12 @@ class Device(object, metaclass=DeviceMetaclass):
             After you instantiate the device, you can still change the setting with::
 
                 Device.settings.resource = 'insert-your-address-string-here'
-        '''
+        """
 
         resource = Unicode(allow_none=True,
-                           help='the data needed to make a connection to a device. its type and format are determined by the subclass implementation')
+                           help='Addressing information needed to make a connection to a device. Type and format are determined by the subclass implementation')
         concurrency_support = Bool(default_value=True, read_only=True,
-                                   help='whether this :class:`Device` implementation supports threading')
+                                   help='Whether this backend supports threading')
 
     class state(HasStateTraits):
         ''' Container for state traits in a Device. Getting or setting state traits

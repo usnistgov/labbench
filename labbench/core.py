@@ -261,6 +261,8 @@ class HasStateTraits(HasTraits):
             raise AttributeError(msg)
         super(HasStateTraits, self).__setattr__(key, value)
 
+defaults = dict(default_value=Undefined, read_only=False, write_only=False,
+                cache=False, allow_none=False, remap={})
 
 class TraitMixIn(object):
     ''' Includes added mix-in features for device control into traitlets types:
@@ -294,18 +296,35 @@ class TraitMixIn(object):
             attr_pairs = []
             for k in self.doc_attrs:
                 v = getattr(self, k)
-                if (k=='default_value' and v!=Undefined)\
-                   and v is not None\
-                   and not (k=='allow_none' and v==False)\
-                   and not (k=='remap' and v=={}):
-                    attr_pairs.append('{k}={v}'.format(k=k, v=repr(v)))
+
+                for def_k, def_v in defaults.items():
+                    if k == def_k and v == def_v:
+                        # Don't doc the default values
+                        break
+                else:
+                    if v is not None:
+                        attr_pairs.append(f'{k}={repr(v)}')
+                # if (k=='default_value' and v == Undefined)\
+                #    or (k=='read_only' and v == False)\
+                #    or (k=='write_only' and v == False)\
+                #    or (k=='cache' and v == False)\
+                #    or (k=='allow_none' and v==False):
+                #     continue
+                # if v is None\
+                #    or (k=='remap' and v=={}):
+                #     continue
+                # if (k=='default_value' and v!=Undefined)\
+                #    and v is not None\
+                #    and not (k=='allow_none' and v==False)\
+                #    and not (k=='remap' and v=={}):
+                
             params = {'name': type(self).__name__,
                       'attrs': ','.join(attr_pairs),
                       'help': self.help}
             sig = '{name}({attrs})\n\n\t{help}'.format(**params)
             sig = sig.replace('*', r'\*')
-            if self.__doc__:
-                sig += self.__doc__
+            # if self.__doc__:
+            #     sig += self.__doc__
             return sig
 
         # Identify the underlying class from Trait

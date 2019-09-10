@@ -1,15 +1,9 @@
 ## Introduction
 
-_Certain commercial equipment, instruments, or
-materials are identified in this repository in order to specify the application
-adequately. Such identification is not intended to imply recommendation
-or endorsement by the National Institute of Standards and Technology, nor is it
-intended to imply that the materials or equipment identified are necessarily the
-best available for the purpose._
 The `labbench` python library provides tools for instrument automation and data management in scripted lab experiments.
 
 A device driver implemented with labbench is a light wrapper around another instrument control library.
-This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level routines. The labbench
+This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL¹) provides low-level routines. The labbench
 abstraction provides several benefits:
 
 * automatic acquisition logging into an SQLite database,
@@ -47,7 +41,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 ## Installation
 1. Install your favorite distribution of a python version 3.6 or greater
 2. In a command prompt, `pip install git+https://gitlab.nist.gov/gitlab/ssm/labbench`
-3. (Optional) install an NI VISA [[1](#myfootnote1)] runtime, for example [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
+3. (Optional) install an NI VISA¹ runtime, for example [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
 
 ## Backends
 The following types of backend classes are implemented to streamline development of new instrumentation drivers:
@@ -59,3 +53,10 @@ The following types of backend classes are implemented to streamline development
 * TelnetDevice (telnetlib backend)
 * VISADevice (pyvisa backend)
 * EmulatedVISADevice (test-only driver for testing labbench features)
+
+_¹Certain commercial equipment, instruments, or
+materials are identified in this repository in order to specify the application
+adequately. Such identification is not intended to imply recommendation
+or endorsement by the National Institute of Standards and Technology, nor is it
+intended to imply that the materials or equipment identified are necessarily the
+best available for the purpose._

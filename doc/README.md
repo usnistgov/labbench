@@ -14,7 +14,7 @@ abstraction provides several benefits:
 * ensure devices disconnect properly when acquisition completes (even on exceptions), and
 * conversion of vector or tabular data to [pandas](pandas.pydata.org) Series or DataFrame objects for rapid exploration of data.
 
-Together, these features help to minimize the amount of "copy-and-paste" code that can make your lab automation scripts error-prone and difficult to maintain.
+Together, these features help to minimize the amount of "copy-and-paste" code that can make lab automation scripts error-prone and difficult to maintain.
 The python code that results can be clear, concise, reusable and maintainable, and
 provide consistent formatting for stored data.
 The result helps researchers to meet NIST's

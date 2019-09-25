@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Corrected a state and setting bug where setters caused unnecessary extra getter calls
 - Fixed the bug in jupyter notebook front panel re-display for objects that already exist
 - If Device.state and/or Device.settings are declared with no parent class, automatically subclass from corresponding attribute in the parent class
+- Count the number of threads running in lb.concurrently to clear the stop request event, so lb.sleep does not unexpectedly raise ThreadEndedByMaster
 
 ### Removed
 

@@ -39,7 +39,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 
 ## Installation
 1. Install your favorite distribution of a python version 3.6 or greater
-2. In a command prompt, `pip install git+https://gitlab.nist.gov/gitlab/ssm/labbench`
+2. In a command prompt, `pip install git+https://github.nist.gov/usnistgov/labbench`
 3. (Optional) install an NI VISA [[1](#myfootnote1)] runtime, for example [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
 
 ## Usage

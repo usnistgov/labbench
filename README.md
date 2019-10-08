@@ -49,7 +49,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 
 #### Using drivers and labbench goodies for laboratory automation
 * [Execute multiple automation functions concurrently](examples/How to run more than one function at the same time.ipynb)
-* [Log the state of instruments to an sqlite database file](examples/How to automatically log to an SQLite database.ipynb)
+* [Log the state of instruments to an sqlite database file](blob/master/examples/How%20to%20automatically%20log%20to%20an%20SQLite%20database.ipynb)
 * [Indicate testbed state in jupyter notebook](examples/Goodies for jupyter notebook.ipynb)
 
 #### Writing your own device driver

@@ -26,9 +26,7 @@ Additional goodies include
 * [real-time heads-up displays for jupyter notebooks](http://ssm.ipages.nist.gov/labbench/labbench.html#module-labbench.notebooks)
 * [convenience functions for reading relational table data from multiple rows](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.data.read_relational)
 
-Information here is mostly about writing your own drivers. A collection of labbench drivers has been implemented in
-[ssmdevices](https://gitlab.nist.gov/gitlab/ssm/ssmdevices),
-which also includes application examples and documentation.
+Information here is mostly about writing your own drivers. Specific drivers written in labbench are implemented in other libraries.
 
 ### Design
 Driver control over scalar instrument settings follows the [descriptor](https://docs.python.org/3/howto/descriptor.html)

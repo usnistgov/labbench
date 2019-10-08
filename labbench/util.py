@@ -62,6 +62,7 @@ class ThreadEndedByMaster(ThreadError):
     '''
 
 
+concurrency_count = 0
 stop_request_event = Event()
 
 
@@ -446,6 +447,8 @@ def stopwatch(desc=''):
 
 
 def concurrently_call(*funcs, **kws):
+    global concurrency_count
+    
     def traceback_skip(exc_tuple, count):
         ''' Skip the first `count` traceback entries in
             an exception.
@@ -512,6 +515,7 @@ def concurrently_call(*funcs, **kws):
     for name, thread in list(threads.items()):
         wrappers[name].set_queue(finished)
         thread.start()
+        concurrency_count += 1
 
     # As each thread ends, collect the return value and any exceptions
 #    exception_count = 0
@@ -536,7 +540,7 @@ def concurrently_call(*funcs, **kws):
 
         if called is None:
             continue
-
+        
         # Below only happens when called is not none
         if master_exception is not None:
             names = ', '.join(list(threads.keys()))
@@ -567,6 +571,12 @@ def concurrently_call(*funcs, **kws):
 
         # Remove this thread from the dictionary of running threads
         del threads[called.name]
+        concurrency_count -= 1
+    
+    # Clear the stop request, if there are no other threads that
+    # still need to exit
+    if concurrency_count == 0 and stop_request_event.is_set():
+        stop_request_event.clear()
 
     # Raise exceptions as necessary
     if master_exception is not None:        

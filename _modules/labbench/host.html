@@ -1,0 +1,422 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>labbench.host &#8212; labbench v0.20</title>
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench v0.20">
+  <link rel="canonical" href="../../">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../..//_static/NISTStyle.css">
+  <link rel="stylesheet" href="../..//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../labbench.html">labbench v0.20</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for labbench.host</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This software was developed by employees of the National Institute of</span>
+<span class="c1"># Standards and Technology (NIST), an agency of the Federal Government.</span>
+<span class="c1"># Pursuant to title 17 United States Code Section 105, works of NIST employees</span>
+<span class="c1"># are not subject to copyright protection in the United States and are</span>
+<span class="c1"># considered to be in the public domain. Permission to freely use, copy,</span>
+<span class="c1"># modify, and distribute this software and its documentation without fee is</span>
+<span class="c1"># hereby granted, provided that this notice and disclaimer of warranty appears</span>
+<span class="c1"># in all copies.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &#39;AS IS&#39; WITHOUT ANY WARRANTY OF ANY KIND, EITHER</span>
+<span class="c1"># EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY</span>
+<span class="c1"># THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF</span>
+<span class="c1"># MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM</span>
+<span class="c1"># INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE</span>
+<span class="c1"># SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT</span>
+<span class="c1"># SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,</span>
+<span class="c1"># INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,</span>
+<span class="c1"># OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON</span>
+<span class="c1"># WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED</span>
+<span class="c1"># BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED</span>
+<span class="c1"># FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES</span>
+<span class="c1"># PROVIDED HEREUNDER. Distributions of NIST software should also include</span>
+<span class="c1"># copyright and licensing statements of any third-party software that are</span>
+<span class="c1"># legally bundled with the code in compliance with the conditions of those</span>
+<span class="c1"># licenses.</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">util</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Host&#39;</span><span class="p">,</span> <span class="s1">&#39;Email&#39;</span><span class="p">,</span> <span class="s1">&#39;LogStderr&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">LogStreamBuffer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">+</span> <span class="n">msg</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">,</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="LogStderr"><a class="viewcode-back" href="../../labbench.html#labbench.host.LogStderr">[docs]</a><span class="k">class</span> <span class="nc">LogStderr</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Device</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; This &quot;Device&quot; logs a copy of messages on sys.stderr while connected.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+<div class="viewcode-block" id="LogStderr.connect"><a class="viewcode-back" href="../../labbench.html#labbench.host.LogStderr.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buf</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(),</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="LogStderr.disconnect"><a class="viewcode-back" href="../../labbench.html#labbench.host.LogStderr.disconnect">[docs]</a>    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">connected</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buf</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">what</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">what</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">what</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buf</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buf</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Email"><a class="viewcode-back" href="../../labbench.html#labbench.host.Email">[docs]</a><span class="k">class</span> <span class="nc">Email</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Device</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Sends a notification message on disconnection. If an exception</span>
+<span class="sd">        was thrown, this is a failure subject line with traceback information</span>
+<span class="sd">        in the main body. Otherwise, the message is a success message in the</span>
+<span class="sd">        subject line. Stderr is also sent.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="Email.settings"><a class="viewcode-back" href="../../labbench.html#labbench.host.Email.settings">[docs]</a>    <span class="k">class</span> <span class="nc">settings</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Device</span><span class="o">.</span><span class="n">settings</span><span class="p">):</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">TCPAddress</span><span class="p">((</span><span class="s1">&#39;smtp.nist.gov&#39;</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+                                   <span class="n">help</span><span class="o">=</span><span class="s1">&#39;smtp server to use&#39;</span><span class="p">)</span>
+        <span class="n">sender</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="s1">&#39;myemail@nist.gov&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;email address of the sender&#39;</span><span class="p">)</span>
+        <span class="n">recipients</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">List</span><span class="p">([</span><span class="s1">&#39;myemail@nist.gov&#39;</span><span class="p">],</span>
+                               <span class="n">help</span><span class="o">=</span><span class="s1">&#39;list of email addresses of recipients&#39;</span><span class="p">)</span>
+        <span class="n">success_message</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="s1">&#39;Test finished normally&#39;</span><span class="p">,</span>
+                                       <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">help</span><span class="o">=</span><span class="s1">&#39;subject line for test success emails, or None to suppress success emails&#39;</span><span class="p">)</span>
+        <span class="n">failure_message</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="s1">&#39;Exception ended test early&#39;</span><span class="p">,</span>
+                                       <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">help</span><span class="o">=</span><span class="s1">&#39;subject line for test failure emails, or None to suppress success emails&#39;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">body</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="kn">from</span> <span class="nn">email.mime.text</span> <span class="k">import</span> <span class="n">MIMEText</span>
+        <span class="kn">import</span> <span class="nn">smtplib</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MIMEText</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">)</span>
+        <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;From&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">sender</span>
+        <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;Subject&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subject</span>
+        <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;To&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">recipients</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">smtplib</span><span class="o">.</span><span class="n">SMTP</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">sendmail</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">sender</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">recipients</span><span class="p">,</span>
+                                 <span class="n">msg</span><span class="o">.</span><span class="n">as_string</span><span class="p">())</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Email.connect"><a class="viewcode-back" href="../../labbench.html#labbench.host.Email.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;enter host&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">LogStderr</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Email.disconnect"><a class="viewcode-back" href="../../labbench.html#labbench.host.Email.disconnect">[docs]</a>    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">connected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+            <span class="n">util</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send_summary</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Email.send_summary"><a class="viewcode-back" href="../../labbench.html#labbench.host.Email.send_summary">[docs]</a>    <span class="k">def</span> <span class="nf">send_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Sends the summary email containing the final state of the test.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">from</span> <span class="nn">traceback</span> <span class="k">import</span> <span class="n">format_exc</span>
+
+        <span class="n">exc</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">exc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">exc</span> <span class="o">!=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">failure_message</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">failure_message</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s1">&#39;&lt;b&gt;Exception&lt;/b&gt;</span><span class="se">\n</span><span class="s1">&#39;</span>\
+                      <span class="o">+</span> <span class="s1">&#39;&lt;font face=&quot;Courier New, Courier, monospace&quot;&gt;&#39;</span>\
+                      <span class="o">+</span> <span class="n">format_exc</span><span class="p">()</span>\
+                      <span class="o">+</span> <span class="s1">&#39;&lt;/font&gt;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">success_message</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">success_message</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span> \
+                <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&lt;b&gt;Standard error&lt;/b&gt;</span><span class="se">\n</span><span class="s1">&#39;</span>\
+                <span class="o">+</span> <span class="s1">&#39;&lt;font face=&quot;Courier New, Courier, monospace&quot;&gt;&#39;</span>\
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">log</span>\
+                <span class="o">+</span> <span class="s1">&#39;&lt;/font&gt;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;br&gt;&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">subject</span><span class="p">,</span> <span class="n">message</span></div></div>
+
+
+<div class="viewcode-block" id="Host"><a class="viewcode-back" href="../../labbench.html#labbench.host.Host">[docs]</a><span class="k">class</span> <span class="nc">Host</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Device</span><span class="p">):</span>
+    <span class="n">log_format</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">.</span><span class="si">%(msecs).03d</span><span class="s1"> </span><span class="si">%(levelname)10s</span><span class="s1"> </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+    <span class="n">time_format</span> <span class="o">=</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span>
+
+<div class="viewcode-block" id="Host.state"><a class="viewcode-back" href="../../labbench.html#labbench.host.Host.state">[docs]</a>    <span class="k">class</span> <span class="nc">state</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Device</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="n">relational</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">git_commit_id</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">git_remote_url</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span>
+            <span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">git_browse_url</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">hostname</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Unicode</span><span class="p">(</span><span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<span class="c1">#    def __init__ (self, *args, **kws):</span>
+<span class="c1">#        super(Host, self).__init__(*args, **kws)</span>
+
+<div class="viewcode-block" id="Host.connect"><a class="viewcode-back" href="../../labbench.html#labbench.host.Host.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; The host setup method tries to commit current changes to the tree</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;labbench&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">LogStreamBuffer</span><span class="p">()</span>
+        <span class="n">sh</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="n">sh</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_format</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_format</span><span class="p">))</span>
+        <span class="n">sh</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">sh</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logger&#39;</span><span class="p">:</span> <span class="n">logger</span><span class="p">,</span>
+                        <span class="s1">&#39;log_stream&#39;</span><span class="p">:</span> <span class="n">stream</span><span class="p">,</span>
+                        <span class="s1">&#39;log_handler&#39;</span><span class="p">:</span> <span class="n">sh</span><span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repo</span> <span class="o">=</span> <span class="n">git</span><span class="o">.</span><span class="n">Repo</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">search_parent_directories</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">git</span><span class="o">.</span><span class="n">NoSuchPathError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repo</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;no git commit because {os.path.abspath(&#39;.&#39;)} is not in a repository&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">commit</span><span class="p">(</span><span class="s1">&#39;start of measurement&#39;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__imports__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">git</span><span class="p">,</span> <span class="n">pip</span>
+        <span class="kn">import</span> <span class="nn">git</span>
+        <span class="kn">import</span> <span class="nn">pip</span>
+
+<div class="viewcode-block" id="Host.disconnect"><a class="viewcode-back" href="../../labbench.html#labbench.host.Host.disconnect">[docs]</a>    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">[</span><span class="s1">&#39;log_handler&#39;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">[</span><span class="s1">&#39;log_stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Host.metadata"><a class="viewcode-back" href="../../labbench.html#labbench.host.Host.metadata">[docs]</a>    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Generate the metadata associated with the host and python distribution</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">metadata</span><span class="p">()</span>
+        <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;python_modules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__python_module_versions</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+    <span class="k">def</span> <span class="nf">__python_module_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Enumerate the versions of installed python modules</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">versions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">pip</span><span class="o">.</span><span class="n">get_installed_distributions</span><span class="p">()])</span>
+        <span class="n">running</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="n">versions</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()])</span>
+                               <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">running</span><span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+    <span class="c1"># def metadata(self, name):</span>
+    <span class="c1">#     ret = super(type(self),self).metadata()</span>
+    <span class="c1">#</span>
+    <span class="c1">#     commit_id = self.state.git_commit_id</span>
+    <span class="c1">#     url = self.state.git_remote_url</span>
+    <span class="c1">#     browse_url = &#39;{}/tree/{}&#39;.format(url, commit_id)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     ret.update({&#39;git_commit_id&#39;: commit_id,</span>
+    <span class="c1">#                 &#39;git_remote_url&#39;: url,</span>
+    <span class="c1">#                 &#39;git_browse_commit_url&#39;: browse_url})</span>
+    <span class="c1">#</span>
+    <span class="c1">#     return ret</span>
+
+    <span class="nd">@state</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">getter</span>
+    <span class="k">def</span> <span class="nf">get_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Get a timestamp of the current time</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;{now.strftime(self.time_format)}.</span><span class="si">{now.microsecond}</span><span class="s1">&#39;</span>
+
+    <span class="nd">@state</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">getter</span>
+    <span class="k">def</span> <span class="nf">get_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Get the current host log contents.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">[</span><span class="s1">&#39;log_handler&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">[</span><span class="s1">&#39;log_stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="nd">@state</span><span class="o">.</span><span class="n">git_commit_id</span><span class="o">.</span><span class="n">getter</span>
+    <span class="k">def</span> <span class="nf">get_git_commit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Try to determine the current commit hash of the current git repo</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">commit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">commit</span><span class="o">.</span><span class="n">hexsha</span>
+        <span class="k">except</span> <span class="n">git</span><span class="o">.</span><span class="n">NoSuchPathError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="nd">@state</span><span class="o">.</span><span class="n">git_remote_url</span><span class="o">.</span><span class="n">getter</span>
+    <span class="k">def</span> <span class="nf">get_git_remote_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Try to identify the remote URL of the repository of the current git repo</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span><span class="o">.</span><span class="n">urls</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="nd">@state</span><span class="o">.</span><span class="n">hostname</span><span class="o">.</span><span class="n">getter</span>
+    <span class="k">def</span> <span class="nf">get_hostname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Get the name of the current host</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
+
+    <span class="nd">@state</span><span class="o">.</span><span class="n">git_browse_url</span><span class="o">.</span><span class="n">getter</span>
+    <span class="k">def</span> <span class="nf">get_git_browse_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; URL for browsing the current git repository</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/tree/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span>\
+               <span class="nb">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">git_remote_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">git_commit_id</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1">#    core.show_messages(&#39;DEBUG&#39;)</span>
+    <span class="c1">#</span>
+    <span class="c1">#    with Host() as pc:</span>
+    <span class="c1">#        print(pc.state.time)</span>
+
+    <span class="k">with</span> <span class="n">Email</span><span class="p">(</span><span class="n">recipients</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;daniel.kuester@nist.gov&#39;</span><span class="p">])</span> <span class="k">as</span> <span class="n">email</span><span class="p">:</span>
+        <span class="k">pass</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../labbench.html">labbench v0.20</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

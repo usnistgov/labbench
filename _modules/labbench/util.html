@@ -1,0 +1,1476 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>labbench.util &#8212; labbench v0.20</title>
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench v0.20">
+  <link rel="canonical" href="../../">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../..//_static/NISTStyle.css">
+  <link rel="stylesheet" href="../..//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../labbench.html">labbench v0.20</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for labbench.util</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This software was developed by employees of the National Institute of</span>
+<span class="c1"># Standards and Technology (NIST), an agency of the Federal Government.</span>
+<span class="c1"># Pursuant to title 17 United States Code Section 105, works of NIST employees</span>
+<span class="c1"># are not subject to copyright protection in the United States and are</span>
+<span class="c1"># considered to be in the public domain. Permission to freely use, copy,</span>
+<span class="c1"># modify, and distribute this software and its documentation without fee is</span>
+<span class="c1"># hereby granted, provided that this notice and disclaimer of warranty appears</span>
+<span class="c1"># in all copies.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &#39;AS IS&#39; WITHOUT ANY WARRANTY OF ANY KIND, EITHER</span>
+<span class="c1"># EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY</span>
+<span class="c1"># THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF</span>
+<span class="c1"># MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM</span>
+<span class="c1"># INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE</span>
+<span class="c1"># SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT</span>
+<span class="c1"># SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,</span>
+<span class="c1"># INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,</span>
+<span class="c1"># OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON</span>
+<span class="c1"># WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED</span>
+<span class="c1"># BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED</span>
+<span class="c1"># FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES</span>
+<span class="c1"># PROVIDED HEREUNDER. Distributions of NIST software should also include</span>
+<span class="c1"># copyright and licensing statements of any third-party software that are</span>
+<span class="c1"># legally bundled with the code in compliance with the conditions of those</span>
+<span class="c1"># licenses.</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">core</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">queue</span> <span class="k">import</span> <span class="n">Queue</span><span class="p">,</span> <span class="n">Empty</span>
+<span class="kn">from</span> <span class="nn">sortedcontainers</span> <span class="k">import</span> <span class="n">SortedDict</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="k">import</span> <span class="n">Thread</span><span class="p">,</span> <span class="n">ThreadError</span><span class="p">,</span> <span class="n">Event</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+<span class="kn">import</span> <span class="nn">psutil</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;concurrently&#39;</span><span class="p">,</span> <span class="s1">&#39;sequentially&#39;</span><span class="p">,</span> <span class="s1">&#39;Call&#39;</span><span class="p">,</span> <span class="s1">&#39;ConcurrentException&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;ConfigStore&#39;</span><span class="p">,</span> <span class="s1">&#39;ConcurrentRunner&#39;</span><span class="p">,</span> <span class="s1">&#39;FilenameDict&#39;</span><span class="p">,</span> <span class="s1">&#39;hash_caller&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;kill_by_name&#39;</span><span class="p">,</span> <span class="s1">&#39;check_master&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;retry&#39;</span><span class="p">,</span> <span class="s1">&#39;show_messages&#39;</span><span class="p">,</span> <span class="s1">&#39;sleep&#39;</span><span class="p">,</span> <span class="s1">&#39;stopwatch&#39;</span><span class="p">,</span> <span class="s1">&#39;Testbed&#39;</span><span class="p">,</span> <span class="s1">&#39;ThreadSandbox&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;ThreadEndedByMaster&#39;</span><span class="p">,</span> <span class="s1">&#39;until_timeout&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="ConcurrentException"><a class="viewcode-back" href="../../labbench.html#labbench.util.ConcurrentException">[docs]</a><span class="k">class</span> <span class="nc">ConcurrentException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Raised on concurrency errors in `labbench.concurrently`</span>
+<span class="sd">    &#39;&#39;&#39;</span></div>
+
+
+<span class="k">class</span> <span class="nc">MasterThreadException</span><span class="p">(</span><span class="n">ThreadError</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Raised to encapsulate a thread raised by the master thread during calls to `labbench.concurrently`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+
+<div class="viewcode-block" id="ThreadEndedByMaster"><a class="viewcode-back" href="../../labbench.html#labbench.util.ThreadEndedByMaster">[docs]</a><span class="k">class</span> <span class="nc">ThreadEndedByMaster</span><span class="p">(</span><span class="n">ThreadError</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Raised in a thread to indicate the master thread requested termination</span>
+<span class="sd">    &#39;&#39;&#39;</span></div>
+
+
+<span class="n">concurrency_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">stop_request_event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="sleep"><a class="viewcode-back" href="../../labbench.html#labbench.util.sleep">[docs]</a><span class="k">def</span> <span class="nf">sleep</span><span class="p">(</span><span class="n">seconds</span><span class="p">,</span> <span class="n">tick</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Drop-in replacement for time.sleep that raises ConcurrentException</span>
+<span class="sd">        if another thread requests that all threads stop.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">global</span> <span class="n">stop_request_event</span>
+    <span class="n">remaining</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Raise ConcurrentException if the stop_request_event is set</span>
+        <span class="k">if</span> <span class="n">stop_request_event</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">remaining</span><span class="p">,</span> <span class="n">tick</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">ThreadEndedByMaster</span>
+
+        <span class="n">remaining</span> <span class="o">=</span> <span class="n">seconds</span> <span class="o">-</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+
+        <span class="c1"># Return normally if the sleep finishes as requested</span>
+        <span class="k">if</span> <span class="n">remaining</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="check_master"><a class="viewcode-back" href="../../labbench.html#labbench.util.check_master">[docs]</a><span class="k">def</span> <span class="nf">check_master</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39; Raise ThreadEndedByMaster if the master thread as requested this</span>
+<span class="sd">        thread to end.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retry"><a class="viewcode-back" href="../../labbench.html#labbench.util.retry">[docs]</a><span class="k">def</span> <span class="nf">retry</span><span class="p">(</span><span class="n">exception_or_exceptions</span><span class="p">,</span> <span class="n">tries</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+          <span class="n">backoff</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">exception_func</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This decorator causes the function call to repeat, suppressing specified exception(s), until a</span>
+<span class="sd">    maximum number of retries has been attempted.</span>
+<span class="sd">    - If the function raises the exception the specified number of times, the underlying exception is raised.</span>
+<span class="sd">    - Otherwise, return the result of the function call.</span>
+
+<span class="sd">    :example:</span>
+<span class="sd">    The following retries the telnet connection 5 times on ConnectionRefusedError::</span>
+
+<span class="sd">        import telnetlib</span>
+<span class="sd">    </span>
+<span class="sd">        # Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError</span>
+<span class="sd">        @retry(ConnectionRefusedError, tries=5)</span>
+<span class="sd">        def connect(host, port):</span>
+<span class="sd">            t = telnetlib.Telnet()</span>
+<span class="sd">            t.open(host,port,5)</span>
+<span class="sd">            return t</span>
+
+
+<span class="sd">    Inspired by https://github.com/saltycrane/retry-decorator which is released</span>
+<span class="sd">    under the BSD license.</span>
+
+<span class="sd">    :param exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for</span>
+<span class="sd">    :param tries: number of times to try before giving up</span>
+<span class="sd">    :type tries: int</span>
+<span class="sd">    :param delay: initial delay between retries in seconds</span>
+<span class="sd">    :type delay: float</span>
+<span class="sd">    :param backoff: backoff to multiply to the delay for each retry</span>
+<span class="sd">    :type backoff: float</span>
+<span class="sd">    :param exception_func: function to call on exception before the next retry</span>
+<span class="sd">    :type exception_func: callable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">do_retry</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">active_delay</span> <span class="o">=</span> <span class="n">delay</span>
+            <span class="k">for</span> <span class="n">retry</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tries</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">exception_or_exceptions</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">ex</span> <span class="o">=</span> <span class="n">e</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="n">f</span><span class="s1">&#39;</span><span class="si">{f.__name__}</span><span class="s1"> retry (call attempt {retry+1}/</span><span class="si">{tries}</span><span class="s1">)&#39;</span><span class="p">)</span>
+                    <span class="n">exception_func</span><span class="p">()</span>
+                    <span class="n">sleep</span><span class="p">(</span><span class="n">active_delay</span><span class="p">)</span>
+                    <span class="n">active_delay</span> <span class="o">=</span> <span class="n">active_delay</span> <span class="o">*</span> <span class="n">backoff</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ex</span>
+
+            <span class="k">return</span> <span class="n">ret</span>
+
+        <span class="k">return</span> <span class="n">do_retry</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+<div class="viewcode-block" id="until_timeout"><a class="viewcode-back" href="../../labbench.html#labbench.util.until_timeout">[docs]</a><span class="k">def</span> <span class="nf">until_timeout</span><span class="p">(</span><span class="n">exception_or_exceptions</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                  <span class="n">backoff</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">exception_func</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This decorator causes the function call to repeat, suppressing specified exception(s), until the</span>
+<span class="sd">    specified timeout period has expired.</span>
+<span class="sd">    - If the timeout expires, the underlying exception is raised.</span>
+<span class="sd">    - Otherwise, return the result of the function call.</span>
+
+<span class="sd">    Inspired by https://github.com/saltycrane/retry-decorator which is released</span>
+<span class="sd">    under the BSD license.</span>
+
+
+<span class="sd">    :example:</span>
+<span class="sd">    The following retries the telnet connection for 5 seconds on ConnectionRefusedError::</span>
+
+<span class="sd">        import telnetlib</span>
+<span class="sd">    </span>
+<span class="sd">        @until_timeout(ConnectionRefusedError, 5)</span>
+<span class="sd">        def connect(host, port):</span>
+<span class="sd">            t = telnetlib.Telnet()</span>
+<span class="sd">            t.open(host,port,5)</span>
+<span class="sd">            return t</span>
+
+<span class="sd">    :param exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for</span>
+<span class="sd">    :param timeout: time in seconds to continue calling the decorated function while suppressing exception_or_exceptions</span>
+<span class="sd">    :type timeout: float</span>
+<span class="sd">    :param delay: initial delay between retries in seconds</span>
+<span class="sd">    :type delay: float</span>
+<span class="sd">    :param backoff: backoff to multiply to the delay for each retry</span>
+<span class="sd">    :type backoff: float</span>
+<span class="sd">    :param exception_func: function to call on exception before the next retry</span>
+<span class="sd">    :type exception_func: callable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">do_retry</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">active_delay</span> <span class="o">=</span> <span class="n">delay</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
+                <span class="n">progress</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">exception_or_exceptions</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">ex</span> <span class="o">=</span> <span class="n">e</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="n">f</span><span class="s1">&#39;</span><span class="si">{f.__name__}</span><span class="s1"> retry (</span><span class="si">{progress}</span><span class="s1">s/</span><span class="si">{timeout}</span><span class="s1">s elapsed)&#39;</span><span class="p">)</span>
+                    <span class="n">exception_func</span><span class="p">()</span>
+                    <span class="n">sleep</span><span class="p">(</span><span class="n">active_delay</span><span class="p">)</span>
+                    <span class="n">active_delay</span> <span class="o">=</span> <span class="n">active_delay</span> <span class="o">*</span> <span class="n">backoff</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ex</span>
+
+            <span class="k">return</span> <span class="n">ret</span>
+
+        <span class="k">return</span> <span class="n">do_retry</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">limit_exception_traceback</span><span class="p">(</span><span class="n">limit</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Limit the tracebacks printed for uncaught</span>
+<span class="sd">        exceptions to the specified depth. Works for</span>
+<span class="sd">        regular CPython and IPython interpreters.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">limit_hook</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tb</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s1">&#39;ipykernel&#39;</span> <span class="ow">in</span> <span class="nb">repr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">excepthook</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">ipykernel</span> <span class="k">import</span> <span class="n">kernelapp</span>
+        <span class="kn">import</span> <span class="nn">IPython</span>
+
+        <span class="n">app</span> <span class="o">=</span> <span class="n">kernelapp</span><span class="o">.</span><span class="n">IPKernelApp</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span>
+        <span class="n">ipyhook</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">excepthook</span>
+
+        <span class="n">is_ipy</span> <span class="o">=</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">excepthook</span> <span class="o">==</span> <span class="n">ipyhook</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">is_ipy</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">is_ipy</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">showtb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+            <span class="n">limit_hook</span><span class="p">(</span><span class="o">*</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+
+        <span class="n">oldhook</span> <span class="o">=</span> <span class="n">ipyhook</span>
+        <span class="n">IPython</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">interactiveshell</span><span class="o">.</span><span class="n">InteractiveShell</span><span class="o">.</span><span class="n">showtraceback</span> <span class="o">=</span> <span class="n">showtb</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">oldhook</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">excepthook</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">excepthook</span><span class="p">,</span> <span class="n">limit_hook</span>
+
+    <span class="k">yield</span>
+
+    <span class="k">if</span> <span class="n">is_ipy</span><span class="p">:</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">showtraceback</span> <span class="o">=</span> <span class="n">oldhook</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">excepthook</span> <span class="o">=</span> <span class="n">oldhook</span>
+
+
+<div class="viewcode-block" id="show_messages"><a class="viewcode-back" href="../../labbench.html#labbench.util.show_messages">[docs]</a><span class="k">def</span> <span class="nf">show_messages</span><span class="p">(</span><span class="n">minimum_level</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Configure screen debug message output for any messages as least as important as indicated by `level`.</span>
+
+<span class="sd">    :param minimum_level: One of &#39;debug&#39;, &#39;warning&#39;, &#39;error&#39;, or None. If None, there will be no output.</span>
+<span class="sd">    :return: None</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">logging</span>
+    <span class="kn">import</span> <span class="nn">coloredlogs</span>
+
+    <span class="n">err_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+               <span class="s1">&#39;warning&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+               <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+               <span class="s1">&#39;info&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+               <span class="kc">None</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">minimum_level</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">err_map</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="n">f</span><span class="s1">&#39;message level must be one of {list(err_map.keys())}&#39;</span><span class="p">)</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">err_map</span><span class="p">[</span><span class="n">minimum_level</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+
+    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+    <span class="c1"># Clear out any stale handlers</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="p">,</span> <span class="s1">&#39;_screen_handler&#39;</span><span class="p">):</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">_screen_handler</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">_screen_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">_screen_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="c1"># - %(pathname)s:%(lineno)d&#39;</span>
+        <span class="n">log_fmt</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">.</span><span class="si">%(msecs)03d</span><span class="s1"> - </span><span class="si">%(levelname)s</span><span class="s1"> - </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+        <span class="c1">#    coloredlogs.install(level=&#39;DEBUG&#39;, logger=logger)</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">_screen_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span>
+            <span class="n">coloredlogs</span><span class="o">.</span><span class="n">ColoredFormatter</span><span class="p">(</span><span class="n">log_fmt</span><span class="p">))</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">_screen_handler</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="kill_by_name"><a class="viewcode-back" href="../../labbench.html#labbench.util.kill_by_name">[docs]</a><span class="k">def</span> <span class="nf">kill_by_name</span><span class="p">(</span><span class="o">*</span><span class="n">names</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Kill one or more running processes by the name(s) of matching binaries.</span>
+
+<span class="sd">        :param names: list of names of processes to kill</span>
+<span class="sd">        :type names: str</span>
+
+<span class="sd">        :example:</span>
+<span class="sd">        &gt;&gt;&gt; # Kill any binaries called &#39;notepad.exe&#39; or &#39;notepad2.exe&#39;</span>
+<span class="sd">        &gt;&gt;&gt; kill_by_name(&#39;notepad.exe&#39;, &#39;notepad2.exe&#39;)</span>
+
+<span class="sd">        :Notes:</span>
+<span class="sd">        Looks for a case-insensitive match against the Process.name() in the</span>
+<span class="sd">        psutil library. Though psutil is cross-platform, the naming convention</span>
+<span class="sd">        returned by name() is platform-dependent. In windows, for example, name()</span>
+<span class="sd">        usually ends in &#39;.exe&#39;.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="n">psutil</span><span class="o">.</span><span class="n">pids</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">proc</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">target</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;killing process {proc.name()}&#39;</span><span class="p">)</span>
+                    <span class="n">proc</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">psutil</span><span class="o">.</span><span class="n">NoSuchProcess</span><span class="p">:</span>
+            <span class="k">continue</span></div>
+
+
+<div class="viewcode-block" id="hash_caller"><a class="viewcode-back" href="../../labbench.html#labbench.util.hash_caller">[docs]</a><span class="k">def</span> <span class="nf">hash_caller</span><span class="p">(</span><span class="n">call_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Use introspection to return an SHA224 hex digest of the caller, which</span>
+<span class="sd">        is almost certainly unique to the combination of the caller source code</span>
+<span class="sd">        and the arguments passed it.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">inspect</span>
+    <span class="kn">import</span> <span class="nn">hashlib</span>
+    <span class="kn">import</span> <span class="nn">pickle</span>
+
+    <span class="n">thisframe</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getouterframes</span><span class="p">(</span><span class="n">thisframe</span><span class="p">)[</span><span class="n">call_depth</span><span class="p">]</span>
+    <span class="n">arginfo</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargvalues</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">frame</span><span class="p">)</span>
+
+    <span class="c1"># get the function object for a simple function</span>
+    <span class="k">if</span> <span class="n">frame</span><span class="o">.</span><span class="n">function</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">f_globals</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">f_globals</span><span class="p">[</span><span class="n">frame</span><span class="o">.</span><span class="n">function</span><span class="p">]</span>
+        <span class="n">argnames</span> <span class="o">=</span> <span class="n">arginfo</span><span class="o">.</span><span class="n">args</span>
+
+    <span class="c1"># get the function object for a method in a class</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">arginfo</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># arginfo.args[0] == &#39;self&#39;:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">arginfo</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;failed to find function object by introspection&#39;</span><span class="p">)</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">frame</span><span class="o">.</span><span class="n">function</span><span class="p">)</span>
+        <span class="n">argnames</span> <span class="o">=</span> <span class="n">arginfo</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="c1"># there weren&#39;t any arguments</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">argnames</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">arginfo</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">argnames</span><span class="p">]</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">func</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha224</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Call"><a class="viewcode-back" href="../../labbench.html#labbench.util.Call">[docs]</a><span class="k">class</span> <span class="nc">Call</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Wrap a function to apply arguments for threaded calls to `concurrently`.</span>
+<span class="sd">        This can be passed in directly by a user in order to provide arguments;</span>
+<span class="sd">        otherwise, it will automatically be wrapped inside `concurrently` to</span>
+<span class="sd">        keep track of some call metadata during execution.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;`func` argument is not callable; did you mistakenly add the () and call it?&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kws</span> <span class="o">=</span> <span class="n">kws</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># This is a means for the main thread to raise an exception</span>
+        <span class="c1"># if this is running in a separate thread</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kws</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">traceback</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">traceback</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Call.set_queue"><a class="viewcode-back" href="../../labbench.html#labbench.util.Call.set_queue">[docs]</a>    <span class="k">def</span> <span class="nf">set_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Set the queue object used to communicate between threads</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span></div>
+
+<div class="viewcode-block" id="Call.setup"><a class="viewcode-back" href="../../labbench.html#labbench.util.Call.setup">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="n">func_in</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Setup threading (concurrent execution only), including</span>
+<span class="sd">            checks for whether a Device instance indicates it supports</span>
+<span class="sd">            concurrent execution or not.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">func_in</span><span class="o">.</span><span class="n">func</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func_in</span><span class="p">,</span> <span class="n">Call</span><span class="p">)</span> <span class="k">else</span> <span class="n">func_in</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__self__&#39;</span><span class="p">)</span> \
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__self__</span><span class="p">,</span> <span class="n">core</span><span class="o">.</span><span class="n">Device</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">func</span><span class="o">.</span><span class="vm">__self__</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">concurrency_support</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConcurrentException</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s1">&#39;</span><span class="si">{func.__self__}</span><span class="s1"> does not support concurrency&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__self__</span><span class="p">,</span> <span class="s1">&#39;__pre_thread__&#39;</span><span class="p">):</span>
+                <span class="n">func</span><span class="o">.</span><span class="vm">__self__</span><span class="o">.</span><span class="n">__pre_thread__</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">func_in</span></div>
+
+<div class="viewcode-block" id="Call.cleanup"><a class="viewcode-back" href="../../labbench.html#labbench.util.Call.cleanup">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="n">func_in</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Cleanup threading (concurrent execution only)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># Implement the below at some stage in the future?</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">func_in</span><span class="o">.</span><span class="n">func</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func_in</span><span class="p">,</span> <span class="n">Call</span><span class="p">)</span> <span class="k">else</span> <span class="n">func_in</span>
+        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">func</span><span class="p">)</span> \
+                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__self__</span><span class="p">,</span> <span class="s1">&#39;__post_thread__&#39;</span><span class="p">):</span>
+            <span class="n">func</span><span class="o">.</span><span class="vm">__self__</span><span class="o">.</span><span class="n">__post_thread__</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">func_in</span></div></div>
+
+
+<div class="viewcode-block" id="stopwatch"><a class="viewcode-back" href="../../labbench.html#labbench.util.stopwatch">[docs]</a><span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">stopwatch</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Time a block of code using a with statement like this:</span>
+
+<span class="sd">    &gt;&gt;&gt; with stopwatch(&#39;sleep statement&#39;):</span>
+<span class="sd">    &gt;&gt;&gt;     time.sleep(2)</span>
+<span class="sd">    sleep statement time elapsed 1.999s.</span>
+
+<span class="sd">    :param desc: text for display that describes the event being timed</span>
+<span class="sd">    :type desc: str</span>
+<span class="sd">    :return: context manager</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">from</span> <span class="nn">platform</span> <span class="k">import</span> <span class="n">platform</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+
+    <span class="k">if</span> <span class="n">platform</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;windows&#39;</span><span class="p">):</span>
+        <span class="n">timefunc</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">timefunc</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">timefunc</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">timefunc</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{desc}</span><span class="s1"> time elapsed </span><span class="si">{T:0.3f}</span><span class="s1">s&#39;</span><span class="o">.</span><span class="n">lstrip</span><span class="p">())</span></div>
+
+
+<span class="k">def</span> <span class="nf">concurrently_call</span><span class="p">(</span><span class="o">*</span><span class="n">funcs</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">concurrency_count</span>
+    
+    <span class="k">def</span> <span class="nf">traceback_skip</span><span class="p">(</span><span class="n">exc_tuple</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Skip the first `count` traceback entries in</span>
+<span class="sd">            an exception.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">exc_tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tb</span><span class="o">.</span><span class="n">tb_next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tb</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">tb_next</span>
+        <span class="k">return</span> <span class="n">exc_tuple</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">tb</span><span class="p">,)</span>
+
+    <span class="n">stop_request_event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">funcs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;only dictionary and callable arguments are allowed, but got &#39;</span> <span class="o">+</span> \
+                <span class="nb">repr</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">catch</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;catch&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">catch</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;catch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">catch</span>
+        <span class="n">catch</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">flatten</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;flatten&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">flatten</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;flatten&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flatten</span>
+        <span class="n">flatten</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">nones</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nones&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">nones</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;nones&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nones</span>
+        <span class="n">nones</span> <span class="o">=</span> <span class="kc">False</span>
+        
+    <span class="n">traceback_delay</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;traceback_delay&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">nones</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;traceback_delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">traceback_delay</span>
+        <span class="n">traceback_delay</span> <span class="o">=</span> <span class="kc">False</span>        
+
+    <span class="n">calls</span> <span class="o">=</span> <span class="p">[</span><span class="n">Call</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">Call</span><span class="p">)</span> <span class="k">else</span> <span class="n">Call</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">]</span>
+
+    <span class="c1"># Force unique names</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">calls</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">calls</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">names</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">c0</span> <span class="o">=</span> <span class="n">calls</span><span class="p">[</span><span class="n">names</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">c0</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_0&#39;</span><span class="p">):</span>
+                <span class="n">c0</span><span class="o">.</span><span class="n">name</span> <span class="o">+=</span> <span class="s1">&#39;_0&#39;</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">names</span>
+
+    <span class="c1"># Set up mappings between wrappers, threads, and the function to call</span>
+    <span class="c1"># OrderedDict([(func,Call(func, *args.get(func,[]))) for func in funcs])</span>
+    <span class="n">wrappers</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">calls</span><span class="p">],</span> <span class="n">calls</span><span class="p">)))</span>
+    <span class="n">threads</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">w</span><span class="p">))</span>
+                           <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">wrappers</span><span class="o">.</span><span class="n">items</span><span class="p">())])</span>
+
+    <span class="c1"># Start threads with calls to each function</span>
+    <span class="n">finished</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">thread</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">threads</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">wrappers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">set_queue</span><span class="p">(</span><span class="n">finished</span><span class="p">)</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">concurrency_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># As each thread ends, collect the return value and any exceptions</span>
+<span class="c1">#    exception_count = 0</span>
+    <span class="n">tracebacks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">master_exception</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">called</span> <span class="o">=</span> <span class="n">finished</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Empty</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span> <span class="o">&gt;</span> <span class="mi">60</span><span class="o">*</span><span class="mi">15</span><span class="p">:</span>
+                <span class="n">names</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">threads</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{names}</span><span class="s1"> threads are still running&#39;</span><span class="p">)</span>
+                <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+            <span class="k">continue</span>
+        <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">master_exception</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="n">stop_request_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+            <span class="n">called</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">called</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        
+        <span class="c1"># Below only happens when called is not none</span>
+        <span class="k">if</span> <span class="n">master_exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">threads</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="n">f</span><span class="s1">&#39;raising </span><span class="si">{master_exception.__class__}</span><span class="s1"> in main thread after child threads </span><span class="si">{names}</span><span class="s1"> return&#39;</span><span class="p">)</span>
+
+        <span class="c1"># if there was an exception that wasn&#39;t us ending the thread,</span>
+        <span class="c1"># show messages</span>
+        <span class="k">if</span> <span class="n">called</span><span class="o">.</span><span class="n">traceback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tb</span> <span class="o">=</span> <span class="n">traceback_skip</span><span class="p">(</span><span class="n">called</span><span class="o">.</span><span class="n">traceback</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">called</span><span class="o">.</span><span class="n">traceback</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ThreadEndedByMaster</span><span class="p">:</span>
+<span class="c1">#                exception_count += 1</span>
+                <span class="n">tracebacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tb</span><span class="p">)</span>
+                <span class="n">last_exception</span> <span class="o">=</span> <span class="n">called</span><span class="o">.</span><span class="n">traceback</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">traceback_delay</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">tb</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">thread error (fixme to print message)&#39;</span><span class="p">)</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">flatten</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">called</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">called</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">nones</span> <span class="ow">or</span> <span class="n">called</span><span class="o">.</span><span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">called</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">called</span><span class="o">.</span><span class="n">result</span>
+
+        <span class="c1"># Remove this thread from the dictionary of running threads</span>
+        <span class="k">del</span> <span class="n">threads</span><span class="p">[</span><span class="n">called</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">concurrency_count</span> <span class="o">-=</span> <span class="mi">1</span>
+    
+    <span class="c1"># Clear the stop request, if there are no other threads that</span>
+    <span class="c1"># still need to exit</span>
+    <span class="k">if</span> <span class="n">concurrency_count</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">stop_request_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+        <span class="n">stop_request_event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="c1"># Raise exceptions as necessary</span>
+    <span class="k">if</span> <span class="n">master_exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>        
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">tb</span> <span class="ow">in</span> <span class="n">tracebacks</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">tb</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">thread error (fixme to print message)&#39;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            
+        <span class="k">raise</span> <span class="n">master_exception</span>
+
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">tracebacks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">catch</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tracebacks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">last_exception</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">tb</span> <span class="ow">in</span> <span class="n">tracebacks</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">tb</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">thread error (fixme to print message)&#39;</span><span class="p">)</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">limit_exception_traceback</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConcurrentException</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s1">&#39;{len(tracebacks)} call(s) raised exceptions&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">concurrently_enter</span><span class="p">(</span><span class="o">*</span><span class="n">contexts</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">exits</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">enter</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">ex</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">Call</span><span class="o">.</span><span class="n">cleanup</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="c1"># Exit Device instances last, to give other</span>
+        <span class="c1"># devices a chance to access them during their</span>
+        <span class="c1"># __exit__</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">core</span><span class="o">.</span><span class="n">Device</span><span class="p">):</span>
+            <span class="n">exits</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+        <span class="n">ent</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="fm">__enter__</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ent</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">contexts</span><span class="p">:</span>
+            <span class="n">Call</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">kws</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">Call</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">)</span>
+        <span class="n">calls</span> <span class="o">=</span> <span class="p">[</span><span class="n">Call</span><span class="p">(</span><span class="n">enter</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">contexts</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">kws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="n">Call</span><span class="p">(</span><span class="n">enter</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+            <span class="n">call</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">concurrently_call</span><span class="p">(</span><span class="o">*</span><span class="n">calls</span><span class="p">)</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Connected all in {time.time()-t0:0.2f}s&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">ret</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+        <span class="n">exc</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">exc</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">while</span> <span class="n">exits</span><span class="p">:</span>
+        <span class="n">exit</span> <span class="o">=</span> <span class="n">exits</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">exit</span><span class="p">(</span><span class="o">*</span><span class="n">exc</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+            <span class="n">exc</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+
+    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Disonnected all in {time.time()-t0:0.2f}s&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">exc</span> <span class="o">!=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># sys.exc_info() may have been</span>
+        <span class="c1"># changed by one of the exit methods</span>
+        <span class="c1"># so provide explicit exception info</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="n">exc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="sequentially"><a class="viewcode-back" href="../../labbench.html#labbench.util.sequentially">[docs]</a><span class="k">def</span> <span class="nf">sequentially</span><span class="p">(</span><span class="o">*</span><span class="n">funcs</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&#39;&#39;&#39; Call each function or method listed in `*funcs` sequentially.</span>
+<span class="sd">         The goal is to emulate the behavior of the `concurrently` function,</span>
+<span class="sd">         with some of the same support for updating result dictionaries.</span>
+
+<span class="sd">        Multiple references to the same function in `*funcs` only result in one</span>
+<span class="sd">        call. The `catch` and `flatten` arguments may be callables, in which</span>
+<span class="sd">        case they are executed (and their values are treated as defaults).</span>
+
+<span class="sd">        :param objs:  each argument may be a callable (function or class that\</span>
+<span class="sd">        defines a __call__ method), or context manager (such as a Device instance)</span>
+<span class="sd">        :param catch:  if `False` (the default), a `ConcurrentException` is\</span>
+<span class="sd">        raised if any of `funcs` raise an exception; otherwise, any remaining\</span>
+<span class="sd">        successful calls are returned as normal</span>
+<span class="sd">        :param flatten:  if not callable\</span>
+<span class="sd">        and evalues as True, updates the returned dictionary with the\</span>
+<span class="sd">        dictionary (instead of a nested dictionary)</span>
+<span class="sd">        :param nones: if not\</span>
+<span class="sd">        callable and evalues as True, includes entries for calls that return\</span>
+<span class="sd">        None (default is False)</span>
+<span class="sd">        :return: the values returned by each function</span>
+<span class="sd">        :rtype: dictionary of keyed by function.</span>
+
+<span class="sd">        Here are some examples:</span>
+
+<span class="sd">        :Example: Call each function `myfunc1` and `myfunc2`, each with no arguments:</span>
+
+<span class="sd">        &gt;&gt;&gt; import labbench as lb</span>
+<span class="sd">        &gt;&gt;&gt; def do_something_1 ():</span>
+<span class="sd">        &gt;&gt;&gt;     time.sleep(0.5)</span>
+<span class="sd">        &gt;&gt;&gt;     return 1</span>
+<span class="sd">        &gt;&gt;&gt; def do_something_2 ():</span>
+<span class="sd">        &gt;&gt;&gt;     time.sleep(1)</span>
+<span class="sd">        &gt;&gt;&gt;     return 2</span>
+<span class="sd">        &gt;&gt;&gt; rets = lb.sequentially(myfunc1, myfunc2)</span>
+<span class="sd">        &gt;&gt;&gt; rets[do_something_1]</span>
+<span class="sd">        1</span>
+
+<span class="sd">        :Example: To pass arguments, use the Call wrapper</span>
+
+<span class="sd">        &gt;&gt;&gt; def do_something_3 (a,b,c):</span>
+<span class="sd">        &gt;&gt;&gt;     time.sleep(2)</span>
+<span class="sd">        &gt;&gt;&gt;     return a,b,c</span>
+<span class="sd">        &gt;&gt;&gt; rets = lb.sequentially(myfunc1, Call(myfunc3,a,b,c=c))</span>
+<span class="sd">        &gt;&gt;&gt; rets[do_something_3]</span>
+<span class="sd">        a, b, c</span>
+
+<span class="sd">        Because :func sequentially: does not use threading, it does not check</span>
+<span class="sd">        whether a Device method supports concurrency before it runs.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">funcs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">funcs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;only dictionary and callable arguments are allowed, but got &#39;</span> <span class="o">+</span> \
+                <span class="nb">repr</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">funcs</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">funcs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s1">&#39;input arguments include duplicates, but each must be unique&#39;</span><span class="p">)</span>
+
+    <span class="n">catch</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;catch&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">catch</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;catch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">catch</span>
+        <span class="n">catch</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">flatten</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;flatten&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">flatten</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;flatten&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flatten</span>
+        <span class="n">flatten</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">nones</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nones&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">nones</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;nones&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nones</span>
+        <span class="n">nones</span> <span class="o">=</span> <span class="kc">False</span>
+        
+    <span class="n">traceback_delay</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;traceback_delay&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">nones</span><span class="p">):</span>
+        <span class="n">kws</span><span class="p">[</span><span class="s1">&#39;traceback_delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">traceback_delay</span>
+        <span class="n">traceback_delay</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">calls</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">Call</span><span class="p">)</span> <span class="k">else</span> <span class="n">Call</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">]</span>
+
+    <span class="c1"># Force unique names</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">calls</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">calls</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">names</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">c0</span> <span class="o">=</span> <span class="n">calls</span><span class="p">[</span><span class="n">names</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">c0</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_0&#39;</span><span class="p">):</span>
+                <span class="n">c0</span><span class="o">.</span><span class="n">name</span> <span class="o">+=</span> <span class="s1">&#39;_0&#39;</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">names</span>
+
+    <span class="c1"># Set up mappings between wrappers, threads, and the function to call</span>
+    <span class="c1"># OrderedDict([(func,Call(func, *args.get(func,[]))) for func in funcs])</span>
+    <span class="n">wrappers</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">calls</span><span class="p">],</span> <span class="n">calls</span><span class="p">)))</span>
+    <span class="n">threads</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+                           <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">wrappers</span><span class="o">.</span><span class="n">items</span><span class="p">())])</span>
+
+    <span class="c1"># Call one at a time with calls to each function</span>
+    <span class="n">finished</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">thread</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">threads</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">wrappers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">set_queue</span><span class="p">(</span><span class="n">finished</span><span class="p">)</span>
+        <span class="n">thread</span><span class="p">()</span>
+
+    <span class="c1"># As each thread ends, collect the return value and any exceptions</span>
+    <span class="n">tracebacks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)):</span>
+        <span class="n">called</span> <span class="o">=</span> <span class="n">finished</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+        <span class="c1"># if there was an exception</span>
+        <span class="k">if</span> <span class="n">called</span><span class="o">.</span><span class="n">traceback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">traceback_delay</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">called</span><span class="o">.</span><span class="n">traceback</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">tracebacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">called</span><span class="o">.</span><span class="n">traceback</span><span class="p">)</span>
+                
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">flatten</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">called</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">called</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">nones</span> <span class="ow">or</span> <span class="n">called</span><span class="o">.</span><span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">called</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">called</span><span class="o">.</span><span class="n">result</span>
+
+    <span class="c1"># Raise exceptions as necessary</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tracebacks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">catch</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConcurrentException</span><span class="p">(</span>
+            <span class="n">f</span><span class="s1">&#39;{len(tracebacks)} call(s) raised exceptions&#39;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">traceback_delay</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tb</span> <span class="ow">in</span> <span class="n">tracebacks</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">tb</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">results</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="concurrently"><a class="viewcode-back" href="../../labbench.html#labbench.util.concurrently">[docs]</a><span class="k">def</span> <span class="nf">concurrently</span><span class="p">(</span><span class="o">*</span><span class="n">objs</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&#39;&#39;&#39; If `*objs` are callable (like functions), call each of</span>
+<span class="sd">         `*objs` in concurrent threads. If `*objs` are context</span>
+<span class="sd">         managers (such as Device instances to be connected),</span>
+<span class="sd">         enter each context in concurrent threads.</span>
+
+<span class="sd">        Multiple references to the same function in `objs` only result in one call. The `catch` and `flatten`</span>
+<span class="sd">        arguments may be callables, in which case they are executed (and each flag value is treated as defaults).</span>
+
+<span class="sd">        :param objs:  each argument may be a callable (function or class that defines a __call__ method), or context manager (such as a Device instance)</span>
+<span class="sd">        :param catch:  if `False` (the default), a `ConcurrentException` is raised if any of `funcs` raise an exception; otherwise, any remaining successful calls are returned as normal</span>
+<span class="sd">        :param flatten:  if not callable and evalues as True, updates the returned dictionary with the dictionary (instead of a nested dictionary)</span>
+<span class="sd">        :param nones: if not callable and evalues as True, includes entries for calls that return None (default is False)</span>
+<span class="sd">        :param traceback_delay: if `False`, immediately show traceback information on a thread exception; if `True` (the default), wait until all threads finish</span>
+<span class="sd">        :return: the values returned by each function</span>
+<span class="sd">        :rtype: dictionary of keyed by function</span>
+
+<span class="sd">        Here are some examples:</span>
+
+<span class="sd">        :Example: Call each function `myfunc1` and `myfunc2`, each with no arguments:</span>
+
+<span class="sd">        &gt;&gt;&gt; def do_something_1 ():</span>
+<span class="sd">        &gt;&gt;&gt;     time.sleep(0.5)</span>
+<span class="sd">        &gt;&gt;&gt;     return 1</span>
+<span class="sd">        &gt;&gt;&gt; def do_something_2 ():</span>
+<span class="sd">        &gt;&gt;&gt;     time.sleep(1)</span>
+<span class="sd">        &gt;&gt;&gt;     return 2</span>
+<span class="sd">        &gt;&gt;&gt; rets = concurrent(myfunc1, myfunc2)</span>
+<span class="sd">        &gt;&gt;&gt; rets[do_something_1]</span>
+<span class="sd">        1</span>
+
+<span class="sd">        :Example: To pass arguments, use the Call wrapper</span>
+
+<span class="sd">        &gt;&gt;&gt; def do_something_3 (a,b,c):</span>
+<span class="sd">        &gt;&gt;&gt;     time.sleep(2)</span>
+<span class="sd">        &gt;&gt;&gt;     return a,b,c</span>
+<span class="sd">        &gt;&gt;&gt; rets = concurrent(myfunc1, Call(myfunc3,a,b,c=c))</span>
+<span class="sd">        &gt;&gt;&gt; rets[do_something_3]</span>
+<span class="sd">        a, b, c</span>
+
+<span class="sd">        **Caveats**</span>
+
+<span class="sd">        - Because the calls are in different threads, not different processes,</span>
+<span class="sd">          this should be used for IO-bound functions (not CPU-intensive functions).</span>
+<span class="sd">        - Be careful about thread safety.</span>
+
+<span class="sd">        When the callable object is a Device method, :func concurrency: checks</span>
+<span class="sd">        the Device object state.concurrency_support for compatibility</span>
+<span class="sd">        before execution. If this check returns `False`, this method</span>
+<span class="sd">        raises a ConcurrentException.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">objs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">objs</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">objs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">objs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span>
+                <span class="n">f</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;__enter__&#39;</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;only dict, callable or context manager arguments are allowed, but got </span><span class="si">{}</span><span class="s1">&#39;</span> <span class="o">+</span> \
+                <span class="nb">repr</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">kws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;catch&#39;</span><span class="p">,</span> <span class="s1">&#39;flatten&#39;</span><span class="p">,</span> <span class="s1">&#39;nones&#39;</span><span class="p">,</span><span class="s1">&#39;traceback_delay&#39;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">del</span> <span class="n">kws</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span>
+                <span class="n">f</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;__enter__&#39;</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;only dict, callable or context manager arguments are allowed, but got </span><span class="si">{}</span><span class="s1">&#39;</span> <span class="o">+</span> \
+                <span class="nb">repr</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">objs</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">objs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s1">&#39;input arguments include duplicates, but each must be unique&#39;</span><span class="p">)</span>
+
+    <span class="c1"># If funcs are context managers, concurrently enter</span>
+    <span class="c1"># their contexts instead of calling them</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">objs</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">kws</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;__enter__&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">concurrently_call</span><span class="p">(</span><span class="o">*</span><span class="n">objs</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">concurrently_enter</span><span class="p">(</span><span class="o">*</span><span class="n">objs</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span></div>
+
+
+<span class="n">OP_CALL</span> <span class="o">=</span> <span class="s1">&#39;op&#39;</span>
+<span class="n">OP_GET</span> <span class="o">=</span> <span class="s1">&#39;get&#39;</span>
+<span class="n">OP_SET</span> <span class="o">=</span> <span class="s1">&#39;set&#39;</span>
+<span class="n">OP_QUIT</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">ThreadDelegate</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">_sandbox</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_obj</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_dir</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_repr</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sandbox</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">dir_</span><span class="p">,</span> <span class="n">repr_</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sandbox</span> <span class="o">=</span> <span class="n">sandbox</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dir</span> <span class="o">=</span> <span class="n">dir_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_repr</span> <span class="o">=</span> <span class="n">repr_</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sandbox</span><span class="p">,</span> <span class="n">OP_CALL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kws</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">delegate_keys</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sandbox</span><span class="p">,</span> <span class="n">OP_GET</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dir</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;ThreadDelegate(</span><span class="si">{self._repr}</span><span class="s1">)&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">delegate_keys</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sandbox</span><span class="p">,</span> <span class="n">OP_SET</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<span class="n">delegate_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ThreadDelegate</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+
+<span class="k">def</span> <span class="nf">message</span><span class="p">(</span><span class="n">sandbox</span><span class="p">,</span> <span class="o">*</span><span class="n">msg</span><span class="p">):</span>
+    <span class="n">req</span><span class="p">,</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">sandbox</span><span class="o">.</span><span class="n">_requestq</span><span class="p">,</span> <span class="n">Queue</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Await and handle request. Exception should be raised in this</span>
+    <span class="c1"># (main) thread</span>
+    <span class="n">req</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">msg</span> <span class="o">+</span> <span class="p">(</span><span class="n">rsp</span><span class="p">,),</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">ret</span><span class="p">,</span> <span class="n">exc</span> <span class="o">=</span> <span class="n">rsp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">exc</span>
+
+    <span class="k">return</span> <span class="n">ret</span>
+
+
+<div class="viewcode-block" id="ThreadSandbox"><a class="viewcode-back" href="../../labbench.html#labbench.util.ThreadSandbox">[docs]</a><span class="k">class</span> <span class="nc">ThreadSandbox</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Execute all calls in the class in a separate background thread. This</span>
+<span class="sd">        is intended to work around challenges in threading wrapped win32com APIs.</span>
+
+<span class="sd">        Use it as follows:</span>
+<span class="sd">    </span>
+<span class="sd">            obj = ThreadSandbox(MyClass(myclassarg, myclasskw=myclassvalue))</span>
+
+<span class="sd">        Then use `obj` as a normal MyClass instance.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">__repr_root__</span> <span class="o">=</span> <span class="s1">&#39;uninitialized ThreadSandbox&#39;</span>
+    <span class="n">__dir_root__</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">__thread</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_requestq</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factory</span><span class="p">,</span> <span class="n">should_sandbox_func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Start the thread and block until it&#39;s ready</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_requestq</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ready</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__thread</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__worker</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">factory</span><span class="p">,</span> <span class="n">ready</span><span class="p">,</span> <span class="n">should_sandbox_func</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">exc</span> <span class="o">=</span> <span class="n">ready</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">exc</span>
+
+    <span class="k">def</span> <span class="nf">__worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factory</span><span class="p">,</span> <span class="n">ready</span><span class="p">,</span> <span class="n">sandbox_check_func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; This is the only thread allowed to access the protected object.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">factory</span><span class="p">()</span>
+
+            <span class="k">def</span> <span class="nf">default_sandbox_check_func</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+                        <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="k">if</span> <span class="n">sandbox_check_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sandbox_check_func</span> <span class="o">=</span> <span class="n">default_sandbox_check_func</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__repr_root__</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__dir_root__</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">sandbox_keys</span><span class="p">))))</span>
+            <span class="n">exc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">exc</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">ready</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Do some sort of setup here</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">exc</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">op</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kws</span><span class="p">,</span> <span class="n">rsp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_requestq</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># End if that&#39;s good</span>
+            <span class="k">if</span> <span class="n">op</span> <span class="ow">is</span> <span class="n">OP_QUIT</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">root</span>
+
+            <span class="c1"># Do the op</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">op</span> <span class="ow">is</span> <span class="n">OP_GET</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">op</span> <span class="ow">is</span> <span class="n">OP_CALL</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">obj</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">op</span> <span class="ow">is</span> <span class="n">OP_SET</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+                <span class="c1"># Make it a delegate if it needs to be protected</span>
+                <span class="k">if</span> <span class="n">sandbox_check_func</span><span class="p">(</span><span class="n">ret</span><span class="p">):</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">ThreadDelegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span>
+                                         <span class="n">dir_</span><span class="o">=</span><span class="nb">dir</span><span class="p">(</span><span class="n">ret</span><span class="p">),</span>
+                                         <span class="n">repr_</span><span class="o">=</span><span class="nb">repr</span><span class="p">(</span><span class="n">ret</span><span class="p">))</span>
+
+            <span class="c1"># Catch all exceptions</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">exc</span> <span class="o">=</span> <span class="n">e</span>
+                <span class="n">exc</span> <span class="o">=</span> <span class="n">e</span>
+
+            <span class="n">rsp</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">ret</span><span class="p">,</span> <span class="n">exc</span><span class="p">),</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;ThreadSandbox worker thread finished&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">sandbox_keys</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">OP_GET</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">sandbox_keys</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">OP_SET</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">OP_QUIT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_kill</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__thread</span><span class="p">,</span> <span class="n">Thread</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;no thread running to kill&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">del_</span> <span class="o">=</span> <span class="n">message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">OP_GET</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;__del__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">del_</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_kill</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;ThreadSandbox(</span><span class="si">{self.__repr_root__}</span><span class="s1">)&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dir_root__</span></div>
+
+
+<span class="n">sandbox_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ThreadSandbox</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                   <span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="ConfigStore"><a class="viewcode-back" href="../../labbench.html#labbench.util.ConfigStore">[docs]</a><span class="k">class</span> <span class="nc">ConfigStore</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39; Define dictionaries of configuration settings</span>
+<span class="sd">        in subclasses of this object. Each dictionary should</span>
+<span class="sd">        be an attribute of the subclass. The all() class method</span>
+<span class="sd">        returns a flattened dictionary consisting of all values</span>
+<span class="sd">        of these dictionary attributes, keyed according to</span>
+<span class="sd">        &#39;{attr_name}_{attr_key}&#39;, where {attr_name} is the</span>
+<span class="sd">        name of the dictionary attribute and {attr_key} is the</span>
+<span class="sd">        nested dictionary key.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="ConfigStore.all"><a class="viewcode-back" href="../../labbench.html#labbench.util.ConfigStore.all">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">all</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return a dictionary of all attributes in the class</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+                <span class="n">ret</span><span class="o">.</span><span class="n">update</span><span class="p">([(</span><span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">k2</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span> <span class="k">for</span> <span class="n">k2</span><span class="p">,</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="ConfigStore.frame"><a class="viewcode-back" href="../../labbench.html#labbench.util.ConfigStore.frame">[docs]</a>    <span class="nd">@classmethod</span>    
+    <span class="k">def</span> <span class="nf">frame</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return a pandas DataFrame containing all attributes</span>
+<span class="sd">            in the class</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="bp">cls</span><span class="o">.</span><span class="n">all</span><span class="p">()])</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Value&#39;</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Parameter&#39;</span>
+        <span class="k">return</span> <span class="n">df</span></div></div>
+
+
+<div class="viewcode-block" id="FilenameDict"><a class="viewcode-back" href="../../labbench.html#labbench.util.FilenameDict">[docs]</a><span class="k">class</span> <span class="nc">FilenameDict</span><span class="p">(</span><span class="n">SortedDict</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Sometimes instrument configuration file can be defined according</span>
+<span class="sd">        to a combination of several test parameters.</span>
+
+<span class="sd">        This class provides a way of mapping these parameters to and from a</span>
+<span class="sd">        filename string.</span>
+
+<span class="sd">        They keys are sorted alphabetically, just as in the underlying</span>
+<span class="sd">        SortedDict.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_filename</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">FilenameDict</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_index</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">FilenameDict</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">FilenameDict</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Convert the dictionary to a filename. It is not guaranteed</span>
+<span class="sd">            to fit within file name length limit of any filesystem.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{k}</span><span class="s1">=</span><span class="si">{v}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{self.__class__.__name__}</span><span class="s1">({repr(str(self))})&#39;</span>
+
+<div class="viewcode-block" id="FilenameDict.from_filename"><a class="viewcode-back" href="../../labbench.html#labbench.util.FilenameDict.from_filename">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_filename</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Convert from a FilenameDict filename string to a FilenameDict</span>
+<span class="sd">            object.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FilenameDict.from_index"><a class="viewcode-back" href="../../labbench.html#labbench.util.FilenameDict.from_index">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_index</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Make a FilenameDict where the keys are taken from df.index</span>
+<span class="sd">            and the values are constant values provided.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">*</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">values</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="ConcurrentRunner"><a class="viewcode-back" href="../../labbench.html#labbench.util.ConcurrentRunner">[docs]</a><span class="k">class</span> <span class="nc">ConcurrentRunner</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39; Concurrently runs all staticmethods or classmethods</span>
+<span class="sd">        defined in the subclass.</span>
+
+<span class="sd">        This has been deprecated - don&#39;t use in new code.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">log_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">func_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">wrap</span><span class="p">():</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">()</span>
+                <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s1">&#39;concurrent run </span><span class="si">{cls.__name__}</span><span class="s1">.</span><span class="si">{func_name}</span><span class="s1"> done&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ret</span>
+
+            <span class="k">return</span> <span class="n">wrap</span>
+
+        <span class="n">methods</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Only attributes that are not in this base class</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="bp">cls</span><span class="p">))</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">ConcurrentRunner</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">attrs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="n">clsmeth</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> \
+                    <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="vm">__self__</span> <span class="ow">is</span> <span class="bp">cls</span>
+                <span class="n">staticmeth</span> <span class="o">=</span> <span class="n">callable</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;__self__&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">clsmeth</span> <span class="ow">or</span> <span class="n">staticmeth</span><span class="p">:</span>
+                    <span class="n">methods</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_wrapper</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;skipping </span><span class="si">{cls.__name__}</span><span class="s1">.</span><span class="si">{k}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">core</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">f</span><span class="s2">&quot;concurrent run </span><span class="si">{cls.__name__}</span><span class="s2"> {list(methods.keys())}&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">concurrently</span><span class="p">(</span><span class="o">*</span><span class="n">methods</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Testbed"><a class="viewcode-back" href="../../labbench.html#labbench.util.Testbed">[docs]</a><span class="k">class</span> <span class="nc">Testbed</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Base class for Testbeds, which is a collection of multiple Device instances,</span>
+<span class="sd">        database managers, etc. that together implement an automated experiment</span>
+<span class="sd">        in the lab.</span>
+
+<span class="sd">        Use a `with` block with the testbed instance to connect everything</span>
+<span class="sd">        at once like so::</span>
+
+<span class="sd">            with Testbed() as testbed:</span>
+<span class="sd">                # use the testbed here</span>
+<span class="sd">                pass</span>
+
+<span class="sd">        or optionally connect only a subset of devices like this::</span>
+
+<span class="sd">            testbed = Testbed()</span>
+<span class="sd">            with testbed.dev1, testbed.dev2:</span>
+<span class="sd">                # use the testbed.dev1 and testbed.dev2 here</span>
+<span class="sd">                pass</span>
+
+<span class="sd">        Make your own subclass of Testbed with a custom `make`</span>
+<span class="sd">        method to define the Device or database manager instances, and</span>
+<span class="sd">        a custom `startup` method to implement custom code to set up the</span>
+<span class="sd">        testbed after each Device is connected.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">concurrent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="n">attrs_start</span> <span class="o">=</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make</span><span class="p">()</span>
+
+        <span class="c1"># Find the objects</span>
+        <span class="n">new_attrs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">attrs_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_contexts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">new_attrs</span><span class="p">:</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__enter__&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_contexts</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">o</span>
+
+        <span class="k">if</span> <span class="n">concurrent</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__cm</span> <span class="o">=</span> <span class="n">concurrently</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_contexts</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__cm</span> <span class="o">=</span> <span class="n">sequentially</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_contexts</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__cm</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">ex</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ex</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__cm</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">after</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ex</span>
+            <span class="k">return</span> <span class="n">ret</span>
+
+<div class="viewcode-block" id="Testbed.make"><a class="viewcode-back" href="../../labbench.html#labbench.util.Testbed.make">[docs]</a>    <span class="k">def</span> <span class="nf">make</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Implement this method in a subclass of Testbed. It should</span>
+<span class="sd">            set drivers as attributes of the Testbed instance, for example::</span>
+
+<span class="sd">                self.dev1 = MyDevice()</span>
+
+<span class="sd">            This is called automatically when when the testbed class</span>
+<span class="sd">            is instantiated.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Testbed.startup"><a class="viewcode-back" href="../../labbench.html#labbench.util.Testbed.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; This is called automatically after connect if the testbed is</span>
+<span class="sd">            connected using the `with` statement block.</span>
+
+<span class="sd">            Implement any custom code here in Testbed subclasses to</span>
+<span class="sd">            implement startup of the testbed given connected Device</span>
+<span class="sd">            instances.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Testbed.cleanup"><a class="viewcode-back" href="../../labbench.html#labbench.util.Testbed.cleanup">[docs]</a>    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; This is called automatically immediately before disconnect if the</span>
+<span class="sd">            testbed is connected using the `with` statement block.</span>
+
+<span class="sd">            Implement any custom code here in Testbed subclasses to</span>
+<span class="sd">            implement startup of the testbed given connected Device</span>
+<span class="sd">            instances.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="Testbed.after"><a class="viewcode-back" href="../../labbench.html#labbench.util.Testbed.after">[docs]</a>    <span class="k">def</span> <span class="nf">after</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; This is called automatically after disconnect, if no exceptions</span>
+<span class="sd">            were raised.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">do_something_1</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 1&#39;</span><span class="p">)</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 1&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">do_something_2</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 2&#39;</span><span class="p">)</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 2&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">do_something_3</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 2&#39;</span><span class="p">)</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mf">2.5</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 2&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span>
+
+    <span class="k">def</span> <span class="nf">do_something_4</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 1&#39;</span><span class="p">)</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;I had an error&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 1&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">concurrently</span><span class="p">(</span><span class="n">do_something_1</span><span class="p">,</span> <span class="n">do_something_2</span><span class="p">,</span> <span class="n">do_something_3</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;results were&#39;</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../labbench.html">labbench v0.20</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Welcome to labbench-github’s documentation! &#8212; labbench v0.20</title>
+    <title>Introduction &#8212; labbench v0.20</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
@@ -70,31 +70,73 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-labbench-github-s-documentation">
-<h1>Welcome to labbench-github’s documentation!<a class="headerlink" href="#welcome-to-labbench-github-s-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="labbench.html">labbench package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.backends">labbench.backends module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.core">labbench.core module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.data">labbench.data module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.host">labbench.host module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.notebooks">labbench.notebooks module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.util">labbench.util module</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">labbench</span></code> python library provides tools for instrument automation and data management in scripted lab experiments.</p>
+<p>A device driver implemented with labbench is a light wrapper around another instrument control library.
+This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL¹) provides low-level routines. The labbench
+abstraction provides several benefits:</p>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li>automatic acquisition logging into an SQLite database,</li>
+<li>automatically-generated jupyter notebook monitoring widgets,</li>
+<li>interact with settings and data on remote devices with native python data types (instead of strings),</li>
+<li>python exceptions on invalid device state settings (instead of silent failure),</li>
+<li>drivers provide consistent style and API conventions for easy scripting (hello, tab completion!),</li>
+<li>ensure devices disconnect properly when acquisition completes (even on exceptions), and</li>
+<li>conversion of vector or tabular data to <a class="reference external" href="pandas.pydata.org">pandas</a> Series or DataFrame objects for rapid exploration of data.</li>
 </ul>
+<p>Together, these features help to minimize the amount of “copy-and-paste” code that can make lab automation scripts error-prone and difficult to maintain.
+The python code that results can be clear, concise, reusable and maintainable, and
+provide consistent formatting for stored data.
+The result helps researchers to meet NIST’s
+<a class="reference external" href="https://www.nist.gov/open">open data</a> obligations, even for complicated, large,
+and heterogeneous datasets.</p>
+<p>Additional goodies include</p>
+<ul class="simple">
+<li>simplified threading for parallel execution</li>
+<li>convenience objects to manage testbeds made of multiple devices</li>
+<li>real-time heads-up displays for jupyter notebooks</li>
+<li>convenience functions for reading relational table data from multiple rows</li>
+</ul>
+<p>Information here is mostly about writing your own drivers and general use of these drivers.</p>
+</div>
+<div class="section" id="design">
+<h1>Design<a class="headerlink" href="#design" title="Permalink to this headline">¶</a></h1>
+<p>Driver control over scalar instrument settings follows the <a class="reference external" href="https://docs.python.org/3/howto/descriptor.html">descriptor</a>
+(also known as <a class="reference external" href="https://en.wikipedia.org/wiki/Decorator_pattern">decorator</a>) design pattern.
+The implementation of these descriptors is an extension of <a class="reference external" href="https://github.com/ipython/traitlets">traitlets</a>,
+enabling optional integration into <a class="reference external" href="http://jupyter.org/">jupyter notebook</a> widgets
+for real-time state readouts.
+Other libraries (pyvisa, pyserial, pythonnet, etc.) provide backends;
+labbench Driver subclasses standardize an object protocol for backend wrappers that include context management and decriptors.</p>
+</div>
+<div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<ol class="simple">
+<li>Install your favorite distribution of a python version 3.6 or greater</li>
+<li>In a command prompt, <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://gitlab.nist.gov/gitlab/ssm/labbench</span></code></li>
+<li>(Optional) install an NI VISA¹ runtime, for example <a class="reference external" href="http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe">this one for windows</a>.</li>
+</ol>
+</div>
+<div class="section" id="backends">
+<h1>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h1>
+<p>The following types of backend classes are implemented to streamline development of new instrumentation drivers:</p>
+<ul class="simple">
+<li>CommandLineWrapper (standard input/output wrapper for command line programs)</li>
+<li>DotNet (pythonnet backend for dotnet libraries)</li>
+<li>LabViewSocketInterface (for controlling LabView VIs via a simple networking socket)</li>
+<li>SerialDevice (pyserial backend)</li>
+<li>SerialLoggingDevice (pyserial backend for simple data streaming)</li>
+<li>TelnetDevice (telnetlib backend)</li>
+<li>VISADevice (pyvisa backend)</li>
+<li>EmulatedVISADevice (test-only driver for testing labbench features)</li>
+</ul>
+<p><em>¹Certain commercial equipment, instruments, or
+materials are identified in this repository in order to specify the application
+adequately. Such identification is not intended to imply recommendation
+or endorsement by the National Institute of Standards and Technology, nor is it
+intended to imply that the materials or equipment identified are necessarily the
+best available for the purpose.</em></p>
 </div>
 
 
@@ -105,14 +147,16 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="labbench.html">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Welcome to labbench-github’s documentation!</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#">Introduction</a></li>
+<li><a class="reference internal" href="#design">Design</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#backends">Backends</a></li>
 </ul>
 
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
+      <li><a href="_sources/README.md.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>

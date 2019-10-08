@@ -1,0 +1,918 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>sortedcontainers.sorteddict &#8212; labbench v0.20</title>
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench v0.20">
+  <link rel="canonical" href="../../">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../..//_static/NISTStyle.css">
+  <link rel="stylesheet" href="../..//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../labbench.html">labbench v0.20</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for sortedcontainers.sorteddict</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Sorted Dict</span>
+<span class="sd">==============</span>
+
+<span class="sd">:doc:`Sorted Containers&lt;index&gt;` is an Apache2 licensed Python sorted</span>
+<span class="sd">collections library, written in pure-Python, and fast as C-extensions. The</span>
+<span class="sd">:doc:`introduction&lt;introduction&gt;` is the best way to get started.</span>
+
+<span class="sd">Sorted dict implementations:</span>
+
+<span class="sd">.. currentmodule:: sortedcontainers</span>
+
+<span class="sd">* :class:`SortedDict`</span>
+<span class="sd">* :class:`SortedKeysView`</span>
+<span class="sd">* :class:`SortedItemsView`</span>
+<span class="sd">* :class:`SortedValuesView`</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">.sortedlist</span> <span class="k">import</span> <span class="n">SortedList</span><span class="p">,</span> <span class="n">recursive_repr</span>
+<span class="kn">from</span> <span class="nn">.sortedset</span> <span class="k">import</span> <span class="n">SortedSet</span>
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># BEGIN Python 2/3 Shims</span>
+<span class="c1">###############################################################################</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="k">import</span> <span class="n">ItemsView</span><span class="p">,</span> <span class="n">KeysView</span><span class="p">,</span> <span class="n">ValuesView</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">ItemsView</span><span class="p">,</span> <span class="n">KeysView</span><span class="p">,</span> <span class="n">ValuesView</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># END Python 2/3 Shims</span>
+<span class="c1">###############################################################################</span>
+
+
+<span class="k">class</span> <span class="nc">SortedDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sorted dict is a sorted mutable mapping.</span>
+
+<span class="sd">    Sorted dict keys are maintained in sorted order. The design of sorted dict</span>
+<span class="sd">    is simple: sorted dict inherits from dict to store items and maintains a</span>
+<span class="sd">    sorted list of keys.</span>
+
+<span class="sd">    Sorted dict keys must be hashable and comparable. The hash and total</span>
+<span class="sd">    ordering of keys must not change while they are stored in the sorted dict.</span>
+
+<span class="sd">    Mutable mapping methods:</span>
+
+<span class="sd">    * :func:`SortedDict.__getitem__` (inherited from dict)</span>
+<span class="sd">    * :func:`SortedDict.__setitem__`</span>
+<span class="sd">    * :func:`SortedDict.__delitem__`</span>
+<span class="sd">    * :func:`SortedDict.__iter__`</span>
+<span class="sd">    * :func:`SortedDict.__len__` (inherited from dict)</span>
+
+<span class="sd">    Methods for adding items:</span>
+
+<span class="sd">    * :func:`SortedDict.setdefault`</span>
+<span class="sd">    * :func:`SortedDict.update`</span>
+
+<span class="sd">    Methods for removing items:</span>
+
+<span class="sd">    * :func:`SortedDict.clear`</span>
+<span class="sd">    * :func:`SortedDict.pop`</span>
+<span class="sd">    * :func:`SortedDict.popitem`</span>
+
+<span class="sd">    Methods for looking up items:</span>
+
+<span class="sd">    * :func:`SortedDict.__contains__` (inherited from dict)</span>
+<span class="sd">    * :func:`SortedDict.get` (inherited from dict)</span>
+<span class="sd">    * :func:`SortedDict.peekitem`</span>
+
+<span class="sd">    Methods for views:</span>
+
+<span class="sd">    * :func:`SortedDict.keys`</span>
+<span class="sd">    * :func:`SortedDict.items`</span>
+<span class="sd">    * :func:`SortedDict.values`</span>
+
+<span class="sd">    Methods for miscellany:</span>
+
+<span class="sd">    * :func:`SortedDict.copy`</span>
+<span class="sd">    * :func:`SortedDict.fromkeys`</span>
+<span class="sd">    * :func:`SortedDict.__reversed__`</span>
+<span class="sd">    * :func:`SortedDict.__eq__` (inherited from dict)</span>
+<span class="sd">    * :func:`SortedDict.__ne__` (inherited from dict)</span>
+<span class="sd">    * :func:`SortedDict.__repr__`</span>
+<span class="sd">    * :func:`SortedDict._check`</span>
+
+<span class="sd">    Sorted list methods available (applies to keys):</span>
+
+<span class="sd">    * :func:`SortedList.bisect_left`</span>
+<span class="sd">    * :func:`SortedList.bisect_right`</span>
+<span class="sd">    * :func:`SortedList.count`</span>
+<span class="sd">    * :func:`SortedList.index`</span>
+<span class="sd">    * :func:`SortedList.irange`</span>
+<span class="sd">    * :func:`SortedList.islice`</span>
+<span class="sd">    * :func:`SortedList._reset`</span>
+
+<span class="sd">    Additional sorted list methods available, if key-function used:</span>
+
+<span class="sd">    * :func:`SortedKeyList.bisect_key_left`</span>
+<span class="sd">    * :func:`SortedKeyList.bisect_key_right`</span>
+<span class="sd">    * :func:`SortedKeyList.irange_key`</span>
+
+<span class="sd">    Sorted dicts may only be compared for equality and inequality.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize sorted dict instance.</span>
+
+<span class="sd">        Optional key-function argument defines a callable that, like the `key`</span>
+<span class="sd">        argument to the built-in `sorted` function, extracts a comparison key</span>
+<span class="sd">        from each dictionary key. If no function is specified, the default</span>
+<span class="sd">        compares the dictionary keys directly. The key-function argument must</span>
+<span class="sd">        be provided as a positional argument and must come before all other</span>
+<span class="sd">        arguments.</span>
+
+<span class="sd">        Optional iterable argument provides an initial sequence of pairs to</span>
+<span class="sd">        initialize the sorted dict. Each pair in the sequence defines the key</span>
+<span class="sd">        and corresponding value. If a key is seen more than once, the last</span>
+<span class="sd">        value associated with it is stored in the new sorted dict.</span>
+
+<span class="sd">        Optional mapping argument provides an initial mapping of items to</span>
+<span class="sd">        initialize the sorted dict.</span>
+
+<span class="sd">        If keyword arguments are given, the keywords themselves, with their</span>
+<span class="sd">        associated values, are added as items to the dictionary. If a key is</span>
+<span class="sd">        specified both in the positional argument and as a keyword argument,</span>
+<span class="sd">        the value associated with the keyword is stored in the</span>
+<span class="sd">        sorted dict.</span>
+
+<span class="sd">        Sorted dict keys must be hashable, per the requirement for Python&#39;s</span>
+<span class="sd">        dictionaries. Keys (or the result of the key-function) must also be</span>
+<span class="sd">        comparable, per the requirement for sorted lists.</span>
+
+<span class="sd">        &gt;&gt;&gt; d = {&#39;alpha&#39;: 1, &#39;beta&#39;: 2}</span>
+<span class="sd">        &gt;&gt;&gt; SortedDict([(&#39;alpha&#39;, 1), (&#39;beta&#39;, 2)]) == d</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; SortedDict({&#39;alpha&#39;: 1, &#39;beta&#39;: 2}) == d</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; SortedDict(alpha=1, beta=2) == d</span>
+<span class="sd">        True</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">callable</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list</span> <span class="o">=</span> <span class="n">SortedList</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">_key</span><span class="p">)</span>
+
+        <span class="c1"># Calls to super() are expensive so cache references to dict methods on</span>
+        <span class="c1"># sorted dict instances.</span>
+
+        <span class="n">_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SortedDict</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_clear</span> <span class="o">=</span> <span class="n">_dict</span><span class="o">.</span><span class="n">clear</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_delitem</span> <span class="o">=</span> <span class="n">_dict</span><span class="o">.</span><span class="fm">__delitem__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_iter</span> <span class="o">=</span> <span class="n">_dict</span><span class="o">.</span><span class="fm">__iter__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_pop</span> <span class="o">=</span> <span class="n">_dict</span><span class="o">.</span><span class="n">pop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_setitem</span> <span class="o">=</span> <span class="n">_dict</span><span class="o">.</span><span class="fm">__setitem__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_update</span> <span class="o">=</span> <span class="n">_dict</span><span class="o">.</span><span class="n">update</span>
+
+        <span class="c1"># Reaching through ``self._list`` repeatedly adds unnecessary overhead</span>
+        <span class="c1"># so cache references to sorted list methods.</span>
+
+        <span class="n">_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_add</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">add</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_clear</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">clear</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_iter</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="fm">__iter__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_reversed</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="fm">__reversed__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_pop</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">pop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_remove</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">remove</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_update</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">update</span>
+
+        <span class="c1"># Expose some sorted list methods publicly.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bisect_left</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">bisect_left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bisect</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">bisect_right</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bisect_right</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">bisect_right</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">irange</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">irange</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">islice</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">islice</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">_reset</span>
+
+        <span class="k">if</span> <span class="n">_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bisect_key_left</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">bisect_key_left</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bisect_key_right</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">bisect_key_right</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bisect_key</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">bisect_key</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">irange_key</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">irange_key</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function used to extract comparison key from keys.</span>
+
+<span class="sd">        Sorted dict compares keys directly when the key function is none.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">iloc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cached reference of sorted keys view.</span>
+
+<span class="sd">        Deprecated in version 2 of Sorted Containers. Use</span>
+<span class="sd">        :func:`SortedDict.keys` instead.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># pylint: disable=attribute-defined-outside-init</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iloc</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s1">&#39;sorted_dict.iloc is deprecated.&#39;</span>
+                <span class="s1">&#39; Use SortedDict.keys() instead.&#39;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">_iloc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iloc</span> <span class="o">=</span> <span class="n">SortedKeysView</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_iloc</span>
+
+
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;Remove all items from sorted dict.</span>
+
+<span class="sd">        Runtime complexity: `O(n)`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_clear</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove item from sorted dict identified by `key`.</span>
+
+<span class="sd">        ``sd.__delitem__(key)`` &lt;==&gt; ``del sd[key]``</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; del sd[&#39;b&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; sd</span>
+<span class="sd">        SortedDict({&#39;a&#39;: 1, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; del sd[&#39;z&#39;]</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        KeyError: &#39;z&#39;</span>
+
+<span class="sd">        :param key: `key` for item lookup</span>
+<span class="sd">        :raises KeyError: if key not found</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_delitem</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_remove</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an iterator over the keys of the sorted dict.</span>
+
+<span class="sd">        ``sd.__iter__()`` &lt;==&gt; ``iter(sd)``</span>
+
+<span class="sd">        Iterating the sorted dict while adding or deleting items may raise a</span>
+<span class="sd">        :exc:`RuntimeError` or fail to iterate over all keys.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_iter</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">__reversed__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a reverse iterator over the keys of the sorted dict.</span>
+
+<span class="sd">        ``sd.__reversed__()`` &lt;==&gt; ``reversed(sd)``</span>
+
+<span class="sd">        Iterating the sorted dict while adding or deleting items may raise a</span>
+<span class="sd">        :exc:`RuntimeError` or fail to iterate over all keys.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_reversed</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Store item in sorted dict with `key` and corresponding `value`.</span>
+
+<span class="sd">        ``sd.__setitem__(key, value)`` &lt;==&gt; ``sd[key] = value``</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict()</span>
+<span class="sd">        &gt;&gt;&gt; sd[&#39;c&#39;] = 3</span>
+<span class="sd">        &gt;&gt;&gt; sd[&#39;a&#39;] = 1</span>
+<span class="sd">        &gt;&gt;&gt; sd[&#39;b&#39;] = 2</span>
+<span class="sd">        &gt;&gt;&gt; sd</span>
+<span class="sd">        SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+
+<span class="sd">        :param key: key for item</span>
+<span class="sd">        :param value: value for item</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_list_add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_setitem</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="n">_setitem</span> <span class="o">=</span> <span class="fm">__setitem__</span>
+
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a shallow copy of the sorted dict.</span>
+
+<span class="sd">        Runtime complexity: `O(n)`</span>
+
+<span class="sd">        :return: new sorted dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+
+    <span class="n">__copy__</span> <span class="o">=</span> <span class="n">copy</span>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">fromkeys</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a new sorted dict initailized from `iterable` and `value`.</span>
+
+<span class="sd">        Items in the sorted dict have keys from `iterable` and values equal to</span>
+<span class="sd">        `value`.</span>
+
+<span class="sd">        Runtime complexity: `O(n*log(n))`</span>
+
+<span class="sd">        :return: new sorted dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return new sorted keys view of the sorted dict&#39;s keys.</span>
+
+<span class="sd">        See :class:`SortedKeysView` for details.</span>
+
+<span class="sd">        :return: new sorted keys view</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SortedKeysView</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return new sorted items view of the sorted dict&#39;s items.</span>
+
+<span class="sd">        See :class:`SortedItemsView` for details.</span>
+
+<span class="sd">        :return: new sorted items view</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SortedItemsView</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return new sorted values view of the sorted dict&#39;s values.</span>
+
+<span class="sd">        See :class:`SortedValuesView` for details.</span>
+
+<span class="sd">        :return: new sorted values view</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SortedValuesView</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">hexversion</span> <span class="o">&lt;</span> <span class="mh">0x03000000</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">__make_raise_attributeerror</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="n">alternate</span><span class="p">):</span>
+            <span class="c1"># pylint: disable=no-self-argument</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s1">&#39;SortedDict.</span><span class="si">{original}</span><span class="s1">() is not implemented.&#39;</span>
+                <span class="s1">&#39; Use SortedDict.</span><span class="si">{alternate}</span><span class="s1">() instead.&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">original</span><span class="o">=</span><span class="n">original</span><span class="p">,</span> <span class="n">alternate</span><span class="o">=</span><span class="n">alternate</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="c1"># pylint: disable=missing-docstring,unused-argument</span>
+                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="n">method</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">original</span>
+            <span class="n">method</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">message</span>
+            <span class="k">return</span> <span class="nb">property</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="n">iteritems</span> <span class="o">=</span> <span class="n">__make_raise_attributeerror</span><span class="p">(</span><span class="s1">&#39;iteritems&#39;</span><span class="p">,</span> <span class="s1">&#39;items&#39;</span><span class="p">)</span>
+        <span class="n">iterkeys</span> <span class="o">=</span> <span class="n">__make_raise_attributeerror</span><span class="p">(</span><span class="s1">&#39;iterkeys&#39;</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">)</span>
+        <span class="n">itervalues</span> <span class="o">=</span> <span class="n">__make_raise_attributeerror</span><span class="p">(</span><span class="s1">&#39;itervalues&#39;</span><span class="p">,</span> <span class="s1">&#39;values&#39;</span><span class="p">)</span>
+        <span class="n">viewitems</span> <span class="o">=</span> <span class="n">__make_raise_attributeerror</span><span class="p">(</span><span class="s1">&#39;viewitems&#39;</span><span class="p">,</span> <span class="s1">&#39;items&#39;</span><span class="p">)</span>
+        <span class="n">viewkeys</span> <span class="o">=</span> <span class="n">__make_raise_attributeerror</span><span class="p">(</span><span class="s1">&#39;viewkeys&#39;</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">)</span>
+        <span class="n">viewvalues</span> <span class="o">=</span> <span class="n">__make_raise_attributeerror</span><span class="p">(</span><span class="s1">&#39;viewvalues&#39;</span><span class="p">,</span> <span class="s1">&#39;values&#39;</span><span class="p">)</span>
+
+
+    <span class="k">class</span> <span class="nc">_NotGiven</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+        <span class="c1"># pylint: disable=too-few-public-methods</span>
+        <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s1">&#39;&lt;not-given&gt;&#39;</span>
+
+    <span class="n">__not_given</span> <span class="o">=</span> <span class="n">_NotGiven</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">__not_given</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove and return value for item identified by `key`.</span>
+
+<span class="sd">        If the `key` is not found then return `default` if given. If `default`</span>
+<span class="sd">        is not given then raise :exc:`KeyError`.</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; sd.pop(&#39;c&#39;)</span>
+<span class="sd">        3</span>
+<span class="sd">        &gt;&gt;&gt; sd.pop(&#39;z&#39;, 26)</span>
+<span class="sd">        26</span>
+<span class="sd">        &gt;&gt;&gt; sd.pop(&#39;y&#39;)</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        KeyError: &#39;y&#39;</span>
+
+<span class="sd">        :param key: `key` for item</span>
+<span class="sd">        :param default: `default` value if key not found (optional)</span>
+<span class="sd">        :return: value for item</span>
+<span class="sd">        :raises KeyError: if `key` not found and `default` not given</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_list_remove</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">__not_given</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">default</span>
+
+
+    <span class="k">def</span> <span class="nf">popitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove and return ``(key, value)`` pair at `index` from sorted dict.</span>
+
+<span class="sd">        Optional argument `index` defaults to -1, the last item in the sorted</span>
+<span class="sd">        dict. Specify ``index=0`` for the first item in the sorted dict.</span>
+
+<span class="sd">        If the sorted dict is empty, raises :exc:`KeyError`.</span>
+
+<span class="sd">        If the `index` is out of range, raises :exc:`IndexError`.</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))`</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; sd.popitem()</span>
+<span class="sd">        (&#39;c&#39;, 3)</span>
+<span class="sd">        &gt;&gt;&gt; sd.popitem(0)</span>
+<span class="sd">        (&#39;a&#39;, 1)</span>
+<span class="sd">        &gt;&gt;&gt; sd.popitem(100)</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        IndexError: list index out of range</span>
+
+<span class="sd">        :param int index: `index` of item (default -1)</span>
+<span class="sd">        :return: key and value pair</span>
+<span class="sd">        :raises KeyError: if sorted dict is empty</span>
+<span class="sd">        :raises IndexError: if `index` out of range</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;popitem(): dictionary is empty&#39;</span><span class="p">)</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_pop</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">peekitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return ``(key, value)`` pair at `index` in sorted dict.</span>
+
+<span class="sd">        Optional argument `index` defaults to -1, the last item in the sorted</span>
+<span class="sd">        dict. Specify ``index=0`` for the first item in the sorted dict.</span>
+
+<span class="sd">        Unlike :func:`SortedDict.popitem`, the sorted dict is not modified.</span>
+
+<span class="sd">        If the `index` is out of range, raises :exc:`IndexError`.</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))`</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; sd.peekitem()</span>
+<span class="sd">        (&#39;c&#39;, 3)</span>
+<span class="sd">        &gt;&gt;&gt; sd.peekitem(0)</span>
+<span class="sd">        (&#39;a&#39;, 1)</span>
+<span class="sd">        &gt;&gt;&gt; sd.peekitem(100)</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        IndexError: list index out of range</span>
+
+<span class="sd">        :param int index: index of item (default -1)</span>
+<span class="sd">        :return: key and value pair</span>
+<span class="sd">        :raises IndexError: if `index` out of range</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return value for item identified by `key` in sorted dict.</span>
+
+<span class="sd">        If `key` is in the sorted dict then return its value. If `key` is not</span>
+<span class="sd">        in the sorted dict then insert `key` with value `default` and return</span>
+<span class="sd">        `default`.</span>
+
+<span class="sd">        Optional argument `default` defaults to none.</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict()</span>
+<span class="sd">        &gt;&gt;&gt; sd.setdefault(&#39;a&#39;, 1)</span>
+<span class="sd">        1</span>
+<span class="sd">        &gt;&gt;&gt; sd.setdefault(&#39;a&#39;, 10)</span>
+<span class="sd">        1</span>
+<span class="sd">        &gt;&gt;&gt; sd</span>
+<span class="sd">        SortedDict({&#39;a&#39;: 1})</span>
+
+<span class="sd">        :param key: key for item</span>
+<span class="sd">        :param default: value for item (default None)</span>
+<span class="sd">        :return: value for item identified by `key`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dict_setitem</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">default</span>
+
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update sorted dict with items from `args` and `kwargs`.</span>
+
+<span class="sd">        Overwrites existing items.</span>
+
+<span class="sd">        Optional arguments `args` and `kwargs` may be a mapping, an iterable of</span>
+<span class="sd">        pairs or keyword arguments. See :func:`SortedDict.__init__` for</span>
+<span class="sd">        details.</span>
+
+<span class="sd">        :param args: mapping or iterable of pairs</span>
+<span class="sd">        :param kwargs: keyword arguments mapping</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dict_update</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_list_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_iter</span><span class="p">())</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">pairs</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pairs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">))</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dict_update</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_list_clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_list_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_iter</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_setitem</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pairs</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="n">_update</span> <span class="o">=</span> <span class="n">update</span>
+
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Support for pickle.</span>
+
+<span class="sd">        The tricks played with caching references in</span>
+<span class="sd">        :func:`SortedDict.__init__` confuse pickle so customize the reducer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
+
+
+    <span class="nd">@recursive_repr</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return string representation of sorted dict.</span>
+
+<span class="sd">        ``sd.__repr__()`` &lt;==&gt; ``repr(sd)``</span>
+
+<span class="sd">        :return: string representation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">key_arg</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="n">_key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">{0!r}</span><span class="s1">, &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_key</span><span class="p">)</span>
+        <span class="n">item_format</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0!r}</span><span class="s1">: </span><span class="si">{1!r}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item_format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">(</span><span class="si">{1}</span><span class="s1">{{</span><span class="si">{2}</span><span class="s1">}})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">type_name</span><span class="p">,</span> <span class="n">key_arg</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check invariants of sorted dict.</span>
+
+<span class="sd">        Runtime complexity: `O(n)`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list</span>
+        <span class="n">_list</span><span class="o">.</span><span class="n">_check</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">_list</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_list</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_view_delitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Remove item at `index` from sorted dict.</span>
+
+<span class="sd">    ``view.__delitem__(index)`` &lt;==&gt; ``del view[index]``</span>
+
+<span class="sd">    Supports slicing.</span>
+
+<span class="sd">    Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">    &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">    &gt;&gt;&gt; view = sd.keys()</span>
+<span class="sd">    &gt;&gt;&gt; del view[0]</span>
+<span class="sd">    &gt;&gt;&gt; sd</span>
+<span class="sd">    SortedDict({&#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">    &gt;&gt;&gt; del view[-1]</span>
+<span class="sd">    &gt;&gt;&gt; sd</span>
+<span class="sd">    SortedDict({&#39;b&#39;: 2})</span>
+<span class="sd">    &gt;&gt;&gt; del view[:]</span>
+<span class="sd">    &gt;&gt;&gt; sd</span>
+<span class="sd">    SortedDict({})</span>
+
+<span class="sd">    :param index: integer or slice for indexing</span>
+<span class="sd">    :raises IndexError: if index out of range</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_mapping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span>
+    <span class="n">_list</span> <span class="o">=</span> <span class="n">_mapping</span><span class="o">.</span><span class="n">_list</span>
+    <span class="n">_dict_delitem</span> <span class="o">=</span> <span class="n">_mapping</span><span class="o">.</span><span class="n">_dict_delitem</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">_dict_delitem</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">_dict_delitem</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SortedKeysView</span><span class="p">(</span><span class="n">KeysView</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sorted keys view is a dynamic view of the sorted dict&#39;s keys.</span>
+
+<span class="sd">    When the sorted dict&#39;s keys change, the view reflects those changes.</span>
+
+<span class="sd">    The keys view implements the set and sequence abstract base classes.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">it</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SortedSet</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lookup key at `index` in sorted keys views.</span>
+
+<span class="sd">        ``skv.__getitem__(index)`` &lt;==&gt; ``skv[index]``</span>
+
+<span class="sd">        Supports slicing.</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; skv = sd.keys()</span>
+<span class="sd">        &gt;&gt;&gt; skv[0]</span>
+<span class="sd">        &#39;a&#39;</span>
+<span class="sd">        &gt;&gt;&gt; skv[-1]</span>
+<span class="sd">        &#39;c&#39;</span>
+<span class="sd">        &gt;&gt;&gt; skv[:]</span>
+<span class="sd">        [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; skv[100]</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        IndexError: list index out of range</span>
+
+<span class="sd">        :param index: integer or slice for indexing</span>
+<span class="sd">        :return: key or list of keys</span>
+<span class="sd">        :raises IndexError: if index out of range</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span><span class="o">.</span><span class="n">_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+
+    <span class="fm">__delitem__</span> <span class="o">=</span> <span class="n">_view_delitem</span>
+
+
+<span class="k">class</span> <span class="nc">SortedItemsView</span><span class="p">(</span><span class="n">ItemsView</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sorted items view is a dynamic view of the sorted dict&#39;s items.</span>
+
+<span class="sd">    When the sorted dict&#39;s items change, the view reflects those changes.</span>
+
+<span class="sd">    The items view implements the set and sequence abstract base classes.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">it</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SortedSet</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lookup item at `index` in sorted items view.</span>
+
+<span class="sd">        ``siv.__getitem__(index)`` &lt;==&gt; ``siv[index]``</span>
+
+<span class="sd">        Supports slicing.</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; siv = sd.items()</span>
+<span class="sd">        &gt;&gt;&gt; siv[0]</span>
+<span class="sd">        (&#39;a&#39;, 1)</span>
+<span class="sd">        &gt;&gt;&gt; siv[-1]</span>
+<span class="sd">        (&#39;c&#39;, 3)</span>
+<span class="sd">        &gt;&gt;&gt; siv[:]</span>
+<span class="sd">        [(&#39;a&#39;, 1), (&#39;b&#39;, 2), (&#39;c&#39;, 3)]</span>
+<span class="sd">        &gt;&gt;&gt; siv[100]</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        IndexError: list index out of range</span>
+
+<span class="sd">        :param index: integer or slice for indexing</span>
+<span class="sd">        :return: item or list of items</span>
+<span class="sd">        :raises IndexError: if index out of range</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_mapping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span>
+        <span class="n">_mapping_list</span> <span class="o">=</span> <span class="n">_mapping</span><span class="o">.</span><span class="n">_list</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="n">_mapping_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">_mapping</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="n">_mapping_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">_mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+
+    <span class="fm">__delitem__</span> <span class="o">=</span> <span class="n">_view_delitem</span>
+
+
+<span class="k">class</span> <span class="nc">SortedValuesView</span><span class="p">(</span><span class="n">ValuesView</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sorted values view is a dynamic view of the sorted dict&#39;s values.</span>
+
+<span class="sd">    When the sorted dict&#39;s values change, the view reflects those changes.</span>
+
+<span class="sd">    The values view implements the sequence abstract base class.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lookup value at `index` in sorted values view.</span>
+
+<span class="sd">        ``siv.__getitem__(index)`` &lt;==&gt; ``siv[index]``</span>
+
+<span class="sd">        Supports slicing.</span>
+
+<span class="sd">        Runtime complexity: `O(log(n))` -- approximate.</span>
+
+<span class="sd">        &gt;&gt;&gt; sd = SortedDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; svv = sd.values()</span>
+<span class="sd">        &gt;&gt;&gt; svv[0]</span>
+<span class="sd">        1</span>
+<span class="sd">        &gt;&gt;&gt; svv[-1]</span>
+<span class="sd">        3</span>
+<span class="sd">        &gt;&gt;&gt; svv[:]</span>
+<span class="sd">        [1, 2, 3]</span>
+<span class="sd">        &gt;&gt;&gt; svv[100]</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        IndexError: list index out of range</span>
+
+<span class="sd">        :param index: integer or slice for indexing</span>
+<span class="sd">        :return: value or list of values</span>
+<span class="sd">        :raises IndexError: if index out of range</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_mapping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span>
+        <span class="n">_mapping_list</span> <span class="o">=</span> <span class="n">_mapping</span><span class="o">.</span><span class="n">_list</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="n">_mapping_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">_mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="n">_mapping_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">_mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+
+    <span class="fm">__delitem__</span> <span class="o">=</span> <span class="n">_view_delitem</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../labbench.html">labbench v0.20</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

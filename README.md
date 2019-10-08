@@ -38,11 +38,14 @@ Other libraries (pyvisa, pyserial, pythonnet, etc.) provide backends;
 labbench Driver subclasses standardize an object protocol for backend wrappers that include context management and decriptors.
 
 ## Installation
-1. Install your favorite distribution of a python version 3.6 or greater
-2. Choose one of
-  * Latest release: In a command prompt, `pip install labbench`; or,
-  * git master: In a command prompt, `pip install git+https://github.nist.gov/usnistgov/labbench`
-3. (Optional) install an NI VISA [[1](#myfootnote1)] runtime, for example [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
+Make sure tha tyou have installed your favorite distribution of a python, with interpreter version 3.7 or newer.
+
+* To install the current version, open a command prompt and type
+  ```pip install labbench```
+* To install the development version (git master branch), open a command prompt and type
+  ```pip install git+https://github.nist.gov/usnistgov/labbench```
+
+If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime, such as [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
 
 ## Usage
 #### Getting started

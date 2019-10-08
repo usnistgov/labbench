@@ -86,7 +86,7 @@ master_doc = 'labbench'
 project = u'labbench'
 copyright = 'United States government work, not subject to copyright in the United States'
 
-author = 'Dan Kuester (NIST)'
+author = 'Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma (NIST)'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

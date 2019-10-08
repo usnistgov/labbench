@@ -21,10 +21,10 @@ The result helps researchers to meet NIST's
 and heterogeneous datasets.
 
 Additional goodies include 
-* [simplified threading for parallel execution](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.util.concurrently)
-* [convenience objects to manage testbeds made of multiple devices](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.util.Testbed)
-* [real-time heads-up displays for jupyter notebooks](http://ssm.ipages.nist.gov/labbench/labbench.html#module-labbench.notebooks)
-* [convenience functions for reading relational table data from multiple rows](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.data.read_relational)
+* [simplified threading for parallel execution](http://pages.nist.gov/labbench/labbench.html#labbench.util.concurrently)
+* [convenience objects to manage testbeds made of multiple devices](http://pages.nist.gov/labbench/labbench.html#labbench.util.Testbed)
+* [real-time heads-up displays for jupyter notebooks](http://pages.nist.gov/labbench/labbench.html#module-labbench.notebooks)
+* [convenience functions for reading relational table data from multiple rows](http://pages.nist.gov/labbench/labbench.html#labbench.data.read_relational)
 
 Information here is mostly about writing your own drivers. Specific drivers written in labbench are implemented in other libraries.
 
@@ -61,7 +61,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 * Python module wrapper interface
 
 #### Reference manuals
-* [Programming reference](http://ssm.ipages.nist.gov/labbench)
+* [Programming reference](http://pages.nist.gov/labbench)
 
 ## Status
 The following types of backend classes are implemented to streamline development of new instrumentation drivers:
@@ -78,9 +78,9 @@ The following types of backend classes are implemented to streamline development
 |Name|Contact|
 |---|---|
 |Dan Kuester (maintainer)|<daniel.kuester@nist.gov>|
-|Paul Blanchard|<paul.blanchard@nist.gov>|
 |Shane Allman|shane.allman@nist.gov|
-|Yao Ma|yao.ma@nist.gov|
+|Paul Blanchard|paul.blanchard@nist.gov|
+|Yao Ma|<yao.ma@nist.gov>|
 
 _<a name="myfootnote1">[1]</a> Certain commercial equipment, instruments, or
 materials are identified in this repository in order to specify the application

@@ -53,7 +53,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 * [Indicate testbed state in jupyter notebook](examples/Goodies%20for%20jupyter%20notebook.ipynb)
 
 #### Writing your own device driver
-* [Introduction](examples/Workflow for writing labbench drivers.ipynb)
+* [Introduction](examples/Workflow%20for%20writing%20labbench%20drivers.ipynb)
 * VISA instruments
 * Serial port devices
 * .NET [[1](#myfootnote1)] library

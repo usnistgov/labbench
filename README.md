@@ -44,13 +44,13 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 
 ## Usage
 #### Getting started
-* [Using labbench drivers](examples/How to use a labbench driver by example.ipynb)
-* [Primer on device control with object-oriented scripting](examples/Object oriented programming for device control.ipynb)
+* [Using labbench drivers](examples/How%20to%20use%20a%20labbench%20driver%20by%20example.ipynb)
+* [Primer on device control with object-oriented scripting](examples/Object%20oriented%20programming%20for%20device%20control.ipynb)
 
 #### Using drivers and labbench goodies for laboratory automation
-* [Execute multiple automation functions concurrently](examples/How to run more than one function at the same time.ipynb)
+* [Execute multiple automation functions concurrently](examples/How%20to%20run%20more%20than%20one%20function%20at%20the%20same%20time.ipynb)
 * [Log the state of instruments to an sqlite database file](examples/How%20to%20automatically%20log%20to%20an%20SQLite%20database.ipynb)
-* [Indicate testbed state in jupyter notebook](examples/Goodies for jupyter notebook.ipynb)
+* [Indicate testbed state in jupyter notebook](examples/Goodies%20for%20jupyter%20notebook.ipynb)
 
 #### Writing your own device driver
 * [Introduction](examples/Workflow for writing labbench drivers.ipynb)

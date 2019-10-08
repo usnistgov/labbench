@@ -36,6 +36,7 @@
 import traitlets as tl
 import sys
 import os
+import shutil
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -175,9 +176,37 @@ def maybe_skip_member(app, what, name, obj, skip, options):
 
     return False
 
+# From https://groups.google.com/forum/#!msg/sphinx-users/NYUYffRrE78/MPMa57KN1sEJ
+# to make output paths compatible with github
+def change_pathto(app, pagename, templatename, context, doctree):
+    """
+    Replace pathto helper to change paths to folders with a leading
+underscore.
+    """
+    pathto = context.get('pathto')
+    def gh_pathto(otheruri, *args, **kw):
+        if otheruri.startswith('_'):
+            otheruri = otheruri[1:]
+        return pathto(otheruri, *args, **kw)
+    context['pathto'] = gh_pathto
+
+# From https://groups.google.com/forum/#!msg/sphinx-users/NYUYffRrE78/MPMa57KN1sEJ
+# to make output paths compatible with github
+def move_private_folders(app, e):
+    """
+    remove leading underscore from folders in in the output folder
+    """
+    def join(dir):
+        return os.path.join(app.builder.outdir, dir)
+
+    for item in os.listdir(app.builder.outdir):
+        if item.startswith('_') and os.path.isdir(join(item)):
+            shutil.move(join(item), join(item[1:]))
 
 def setup(app):
     app.connect('autodoc-skip-member', maybe_skip_member)
+    app.connect('html-page-context', change_pathto)
+    app.connect('build-finished', move_private_folders)
     # app.connect('autodoc-process-signature', resignature)
 
 

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 ### Changed
+### Removed
+
+## [0.20 - 2019-10-09]
+### Added
+### Changed
 - Explicitly removed support for python 2.x
 - Fixes for docstrings in Device.state and Device.settings objects
 - All trait type definitions now support the `remap` keyword.

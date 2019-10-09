@@ -35,3 +35,5 @@ from .util import *
 from .backends import *
 
 show_messages('info')
+
+name = 'labbench'

@@ -26,6 +26,29 @@
 
 from __future__ import print_function
 
+longdescription = \
+''' The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
+
+A device driver implemented with labbench is a light wrapper around another instrument control library.
+This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level routines. The labbench
+abstraction provides several benefits:
+
+* automatic acquisition logging into an SQLite database,
+* automatically-generated jupyter notebook monitoring widgets,
+* interact with settings and data on remote devices with native python data types (instead of strings),
+* python exceptions on invalid device state settings (instead of silent failure),
+* drivers provide consistent style and API conventions for easy scripting (hello, tab completion!),
+* ensure devices disconnect properly when acquisition completes (even on exceptions), and
+* conversion of vector or tabular data to [pandas](pandas.pydata.org) Series or DataFrame objects for rapid exploration of data.
+
+Together, these features help to minimize the amount of "copy-and-paste" code that can make your lab automation scripts error-prone and difficult to maintain.
+The python code that results can be clear, concise, reusable and maintainable, and
+provide consistent formatting for stored data.
+The result helps researchers to meet NIST's
+[open data](https://www.nist.gov/open) obligations, even for complicated, large,
+and heterogeneous datasets.
+'''
+
 if __name__ == '__main__':
     from distutils.core import setup
     import setuptools
@@ -40,10 +63,10 @@ if __name__ == '__main__':
 
     setup(name='labbench',
           version=__version__,
-          description='toolkit for concise instrument automation',
-          author='Dan Kuester',
+          description='scripting tools for streamlined laboratory automation',
+          author='Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma',
           author_email='daniel.kuester@nist.gov',
-          url='',
+          url='https://github.com/usnistgov/labbench',
           packages=setuptools.find_packages(),
           license='NIST',
           install_requires=['pandas(>=0.20)',
@@ -62,4 +85,6 @@ if __name__ == '__main__':
                             ],
           extras_require={'html': ['sphinx(>=1.6)','recommonmark'],
                           'notebook': ['notebook', 'ipywidgets']},
+          long_description=longdescription,
+          long_description_content_type="text/markdown",                          
           )

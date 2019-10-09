@@ -21,10 +21,10 @@ The result helps researchers to meet NIST's
 and heterogeneous datasets.
 
 Additional goodies include 
-* [simplified threading for parallel execution](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.util.concurrently)
-* [convenience objects to manage testbeds made of multiple devices](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.util.Testbed)
-* [real-time heads-up displays for jupyter notebooks](http://ssm.ipages.nist.gov/labbench/labbench.html#module-labbench.notebooks)
-* [convenience functions for reading relational table data from multiple rows](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.data.read_relational)
+* [simplified threading for parallel execution](http://pages.nist.gov/labbench/labbench.html#labbench.util.concurrently)
+* [convenience objects to manage testbeds made of multiple devices](http://pages.nist.gov/labbench/labbench.html#labbench.util.Testbed)
+* [real-time heads-up displays for jupyter notebooks](http://pages.nist.gov/labbench/labbench.html#module-labbench.notebooks)
+* [convenience functions for reading relational table data from multiple rows](http://pages.nist.gov/labbench/labbench.html#labbench.data.read_relational)
 
 Information here is mostly about writing your own drivers. Specific drivers written in labbench are implemented in other libraries.
 
@@ -38,22 +38,27 @@ Other libraries (pyvisa, pyserial, pythonnet, etc.) provide backends;
 labbench Driver subclasses standardize an object protocol for backend wrappers that include context management and decriptors.
 
 ## Installation
-1. Install your favorite distribution of a python version 3.6 or greater
-2. In a command prompt, `pip install git+https://gitlab.nist.gov/gitlab/ssm/labbench`
-3. (Optional) install an NI VISA [[1](#myfootnote1)] runtime, for example [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
+Make sure tha tyou have installed your favorite distribution of a python, with interpreter version 3.7 or newer.
+
+* To install the current version, open a command prompt and type
+  ```pip install labbench```
+* To install the development version (git master branch), open a command prompt and type
+  ```pip install git+https://github.nist.gov/usnistgov/labbench```
+
+If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime, such as [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
 
 ## Usage
 #### Getting started
-* [Using labbench drivers](examples/How to use a labbench driver by example.ipynb)
-* [Primer on device control with object-oriented scripting](examples/Object oriented programming for device control.ipynb)
+* [Using labbench drivers](examples/How%20to%20use%20a%20labbench%20driver%20by%20example.ipynb)
+* [Primer on device control with object-oriented scripting](examples/Object%20oriented%20programming%20for%20device%20control.ipynb)
 
 #### Using drivers and labbench goodies for laboratory automation
-* [Execute multiple automation functions concurrently](examples/How to run more than one function at the same time.ipynb)
-* [Log the state of instruments to an sqlite database file](examples/How to automatically log to an SQLite database.ipynb)
-* [Indicate testbed state in jupyter notebook](examples/Goodies for jupyter notebook.ipynb)
+* [Execute multiple automation functions concurrently](examples/How%20to%20run%20more%20than%20one%20function%20at%20the%20same%20time.ipynb)
+* [Log the state of instruments to an sqlite database file](examples/How%20to%20automatically%20log%20to%20an%20SQLite%20database.ipynb)
+* [Indicate testbed state in jupyter notebook](examples/Goodies%20for%20jupyter%20notebook.ipynb)
 
 #### Writing your own device driver
-* [Introduction](examples/Workflow for writing labbench drivers.ipynb)
+* [Introduction](examples/Workflow%20for%20writing%20labbench%20drivers.ipynb)
 * VISA instruments
 * Serial port devices
 * .NET [[1](#myfootnote1)] library
@@ -61,7 +66,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 * Python module wrapper interface
 
 #### Reference manuals
-* [Programming reference](http://ssm.ipages.nist.gov/labbench)
+* [Programming reference](http://pages.nist.gov/labbench)
 
 ## Status
 The following types of backend classes are implemented to streamline development of new instrumentation drivers:
@@ -78,9 +83,9 @@ The following types of backend classes are implemented to streamline development
 |Name|Contact|
 |---|---|
 |Dan Kuester (maintainer)|<daniel.kuester@nist.gov>|
-|Paul Blanchard|<paul.blanchard@nist.gov>|
 |Shane Allman|shane.allman@nist.gov|
-|Yao Ma|yao.ma@nist.gov|
+|Paul Blanchard|paul.blanchard@nist.gov|
+|Yao Ma|<yao.ma@nist.gov>|
 
 _<a name="myfootnote1">[1]</a> Certain commercial equipment, instruments, or
 materials are identified in this repository in order to specify the application

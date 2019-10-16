@@ -35,60 +35,39 @@ import labbench as lb
 lb = importlib.reload(lb)
 
 
-class EmulatedInstrument(lb.EmulatedVISADevice):
+class LaggyInstrument(lb.EmulatedVISADevice):
     ''' A mock "instrument"
     with settings and states to
     demonstrate the process of setting
     up a measurement.
     '''
     class settings (lb.EmulatedVISADevice.settings):
-        whatever = lb.Int(5, help='whatever')
-
-    class state (lb.EmulatedVISADevice.state):
-        initiate_continuous = lb.Bool(command='INIT:CONT')
-        output_trigger = lb.Bool(command='OUTP:TRIG')
-        sweep_aperture = lb.Float(command='SWE:APER', min=20e-6, max=200e-3,
-                                  help='time (in s)')
-        frequency = lb.Float(command='SENS:FREQ', min=10e6,
-                             max=18e9, step=1e-3, help='center frequency (in Hz)')
+        delay = lb.Float(2, min=0, help='connection time')
+        fail_disconnect = lb.Bool(False, help='whether to raise DivideByZero on disconnect')
 
     def connect(self):
-        print(f'{self} connecting')
-        lb.sleep(1)
-        print(f'{self} ready')
-
-    def trigger(self, howlong):
-        ''' This would tell the instrument to start a measurement
+        lb.sleep(self.settings.delay)
+        self.logger.info(f'{self} connected')
+        
+    def fetch(self, result, delay):
+        ''' Return the argument after a 1s delay
         '''
-        lb.sleep(howlong)
-
-    def fetch_trace(self, N=1001):
-        ''' Generate N points of junk data as a pandas series.
-        '''
-        values = np.random.uniform(-1, 1, N)
-        index = np.linspace(0, self.state.sweep_aperture, N)
-        series = pd.Series(values, index=index, name='Voltage (V)')
-        series.index.name = 'Time (s)'
-        lb.sleep(1)
-        return series
-
+        lb.sleep(delay)
+        return result
+    
     def disconnect(self):
-        #        if self.state.connected:
-        print(f'{self} disconnecting', threading.current_thread().getName())
-#            self.logger.info(f'disconnecting')
         lb.sleep(1)
         print(f'{self} disconnected', threading.current_thread().getName())
-        1 / 0
-
+        if self.settings.fail_disconnect:
+            1 / 0
 
 if __name__ == '__main__':
     lb.show_messages('info')
+    rtol = 0.01
 
-    inst1 = EmulatedInstrument(resource='inst1')
-    inst2 = EmulatedInstrument(resource='inst2')
-    with lb.sequentially(inst1, inst2):
+    inst1 = LaggyInstrument(resource='fast', delay=0.5)
+    inst2 = LaggyInstrument(resource='slow', delay=1.5)
+    with lb.concurrently(inst1, inst2):
         print('connected')
-        lb.sequentially(inst1.fetch_trace, inst2.fetch_trace)
-# for i in range(10):
-# print('waiting...')
-# lb.sleep(1)
+        print(lb.sequentially(value1=lb.Call(inst1.fetch,1,1),
+                              value2=lb.Call(inst2.fetch,2,2)))

@@ -37,6 +37,8 @@ from threading import Thread, ThreadError, Event
 from functools import wraps
 import psutil
 
+from typing import Callable
+
 
 import time
 import traceback
@@ -354,6 +356,35 @@ def hash_caller(call_depth=1):
     return hashlib.sha224(s.encode('ascii')).hexdigest()
 
 
+@contextmanager
+def stopwatch(desc=''):
+    ''' Time a block of code using a with statement like this:
+
+    >>> with stopwatch('sleep statement'):
+    >>>     time.sleep(2)
+    sleep statement time elapsed 1.999s.
+
+    :param desc: text for display that describes the event being timed
+    :type desc: str
+    :return: context manager
+    '''
+    from platform import platform
+    import time
+
+    if platform().lower().startswith('windows'):
+        timefunc = time.clock
+    else:
+        timefunc = time.time
+
+    t0 = timefunc()
+
+    try:
+        yield
+    finally:
+        T = timefunc() - t0
+        core.logger.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
+
+
 class Call(object):
     ''' Wrap a function to apply arguments for threaded calls to `concurrently`.
         This can be passed in directly by a user in order to provide arguments;
@@ -373,6 +404,13 @@ class Call(object):
 
         # This is a means for the main thread to raise an exception
         # if this is running in a separate thread
+        
+    def __repr__(self):
+        kws = ','.join([(repr(k)+'='+repr(v)) for k,v in self.kws.items()])
+        args = ','.join([repr(v) for v in self.args])
+        allargs = ','.join((args,kws))
+        qualname = self.func.__module__ + '.' + self.func.__qualname__
+        return f'Call({qualname},{allargs})'
 
     def __call__(self):
         try:
@@ -420,36 +458,6 @@ class Call(object):
             func.__self__.__post_thread__()
         return func_in
 
-
-@contextmanager
-def stopwatch(desc=''):
-    ''' Time a block of code using a with statement like this:
-
-    >>> with stopwatch('sleep statement'):
-    >>>     time.sleep(2)
-    sleep statement time elapsed 1.999s.
-
-    :param desc: text for display that describes the event being timed
-    :type desc: str
-    :return: context manager
-    '''
-    from platform import platform
-    import time
-
-    if platform().lower().startswith('windows'):
-        timefunc = time.clock
-    else:
-        timefunc = time.time
-
-    t0 = timefunc()
-
-    try:
-        yield
-    finally:
-        T = timefunc() - t0
-        core.logger.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
-
-from typing import Callable
 
 @contextmanager
 def context_handler(call_handler: Callable[[dict,list,dict],dict],
@@ -627,7 +635,16 @@ def concurrently_call(params, funcs, kws):
     nones = params['nones']
     traceback_delay = params['traceback_delay']
 
-    calls = [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
+    # Setup calls for kws, then funcs
+    calls = []
+    for name, f in kws.items():
+        if not isinstance(f, Call):
+            f = Call.setup(f)
+        f.name = name
+        calls.append(f)
+    calls += [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
+    
+    # Add calls for kws
 
     # Force unique names
     names = [c.name for c in calls]
@@ -813,7 +830,16 @@ def sequentially_call(params, funcs, kws):
     flatten = params['flatten']
     nones = params['nones']
 
-    calls = [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
+    # 
+    calls = []
+
+    for name, f in kws.items():
+        if not isinstance(f, Call):
+            f = Call.setup(f)
+        f.name = name
+        calls.append(f)
+
+    calls += [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
 
     # Force unique names
     names = [c.name for c in calls]

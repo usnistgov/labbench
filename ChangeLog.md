@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Unit testing for lb.concurrently and lb.sequentially in tests/test_concurrently
 ### Changed
 - Add up to 40 lines of CommandLineWrapper output to debug logs
 - Removed logger warnings when calls to CommandLineWrapper.kill() do not kill any process

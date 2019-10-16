@@ -367,21 +367,13 @@ def stopwatch(desc=''):
     :param desc: text for display that describes the event being timed
     :type desc: str
     :return: context manager
-    '''
-    from platform import platform
-    import time
-
-    if platform().lower().startswith('windows'):
-        timefunc = time.clock
-    else:
-        timefunc = time.time
-
-    t0 = timefunc()
+    '''   
+    t0 = time.perf_counter()
 
     try:
         yield
     finally:
-        T = timefunc() - t0
+        T = time.perf_counter() - t0
         core.logger.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
 
 
@@ -431,34 +423,6 @@ class Call(object):
         '''
         self.queue = queue
 
-    @staticmethod
-    def setup(func_in):
-        ''' Setup threading (concurrent execution only), including
-            checks for whether a Device instance indicates it supports
-            concurrent execution or not.
-        '''
-        func = func_in.func if isinstance(func_in, Call) else func_in
-        if hasattr(func, '__self__') \
-                and isinstance(func.__self__, core.Device):
-            if not func.__self__.settings.concurrency_support:
-                raise ConcurrentException(
-                    f'{func.__self__} does not support concurrency')
-            elif hasattr(func.__self__, '__pre_thread__'):
-                func.__self__.__pre_thread__()
-        return func_in
-
-    @staticmethod
-    def cleanup(func_in):
-        ''' Cleanup threading (concurrent execution only)
-        '''
-        # Implement the below at some stage in the future?
-        func = func_in.func if isinstance(func_in, Call) else func_in
-        if inspect.ismethod(func) \
-                and hasattr(func.__self__, '__post_thread__'):
-            func.__self__.__post_thread__()
-        return func_in
-
-
 @contextmanager
 def context_handler(call_handler: Callable[[dict,list,dict],dict],
                     params: dict,
@@ -488,13 +452,20 @@ def context_handler(call_handler: Callable[[dict,list,dict],dict],
     '''
     t0 = time.time()
     exits = []
+    
+#    def thread_cleanup(func_in):
+#        ''' Cleanup threading (concurrent execution only)
+#        '''
+#        # Implement the below at some stage in the future?
+#        func = func_in.func if isinstance(func_in, Call) else func_in
+#        if inspect.ismethod(func) \
+#                and hasattr(func.__self__, '__post_thread__'):
+#            func.__self__.__post_thread__()
+#        return func_in
 
     def enter(c):
         def ex(*args):
-            try:
-                Call.cleanup(c.__exit__)
-            finally:
-                c.__exit__(*args)
+            c.__exit__(*args)
 
         # Exit Device instances last, to give other
         # devices a chance to access them during their
@@ -510,10 +481,6 @@ def context_handler(call_handler: Callable[[dict,list,dict],dict],
         return ret
 
     try:
-        for c in contexts:
-            Call.setup(c.__enter__)
-        for c in kws.values():
-            Call.setup(c.__enter__)
         calls = [Call(enter, c) for c in contexts]
         for name, c in kws.items():
             call = Call(enter, c)
@@ -549,13 +516,11 @@ def context_handler(call_handler: Callable[[dict,list,dict],dict],
         raise exc[1]
 
 
-runners = {(False, False): None,
+RUNNERS = {(False, False): None,
            (False, True): 'context',
            (True,False): 'callable',
            (True,True): 'both'}
 
-runner_types = namedtuple('runner_types', ['context','callable','both'],
-                          defaults=['context','callable','both'])()
 
 def enter_context_or_call(callable_handler, objs, kws):
     ''' Extract settings from the keyword arguments flags, decide whether
@@ -588,7 +553,7 @@ def enter_context_or_call(callable_handler, objs, kws):
     # or (2) all callables. Decide what type of operation to proceed with.
     runner = None
     for k, f in zip(kwnames, candidates):
-        thisone = runners[callable(f), hasattr(f, '__enter__')]
+        thisone = RUNNERS[callable(f), hasattr(f, '__enter__')]
             
         if thisone is None:
             msg = f'each argument must be a callable and/or a context manager, '
@@ -626,10 +591,23 @@ def concurrently_call(params, funcs, kws):
                 tb = tb.tb_next
         return exc_tuple[:2] + (tb,)
 
+    def check_thread_support(func_in):
+        ''' Setup threading (concurrent execution only), including
+            checks for whether a Device instance indicates it supports
+            concurrent execution or not.
+        '''
+        func = func_in.func if isinstance(func_in, Call) else func_in
+        if hasattr(func, '__self__') \
+                and isinstance(func.__self__, core.Device):
+            if not func.__self__.settings.concurrency_support:
+                raise ConcurrentException(
+                    f'{func.__self__} does not support concurrency')
+        return func_in
+
     stop_request_event.clear()
 
     results = {}
-            
+
     catch = params['catch']
     flatten = params['flatten']
     nones = params['nones']
@@ -639,12 +617,15 @@ def concurrently_call(params, funcs, kws):
     calls = []
     for name, f in kws.items():
         if not isinstance(f, Call):
-            f = Call.setup(f)
+            f = Call(f)
+        f = check_thread_support(f)
         f.name = name
         calls.append(f)
-    calls += [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
-    
-    # Add calls for kws
+    for f in funcs:
+        if not isinstance(f, Call):
+            f = Call(f)
+        f = check_thread_support(f)
+        calls.append(f)
 
     # Force unique names
     names = [c.name for c in calls]
@@ -658,7 +639,6 @@ def concurrently_call(params, funcs, kws):
     del names
 
     # Set up mappings between wrappers, threads, and the function to call
-    # OrderedDict([(func,Call(func, *args.get(func,[]))) for func in funcs])
     wrappers = OrderedDict(list(zip([c.name for c in calls], calls)))
     threads = OrderedDict([(name, Thread(target=w))
                            for name, w in list(wrappers.items())])
@@ -835,11 +815,11 @@ def sequentially_call(params, funcs, kws):
 
     for name, f in kws.items():
         if not isinstance(f, Call):
-            f = Call.setup(f)
+            f = Call(f)
         f.name = name
         calls.append(f)
 
-    calls += [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
+    calls += [f if isinstance(f, Call) else Call(f) for f in funcs]
 
     # Force unique names
     names = [c.name for c in calls]

@@ -884,13 +884,13 @@ class VISADevice(core.Device):
         identity string from the remote instrument::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
-                print inst.state.identity
+                print(inst.state.identity)
 
         This is equivalent to the more pyvisa-style use as follows::
 
             inst = VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR')
             inst.connect()
-            print inst.query('*IDN?')
+            print(inst.query('*IDN?'))
 
         Use of `inst.state` makes it possible to add callbacks to support
         automatic state logging, or to build a UI.

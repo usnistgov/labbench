@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from contextlib import contextmanager
 from . import core
 import inspect
@@ -46,7 +46,7 @@ import traceback
 __all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
            'ConfigStore', 'ConcurrentRunner', 'FilenameDict', 'hash_caller',
            'kill_by_name', 'check_master',
-           'retry', 'show_messages', 'sleep', 'stopwatch', 'Testbed', 'ThreadSandbox',
+           'retry', 'show_messages', 'sleep', 'stopwatch', 'ThreadSandbox',
            'ThreadEndedByMaster', 'until_timeout']
 
 
@@ -1215,107 +1215,6 @@ class ConcurrentRunner:
         core.logger.info(
             f"concurrent run {cls.__name__} {list(methods.keys())}")
         return concurrently(*methods.values(), flatten=True)
-
-
-class Testbed(object):
-    ''' Base class for Testbeds, which is a collection of multiple Device instances,
-        database managers, etc. that together implement an automated experiment
-        in the lab.
-
-        Use a `with` block with the testbed instance to connect everything
-        at once like so::
-
-            with Testbed() as testbed:
-                # use the testbed here
-                pass
-
-        or optionally connect only a subset of devices like this::
-
-            testbed = Testbed()
-            with testbed.dev1, testbed.dev2:
-                # use the testbed.dev1 and testbed.dev2 here
-                pass
-
-        Make your own subclass of Testbed with a custom `make`
-        method to define the Device or database manager instances, and
-        a custom `startup` method to implement custom code to set up the
-        testbed after each Device is connected.
-    '''
-
-    def __init__(self, config=None, concurrent=True):
-        self.config = config
-        attrs_start = dir(self)
-        self.make()
-
-        # Find the objects
-        new_attrs = set(dir(self)).difference(attrs_start)
-        self._contexts = {}
-        for a in new_attrs:
-            o = getattr(self, a)
-            if hasattr(o, '__enter__'):
-                self._contexts[a] = o
-
-        if concurrent:
-            self.__cm = concurrently(**self._contexts)
-        else:
-            self.__cm = sequentially(**self._contexts)
-
-    def __enter__(self):
-        self.__cm.__enter__()
-        self.startup()
-        return self
-
-    def __exit__(self, *args):
-        try:
-            self.cleanup()
-        except BaseException as e:
-            ex = e
-        else:
-            ex = None
-        finally:
-            ret = self.__cm.__exit__(*args)
-            if ex is None:
-                self.after()
-            else:
-                raise ex
-            return ret
-
-    def make(self):
-        ''' Implement this method in a subclass of Testbed. It should
-            set drivers as attributes of the Testbed instance, for example::
-
-                self.dev1 = MyDevice()
-
-            This is called automatically when when the testbed class
-            is instantiated.
-        '''
-        pass
-
-    def startup(self):
-        ''' This is called automatically after connect if the testbed is
-            connected using the `with` statement block.
-
-            Implement any custom code here in Testbed subclasses to
-            implement startup of the testbed given connected Device
-            instances.
-        '''
-        pass
-
-    def cleanup(self):
-        ''' This is called automatically immediately before disconnect if the
-            testbed is connected using the `with` statement block.
-
-            Implement any custom code here in Testbed subclasses to
-            implement startup of the testbed given connected Device
-            instances.
-        '''
-        pass
-    
-    def after(self):
-        ''' This is called automatically after disconnect, if no exceptions
-            were raised.
-        '''
-        pass
 
 
 if __name__ == '__main__':

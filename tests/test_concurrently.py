@@ -37,7 +37,6 @@ import numpy as np
 lb = importlib.reload(lb)
 
 
-
 class LaggyInstrument(lb.EmulatedVISADevice):
     ''' A mock "instrument"
     with settings and states to

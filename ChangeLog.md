@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Removed logger warnings when calls to CommandLineWrapper.kill() do not kill any process
 - Tightened the message about a pending exception in lb.concurrently
 - The arguments and return value of sequentially have been corrected to match those in concurrently
+- Testbed objects now support entering contexts of specified types first, which are listed (in order) by the new enter_first class attribute
 ### Removed
 
 ## [0.20 - 2019-10-09]

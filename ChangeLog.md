@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 ### Changed
+- Add up to 40 lines of CommandLineWrapper output to debug logs
+- Removed logger warnings when calls to CommandLineWrapper.kill() do not kill any process
+- Tightened the message about a pending exception in lb.concurrently
 ### Removed
 
 ## [0.20 - 2019-10-09]

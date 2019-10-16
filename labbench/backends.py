@@ -168,15 +168,16 @@ class CommandLineWrapper(core.Device):
         ret = cp.stdout
 
         if ret:
-            if ret.count(b'\n') < 2:
-                self.logger.debug(f'-> {ret.decode()}')
-            else:
-                count = ret.count(b'\n')
-                self.logger.debug(f"-> ({count} lines)")
+            lines = ret.decode().splitlines()
+            show_count = min(40, len(lines))
+            remaining = max(0, len(lines)-show_count)
+            for line in lines[:show_count//2]:
+                self.logger.debug(f'► {line}')
+            if remaining>0:
+                self.logger.debug(f'…{remaining} more lines')
+            for line in lines[-show_count//2:]:
+                self.logger.debug(f'► {line}')
         return ret
-#        if ret != self.settings.return_code_ok:
-#            raise ValueError('process returned error code {}'\
-#                             .format(ret))
 
     def background(self, *extra_arguments, **flags):
         ''' Run the executable in the background (returning immediately while
@@ -387,9 +388,8 @@ class CommandLineWrapper(core.Device):
         self.__kill = True
         backend = self.backend
         if self.running():
+            self.logger.debug(f'killing process {backend.pid}') 
             self._kill_proc_tree(backend.pid)
-        else:
-            self.logger.warning('tried kill(), but no process is running')
 
     def running(self):
         """ Return whether the executable is currently running

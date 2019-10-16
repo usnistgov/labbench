@@ -138,7 +138,7 @@ def retry(exception_or_exceptions, tries=4, delay=0,
                     ex = e
                     core.logger.warning(str(e))
                     core.logger.warning(
-                        f'{f.__name__} retry (call attempt {retry+1}/{tries})')
+                        f'{f.__name__} retry (attempt {retry+1}/{tries})')
                     exception_func()
                     sleep(active_delay)
                     active_delay = active_delay * backoff
@@ -191,11 +191,11 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
         def do_retry(*args, **kwargs):
             active_delay = delay
             t0 = time.time()
-            while time.time() - t0 < timeout:
-                progress = time.time() - t0
+            while time.time() - t0 < timeout:                
                 try:
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
+                    progress = time.time() - t0
                     ex = e
                     core.logger.warning(str(e))
                     core.logger.warning(
@@ -681,7 +681,7 @@ def concurrently_call(params, funcs, kws):
         if master_exception is not None:
             names = ', '.join(list(threads.keys()))
             core.logger.error(
-                f'raising {master_exception.__class__} in main thread after child threads {names} return')
+                f'raising {master_exception.__class__.__name__} in main thread after child threads {names} return')
 
         # if there was an exception that wasn't us ending the thread,
         # show messages

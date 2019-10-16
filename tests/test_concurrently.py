@@ -86,9 +86,9 @@ if __name__ == '__main__':
 
     inst1 = EmulatedInstrument(resource='inst1')
     inst2 = EmulatedInstrument(resource='inst2')
-#    with lb.concurrently(potato=inst1, moose=inst2):
-#        print('connected')
-#        lb.concurrently(inst1.fetch_trace, inst2.fetch_trace)
+    with lb.sequentially(inst1, inst2):
+        print('connected')
+        lb.sequentially(inst1.fetch_trace, inst2.fetch_trace)
 # for i in range(10):
 # print('waiting...')
 # lb.sleep(1)

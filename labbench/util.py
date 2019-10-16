@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from contextlib import contextmanager
 from . import core
 import inspect
@@ -36,6 +36,7 @@ import sys
 from threading import Thread, ThreadError, Event
 from functools import wraps
 import psutil
+
 
 import time
 import traceback
@@ -382,7 +383,10 @@ class Call(object):
         else:
             self.traceback = None
 
-        self.queue.put(self)
+        if self.queue is not None:
+            self.queue.put(self)
+        else:
+            return self.result
 
     def set_queue(self, queue):
         ''' Set the queue object used to communicate between threads
@@ -445,8 +449,163 @@ def stopwatch(desc=''):
         T = timefunc() - t0
         core.logger.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
 
+from typing import Callable
 
-def concurrently_call(*funcs, **kws):
+@contextmanager
+def context_handler(call_handler: Callable[[dict,list,dict],dict],
+                    params: dict,
+                    contexts: list,
+                    kws: dict):
+    ''' Handle opening multiple contexts in a single `with` block. This is
+        a threadsafe implementation that accepts a handler function that may
+        implement any desired any desired type of concurrency in entering
+        each context.
+
+        The handler is responsible for sequencing the calls that enter each
+        context. In the event of an exception, `context_handler` calls
+        the __exit__ condition of each context that has already
+        been entered.
+        
+        In the current implementation, __exit__ calls are made sequentially
+        (not through call_handler), in the reversed order that each context
+        __enter__ was called.
+        
+        
+        :param call_handler: this callable executes entry into each context and any desired concurrency
+        :param params: a dictionary of operating parameters (see `concurrently`)
+        :param contexts: a list of contexts to be entered
+        :param kws: a dictionary with key names and values that are further contexts
+        
+        :returns: context object for use in a `with` statement
+    '''
+    t0 = time.time()
+    exits = []
+
+    def enter(c):
+        def ex(*args):
+            try:
+                Call.cleanup(c.__exit__)
+            finally:
+                c.__exit__(*args)
+
+        # Exit Device instances last, to give other
+        # devices a chance to access them during their
+        # __exit__
+        if isinstance(c, core.Device):
+            exits.insert(0, ex)
+        else:
+            exits.append(ex)
+
+        ent = c.__enter__
+        ret = ent()
+
+        return ret
+
+    try:
+        for c in contexts:
+            Call.setup(c.__enter__)
+        for c in kws.values():
+            Call.setup(c.__enter__)
+        calls = [Call(enter, c) for c in contexts]
+        for name, c in kws.items():
+            call = Call(enter, c)
+            call.name = name
+            calls.append(call)
+        ret = call_handler(params, calls, {})
+        core.logger.info(f'Connected all in {time.time()-t0:0.2f}s')
+        if ret is None:
+            yield []
+        else:
+            yield ret.values()
+    except BaseException:
+        exc = sys.exc_info()
+    else:
+        exc = (None, None, None)
+
+    t0 = time.time()
+    while exits:
+        exit = exits.pop()
+        try:
+            exit(*exc)
+        except BaseException:
+            exc = sys.exc_info()
+
+    core.logger.info(f'Disonnected all in {time.time()-t0:0.2f}s')
+
+    if exc != (None, None, None):
+        # sys.exc_info() may have been
+        # changed by one of the exit methods
+        # so provide explicit exception info
+        for h in core.logger.handlers:
+            h.flush()
+        raise exc[1]
+
+
+runners = {(False, False): None,
+           (False, True): 'context',
+           (True,False): 'callable',
+           (True,True): 'both'}
+
+runner_types = namedtuple('runner_types', ['context','callable','both'],
+                          defaults=['context','callable','both'])()
+
+def enter_context_or_call(callable_handler, objs, kws):
+    ''' Extract settings from the keyword arguments flags, decide whether
+        `objs` and `kws` contain context managers or callables, and then
+        either enter the contexts or call the callables.
+    '''
+    
+    objs = list(objs)
+
+    # Treat keyword arguments passed as callables should be left as callables;
+    # otherwise, override the parameter setting
+    params = dict(catch=False,
+                  flatten=True,
+                  nones=False,
+                  traceback_delay=False)
+
+    for name in params.keys():
+        if name in kws and not callable(kws[name]):
+            params[name] = kws.pop(name)
+
+    # Combine the position and keyword arguments, and assign labels
+    candidates = list(objs) + list(kws.values())
+    kwnames = (len(objs)*[None]) + list(kws.keys())
+
+    # enforce uniqueness
+    if len(set(candidates)) != len(candidates):
+        raise ValueError('each callable and context manager must be unique')    
+
+    # Make sure all objs and kws.values() are either (1) all context managers
+    # or (2) all callables. Decide what type of operation to proceed with.
+    runner = None
+    for k, f in zip(kwnames, candidates):
+        thisone = runners[callable(f), hasattr(f, '__enter__')]
+            
+        if thisone is None:
+            msg = f'each argument must be a callable and/or a context manager, '
+            
+            if k is None:
+                msg += f'but got {repr(f)}'
+            else:
+                msg += f'but got {k}={repr(f)}'
+
+            raise TypeError(msg)
+        elif runner in (None, 'both'):
+            runner = thisone
+        else:
+            if thisone != runner:
+                raise TypeError(f'cannot run a mixture of context managers and callables')
+
+    if runner == 'both':
+        raise TypeError("can't decide whether to proceed as a caller or context manager - all objects supported both!")
+    elif runner == 'context':
+        return context_handler(callable_handler, params, objs, kws)
+    else:
+        return callable_handler(params, objs, kws)
+
+
+def concurrently_call(params, funcs, kws):
     global concurrency_count
     
     def traceback_skip(exc_tuple, count):
@@ -462,34 +621,11 @@ def concurrently_call(*funcs, **kws):
     stop_request_event.clear()
 
     results = {}
-    for f in funcs:
-        if isinstance(f, dict):
-            results.update(f)
-            funcs.remove(f)
-        elif not callable(f):
-            msg = 'only dictionary and callable arguments are allowed, but got ' + \
-                repr(f)
-            raise ValueError(msg)
-
-    catch = kws.get('catch', False)
-    if callable(catch):
-        kws['catch'] = catch
-        catch = False
-
-    flatten = kws.get('flatten', True)
-    if callable(flatten):
-        kws['flatten'] = flatten
-        flatten = True
-
-    nones = kws.get('nones', False)
-    if callable(nones):
-        kws['nones'] = nones
-        nones = False
-        
-    traceback_delay = kws.get('traceback_delay', True)
-    if callable(nones):
-        kws['traceback_delay'] = traceback_delay
-        traceback_delay = False        
+            
+    catch = params['catch']
+    flatten = params['flatten']
+    nones = params['nones']
+    traceback_delay = params['traceback_delay']
 
     calls = [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
 
@@ -560,8 +696,9 @@ def concurrently_call(*funcs, **kws):
             if not traceback_delay:
                 try:
                     traceback.print_exception(*tb)
-                except BaseException:
-                    sys.stderr.write('\nthread error (fixme to print message)')
+                except BaseException as e:
+                    sys.stderr.write('\nthread exception, but failed to print exception')
+                    sys.stderr.write(str(e))
                     sys.stderr.write('\n')
         else:
             if flatten and isinstance(called.result, dict):
@@ -612,218 +749,6 @@ def concurrently_call(*funcs, **kws):
     return results
 
 
-@contextmanager
-def concurrently_enter(*contexts, **kws):
-    t0 = time.time()
-    exits = []
-
-    def enter(c):
-        def ex(*args):
-            try:
-                Call.cleanup(c.__exit__)
-            finally:
-                c.__exit__(*args)
-
-        # Exit Device instances last, to give other
-        # devices a chance to access them during their
-        # __exit__
-        if isinstance(c, core.Device):
-            exits.insert(0, ex)
-        else:
-            exits.append(ex)
-
-        ent = c.__enter__
-        ret = ent()
-
-        return ret
-
-    try:
-        for c in contexts:
-            Call.setup(c.__enter__)
-        for c in kws.values():
-            Call.setup(c.__enter__)
-        calls = [Call(enter, c) for c in contexts]
-        for name, c in kws.items():
-            call = Call(enter, c)
-            call.name = name
-            calls.append(call)
-        ret = concurrently_call(*calls)
-        core.logger.info(f'Connected all in {time.time()-t0:0.2f}s')
-        if ret is None:
-            yield []
-        else:
-            yield ret.values()
-    except BaseException:
-        exc = sys.exc_info()
-    else:
-        exc = (None, None, None)
-
-    t0 = time.time()
-    while exits:
-        exit = exits.pop()
-        try:
-            exit(*exc)
-        except BaseException:
-            exc = sys.exc_info()
-
-    core.logger.info(f'Disonnected all in {time.time()-t0:0.2f}s')
-
-    if exc != (None, None, None):
-        # sys.exc_info() may have been
-        # changed by one of the exit methods
-        # so provide explicit exception info
-        for h in core.logger.handlers:
-            h.flush()
-        raise exc[1]
-
-
-def sequentially(*funcs, **kws):
-    r''' Call each function or method listed in `*funcs` sequentially.
-         The goal is to emulate the behavior of the `concurrently` function,
-         with some of the same support for updating result dictionaries.
-
-        Multiple references to the same function in `*funcs` only result in one
-        call. The `catch` and `flatten` arguments may be callables, in which
-        case they are executed (and their values are treated as defaults).
-
-        :param objs:  each argument may be a callable (function or class that\
-        defines a __call__ method), or context manager (such as a Device instance)
-        :param catch:  if `False` (the default), a `ConcurrentException` is\
-        raised if any of `funcs` raise an exception; otherwise, any remaining\
-        successful calls are returned as normal
-        :param flatten:  if not callable\
-        and evalues as True, updates the returned dictionary with the\
-        dictionary (instead of a nested dictionary)
-        :param nones: if not\
-        callable and evalues as True, includes entries for calls that return\
-        None (default is False)
-        :return: the values returned by each function
-        :rtype: dictionary of keyed by function.
-
-        Here are some examples:
-
-        :Example: Call each function `myfunc1` and `myfunc2`, each with no arguments:
-
-        >>> import labbench as lb
-        >>> def do_something_1 ():
-        >>>     time.sleep(0.5)
-        >>>     return 1
-        >>> def do_something_2 ():
-        >>>     time.sleep(1)
-        >>>     return 2
-        >>> rets = lb.sequentially(myfunc1, myfunc2)
-        >>> rets[do_something_1]
-        1
-
-        :Example: To pass arguments, use the Call wrapper
-
-        >>> def do_something_3 (a,b,c):
-        >>>     time.sleep(2)
-        >>>     return a,b,c
-        >>> rets = lb.sequentially(myfunc1, Call(myfunc3,a,b,c=c))
-        >>> rets[do_something_3]
-        a, b, c
-
-        Because :func sequentially: does not use threading, it does not check
-        whether a Device method supports concurrency before it runs.
-    '''
-
-    funcs = list(funcs)
-    results = {}
-    for f in funcs:
-        if isinstance(f, dict):
-            results.update(f)
-            funcs.remove(f)
-        elif not callable(f):
-            msg = 'only dictionary and callable arguments are allowed, but got ' + \
-                repr(f)
-            raise ValueError(msg)
-
-    if len(set(funcs)) != len(funcs):
-        raise Exception(
-            'input arguments include duplicates, but each must be unique')
-
-    catch = kws.get('catch', False)
-    if callable(catch):
-        kws['catch'] = catch
-        catch = False
-
-    flatten = kws.get('flatten', True)
-    if callable(flatten):
-        kws['flatten'] = flatten
-        flatten = True
-
-    nones = kws.get('nones', False)
-    if callable(nones):
-        kws['nones'] = nones
-        nones = False
-        
-    traceback_delay = kws.get('traceback_delay', True)
-    if callable(nones):
-        kws['traceback_delay'] = traceback_delay
-        traceback_delay = False
-
-    calls = [f if isinstance(f, Call) else Call(f) for f in funcs]
-
-    # Force unique names
-    names = [c.name for c in calls]
-    for i, c in enumerate(calls):
-        count = names[:i].count(c.name)
-        if count > 0:
-            c0 = calls[names[:i].index(c.name)]
-            if not c0.name.endswith('_0'):
-                c0.name += '_0'
-            c.name += '_' + str(count)
-    del names
-
-    # Set up mappings between wrappers, threads, and the function to call
-    # OrderedDict([(func,Call(func, *args.get(func,[]))) for func in funcs])
-    wrappers = OrderedDict(list(zip([c.name for c in calls], calls)))
-    threads = OrderedDict([(name, w)
-                           for name, w in list(wrappers.items())])
-
-    # Call one at a time with calls to each function
-    finished = Queue()
-    for name, thread in list(threads.items()):
-        wrappers[name].set_queue(finished)
-        thread()
-
-    # As each thread ends, collect the return value and any exceptions
-    tracebacks = []
-    for i in range(len(threads)):
-        called = finished.get()
-
-        # if there was an exception
-        if called.traceback is not None:
-            if not traceback_delay:
-                sys.stderr.write('\n')
-                traceback.print_exception(*called.traceback)
-                sys.stderr.write('\n')
-            tracebacks.append(called.traceback)
-                
-        else:
-            if flatten and isinstance(called.result, dict):
-                results.update(called.result)
-            elif nones or called.result is not None:
-                results[called.name] = called.result
-
-    # Raise exceptions as necessary
-    if len(tracebacks) > 0 and not catch:
-        raise ConcurrentException(
-            f'{len(tracebacks)} call(s) raised exceptions')
-        
-    if traceback_delay:
-        for tb in tracebacks:
-            sys.stderr.write('\n')
-            traceback.print_exception(*tb)
-            sys.stderr.write('\n')
-
-    if results is None:
-        return {}
-    else:
-        return results
-
-
 def concurrently(*objs, **kws):
     r''' If `*objs` are callable (like functions), call each of
          `*objs` in concurrent threads. If `*objs` are context
@@ -853,7 +778,6 @@ def concurrently(*objs, **kws):
         >>>     return 2
         >>> rets = concurrent(myfunc1, myfunc2)
         >>> rets[do_something_1]
-        1
 
         :Example: To pass arguments, use the Call wrapper
 
@@ -876,39 +800,100 @@ def concurrently(*objs, **kws):
         raises a ConcurrentException.
 
     '''
-    objs = list(objs)
+    
+    return enter_context_or_call(concurrently_call, objs, kws)
 
-    for f in objs:
-        if isinstance(f, dict):
-            objs.remove(f)
-        if not isinstance(f, dict) and not callable(
-                f) and not hasattr(f, '__enter__'):
-            msg = 'only dict, callable or context manager arguments are allowed, but got {}' + \
-                repr(f)
-            raise ValueError(msg)
+def sequentially_call(params, funcs, kws):
+    ''' Emulate `concurrently_call`, with sequential execution. This is mostly
+        only useful to guarantee compatibility with `concurrently_call`
+        dictionary-style returns.
+    '''
+    results = {}
 
-    for k, f in kws.items():
-        if k in ('catch', 'flatten', 'nones','traceback_delay'):
-            continue
-        if isinstance(f, dict):
-            del kws[k]
-        if not isinstance(f, dict) and not callable(
-                f) and not hasattr(f, '__enter__'):
-            msg = 'only dict, callable or context manager arguments are allowed, but got {}' + \
-                repr(f)
-            raise ValueError(msg)
+    flatten = params['flatten']
+    nones = params['nones']
 
-    if len(set(objs)) != len(objs):
-        raise Exception(
-            'input arguments include duplicates, but each must be unique')
+    calls = [Call.setup(f) if isinstance(f, Call) else Call(f) for f in funcs]
 
-    # If funcs are context managers, concurrently enter
-    # their contexts instead of calling them
-    for f in objs + list(kws.values()):
-        if not hasattr(f, '__enter__'):
-            return concurrently_call(*objs, **kws)
-    else:
-        return concurrently_enter(*objs, **kws)
+    # Force unique names
+    names = [c.name for c in calls]
+    for i, c in enumerate(calls):
+        count = names[:i].count(c.name)
+        if count > 0:
+            c0 = calls[names[:i].index(c.name)]
+            if not c0.name.endswith('_0'):
+                c0.name += '_0'
+            c.name += '_' + str(count)
+    del names
+
+    wrappers = OrderedDict(list(zip([c.name for c in calls], calls)))
+
+    # Run each callable
+    for name, wrapper in list(wrappers.items()):
+        ret = wrapper()
+        
+        if flatten and isinstance(ret, dict):
+            results.update(ret)
+        elif nones or ret is not None:
+            results[name] = ret
+
+    return results
+
+
+def sequentially(*objs, **kws):
+    r''' If `*objs` are callable (like functions), call each of
+         `*objs` in the given order. If `*objs` are context
+         managers (such as Device instances to be connected),
+         enter each context in the given order, and return a context manager
+         suited for a `with` statement.
+         This is the sequential implementation of the `concurrently` function,
+         with a compatible convention of returning dictionaries.
+
+        Multiple references to the same function in `objs` only result in one call. The `catch` and `flatten`
+        arguments may be callables, in which case they are executed (and each flag value is treated as defaults).
+
+        :param objs:  each argument may be a callable (function, or class that defines a __call__ method), or context manager (such as a Device instance)
+        :param kws: dictionary of further callables or context managers, with names set by the dictionary key
+        :param flatten:  if not callable and evalues as True, updates the returned dictionary with the dictionary (instead of a nested dictionary)
+        :param nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
+        :return: the values returned by each function
+        :rtype: dictionary of keyed by function
+
+        Here are some examples:
+
+        :Example: Call each function `myfunc1` and `myfunc2`, each with no arguments:
+
+        >>> def do_something_1 ():
+        >>>     time.sleep(0.5)
+        >>>     return 1
+        >>> def do_something_2 ():
+        >>>     time.sleep(1)
+        >>>     return 2
+        >>> rets = concurrent(myfunc1, myfunc2)
+        >>> rets[do_something_1]
+        1
+
+        :Example: To pass arguments, use the Call wrapper
+
+        >>> def do_something_3 (a,b,c):
+        >>>     time.sleep(2)
+        >>>     return a,b,c
+        >>> rets = concurrent(myfunc1, Call(myfunc3,a,b,c=c))
+        >>> rets[do_something_3]
+        a, b, c
+
+        **Caveats**
+
+        - Unlike `concurrently`, an exception in a context manager's __enter__ 
+          means that any remaining context managers will not be entered.
+
+        When the callable object is a Device method, :func concurrency: checks
+        the Device object state.concurrency_support for compatibility
+        before execution. If this check returns `False`, this method
+        raises a ConcurrentException.
+        '''
+
+    return enter_context_or_call(sequentially_call, objs, kws)
 
 
 OP_CALL = 'op'

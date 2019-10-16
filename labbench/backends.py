@@ -940,9 +940,9 @@ class VISADevice(core.Device):
             sets up a connected instance::
 
                 with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as inst:
-                    print inst.state.identity
-                    print inst.state.status_byte
-                    print inst.state.options
+                    print(inst.state.identity)
+                    print(inst.state.status_byte)
+                    print(inst.state.options)
 
             would instantiate a `VISADevice` and guarantee
             it is disconnected either at the successful completion

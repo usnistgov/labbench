@@ -25,7 +25,7 @@
 # licenses.
 
 from collections import OrderedDict
-from contextlib import contextmanager
+from contextlib import contextmanager, _GeneratorContextManager
 from . import core
 import inspect
 import pandas as pd
@@ -472,32 +472,9 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
     t0 = time.time()
     exits = []
     
-#    def thread_cleanup(func_in):
-#        ''' Cleanup threading (concurrent execution only)
-#        '''
-#        # Implement the below at some stage in the future?
-#        func = func_in.func if isinstance(func_in, Call) else func_in
-#        if inspect.ismethod(func) \
-#                and hasattr(func.__self__, '__post_thread__'):
-#            func.__self__.__post_thread__()
-#        return func_in
-
     def enter(c):
-        def ex(*args):
-            c.__exit__(*args)
-
-        # Exit Device instances last, to give other
-        # devices a chance to access them during their
-        # __exit__
-        if isinstance(c, core.Device):
-            exits.insert(0, ex)
-        else:
-            exits.append(ex)
-
-        ent = c.__enter__
-        ret = ent()
-
-        return ret
+        exits.append(lambda *args: c.__exit__(*args))
+        c.__enter__()
 
     try:
         call_objs = []
@@ -506,16 +483,15 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
                 name = f'{repr(obj)}.__enter__ at {hex(id(obj.__enter__))}'            
             obj = Call(enter, obj)
             obj.name = name
+            print(name,obj)
             call_objs.append((name, obj))     
         
         # Run the __enter__ methods
-        ret = call_handler(params, call_objs)
+        call_handler(params, call_objs)
         
         core.logger.info(f'entered all contexts in {time.time()-t0:0.2f}s')
-        if ret is None:
-            yield []
-        else:
-            yield ret.values()
+        yield
+
     except BaseException:
         exc = sys.exc_info()
     else:
@@ -583,7 +559,6 @@ def enter_or_call(flexible_caller, objs, kws):
             
         return ret
 
-
     # Pull parameters from the passed keywords
     for name in params.keys():
         if name in kws and not callable(kws[name]):
@@ -596,7 +571,7 @@ def enter_or_call(flexible_caller, objs, kws):
     candidates = list(zip(names, allobjs))
     del allobjs, names
     
-    dicts = []    
+    dicts = []
 
     # Make sure candidates are either (1) all context managers
     # or (2) all callables. Decide what type of operation to proceed with.
@@ -607,7 +582,9 @@ def enter_or_call(flexible_caller, objs, kws):
             dicts.append(candidates.pop(i))
             continue
 
-        thisone = RUNNERS[callable(obj), hasattr(obj, '__enter__')]
+        thisone = RUNNERS[(callable(obj) and not isinstance(obj, _GeneratorContextManager)), # Is it callable?
+                          (hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)) # Is it a context manager?
+                         ]
             
         if thisone is None:
             msg = f'each argument must be a callable and/or a context manager, '
@@ -635,7 +612,7 @@ def enter_or_call(flexible_caller, objs, kws):
         raise TypeError("all objects supported both calling and context management - not sure which to run")
     elif runner == 'context':
         if len(dicts) > 0:
-            raise ValueError('unexpectedly received return value dictionaries from context manager')        
+            raise ValueError('unexpectedly return value dictionary argument for context management')
         return flexible_enter(flexible_caller, params, candidates)
     else:
         ret = merge_to_dict(dicts, candidates)

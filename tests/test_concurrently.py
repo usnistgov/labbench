@@ -67,8 +67,14 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         return None
     
     def disconnect(self):
+        self.logger.info(f'{self} disconnected')
         if self.settings.fail_disconnect:
             1 / 0
+            
+class Testbed(lb.Testbed):
+    def make(self):
+        self.inst1 = LaggyInstrument('a',delay=.12)
+        self.inst2 = LaggyInstrument('b',delay=.06)
 
 class TestCases(unittest.TestCase):
     # Acceptable error in delay time meaurement
@@ -289,11 +295,10 @@ class TestCases(unittest.TestCase):
         self.assertIn('data2', ret)
         self.assertEqual(ret['data1'], None)
         self.assertEqual(ret['data2'], None)
-        
-
-        
 
 if __name__ == '__main__':
-    lb.show_messages('warning')
-    unittest.main()
+    lb.show_messages('info')
+#    unittest.main()
 #    tests = TestCases()
+#    tests.test_concurrent_fetch_delay()
+    testbed = Testbed()

@@ -67,7 +67,7 @@ class Testbed(object):
         # Find the objects
         new_attrs = set(dir(self)).difference(attrs_start)
         objs = [(a,getattr(self, a)) for a in new_attrs]
-        objs = OrderedDict([(a,o) for a,o in new_attrs if hasattr(o, '__enter__')])
+        objs = OrderedDict([(a,o) for a,o in objs if hasattr(o, '__enter__')])
 
         # Pull any objects of types listed by self.enter_first, in the
         # order of (1) the types listed in self.enter_first, then (2) the order
@@ -76,9 +76,11 @@ class Testbed(object):
         for cls in self.enter_first:
             for attr, obj in objs.items():
                 if isinstance(obj, cls):
-                    first_contexts[attr] = objs.pop(attr).__enter__
+                    first_contexts[attr] = objs.pop(attr)
 
-        other_contexts = dict([(a,o.__enter__) for a,o in objs.items()])
+        other_contexts = dict([(a,o) for a,o in objs.items()])
+        self._other_contexts = other_contexts
+        self._first_contexts = other_contexts
 
         # Enforce the ordering set by self.enter_first
         if concurrent:

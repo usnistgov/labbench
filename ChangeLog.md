@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Tightened the message about a pending exception in lb.concurrently
 - The arguments and return value of sequentially have been corrected to match those in concurrently
 - Testbed objects now support entering contexts of specified types first, which are listed (in order) by the new enter_first class attribute
+- concurrently and sequentially now raise an exception of two callables have the same name; specify a different name with a keyword argument instead to avoid naming conflicts
+- the flatten argument has been removed from concurrently and sequentially; the new behavior is to always flatten the return dictionary.
 ### Removed
 
 ## [0.20 - 2019-10-09]

@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- Unit testing for lb.concurrently and lb.sequentially in tests/test_concurrently
+- Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
 ### Changed
 - Add up to 40 lines of CommandLineWrapper output to debug logs
 - Removed logger warnings when calls to CommandLineWrapper.kill() do not kill any process
@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - The arguments and return value of sequentially have been corrected to match those in concurrently
 - Testbed objects now support entering contexts of specified types first, which are listed (in order) by the new enter_first class attribute
 - concurrently and sequentially now raise an exception of two callables have the same name; specify a different name with a keyword argument instead to avoid naming conflicts
+- text file outputs in relational databases are now encoded as utf-8
 ### Removed
 
 ## [0.20 - 2019-10-09]

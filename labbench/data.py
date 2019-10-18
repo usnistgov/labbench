@@ -480,7 +480,7 @@ class MungerBase(object):
         :return: the path to the file, relative to the directory that contains the master database
         '''
         with self._open_relational(name + ext, index, row) as f:
-            f.write(bytes(value, encoding='ascii'))
+            f.write(bytes(value, encoding='utf-8'))
         return self._get_key(f)
 
     # The following methods need to be implemented in subclasses.

@@ -73,7 +73,7 @@ class LaggyInstrument(lb.EmulatedVISADevice):
 
 class Testbed(lb.Testbed):
     def make(self):
-        self.inst1 = LaggyInstrument('a',delay=.12)
+        self.inst1 = LaggyInstrument('a',delay=.18)
         self.inst2 = LaggyInstrument('b',delay=.06)
 
 class Testbed2(lb.Testbed):
@@ -201,7 +201,7 @@ class TestCases(unittest.TestCase):
                          inst1.settings.fetch_time)
         self.assertEqual(ret[inst2.settings.resource],
                          inst2.settings.fetch_time)
-        
+
     def test_sequential_fetch_as_args(self):
         inst1 = LaggyInstrument(resource='fast', fetch_time=.002)
         inst2 = LaggyInstrument(resource='slow', fetch_time=.003)
@@ -306,8 +306,8 @@ class TestCases(unittest.TestCase):
         self.assertEqual(testbed.inst2.state.connected, False)
 
 if __name__ == '__main__':
-    lb.show_messages('info')
-#    unittest.main()
-    tests = TestCases()
-    tests.test_concurrent_connect_delay()
+    lb.show_messages('debug')
+    unittest.main()
+#    tests = TestCases()
+#    tests.test_testbed_instantiation()
 #    testbed = Testbed()

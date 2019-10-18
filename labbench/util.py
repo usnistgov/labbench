@@ -471,7 +471,7 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
     '''
     t0 = time.perf_counter()
     exits = []
-    
+
     def enter(c):
         exits.append(lambda *args: c.__exit__(*args))
         c.__enter__()
@@ -489,9 +489,8 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
         call_handler(params, call_objs)
 
         elapsed = time.perf_counter()-t0
-        if elapsed > 0.1:
-            stack = inspect.stack()
-            core.logger.info(f'"{stack[2].code_context[0].strip()}" - entry in {elapsed:0.2f}s')
+        if elapsed > 0.1 and params['name']:
+            core.logger.debug(f'{params["name"]} - entry took {elapsed:0.2f}s')
         yield
 
     except BaseException:
@@ -507,13 +506,10 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
         except BaseException:
             exc = sys.exc_info()
 
-            stack = inspect.stack()
-
     elapsed = time.perf_counter()-t0
-    if elapsed > 0.1:
-        stack = inspect.stack()
-        core.logger.info(f'"{stack[2].code_context[0].strip()}" - exit in {elapsed:0.2f}s')
-        
+    if elapsed > 0.1 and params['name']:
+        core.logger.debug(f'{params["name"]} - exit took {elapsed:0.2f}s')
+
     if exc != (None, None, None):
         # sys.exc_info() may have been
         # changed by one of the exit methods
@@ -545,7 +541,8 @@ def enter_or_call(flexible_caller, objs, kws):
     # otherwise, override the parameter setting
     params = dict(catch=False,
                   nones=False,
-                  traceback_delay=False)
+                  traceback_delay=False,
+                  name=None)
     
     def merge_to_dict(dicts: list, candidates: list):
         ''' Merge nested returns and check for return data key conflicts in
@@ -571,13 +568,17 @@ def enter_or_call(flexible_caller, objs, kws):
         if name in kws and not callable(kws[name]):
             params[name] = kws.pop(name)
 
+    if params['name'] is None:
+        stack = inspect.stack()
+        params['name'] = stack[2].code_context[0].strip()
+    
     # Combine the position and keyword arguments, and assign labels
     allobjs = list(objs) + list(kws.values())
     names = (len(objs)*[None]) + list(kws.keys())
 
     candidates = list(zip(names, allobjs))
     del allobjs, names
-    
+
     dicts = []
 
     # Make sure candidates are either (1) all context managers

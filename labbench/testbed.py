@@ -79,18 +79,18 @@ class Testbed(object):
                     first_contexts[attr] = objs.pop(attr)
 
         other_contexts = dict([(a,o) for a,o in objs.items()])
-        self._other_contexts = other_contexts
-        self._first_contexts = other_contexts
 
         # Enforce the ordering set by self.enter_first
         if concurrent:
             # Any remaining context managers will be run concurrently if concurrent=True            
             self._contexts = OrderedDict(first_contexts,
-                                         others=concurrently(**other_contexts))
+                                         others=concurrently(name=f'',
+                                                             **other_contexts))
         else:
             # Otherwise, run them sequentially
             self._contexts = OrderedDict(first_contexts, **other_contexts)
-        self.__cm = sequentially(**self._contexts)
+        self.__cm = sequentially(name=f'{repr(self)} connections',
+                                 **self._contexts)
 
     def __enter__(self):
         self.__cm.__enter__()
@@ -111,6 +111,9 @@ class Testbed(object):
             else:
                 raise ex
             return ret
+        
+    def __repr__(self):
+        return f'{self.__class__.__qualname__}()'
 
     def make(self):
         ''' Implement this method in a subclass of Testbed. It should

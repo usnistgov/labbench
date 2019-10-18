@@ -542,9 +542,10 @@ def enter_or_call(flexible_caller, objs, kws):
     params = dict(catch=False,
                   nones=False,
                   traceback_delay=False,
+                  flatten=True,
                   name=None)
     
-    def merge_to_dict(dicts: list, candidates: list):
+    def merge_inputs(dicts: list, candidates: list):
         ''' Merge nested returns and check for return data key conflicts in
             the callable
         '''
@@ -554,14 +555,23 @@ def enter_or_call(flexible_caller, objs, kws):
             if len(common) > 0:
                 which = ', '.join(common)
                 msg = f'attempting to merge results and dict arguments, but the key names ({which}) conflict in nested calls'
-                raise ValueError(msg)
+                raise KeyError(msg)
             ret.update(d)
                 
         conflicts = set(ret.keys()).intersection([n for (n,obj) in candidates])
         if len(conflicts) > 0:
-            raise ValueError('keys of conflict in nested return dictionary keys with ')
+            raise KeyError('keys of conflict in nested return dictionary keys with ')
             
         return ret
+
+    def merge_results(inputs, result):
+        for k,v in dict(result).items():
+            if isdictducktype(v.__class__):
+                conflicts = set(v.keys()).intersection(start_keys)
+                if len(conflicts) > 0:
+                    conflicts = ','.join(conflicts)
+                    raise KeyError(f'conflicts in keys ({conflicts}) when merging return dictionaries')
+                inputs.update(result.pop(k))
 
     # Pull parameters from the passed keywords
     for name in params.keys():
@@ -623,8 +633,12 @@ def enter_or_call(flexible_caller, objs, kws):
             raise ValueError('unexpectedly return value dictionary argument for context management')
         return flexible_enter(flexible_caller, params, candidates)
     else:
-        ret = merge_to_dict(dicts, candidates)
-        ret.update(flexible_caller(params, candidates))
+        ret = merge_inputs(dicts, candidates)
+        result = flexible_caller(params, candidates)
+        start_keys = set(ret.keys()).union(result.keys())
+        if params['flatten']:
+            merge_results(ret, result)
+        ret.update(result)
         return ret
 
 def concurrently_call(params: dict, name_func_pairs: list) -> dict:
@@ -778,6 +792,7 @@ def concurrently(*objs, **kws):
         :param objs:  each argument may be a callable (function or class that defines a __call__ method), or context manager (such as a Device instance)
         :param catch:  if `False` (the default), a `ConcurrentException` is raised if any of `funcs` raise an exception; otherwise, any remaining successful calls are returned as normal
         :param nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
+        :param flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
         :param traceback_delay: if `False`, immediately show traceback information on a thread exception; if `True` (the default), wait until all threads finish
         :return: the values returned by each function
         :rtype: dictionary of keyed by function
@@ -852,6 +867,7 @@ def sequentially(*objs, **kws):
         :param objs:  each argument may be a callable (function, or class that defines a __call__ method), or context manager (such as a Device instance)
         :param kws: dictionary of further callables or context managers, with names set by the dictionary key
         :param nones: if True, include dictionary entries for calls that return None (default is False); left as another entry in `kws` if callable or a context manager
+        :param flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)        
         :return: a dictionary keyed on the object name containing the return value of each function
         :rtype: dictionary of keyed by function
 

@@ -60,6 +60,9 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         lb.sleep(self.settings.fetch_time)
         lb.logger.info(f'{self}.fetch done')
         return self.settings.fetch_time
+    
+    def dict(self):
+        return {self.settings.resource: self.settings.resource}
 
     def none(self):
         ''' Return None
@@ -82,7 +85,7 @@ class Testbed2(lb.Testbed):
     
 class TestCases(unittest.TestCase):
     # Acceptable error in delay time meaurement
-    delay_tol = 0.05
+    delay_tol = 0.06
 
     @contextmanager
     def assert_delay(self, expected_delay):
@@ -305,9 +308,45 @@ class TestCases(unittest.TestCase):
         self.assertEqual(testbed.inst1.state.connected, False)
         self.assertEqual(testbed.inst2.state.connected, False)
 
+    def test_flatten(self):        
+        inst1 = LaggyInstrument(resource='a')
+        inst2 = LaggyInstrument(resource='b')
+        
+        with inst1, inst2:
+            ret = lb.concurrently(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=True)
+        self.assertIn('a', ret)
+        self.assertIn('b', ret)
+        self.assertEqual(ret['a'], 'a')
+        self.assertEqual(ret['b'], 'b')
+
+        with inst1, inst2:
+            ret = lb.sequentially(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=True)
+        self.assertIn('a', ret)
+        self.assertIn('b', ret)
+        self.assertEqual(ret['a'], 'a')
+        self.assertEqual(ret['b'], 'b')
+        
+        with inst1, inst2:
+            ret = lb.concurrently(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=False)
+        self.assertIn('d1', ret)
+        self.assertIn('d2', ret)
+        self.assertEqual(ret['d1'], dict(a='a'))
+        self.assertEqual(ret['d2'], dict(b='b'))
+
+        with inst1, inst2:
+            ret = lb.sequentially(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=False)
+        self.assertIn('d1', ret)
+        self.assertIn('d2', ret)
+        self.assertEqual(ret['d1'], dict(a='a'))
+        self.assertEqual(ret['d2'], dict(b='b'))
+
 if __name__ == '__main__':
-    lb.show_messages('debug')
+    lb.show_messages('warning')
     unittest.main()
 #    tests = TestCases()
-#    tests.test_testbed_instantiation()
+#    tests.test_flatten()
 #    testbed = Testbed()

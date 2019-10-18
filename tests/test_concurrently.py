@@ -244,7 +244,6 @@ class TestCases(unittest.TestCase):
                 ret = lb.sequentially(inst1.fetch,
                                       lb.concurrently(sub_1=inst2.fetch,
                                                       sub_2=inst3.fetch))
-                print(ret)
                 
     def test_nested_fetch_delay(self):
         inst1 = LaggyInstrument(resource='a', fetch_time=0.16)
@@ -284,7 +283,8 @@ class TestCases(unittest.TestCase):
 
         with inst1, inst2:
             ret = lb.concurrently(data1 = inst1.none,
-                                  data2 = inst2.none)
+                                  data2 = inst2.none,
+                                  nones = False)
         self.assertEqual(ret, {})
         
         with inst1, inst2:
@@ -295,10 +295,29 @@ class TestCases(unittest.TestCase):
         self.assertIn('data2', ret)
         self.assertEqual(ret['data1'], None)
         self.assertEqual(ret['data2'], None)
+        
+    def test_testbed_instantiation(self):        
+        with self.assert_delay(0):
+            testbed = Testbed(concurrent=True)
+        
+
+        expected_delay = max(testbed.inst1.settings.delay,
+                             testbed.inst2.settings.delay)
+
+        self.assertEqual(testbed.inst1.state.connected, False)
+        self.assertEqual(testbed.inst2.state.connected, False)
+        
+        with self.assert_delay(expected_delay):
+            with testbed:
+                self.assertEqual(testbed.inst1.state.connected, True)
+                self.assertEqual(testbed.inst2.state.connected, True)
+
+        self.assertEqual(testbed.inst1.state.connected, False)
+        self.assertEqual(testbed.inst2.state.connected, False)
 
 if __name__ == '__main__':
-    lb.show_messages('info')
-#    unittest.main()
+    lb.show_messages('warning')
+    unittest.main()
 #    tests = TestCases()
 #    tests.test_concurrent_fetch_delay()
-    testbed = Testbed()
+#    testbed = Testbed()

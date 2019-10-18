@@ -483,7 +483,6 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
                 name = f'{repr(obj)}.__enter__ at {hex(id(obj.__enter__))}'            
             obj = Call(enter, obj)
             obj.name = name
-            print(name,obj)
             call_objs.append((name, obj))     
         
         # Run the __enter__ methods

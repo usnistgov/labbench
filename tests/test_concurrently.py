@@ -60,22 +60,26 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         lb.sleep(self.settings.fetch_time)
         lb.logger.info(f'{self}.fetch done')
         return self.settings.fetch_time
-    
+
     def none(self):
         ''' Return None
         '''
         return None
-    
+
     def disconnect(self):
         self.logger.info(f'{self} disconnected')
         if self.settings.fail_disconnect:
             1 / 0
-            
+
 class Testbed(lb.Testbed):
     def make(self):
         self.inst1 = LaggyInstrument('a',delay=.12)
         self.inst2 = LaggyInstrument('b',delay=.06)
 
+class Testbed2(lb.Testbed):
+    inst1 = LaggyInstrument('a', delay=.12)
+    inst2 = LaggyInstrument('b', delay=.06)
+    
 class TestCases(unittest.TestCase):
     # Acceptable error in delay time meaurement
     delay_tol = 0.05

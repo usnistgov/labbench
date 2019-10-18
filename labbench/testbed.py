@@ -74,7 +74,7 @@ class Testbed(object):
         # they appear in objs
         first_contexts = OrderedDict()        
         for cls in self.enter_first:
-            for attr, obj in objs.items():
+            for attr, obj in OrderedDict(objs).items():
                 if isinstance(obj, cls):
                     first_contexts[attr] = objs.pop(attr)
 

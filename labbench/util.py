@@ -469,7 +469,7 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
         
         :returns: context object for use in a `with` statement
     '''
-    t0 = time.time()
+    t0 = time.perf_counter()
     exits = []
     
     def enter(c):
@@ -487,8 +487,11 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
         
         # Run the __enter__ methods
         call_handler(params, call_objs)
-        
-        core.logger.info(f'entered all contexts in {time.time()-t0:0.2f}s')
+
+        elapsed = time.perf_counter()-t0
+        if elapsed > 0.1:
+            stack = inspect.stack()
+            core.logger.info(f'"{stack[2].code_context[0].strip()}" - entry in {elapsed:0.2f}s')
         yield
 
     except BaseException:
@@ -496,7 +499,7 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
     else:
         exc = (None, None, None)
 
-    t0 = time.time()
+    t0 = time.perf_counter()
     while exits:
         exit = exits.pop()
         try:
@@ -504,8 +507,13 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
         except BaseException:
             exc = sys.exc_info()
 
-    core.logger.info(f'exited all contexts in {time.time()-t0:0.2f}s')
+            stack = inspect.stack()
 
+    elapsed = time.perf_counter()-t0
+    if elapsed > 0.1:
+        stack = inspect.stack()
+        core.logger.info(f'"{stack[2].code_context[0].strip()}" - exit in {elapsed:0.2f}s')
+        
     if exc != (None, None, None):
         # sys.exc_info() may have been
         # changed by one of the exit methods

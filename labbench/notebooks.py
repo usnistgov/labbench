@@ -29,6 +29,7 @@ from . import core
 from .backends import VISADevice
 from .host import Host
 from .util import show_messages
+from .testbed import Testbed
 import pandas as pd
 import numpy as np
 import logging
@@ -146,8 +147,9 @@ class panel(object):
     def __new__(cls, source=2, ncols=2):
         cls.ncols = ncols
 
-        if hasattr(source, '_contexts'):
-            cls.devices = dict(source._contexts)
+        if isinstance(source, Testbed):
+            cls.devices = dict([(k,v) for k,v in source.get_managed_contexts().items()\
+                                if isinstance(v,core.Device)])
         elif isinstance(source, numbers.Number):
             cls.source = source
             cls.devices = core.list_devices(source)

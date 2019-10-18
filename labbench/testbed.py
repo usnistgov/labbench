@@ -68,6 +68,7 @@ class Testbed(object):
         new_attrs = set(dir(self)).difference(attrs_start)
         objs = [(a,getattr(self, a)) for a in new_attrs]
         objs = OrderedDict([(a,o) for a,o in objs if hasattr(o, '__enter__')])
+        self.__managed_contexts = OrderedDict(objs)
 
         # Pull any objects of types listed by self.enter_first, in the
         # order of (1) the types listed in self.enter_first, then (2) the order
@@ -83,19 +84,22 @@ class Testbed(object):
         # Enforce the ordering set by self.enter_first
         if concurrent:
             # Any remaining context managers will be run concurrently if concurrent=True            
-            self._contexts = OrderedDict(first_contexts,
+            contexts = OrderedDict(first_contexts,
                                          others=concurrently(name=f'',
                                                              **other_contexts))
         else:
             # Otherwise, run them sequentially
-            self._contexts = OrderedDict(first_contexts, **other_contexts)
+            contexts = OrderedDict(first_contexts, **other_contexts)
         self.__cm = sequentially(name=f'{repr(self)} connections',
-                                 **self._contexts)
+                                 **contexts)
 
     def __enter__(self):
         self.__cm.__enter__()
         self.startup()
         return self
+    
+    def get_managed_contexts(self):
+        return OrderedDict(self.__managed_contexts)
 
     def __exit__(self, *args):
         try:

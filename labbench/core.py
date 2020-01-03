@@ -46,6 +46,7 @@ from traitlets import All, Undefined, TraitType
 
 __all__ = ['ConnectionError', 'DeviceException', 'DeviceNotReady', 'DeviceFatalError', 
            'DeviceConnectionLost', 'Undefined', 'All', 'DeviceStateError',
+           'UnimplementedState',
            'Int', 'Float', 'Unicode', 'Complex', 'Bytes', 'CaselessBytesEnum',
            'Bool', 'List', 'Dict', 'TCPAddress',
            'CaselessStrEnum', 'Device', 'list_devices', 'logger', 'CommandNotImplementedError',
@@ -61,6 +62,10 @@ class ConnectionError(traitlets.TraitError):
 
 class DeviceStateError(traitlets.TraitError):
     """ Failure to get or set a state in `Device.state`
+    """
+    
+class UnimplementedState(DeviceStateError):
+    """ No state defined for the trait
     """
 
 
@@ -90,31 +95,7 @@ class CommandNotImplementedError(NotImplementedError):
     pass
 
 
-class MetaHasTraits(traitlets.MetaHasTraits):
-    """A metaclass for documenting HasTraits."""
-
-    def setup_class(cls, classdict):
-        super().setup_class(classdict)
-
-        cls.__rawdoc__ = cls.__doc__
-
-        if cls.__doc__ is None:
-            # Find the documentation for HasTraits
-            for subcls in cls.__mro__[1:]:
-                if hasattr(subcls, '__rawdoc__'):
-                    if subcls.__rawdoc__:
-                        doc = subcls.__rawdoc__.rstrip()
-                        break
-                else:
-                    doc = ''
-                    break
-        else:
-            doc = cls.__doc__
-
-        cls.__doc__ = '\n\n'.join([str(doc), cls._doc_traits()])
-
-
-class HasTraits(traitlets.HasTraits, metaclass=MetaHasTraits):
+class HasTraits(traitlets.HasTraits):#, metaclass=MetaHasTraits):
     '''
         Base class for accessing the local and remote state
         parameters of a device.  Normally,
@@ -132,28 +113,28 @@ class HasTraits(traitlets.HasTraits, metaclass=MetaHasTraits):
         self._device = device
         super(traitlets.HasTraits, self).__init__(*args, **kws)
 
-    def __getter__(self, trait):
-        raise CommandNotImplementedError
-
-    def __setter__(self, trait, value):
-        raise CommandNotImplementedError
+#    def __getter__(self, trait):
+#        raise CommandNotImplementedError
+#
+#    def __setter__(self, trait, value):
+#        raise CommandNotImplementedError
 
     @classmethod
-    def _doc_traits(cls):
+    def _update_doc(cls):
         '''
         :return: a dictionary of documentation for this class's traits
         '''
-        ret = ['\n\ntrait attributes:']
+
+        if not hasattr(cls, '__rawdoc__'):
+            cls.__rawdoc__ = cls.__doc__
+
+        cls.__doc__ = str(cls.__rawdoc__) + '\n\ntraits:'
+        
         traits = cls.class_traits()
 
         for name in sorted(traits.keys()):
             trait = traits[name]
-            ret.append('* `{name}`: `{type}`'
-                       .format(help=trait.help,
-                               type=trait.__class__.__name__,
-                               name=name))
-
-        return '\n\n'.join(ret)
+            cls.__doc__ += f'\n\n:{name}: {trait.__doc__}'
 
 
 class HasSettingsTraits(HasTraits):
@@ -220,7 +201,7 @@ class HasStateTraits(HasTraits):
 
         '''
         cls.__setter__ = func
-        return cls
+        return func
 
     @classmethod
     def getter(cls, func):
@@ -240,7 +221,12 @@ class HasStateTraits(HasTraits):
             one.
         '''
         cls.__getter__ = func
-        return cls
+        return func
+
+    @classmethod
+    def _register_callbacks(cls):
+        for name, trait in cls.class_traits().items():
+            trait._apply_state_hooks(cls)
 
     def __setattr__(self, key, value):
         ''' Prevent silent errors that could result from typos in state names
@@ -289,43 +275,8 @@ class TraitMixIn(object):
     read_only_if_connected = False
 
     def __init__(self, default_value=Undefined, allow_none=False, read_only=None, help=None,
-                 write_only=None, cache=None, command=None, getter=None, setter=None,
+                 write_only=None, cache=None, command=None, #getter=None, setter=None,
                  remap={}, **kwargs):
-
-        def make_doc():
-            attr_pairs = []
-            for k in self.doc_attrs:
-                v = getattr(self, k)
-
-                for def_k, def_v in defaults.items():
-                    if k == def_k and v == def_v:
-                        # Don't doc the default values
-                        break
-                else:
-                    if v is not None:
-                        attr_pairs.append(f'{k}={repr(v)}')
-                # if (k=='default_value' and v == Undefined)\
-                #    or (k=='read_only' and v == False)\
-                #    or (k=='write_only' and v == False)\
-                #    or (k=='cache' and v == False)\
-                #    or (k=='allow_none' and v==False):
-                #     continue
-                # if v is None\
-                #    or (k=='remap' and v=={}):
-                #     continue
-                # if (k=='default_value' and v!=Undefined)\
-                #    and v is not None\
-                #    and not (k=='allow_none' and v==False)\
-                #    and not (k=='remap' and v=={}):
-                
-            params = {'name': type(self).__name__,
-                      'attrs': ','.join(attr_pairs),
-                      'help': self.help}
-            sig = '{name}({attrs})\n\n\t{help}'.format(**params)
-            sig = sig.replace('*', r'\*')
-            # if self.__doc__:
-            #     sig += self.__doc__
-            return sig
 
         # Identify the underlying class from Trait
         for c in inspect.getmro(self.__class__):
@@ -360,13 +311,112 @@ class TraitMixIn(object):
         self.command = command
         self.__last = None
 
-        self.tag(setter=setter,
-                 getter=getter)
+#        self.tag(setter=setter,
+#                 getter=getter)
+        self.tag(setter=None, getter=None)
 
         self.remap = remap
         self.remap_inbound = dict([(v, k) for k, v in remap.items()])
 
-        self.info_text = self.__doc__ = make_doc()
+        self.info_text = self.__doc__ = self._make_doc()
+
+    def _make_doc(self):
+        attr_pairs = []
+        for k in self.doc_attrs:
+            v = getattr(self, k)
+
+            for def_k, def_v in defaults.items():
+                if k == def_k and v == def_v:
+                    # Don't doc the default values
+                    break
+            else:
+                if v is not None:
+                    attr_pairs.append(f'{k}={repr(v)}')
+            # if (k=='default_value' and v == Undefined)\
+            #    or (k=='read_only' and v == False)\
+            #    or (k=='write_only' and v == False)\
+            #    or (k=='cache' and v == False)\
+            #    or (k=='allow_none' and v==False):
+            #     continue
+            # if v is None\
+            #    or (k=='remap' and v=={}):
+            #     continue
+            # if (k=='default_value' and v!=Undefined)\
+            #    and v is not None\
+            #    and not (k=='allow_none' and v==False)\
+            #    and not (k=='remap' and v=={}):
+            
+#            p = {'name': type(self).__name__,
+#                      'attrs': ,
+#                      'help': self.help}
+        sig = f'`{type(self).__name__}'\
+              f'({",".join(attr_pairs)})`'
+        if self.help:
+              sig += f': {self.help}'
+        sig = sig.replace('*', r'\*')
+        
+        return sig        
+
+    def class_init(self, cls, name):
+        ''' Work through the order of precedence to set `cls.metadata['getter']`
+            and `cls.metadata['setter']`, or raise `UnimplementedState` if
+            neither is defined.
+            
+            This changes `self.write_only` and `self.read_only` to reflect
+            the implementation.
+        '''
+        
+        super().class_init(cls, name)
+        
+        if not issubclass(cls, HasStateTraits):
+            return
+        state_cls = cls
+        
+        setter = None
+        getter = None
+        
+        # First, take default implementation that comes from state
+        if self.command is not None:
+            setter = getattr(state_cls, '__setter__', None)
+            getter = getattr(state_cls, '__getter__', None)
+        
+        # Override the default with trait-specific implementation if they exist
+        if callable(self.metadata['setter']):
+            setter = self.metadata['setter']
+        if callable(self.metadata['getter']):
+            getter = self.metadata['getter']            
+
+        self.metadata['getter'] = getter
+        self.metadata['setter'] = setter
+
+    def instance_init(self, parent_obj):
+        super().instance_init(parent_obj)
+        self._update_access(parent_obj.__class__)
+        
+    def _update_access(self, parent_cls):
+        ''' Check whether 
+        '''
+
+        if not issubclass(parent_cls, HasStateTraits):
+            return
+
+        getter = self.metadata['getter']
+        setter = self.metadata['setter']
+        if getter is None and setter is None:
+            clsname = parent_cls.__qualname__
+            msg = f'resolved neither a getter nor a setter for {self} in {clsname}'
+            raise UnimplementedState(msg)        
+        if getter is None:
+            self.write_only = True
+            self.read_only = False
+        elif setter is None:
+            self.write_only = False
+            self.read_only = True
+        else:
+            self.read_only = False
+            self.write_only = False
+        
+            
 
     def get(self, obj, cls=None):
         ''' Overload the traitlet's get method. If `obj` is a HasSettingsTraits, call HasTraits.get
@@ -389,20 +439,8 @@ class TraitMixIn(object):
         elif self.write_only or (self.cache and self.__last is not None):
             return self.__last
 
-        # First, look for a getter function or method that implements getting
-        # the value from the device
-        if callable(self.metadata['getter']):
-            new = self.metadata['getter'](obj._device)
-
-        # If there is no getter function, try calling the command_get() method in the Device instance.
-        # Otherwise, raise an exception, because we don't know how to get the
-        # value from the Device.
-        else:  # self.command is not None:
-            try:
-                new = obj.__class__.__getter__(obj._device, self)
-            except CommandNotImplementedError as e:
-                raise DeviceStateError(
-                    'no command or getter defined - cannot get state from device')
+        # Get the value from the device
+        new = self.metadata['getter'](obj._device, self)
 
         # Remap the resulting value.
         new = self.remap_inbound.get(new, new)
@@ -432,23 +470,8 @@ class TraitMixIn(object):
         # Remap the resulting value to the remote value
         value = self.remap.get(value, value)
 
-        # First, look for a getter function or method that implements getting
-        # the value from the device
-        if callable(self.metadata['setter']):
-            self.metadata['setter'](obj._device, value)
-
-        # If there isn't one, try calling the command_get() method in the Device instance.
-        # Otherwise, raise an exception, because we don't know how to get the
-        # value from the Device.
-        else:  # self.command is not None:
-            # try:
-            # The below should raise CommandNotImplementedError if no command
-            # or setter has been defined
-
-            obj.__class__.__setter__(obj._device, self, value)
-            # except CommandNotImplementedError as e:
-            #     raise DeviceStateError(
-            #         'no command or setter defined - cannot set state to device')
+        # Set the value on the device
+        self.metadata['setter'](obj._device, self, value)
 
         # Apply the value to the traitlet, saving the cached value if necessary
         rd_only, self.read_only = self.read_only, False
@@ -458,12 +481,12 @@ class TraitMixIn(object):
         self.read_only = rd_only
 
     def setter(self, func, *args, **kws):
-        self.metadata['setter'] = func
-        return self
+        self.metadata['setter'] = lambda device, trait, value: func(device, value)
+        return func
 
     def getter(self, func, *args, **kws):
-        self.metadata['getter'] = func
-        return self
+        self.metadata['getter'] = lambda device, trait: func(device)
+        return func
 
 
 class Int(TraitMixIn, traitlets.CInt):
@@ -836,6 +859,37 @@ def trim(docstring):
     return '\n'.join(trimmed)
 
 
+def __get_state__(obj, trait):
+    ''' Implement a default state getter in a sub for all traits in
+        `self.state`. This is usually implemented in a subclass by keys
+        in each trait, accessed here as `trait.command`. This is only
+        triggered if the trait is defined with `trait.command is not None`.
+        
+        A common use is in message-based communication, such as
+        SCPI, that supports a common string format
+        for getting parameter values that includes a command string.
+
+        :param str command: the command message to apply to `value`
+        :param trait: the state descriptor or traitlet
+        :returns: the value retrieved from the instrument
+    '''
+    raise CommandNotImplementedError(
+        'state "{attr}" is defined but not implemented! implement {cls}.command_set, or implement a setter for {cls}.state.{attr}'
+        .format(cls=type(obj).__name__, attr=trait))
+
+def __set_state__(obj, trait, value):
+    ''' Apply an instrument setting to the instrument, keyed on a command string.
+        Implement this for message-based protocols, like VISA SCPI or some serial devices.
+
+        :param str command: the command message to apply to `value`
+        :param trait: the state descriptor or traitlet
+        :param value: the value to set
+    '''
+    raise CommandNotImplementedError(
+        'state "{attr}" is defined but not implemented! implement {cls}.command_get, or implement a getter for {cls}.state.{attr}'
+        .format(cls=type(obj).__name__, attr=trait))
+
+
 class DeviceMetaclass(type):
     ''' Dynamically adjust the class documentation strings to include the traits
         defined in its settings. This way we get the documentation without
@@ -851,10 +905,10 @@ class DeviceMetaclass(type):
             for attr in '__name__', '__doc__', '__module__', '__qualname__':
                 setattr(wrapper, attr, getattr(func, attr))
             return wrapper
-        
+
         def autosubclass(name, expected_parent_cls):
             ''' Make cls.state and cls.settings subclasses of the parent class
-                state or settings, if they are not defined as subclasses.
+                state or settings if they are not already.
             '''
             member_cls = getattr(cls, name)
             
@@ -864,14 +918,38 @@ class DeviceMetaclass(type):
                    new_member_cls = type(member_cls.__name__,
                                          (parent_member_cls,),
                                          dict(member_cls.__dict__))
-                   setattr(cls, name, new_member_cls)
+                   setattr(cls, name, new_member_cls)                   
 
         super(DeviceMetaclass, cls).__init__(name, bases, namespace)
 
-        # Automatically make cls.state and cls.settings subclasses of the
-        # parent class state or settings, if they are not defined as subclasses
+        # Make cls.state and cls.settings subclasses of the
+        # parent class attributes, if they are not defined as subclasses
         autosubclass('state', HasStateTraits)
         autosubclass('settings', HasSettingsTraits)
+               
+        # Apply any default state setter and getter defined in the class
+        if cls.__get_state__ is not __get_state__:
+            cls.state.getter(cls.__get_state__)
+        if cls.__set_state__ is not __set_state__:
+            cls.state.setter(cls.__set_state__)
+
+        # Move any top-level traits into `state` and `settings`
+        for name, attr in dict(cls.__dict__).items():
+            if isinstance(attr, TraitMixIn):
+                try:
+                    attr._update_access(cls.state)
+                except UnimplementedState:
+                    setattr(cls.settings, name, attr)
+                    delattr(cls, name) 
+                else:
+                    setattr(cls.state, name, attr)
+                    delattr(cls, name)
+            
+        cls.state.setup_class(cls.state.__dict__)
+
+        # Update documentation
+        cls.state._update_doc()
+        cls.settings._update_doc()
 
         traits = cls.settings.class_traits()
 
@@ -898,15 +976,17 @@ class DeviceMetaclass(type):
             cls.__doc__ = trim(cls.__doc__)
 
         for name, trait in traits.items():
-            ttype, text = trait.info_text.split('\n\n',1)
-            line = '\n\n:param `{type}` {name}:\n{info}'\
-                   .format(help=trait.help,
-                           type=ttype,
-                           info=text,
-                           name=name)
+#            ttype, text = trait.info_text.split(': ',1)
+#            line = '\n\n'+trait._make_doc()
+#            param `{type}` {name}:\n{info}'\
+#                   .format(help=trait.help,
+#                           type=ttype,
+#                           info=text,
+#                           name=name)
 
-            cls.__init__.__doc__ += line
-            cls.__doc__ += line
+            text = f'\n\n:{name}: {trait._make_doc()}'
+            cls.__init__.__doc__ += text
+            cls.__doc__ += text
 
 
 class Device(object, metaclass=DeviceMetaclass):
@@ -976,9 +1056,9 @@ class Device(object, metaclass=DeviceMetaclass):
             
                 variable = device.state.parameter + 1
         '''
+        
+        pass
 
-        connected = Bool(read_only=True,
-                         help='whether the :class:`Device` instance is connected')
 
     backend = DisconnectedBackend(None)
     ''' .. attribute::state is the backend that controls communication with the device.
@@ -1000,29 +1080,9 @@ class Device(object, metaclass=DeviceMetaclass):
         self.backend = DisconnectedBackend(self)
         self.state.connected
 
-#    def command_get(self, command, trait):
-#        ''' Read a setting from a remote instrument, keyed on a command string.
-#            Implement this for message-based protocols, like VISA SCPI or some serial devices.
-#
-#            :param str command: the command message to apply to `value`
-#            :param trait: the state descriptor or traitlet
-#            :returns: the value retrieved from the instrument
-#        '''
-#        raise CommandNotImplementedError(
-#            'state "{attr}" is defined but not implemented! implement {cls}.command_set, or implement a setter for {cls}.state.{attr}'
-#            .format(cls=type(self).__name__, attr=trait))
-#
-#    def command_set(self, command, trait, value):
-#        ''' Apply an instrument setting to the instrument, keyed on a command string.
-#            Implement this for message-based protocols, like VISA SCPI or some serial devices.
-#
-#            :param str command: the command message to apply to `value`
-#            :param trait: the state descriptor or traitlet
-#            :param value: the value to set
-#        '''
-#        raise CommandNotImplementedError(
-#            'state "{attr}" is defined but not implemented! implement {cls}.command_get, or implement a getter for {cls}.state.{attr}'
-#            .format(cls=type(self).__name__, attr=trait))
+    __get_state__ = __get_state__
+    
+    __set_state__ = __set_state__
 
     def __init__(self, resource=None, **settings):
         self.__wrapped__ = {}
@@ -1139,7 +1199,10 @@ class Device(object, metaclass=DeviceMetaclass):
         return '{}({})'.format(type(self).__name__,
                                repr(self.settings.resource))
 
-    @state.connected.getter
+    connected = Bool(read_only=True,
+                     help='whether the :class:`Device` instance is connected')
+
+    @connected.getter
     def __(self):
         return not isinstance(self.backend, DisconnectedBackend)
 

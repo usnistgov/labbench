@@ -46,6 +46,8 @@ class MockBase(lb.Device):
 
 
 class MockTraitWrapper(MockBase):
+    ''' Helpful driver wrapper
+    '''
     class state(MockBase.state):
         pass
 
@@ -87,6 +89,7 @@ class MockStateWrapper(MockBase):
 
 if __name__ == '__main__':
     device = MockTraitWrapper(resource='null')
+    
 
     print('instance doc: \n', device.state.__doc__)
     print('class doc: ', MockTraitWrapper.state.__doc__)

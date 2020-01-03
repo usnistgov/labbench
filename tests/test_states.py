@@ -173,9 +173,8 @@ class TestWrappers(unittest.TestCase):
         self.assertEqual(m._getter_counts['param'], 4)
 
 if __name__ == '__main__':
-    lb.VISADevice.state
-#    lb.show_messages('debug')
-#    unittest.main()
+    lb.show_messages('debug')
+    unittest.main()
 
 #    with MockTraitWrapper() as m:
 #        m.state.param = 4

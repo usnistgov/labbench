@@ -42,6 +42,7 @@ import logging
 import copy
 import sys
 import traceback
+import warnings
 from traitlets import All, Undefined, TraitType
 
 __all__ = ['ConnectionError', 'DeviceException', 'DeviceNotReady', 'DeviceFatalError', 
@@ -1080,9 +1081,10 @@ class Device(object, metaclass=DeviceMetaclass):
         self.backend = DisconnectedBackend(self)
         self.state.connected
 
-    __get_state__ = __get_state__
-    
+    __get_state__ = __get_state__    
     __set_state__ = __set_state__
+    __warn_state_names__ = []
+    __warn_settings_names__ = []
 
     def __init__(self, resource=None, **settings):
         self.__wrapped__ = {}
@@ -1117,11 +1119,40 @@ class Device(object, metaclass=DeviceMetaclass):
 
         wrap(self, 'connect', self.__connect_wrapper__)
         wrap(self, 'disconnect', self.__disconnect_wrapper__)
+        
+        self.__warn_state_names__ = self.state.trait_names()
+        self.__warn_settings_names__ = self.settings.trait_names()
+        
+    def __setattr__(self, name, value):
+        ''' Throw warnings if we suspect a typo on an attempt to assign to a state
+            or settings trait
+        '''
+        if not hasattr(self, name):
+            if name in self.__warn_state_names__:
+                msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait state.{name} instead?'
+                warnings.warn(msg)
+            if name in self.__warn_settings_names__:
+                msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait settings.{name} instead?'
+                warnings.warn(msg)
+        super().__setattr__(name, value)
+
+    def __getattr__(self, name):
+        ''' Throw warnings if we suspect a typo on an attempt to access a state
+            or settings trait
+        '''
+        if name in self.__warn_state_names__:
+            msg = f'{self}: did you mean to access the trait state.{name} instead?'
+            warnings.warn(msg)                   
+        if name in self.__warn_settings_names__:
+            msg = f'{self}: did you mean to access the trait in settings.{name} instead?'
+            warnings.warn(msg)
+        raise AttributeError(f"'{self.__class__.__qualname__}' object has no attribute '{name}'")
 
     def __connect_wrapper__(self, *args, **kws):
         ''' A wrapper for the connect() method. It works through the
-            method resolution order of self.__class__, starting from
-            labbench.Device, and calls its connect() method.
+            method resolution order of self.__class__, starting by
+            calling labbench.Device.connect() and working down the
+            class heirarchy
         '''
         if self.state.connected:
             self.logger.debug('{} already connected'.format(repr(self)))
@@ -1199,8 +1230,7 @@ class Device(object, metaclass=DeviceMetaclass):
         return '{}({})'.format(type(self).__name__,
                                repr(self.settings.resource))
 
-    connected = Bool(read_only=True,
-                     help='whether the :class:`Device` instance is connected')
+    connected = Bool(help='whether the :class:`Device` instance is connected')
 
     @connected.getter
     def __(self):

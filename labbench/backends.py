@@ -572,8 +572,7 @@ class LabviewSocketInterface(core.Device):
                                         self.settings.tx_port))
         util.sleep(self.settings.delay)
 
-    @state.setter
-    def __(self, trait, value):
+    def __set_state__(self, trait, value):
         """ Send a formatted command string to implement state control.
         """
         self.write(f'{trait.command} {value} ')
@@ -845,7 +844,7 @@ class TelnetDevice(core.Device):
         or by setting them afterward in `settings`.
 
         Subclassed devices that need state descriptors will need
-        to implement `state.getter` and `state.setter` methods to implement
+        to implement __get_state__ and __set_state__ methods to implement
         the state set and get operations (as appropriate).
     """
 
@@ -884,13 +883,13 @@ class VISADevice(core.Device):
         identity string from the remote instrument::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
-                print inst.state.identity
+                print(inst.state.identity)
 
         This is equivalent to the more pyvisa-style use as follows::
 
             inst = VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR')
             inst.connect()
-            print inst.query('*IDN?')
+            print(inst.query('*IDN?'))
 
         Use of `inst.state` makes it possible to add callbacks to support
         automatic state logging, or to build a UI.
@@ -940,9 +939,9 @@ class VISADevice(core.Device):
             sets up a connected instance::
 
                 with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as inst:
-                    print inst.state.identity
-                    print inst.state.status_byte
-                    print inst.state.options
+                    print(inst.state.identity)
+                    print(inst.state.status_byte)
+                    print(inst.state.options)
 
             would instantiate a `VISADevice` and guarantee
             it is disconnected either at the successful completion
@@ -1033,8 +1032,7 @@ class VISADevice(core.Device):
         self.logger.debug(f'      -> {msg_out}')
         return ret
 
-    @state.getter
-    def __(self, trait):
+    def __get_state__(self, trait):
         """ Send an SCPI command to get a state value from the
             device. This function
             adds a '?' to match SCPI convention. This is
@@ -1046,8 +1044,7 @@ class VISADevice(core.Device):
         """
         return self.query(trait.command + '?').rstrip()
 
-    @state.setter
-    def __(self, trait, value):
+    def __set_state__(self, trait, value):
         """ Send an SCPI command to set a state value on the
             device. This function adds a '?' to match SCPI convention. This is
             automatically called for `state` attributes that
@@ -1159,14 +1156,12 @@ class EmulatedVISADevice(core.Device):
     def disconnect(self):
         pass
 
-    @state.getter
-    def __(self, trait):
+    def __get_state__(self, trait):
         ret = self.generators[type(trait)](trait)
         self.backend[trait] = ret
         return ret
 
-    @state.setter
-    def __(self, trait, value):
+    def __set_state__(self, trait, value):
         self.backend[trait] = value
 
 

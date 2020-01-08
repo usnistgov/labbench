@@ -33,6 +33,7 @@ from .notebooks import *
 from .version import __version__
 from .util import *
 from .backends import *
+from .testbed import *
 
 show_messages('info')
 

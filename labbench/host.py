@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import core, util
+from . import core
 import datetime
 import os
 import socket
@@ -125,7 +125,7 @@ class Email(core.Device):
     def disconnect(self):
         if self.state.connected:
             self.backend.disconnect()
-            util.sleep(1)
+            time.sleep(1)
             self.send_summary()
 
     def send_summary(self):

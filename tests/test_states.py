@@ -48,8 +48,8 @@ class MockBase(lb.Device):
     _getter_counts = {}
     
     class state(lb.Device.state):
-        param = lb.Int(min=0, max=10)
-        flag = lb.Bool(remap=remap)
+        param = lb.Int(min=0, max=10, command=True)
+        flag = lb.Bool(remap=remap, command=True)
 
     def connect(self):
         self.values = {}
@@ -62,7 +62,7 @@ class MockBase(lb.Device):
         self._getter_counts = {}
 
 
-class MockTraitWrapper(MockBase):    
+class MockOldTraitWrapper(MockBase):    
     class state(MockBase.state):
         pass
 
@@ -90,7 +90,7 @@ class MockTraitWrapper(MockBase):
         self.values['flag'] = value
 
 
-class MockStateWrapper(MockBase):
+class MockOldStateWrapper(MockBase):
     class state(MockBase.state):
         pass
 
@@ -103,43 +103,74 @@ class MockStateWrapper(MockBase):
         print('*****', trait, repr(value))
         self.values[trait.name] = value
 
+class MockTraitWrapper(MockBase):    
+    param = lb.Int(min=0, max=10)
+    flag = lb.Bool(remap=remap)
+
+    @param.getter
+    def _(self):
+        self._getter_counts.setdefault('param',0)
+        self._getter_counts['param'] += 1
+
+        self.logger.debug('get param')
+        return self.values['param']
+
+    @param.setter
+    def _(self, value):
+        self.values['param'] = value
+
+    @flag.getter
+    def _(self):
+        self._getter_counts.setdefault('flag',0)
+        self._getter_counts['flag'] += 1        
+        
+        return self.values['flag']
+
+    @flag.setter
+    def _(self, value):
+        self.values['flag'] = value
+        
+class MockStateWrapper(MockBase):
+    def __get_state__(self, trait):
+        return self.values[trait.name]
+
+    def __set_state__(self, trait, value):
+        print('*****', trait, repr(value))
+        self.values[trait.name] = value        
+
 
 class TestWrappers(unittest.TestCase):
+    def test_old_state_wrapper_type(self):
+        with MockOldStateWrapper() as m:
+            self.do(m)            
+
+    def test_old_trait_wrapper_type(self):
+        with MockOldTraitWrapper() as m:
+            self.do(m)
+            
     def test_state_wrapper_type(self):
         with MockStateWrapper() as m:
-            m.clear_counts()
-            
-            self.assertEqual(m.state.param, start['param'])
-            m.state.param = stop['param']
-            self.assertEqual(m.state.param, stop['param'])
-
-            self.assertEqual(m.state.flag, False)
-            m.state.flag = stop['flag']
-            
-            self.assertEqual(m.state.flag, stop['flag'])
-            self.assertEqual(m.values['flag'], remap[stop['flag']])
-
-            self.assertEqual(m._getter_counts['flag'], 4)
-            self.assertEqual(m._getter_counts['param'], 4)
-            
+            self.do(m)
 
     def test_trait_wrapper_type(self):
         with MockTraitWrapper() as m:
-            m.clear_counts()
+            self.do(m)
             
-            self.assertEqual(m.state.param, start['param'])
-            m.state.param = stop['param']
-            self.assertEqual(m.state.param, stop['param'])
+    def do(self, m):
+        m.clear_counts()
+        
+        self.assertEqual(m.state.param, start['param'])
+        m.state.param = stop['param']
+        self.assertEqual(m.state.param, stop['param'])
 
-            self.assertEqual(m.state.flag, False)
-            m.state.flag = stop['flag']
-            
-            self.assertEqual(m.state.flag, stop['flag'])
-            self.assertEqual(m.values['flag'], remap[stop['flag']])
-            
-            self.assertEqual(m._getter_counts['flag'], 4)
-            self.assertEqual(m._getter_counts['param'], 4)
-            
+        self.assertEqual(m.state.flag, False)
+        m.state.flag = stop['flag']
+        
+        self.assertEqual(m.state.flag, stop['flag'])
+        self.assertEqual(m.values['flag'], remap[stop['flag']])
+        
+        self.assertEqual(m._getter_counts['flag'], 4)
+        self.assertEqual(m._getter_counts['param'], 4)
 
 if __name__ == '__main__':
     lb.show_messages('debug')

@@ -24,71 +24,329 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import threading
-import pandas as pd
-import numpy as np
+import unittest
 import importlib
+import threading
 import sys
+import time
+from contextlib import contextmanager
 if '..' not in sys.path:
     sys.path.insert(0, '..')
 import labbench as lb
+import numpy as np
 lb = importlib.reload(lb)
 
 
-class EmulatedInstrument(lb.EmulatedVISADevice):
+class LaggyInstrument(lb.EmulatedVISADevice):
     ''' A mock "instrument"
     with settings and states to
     demonstrate the process of setting
     up a measurement.
     '''
     class settings (lb.EmulatedVISADevice.settings):
-        whatever = lb.Int(5, help='whatever')
-
-    class state (lb.EmulatedVISADevice.state):
-        initiate_continuous = lb.Bool(command='INIT:CONT')
-        output_trigger = lb.Bool(command='OUTP:TRIG')
-        sweep_aperture = lb.Float(command='SWE:APER', min=20e-6, max=200e-3,
-                                  help='time (in s)')
-        frequency = lb.Float(command='SENS:FREQ', min=10e6,
-                             max=18e9, step=1e-3, help='center frequency (in Hz)')
+        delay = lb.Float(0, min=0, help='connection time')
+        fetch_time = lb.Float(0, min=0, help='fetch time')
+        fail_disconnect = lb.Bool(False, help='whether to raise DivideByZero on disconnect')
 
     def connect(self):
-        print(f'{self} connecting')
-        lb.sleep(1)
-        print(f'{self} ready')
-
-    def trigger(self, howlong):
-        ''' This would tell the instrument to start a measurement
+        self.logger.info(f'{self} connect start')        
+        lb.sleep(self.settings.delay)
+        self.logger.info(f'{self} connected')
+        
+    def fetch(self):
+        ''' Return the argument after a 1s delay
         '''
-        lb.sleep(howlong)
+        lb.logger.info(f'{self}.fetch start')
+        lb.sleep(self.settings.fetch_time)
+        lb.logger.info(f'{self}.fetch done')
+        return self.settings.fetch_time
+    
+    def dict(self):
+        return {self.settings.resource: self.settings.resource}
 
-    def fetch_trace(self, N=1001):
-        ''' Generate N points of junk data as a pandas series.
+    def none(self):
+        ''' Return None
         '''
-        values = np.random.uniform(-1, 1, N)
-        index = np.linspace(0, self.state.sweep_aperture, N)
-        series = pd.Series(values, index=index, name='Voltage (V)')
-        series.index.name = 'Time (s)'
-        lb.sleep(1)
-        return series
+        return None
 
     def disconnect(self):
-        #        if self.state.connected:
-        print(f'{self} disconnecting', threading.current_thread().getName())
-#            self.logger.info(f'disconnecting')
-        lb.sleep(1)
-        print(f'{self} disconnected', threading.current_thread().getName())
-        1 / 0
+        self.logger.info(f'{self} disconnected')
+        if self.settings.fail_disconnect:
+            1 / 0
 
+class Testbed(lb.Testbed):
+    def make(self):
+        self.inst1 = LaggyInstrument('a',delay=.18)
+        self.inst2 = LaggyInstrument('b',delay=.06)
+
+class Testbed2(lb.Testbed):
+    inst1 = LaggyInstrument('a', delay=.12)
+    inst2 = LaggyInstrument('b', delay=.06)
+    
+class TestCases(unittest.TestCase):
+    # Acceptable error in delay time meaurement
+    delay_tol = 0.06
+
+    @contextmanager
+    def assert_delay(self, expected_delay):
+        ''' Time a block of code using a with statement like this:
+    
+        >>> with stopwatch('sleep statement'):
+        >>>     time.sleep(2)
+        sleep statement time elapsed 1.999s.
+    
+        :param desc: text for display that describes the event being timed
+        :type desc: str
+        :return: context manager
+        '''   
+        t0 = time.perf_counter()
+        try:
+            yield
+        except:
+            raise
+        else:
+            elapsed = time.perf_counter()-t0
+            self.assertAlmostEqual(elapsed, expected_delay, delta=self.delay_tol)                
+            lb.logger.info(f'acceptable time elapsed {elapsed:0.3f}s'.lstrip())
+
+    def test_concurrent_connect_delay(self):
+        inst1 = LaggyInstrument(resource='fast', delay=0.16)
+        inst2 = LaggyInstrument(resource='slow', delay=0.26)
+
+        expect_delay = max((inst1.settings.delay,inst2.settings.delay))
+        with self.assert_delay(expect_delay):
+            with lb.concurrently(inst1, inst2):
+                self.assertEqual(inst1.state.connected, True)
+                self.assertEqual(inst2.state.connected, True)
+        self.assertEqual(inst1.state.connected, False)
+        self.assertEqual(inst2.state.connected, False)
+
+    def test_concurrent_fetch_delay(self):
+        inst1 = LaggyInstrument(resource='fast', fetch_time=0.26)
+        inst2 = LaggyInstrument(resource='slow', fetch_time=0.36)
+        
+        expect_delay = max((inst1.settings.fetch_time,inst2.settings.fetch_time))
+        with self.assert_delay(expect_delay):
+            with inst1, inst2:
+                self.assertEqual(inst1.state.connected, True)
+                self.assertEqual(inst2.state.connected, True)               
+                lb.concurrently(fetch1=inst1.fetch,
+                                fetch2=inst2.fetch)
+        
+    def test_concurrent_fetch_as_kws(self):
+        inst1 = LaggyInstrument(resource='fast')
+        inst2 = LaggyInstrument(resource='slow')
+        
+        with inst1, inst2:
+            self.assertEqual(inst1.state.connected, True)
+            self.assertEqual(inst2.state.connected, True)               
+            ret = lb.concurrently(**{inst1.settings.resource: inst1.fetch,
+                                     inst2.settings.resource: inst2.fetch})
+        self.assertIn(inst1.settings.resource, ret)
+        self.assertIn(inst2.settings.resource, ret)
+        self.assertEqual(ret[inst1.settings.resource],
+                         inst1.settings.fetch_time)
+        self.assertEqual(ret[inst2.settings.resource],
+                         inst2.settings.fetch_time)
+        
+    def test_concurrent_fetch_as_args(self):
+        inst1 = LaggyInstrument(resource='fast', fetch_time=.02)
+        inst2 = LaggyInstrument(resource='slow', fetch_time=.03)
+        
+        with inst1, inst2:
+            self.assertEqual(inst1.state.connected, True)
+            self.assertEqual(inst2.state.connected, True)               
+            ret = lb.concurrently(fetch_0=inst1.fetch,
+                                  fetch_1=inst2.fetch)
+        self.assertIn('fetch_0', ret)
+        self.assertIn('fetch_1', ret)
+        self.assertEqual(ret['fetch_0'],
+                         inst1.settings.fetch_time)
+        self.assertEqual(ret['fetch_1'],
+                         inst2.settings.fetch_time)
+        
+    def test_sequential_connect_delay(self):
+        inst1 = LaggyInstrument(resource='fast', delay=0.16)
+        inst2 = LaggyInstrument(resource='slow', delay=0.26)
+        
+        expect_delay = inst1.settings.delay + inst2.settings.delay
+        with self.assert_delay(expect_delay):
+            with lb.sequentially(inst1, inst2):
+                self.assertEqual(inst1.state.connected, True)
+                self.assertEqual(inst2.state.connected, True)
+        self.assertEqual(inst1.state.connected, False)
+        self.assertEqual(inst2.state.connected, False)
+
+    def test_sequential_fetch_delay(self):
+        inst1 = LaggyInstrument(resource='fast', fetch_time=0.26)
+        inst2 = LaggyInstrument(resource='slow', fetch_time=0.36)
+        
+        expect_delay = inst1.settings.fetch_time + inst2.settings.fetch_time
+        with self.assert_delay(expect_delay):
+            with inst1, inst2:
+                self.assertEqual(inst1.state.connected, True)
+                self.assertEqual(inst2.state.connected, True)               
+                lb.sequentially(fetch1=inst1.fetch,
+                                fetch2=inst2.fetch)
+        
+    def test_sequential_fetch_as_kws(self):
+        inst1 = LaggyInstrument(resource='fast', fetch_time=.002)
+        inst2 = LaggyInstrument(resource='slow', fetch_time=.003)
+        
+        with inst1, inst2:
+            self.assertEqual(inst1.state.connected, True)
+            self.assertEqual(inst2.state.connected, True)               
+            ret = lb.sequentially(**{inst1.settings.resource: inst1.fetch,
+                                     inst2.settings.resource: inst2.fetch})
+        self.assertIn(inst1.settings.resource, ret)
+        self.assertIn(inst2.settings.resource, ret)
+        self.assertEqual(ret[inst1.settings.resource],
+                         inst1.settings.fetch_time)
+        self.assertEqual(ret[inst2.settings.resource],
+                         inst2.settings.fetch_time)
+
+    def test_sequential_fetch_as_args(self):
+        inst1 = LaggyInstrument(resource='fast', fetch_time=.002)
+        inst2 = LaggyInstrument(resource='slow', fetch_time=.003)
+        
+        with inst1, inst2:
+            self.assertEqual(inst1.state.connected, True)
+            self.assertEqual(inst2.state.connected, True)               
+            ret = lb.sequentially(fetch_0=inst1.fetch,
+                                  fetch_1=inst2.fetch)
+        self.assertIn('fetch_0', ret)
+        self.assertIn('fetch_1', ret)
+        self.assertEqual(ret['fetch_0'],
+                         inst1.settings.fetch_time)
+        self.assertEqual(ret['fetch_1'],
+                         inst2.settings.fetch_time)
+        
+    def test_nested_connect_delay(self):
+        inst1 = LaggyInstrument(resource='a', delay=0.16)
+        inst2 = LaggyInstrument(resource='b', delay=0.26)
+        inst3 = LaggyInstrument(resource='c', delay=0.37)
+
+        expect_delay = inst1.settings.delay+\
+                       max((inst2.settings.delay,inst3.settings.delay))
+
+        with self.assert_delay(expect_delay):
+            with lb.sequentially(inst1, lb.concurrently(inst2, inst3)):
+                self.assertEqual(inst1.state.connected, True)
+                self.assertEqual(inst2.state.connected, True)
+                self.assertEqual(inst3.state.connected, True)
+        self.assertEqual(inst1.state.connected, False)
+        self.assertEqual(inst2.state.connected, False)
+        self.assertEqual(inst3.state.connected, False)
+
+    def test_nested_fetch_delay(self):
+        inst1 = LaggyInstrument(resource='a', fetch_time=0.16)
+        inst2 = LaggyInstrument(resource='b', fetch_time=0.26)
+        inst3 = LaggyInstrument(resource='c', fetch_time=0.37)
+
+        expect_delay = inst1.settings.fetch_time+\
+                       max((inst2.settings.fetch_time,inst3.settings.fetch_time))
+
+        with self.assert_delay(expect_delay):
+            with inst1, inst2, inst3:
+                ret = lb.sequentially(inst1.fetch,
+                                      lb.concurrently(sub_1=inst2.fetch,
+                                                      sub_2=inst3.fetch))
+
+    def test_sequential_nones(self):
+        inst1 = LaggyInstrument(resource='a', fetch_time=0.16)
+        inst2 = LaggyInstrument(resource='b', fetch_time=0.26)
+
+        with inst1, inst2:
+            ret = lb.sequentially(data1 = inst1.none,
+                                  data2 = inst2.none)
+        self.assertEqual(ret, {})
+        
+        with inst1, inst2:
+            ret = lb.sequentially(data1 = inst1.none,
+                                  data2 = inst2.none,
+                                  nones = True)
+        self.assertIn('data1', ret)
+        self.assertIn('data2', ret)
+        self.assertEqual(ret['data1'], None)
+        self.assertEqual(ret['data2'], None)
+
+    def test_concurrent_nones(self):
+        inst1 = LaggyInstrument(resource='a', fetch_time=0.16)
+        inst2 = LaggyInstrument(resource='b', fetch_time=0.26)
+
+        with inst1, inst2:
+            ret = lb.concurrently(data1 = inst1.none,
+                                  data2 = inst2.none,
+                                  nones = False)
+        self.assertEqual(ret, {})
+        
+        with inst1, inst2:
+            ret = lb.concurrently(data1 = inst1.none,
+                                  data2 = inst2.none,
+                                  nones = True)
+        self.assertIn('data1', ret)
+        self.assertIn('data2', ret)
+        self.assertEqual(ret['data1'], None)
+        self.assertEqual(ret['data2'], None)
+        
+    def test_testbed_instantiation(self):        
+        with self.assert_delay(0):
+            testbed = Testbed(concurrent=True)
+        
+
+        expected_delay = max(testbed.inst1.settings.delay,
+                             testbed.inst2.settings.delay)
+
+        self.assertEqual(testbed.inst1.state.connected, False)
+        self.assertEqual(testbed.inst2.state.connected, False)
+        
+        with self.assert_delay(expected_delay):
+            with testbed:
+                self.assertEqual(testbed.inst1.state.connected, True)
+                self.assertEqual(testbed.inst2.state.connected, True)
+
+        self.assertEqual(testbed.inst1.state.connected, False)
+        self.assertEqual(testbed.inst2.state.connected, False)
+
+    def test_flatten(self):        
+        inst1 = LaggyInstrument(resource='a')
+        inst2 = LaggyInstrument(resource='b')
+        
+        with inst1, inst2:
+            ret = lb.concurrently(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=True)
+        self.assertIn('a', ret)
+        self.assertIn('b', ret)
+        self.assertEqual(ret['a'], 'a')
+        self.assertEqual(ret['b'], 'b')
+
+        with inst1, inst2:
+            ret = lb.sequentially(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=True)
+        self.assertIn('a', ret)
+        self.assertIn('b', ret)
+        self.assertEqual(ret['a'], 'a')
+        self.assertEqual(ret['b'], 'b')
+        
+        with inst1, inst2:
+            ret = lb.concurrently(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=False)
+        self.assertIn('d1', ret)
+        self.assertIn('d2', ret)
+        self.assertEqual(ret['d1'], dict(a='a'))
+        self.assertEqual(ret['d2'], dict(b='b'))
+
+        with inst1, inst2:
+            ret = lb.sequentially(d1=inst1.dict, d2=inst2.dict,
+                                  flatten=False)
+        self.assertIn('d1', ret)
+        self.assertIn('d2', ret)
+        self.assertEqual(ret['d1'], dict(a='a'))
+        self.assertEqual(ret['d2'], dict(b='b'))
 
 if __name__ == '__main__':
-    lb.show_messages('info')
-
-    inst1 = EmulatedInstrument(resource='inst1')
-    inst2 = EmulatedInstrument(resource='inst2')
-#    with lb.concurrently(potato=inst1, moose=inst2):
-#        print('connected')
-#        lb.concurrently(inst1.fetch_trace, inst2.fetch_trace)
-# for i in range(10):
-# print('waiting...')
-# lb.sleep(1)
+    lb.show_messages('warning')
+    unittest.main()
+#    tests = TestCases()
+#    tests.test_flatten()
+#    testbed = Testbed()

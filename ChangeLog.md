@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
+- `lb.setter` and `lb.getter` for overloaded-style implementation of state traits
 ### Changed
 - Show warnings on trait assignment typos like `device.frequency = 5` instead of `device.state.frequency = 5`
 - `state` or `settings` traits can be defined directly in a `labbench.Device` class. They are automatically moved into `state` if they include a getter or setter, or otherwise into `settings`.

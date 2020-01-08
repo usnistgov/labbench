@@ -47,7 +47,7 @@ from traitlets import All, Undefined, TraitType
 
 __all__ = ['ConnectionError', 'DeviceException', 'DeviceNotReady', 'DeviceFatalError', 
            'DeviceConnectionLost', 'Undefined', 'All', 'DeviceStateError',
-           'UnimplementedState',
+           'UnimplementedState', 'setter', 'getter',
            'Int', 'Float', 'Unicode', 'Complex', 'Bytes', 'CaselessBytesEnum',
            'Bool', 'List', 'Dict', 'TCPAddress',
            'CaselessStrEnum', 'Device', 'list_devices', 'logger', 'CommandNotImplementedError',
@@ -891,6 +891,70 @@ def __set_state__(obj, trait, value):
         .format(cls=type(obj).__name__, attr=trait))
 
 
+def setter(func):
+    ''' Use this decorator to apply a setter function to a descriptor with the
+        same name. For example,
+        
+        ```python
+        class MyDevice(lb.Device):
+            param = lb.Int(min=0)
+            
+            @lb.getter
+            def param(self, value):
+                return self.write(f'GETMYPARAM {value}')
+        ```
+        
+        The descriptor needs to be defined before the setter function as shown.
+    '''
+    
+    curr_frame = inspect.currentframe()
+    frame = inspect.getouterframes(curr_frame)[1]
+    try:
+        try:
+            descriptor = frame.frame.f_locals[func.__name__]
+        except KeyError:
+            msg = f'to define a setter for {func.__name__}, define a descriptor above with the same name'
+            raise NameError(msg)
+        if not isinstance(descriptor, TraitMixIn):
+            raise TypeError('expected "{func.__name__}" to be a descriptor instance, but it is of type "{type(descriptor).__qualname__}"')
+        descriptor.__setter__ = func
+    finally:
+        del curr_frame, frame
+    return descriptor
+
+
+def getter(func):
+    ''' Use this decorator to apply a getter function to a descriptor with the
+        same name. For example,
+        
+        ```python
+        class MyDevice(lb.Device):
+            param = lb.Int(min=0)
+            
+            @lb.getter
+            def param(self):
+                return self.query('GETMYPARAM?')
+        ```
+        
+        The descriptor needs to be defined before the getter function as shown.
+    '''
+    
+    curr_frame = inspect.currentframe()
+    frame = inspect.getouterframes(curr_frame)[1]
+    try:
+        try:
+            descriptor = frame.frame.f_locals[func.__name__]
+        except KeyError:
+            msg = f'to define a setter for {func.__name__}, define a descriptor above with the same name'
+            raise NameError(msg)
+        if not isinstance(descriptor, TraitMixIn):
+            raise TypeError('expected "{func.__name__}" to be a descriptor instance, but it is of type "{type(descriptor).__qualname__}"')
+        descriptor.__getter__ = func
+    finally:
+        del curr_frame, frame
+    return descriptor
+
+
 class DeviceMetaclass(type):
     ''' Dynamically adjust the class documentation strings to include the traits
         defined in its settings. This way we get the documentation without
@@ -1005,7 +1069,7 @@ class Device(object, metaclass=DeviceMetaclass):
         :param **local_states: set the local state for each supplied state key and value
 
         .. note::
-            Use `Device` by subclassing it only if you are
+            Use `Device` by subXclassing it only if you are
             implementing a driver that needs a new type of backend.
 
             Several types of backends have already been implemented
@@ -1122,7 +1186,7 @@ class Device(object, metaclass=DeviceMetaclass):
         
         self.__warn_state_names__ = self.state.trait_names()
         self.__warn_settings_names__ = self.settings.trait_names()
-        
+
     def __setattr__(self, name, value):
         ''' Throw warnings if we suspect a typo on an attempt to assign to a state
             or settings trait
@@ -1250,19 +1314,22 @@ def list_devices(depth=1):
     from inspect import getouterframes, currentframe
     from sortedcontainers import sorteddict
 
-    f = getouterframes(currentframe())[depth]
-
-    ret = sorteddict.SortedDict()
-    for k, v in list(f.frame.f_locals.items()):
-        if isinstance(v, Device):
-            ret[k] = v
-
-    # If the context is a function, look in its first argument,
-    # in case it is a method. Search its class instance.
-    if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0:
-        obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]]
-        for k, v in obj.__dict__.items():
+    frame = currentframe()
+    f = getouterframes(frame)[depth]
+    try:
+        ret = sorteddict.SortedDict()
+        for k, v in list(f.frame.f_locals.items()):
             if isinstance(v, Device):
                 ret[k] = v
+    
+        # If the context is a function, look in its first argument,
+        # in case it is a method. Search its class instance.
+        if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0:
+            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]]
+            for k, v in obj.__dict__.items():
+                if isinstance(v, Device):
+                    ret[k] = v
+    finally:
+        del frame, f
 
     return ret

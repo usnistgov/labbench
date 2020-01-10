@@ -25,43 +25,48 @@
 # licenses.
 
 '''
-This implementation is deeply intertwined with low-level internals of
-traitlets and obscure details of the python object model. Consider reading
-the documentation closely and inheriting these objects instead of
-reverse-engineering this code.
+This implementation is deeply intertwined obscure details of the python object
+model. Consider starting with a close read of the documentation and exploring
+the objects in an interpreter instead of reverse-engineering this code.
 '''
 
-from . import util
+#from . import util
 
-from collections import OrderedDict
-from textwrap import dedent
+from typing import Any, Generic, T, NoReturn
+from warnings import warn, simplefilter
 
-import traitlets
+import builtins
+import functools
 import inspect
+import ipaddress
 import logging
-import copy
 import sys
 import traceback
-import warnings
-from traitlets import All, Undefined, TraitType
+import types
 
-__all__ = ['ConnectionError', 'DeviceException', 'DeviceNotReady', 'DeviceFatalError', 
+__all__ = ['DeviceException', 'DeviceNotReady', 'DeviceFatalError', 
            'DeviceConnectionLost', 'Undefined', 'All', 'DeviceStateError',
            'UnimplementedState', 'setter', 'getter',
            'Int', 'Float', 'Unicode', 'Complex', 'Bytes', 'CaselessBytesEnum',
            'Bool', 'List', 'Dict', 'TCPAddress',
            'CaselessStrEnum', 'Device', 'list_devices', 'logger', 'CommandNotImplementedError',
+           'observe', 'unobserve', 'BytesEnum', 'UnicodeEnum',
            ]
 
 logger = logging.getLogger('labbench')
 
+class LabbenchDeprecationWarning(DeprecationWarning):
+    pass
 
-class ConnectionError(traitlets.TraitError):
-    """ Failure on attempt to connect to a device
-    """
+simplefilter('once', LabbenchDeprecationWarning)
 
+All = Any
+Undefined = NoReturn
 
-class DeviceStateError(traitlets.TraitError):
+class ThisType(Generic[T]):
+    pass
+
+class DeviceStateError(IOError):
     """ Failure to get or set a state in `Device.state`
     """
     
@@ -94,713 +99,6 @@ class CommandNotImplementedError(NotImplementedError):
     """ A command that has been defined but not implemented
     """
     pass
-
-
-class HasTraits(traitlets.HasTraits):#, metaclass=MetaHasTraits):
-    '''
-        Base class for accessing the local and remote state
-        parameters of a device.  Normally,
-        a device driver implemented as a :class:`Device` subclass
-        should add driver-specific states by subclassing this class.
-
-        Instantiating :class:`Device` (or one of its subclasses)
-        automatically instantiate this class as well.
-    '''
-
-    _device = None
-    __attributes__ = dir(traitlets.HasTraits())
-
-    def __init__(self, device, *args, **kws):
-        self._device = device
-        super(traitlets.HasTraits, self).__init__(*args, **kws)
-
-#    def __getter__(self, trait):
-#        raise CommandNotImplementedError
-#
-#    def __setter__(self, trait, value):
-#        raise CommandNotImplementedError
-
-    @classmethod
-    def _update_doc(cls):
-        '''
-        :return: a dictionary of documentation for this class's traits
-        '''
-
-        if not hasattr(cls, '__rawdoc__'):
-            cls.__rawdoc__ = cls.__doc__
-
-        cls.__doc__ = str(cls.__rawdoc__) + '\n\ntraits:'
-        
-        traits = cls.class_traits()
-
-        for name in sorted(traits.keys()):
-            trait = traits[name]
-            cls.__doc__ += f'\n\n:{name}: {trait.__doc__}'
-
-
-class HasSettingsTraits(HasTraits):
-    @classmethod
-    def define(cls, **kws):
-        ''' Change default values of the settings in parent settings, without redefining the
-            full class. redefined according to each keyword argument. For example::
-
-                MyInstrumentClass.settings.define(parameter=7)
-
-            changes the default value of the `parameter` setting in `MyInstrumentClass.settings` to `7`.
-            This is a convenience function to avoid completely redefining `parameter` if it was defined
-            in a parent class of `MyInstrumentClass`.
-        '''
-
-        # Dynamically define the result to be a new subclass
-        newcls = type('settings', (cls,), {})
-
-        traits = cls.class_traits()
-
-        for k, v in kws.items():
-            if k not in traits:
-                raise traitlets.TraitError('cannot set default value of undefined trait {}'
-                                           .format(k))
-            trait = copy.copy(traits[k])
-            trait.default_value = v
-            setattr(newcls, k, trait)
-
-        return newcls
-
-    def __setattr__(self, key, value):
-        ''' Prevent silent errors that could result from typos in state names
-        '''
-        exists = hasattr(self, key)
-
-        # Need to check self.__attributes__ because traitlets.HasTraits.__init__ may not
-        # have created attributes it needs yet
-        if key not in self.__attributes__ and not exists:
-            name = str(self)[1:].split(' ', 1)[0]
-            msg = "{} has no '{}' setting defined".format(name, key)
-            raise AttributeError(msg)
-        if exists and not key.startswith('_') and callable(getattr(self, key)):
-            name = str(self)[1:].split(' ', 1)[0]
-            msg = "{} attribute '{}' is a method, not a setting. call as a function it instead"\
-                .format(name, key)
-            raise AttributeError(msg)
-        super(HasSettingsTraits, self).__setattr__(key, value)
-
-
-class HasStateTraits(HasTraits):
-    @classmethod
-    def setter(cls, func):
-        ''' Use this as a decorator to define a setter function for all traits
-            in this class. The setter should take two arguments: the instance
-            of the trait to get, and the value to set. It should perform any
-            operation needed to apply the given value to the trait's state
-            in `self._device`. One example is to send a command defined by
-            trait.command.
-
-            Any return value from the function is ignored.
-
-            A trait that has its own setter defined will ignore this
-            one.
-
-        '''
-        cls.__setter__ = func
-        return func
-
-    @classmethod
-    def getter(cls, func):
-        ''' Use this as a decorator to define a setter function for all traits
-            in this class. The getter should take one argument: the instance
-            of the trait to get. It should perform any
-            operation needed to retrieve the current value of the device state
-            corresponding to the supplied trait, using `self._device`.
-
-            One example is to send a command defined by
-            trait.command.
-
-            The function should return a value that is the state from the
-            device.
-
-            A trait that has its own getter defined will ignore this
-            one.
-        '''
-        cls.__getter__ = func
-        return func
-
-    @classmethod
-    def _register_callbacks(cls):
-        for name, trait in cls.class_traits().items():
-            trait._apply_state_hooks(cls)
-
-    def __setattr__(self, key, value):
-        ''' Prevent silent errors that could result from typos in state names
-        '''
-
-        exists = hasattr(self, key)
-
-        # Need to check self.__attributes__ because traitlets.HasTraits.__init__ may not
-        # have created attributes it needs yet
-        if key not in self.__attributes__ and not exists:
-            name = str(self)[1:].split(' ', 1)[0]
-            msg = "{} has no '{}' state definition".format(name, key)
-            raise AttributeError(msg)
-        if exists and not key.startswith('_') and callable(getattr(self, key)):
-            name = str(self)[1:].split(' ', 1)[0]
-            msg = "{} attribute '{}' is a method, not a state. call as a function it instead"\
-                .format(name, key)
-            raise AttributeError(msg)
-        super(HasStateTraits, self).__setattr__(key, value)
-
-defaults = dict(default_value=Undefined, read_only=False, write_only=False,
-                cache=False, allow_none=False, remap={})
-
-class TraitMixIn(object):
-    ''' Includes added mix-in features for device control into traitlets types:
-        - If the instance is an attribute of a HasStateTraits class, there are hooks for
-          live synchronization with the remote device by sending or receiving data.
-          Implement with one of
-          * `getter` and/or `setter` keywords in __init__ to pass in a function;
-          *  metadata passed in through the `command` keyword, which the parent
-             HasStateTraits instance may use in its own `getter` and `setter`
-             implementations
-        - Adds metadata for autogenerating documentation (see `doc_attrs`)
-
-        Order is important - the class should inherit TraitMixIn first and the
-        desired traitlet type second.
-
-        class LabbenchType(TraitMixIn,traitlets.TraitletType):
-            pass
-    '''
-
-    doc_attrs = 'command', 'read_only', 'write_only', 'remap', 'cache'
-    default_value = traitlets.Undefined
-    write_only = False
-    cache = False
-    read_only_if_connected = False
-
-    def __init__(self, default_value=Undefined, allow_none=False, read_only=None, help=None,
-                 write_only=None, cache=None, command=None, #getter=None, setter=None,
-                 remap={}, **kwargs):
-
-        # Identify the underlying class from Trait
-        for c in inspect.getmro(self.__class__):
-            if issubclass(c, TraitType) \
-                    and not issubclass(c, TraitMixIn):
-                self._parent = c
-                break
-        else:
-            raise Exception(
-                'could not identify any parent Trait class')
-
-        # Work around a bug in traitlets.List as of version 4.3.2
-        if isinstance(self, traitlets.Container)\
-           and default_value is not Undefined:
-            self.default_value = default_value
-
-        super(TraitMixIn, self).__init__(default_value=default_value,
-                                         allow_none=allow_none,
-                                         read_only=read_only,
-                                         help=help, **kwargs)
-
-        if read_only == 'connected':
-            read_only = False
-            self.read_only_if_connected = True
-        if write_only is not None:
-            self.write_only = write_only
-        if cache is not None:
-            self.cache = cache
-        if not isinstance(remap, dict):
-            raise TypeError('remap must be a dictionary')
-
-        self.command = command
-        self.__last = None
-
-#        self.tag(setter=setter,
-#                 getter=getter)
-        self.tag(setter=None, getter=None)
-
-        self.remap = remap
-        self.remap_inbound = dict([(v, k) for k, v in remap.items()])
-
-        self.info_text = self.__doc__ = self._make_doc()
-
-    def _make_doc(self):
-        attr_pairs = []
-        for k in self.doc_attrs:
-            v = getattr(self, k)
-
-            for def_k, def_v in defaults.items():
-                if k == def_k and v == def_v:
-                    # Don't doc the default values
-                    break
-            else:
-                if v is not None:
-                    attr_pairs.append(f'{k}={repr(v)}')
-            # if (k=='default_value' and v == Undefined)\
-            #    or (k=='read_only' and v == False)\
-            #    or (k=='write_only' and v == False)\
-            #    or (k=='cache' and v == False)\
-            #    or (k=='allow_none' and v==False):
-            #     continue
-            # if v is None\
-            #    or (k=='remap' and v=={}):
-            #     continue
-            # if (k=='default_value' and v!=Undefined)\
-            #    and v is not None\
-            #    and not (k=='allow_none' and v==False)\
-            #    and not (k=='remap' and v=={}):
-            
-#            p = {'name': type(self).__name__,
-#                      'attrs': ,
-#                      'help': self.help}
-        sig = f'`{type(self).__name__}'\
-              f'({",".join(attr_pairs)})`'
-        if self.help:
-              sig += f': {self.help}'
-        sig = sig.replace('*', r'\*')
-        
-        return sig        
-
-    def class_init(self, cls, name):
-        ''' Work through the order of precedence to set `cls.metadata['getter']`
-            and `cls.metadata['setter']`, or raise `UnimplementedState` if
-            neither is defined.
-            
-            This changes `self.write_only` and `self.read_only` to reflect
-            the implementation.
-        '''
-        
-        super().class_init(cls, name)
-        
-        if not issubclass(cls, HasStateTraits):
-            return
-        state_cls = cls
-        
-        setter = None
-        getter = None
-        
-        # First, take default implementation that comes from state
-        if self.command is not None:
-            setter = getattr(state_cls, '__setter__', None)
-            getter = getattr(state_cls, '__getter__', None)
-        
-        # Override the default with trait-specific implementation if they exist
-        if callable(self.metadata['setter']):
-            setter = self.metadata['setter']
-        if callable(self.metadata['getter']):
-            getter = self.metadata['getter']            
-
-        self.metadata['getter'] = getter
-        self.metadata['setter'] = setter
-
-    def instance_init(self, parent_obj):
-        super().instance_init(parent_obj)
-        self._update_access(parent_obj.__class__)
-        
-    def _update_access(self, parent_cls):
-        ''' Check whether 
-        '''
-
-        if not issubclass(parent_cls, HasStateTraits):
-            return
-
-        getter = self.metadata['getter']
-        setter = self.metadata['setter']
-        if getter is None and setter is None:
-            clsname = parent_cls.__qualname__
-            msg = f'resolved neither a getter nor a setter for {self} in {clsname}'
-            raise UnimplementedState(msg)        
-        if getter is None:
-            self.write_only = True
-            self.read_only = False
-        elif setter is None:
-            self.write_only = False
-            self.read_only = True
-        else:
-            self.read_only = False
-            self.write_only = False
-        
-            
-
-    def get(self, obj, cls=None):
-        ''' Overload the traitlet's get method. If `obj` is a HasSettingsTraits, call HasTraits.get
-            like normal. Otherwise, this is a HasStateTraits, and inject a call to do a `set` from the remote device
-        '''
-        # If this is Device.settings instead of Device.state, do simple Trait.get,
-        # skipping any communicate with the device
-        if isinstance(obj, HasSettingsTraits):
-            return self._parent.get(self, obj, cls)
-        elif not isinstance(obj, HasStateTraits):
-            raise TypeError('obj (of type {}) must be an instance of HasSettingsTraits or HasStateTraits'
-                            .format(type(obj)))
-
-        # If self.write_only, bail if we haven't cached the value
-        if self.write_only and self.__last is None:
-            raise traitlets.TraitError(
-                'tried to get state value, but it is write-only and has not been set yet')
-
-        # If self.write_only or we are caching, return a cached value
-        elif self.write_only or (self.cache and self.__last is not None):
-            return self.__last
-
-        # Get the value from the device
-        new = self.metadata['getter'](obj._device, self)
-
-        # Remap the resulting value.
-        new = self.remap_inbound.get(new, new)
-
-        # Apply the value with the parent traitlet class.
-        self._parent.set(self, obj, new)
-        return self._parent.get(self, obj, cls)
-
-    def set(self, obj, value):
-        ''' Overload the traitlet's get method to inject a call to a
-            method to set the state on a remote device.
-        '''
-        assert isinstance(obj, HasTraits)
-
-        # If this is Device.settings instead of Device.state, do simple Trait.set,
-        # skipping any communicate with the device
-        if isinstance(obj, HasSettingsTraits):
-            return self._parent.set(self, obj, value)
-
-        # Trait.set already implements a check for self.read_only, so we don't
-        # do that here.
-
-        # Make sure the (potentially remapped) value meets criteria defined by
-        # this traitlet subclass
-        value = self.validate(obj, value)
-
-        # Remap the resulting value to the remote value
-        value = self.remap.get(value, value)
-
-        # Set the value on the device
-        self.metadata['setter'](obj._device, self, value)
-
-        # Apply the value to the traitlet, saving the cached value if necessary
-        rd_only, self.read_only = self.read_only, False
-        self._parent.set(self, obj, value)
-        if self.cache or self.write_only:
-            self.__last = self._parent.get(self, obj, self._parent)
-        self.read_only = rd_only
-
-    def setter(self, func, *args, **kws):
-        self.metadata['setter'] = lambda device, trait, value: func(device, value)
-        return func
-
-    def getter(self, func, *args, **kws):
-        self.metadata['getter'] = lambda device, trait: func(device)
-        return func
-
-
-class Int(TraitMixIn, traitlets.CInt):
-    ''' Trait for an integer value, with type and bounds checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-        :param min: lower bound for the value
-        :param max: upper bound for the value
-    '''
-    doc_attrs = ('min', 'max') + TraitMixIn.doc_attrs
-
-
-class CFLoatSteppedTraitlet(traitlets.CFloat):
-    ''' Trait for a quantized floating point value, with type and bounds checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-        :param min: lower bound for the value
-        :param max: upper bound for the value
-        :param step: resolution of the floating point values                
-    '''    
-    def __init__(self, *args, **kws):
-        self.step = kws.pop('step', None)
-        super(CFLoatSteppedTraitlet, self).__init__(*args, **kws)
-
-
-class Float(TraitMixIn, CFLoatSteppedTraitlet):
-    ''' Trait for a floating point value, with type and bounds checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-        :param min: lower bound for the value
-        :param max: upper bound for the value        
-    '''    
-
-    doc_attrs = ('min', 'max', 'step') + TraitMixIn.doc_attrs
-
-    def validate(self, obj, value):
-        value = super(Float, self).validate(obj, value)
-
-        # Round to nearest increment of step
-        if self.step:
-            value = round(value / self.step) * self.step
-        return value
-
-
-class Unicode(TraitMixIn, traitlets.CUnicode):
-    ''' Trait for a Unicode string value, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''    
-
-    default_value = ''
-
-
-class Complex(TraitMixIn, traitlets.CComplex):
-    ''' Trait for a complex numeric value, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''    
-
-
-class Bytes(TraitMixIn, traitlets.CBytes):
-    ''' Trait for a byte string value, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''    
-
-class TCPAddress(TraitMixIn, traitlets.TCPAddress):
-    ''' Trait for a (address, port) TCP address tuple value, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''    
-
-
-class List(TraitMixIn, traitlets.List):
-    ''' Trait for a python list value, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''
-
-    default_value = []
-
-
-class EnumBytesTraitlet(traitlets.CBytes):
-    ''' Trait for an enumerated list of valid byte string values, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''
-
-    def __init__(self, values=[], case_sensitive=False, **kws):
-        if len(values) == 0:
-            raise ValueError('Must define at least one enum value')
-
-        self.values = [bytes(v) for v in values]
-        self.case_sensitive = case_sensitive
-        if case_sensitive:
-            self.values = [v.upper() for v in self.values]
-
-        self.info_text = 'castable to ' + \
-                         ', '.join([repr(v) for v in self.values]) + \
-                         ' (case insensitive)' if not case_sensitive else ''
-
-        super(EnumBytesTraitlet, self).__init__(**kws)
-
-    def validate(self, obj, value):
-        try:
-            value = bytes(value)
-        except BaseException:
-            self.error(obj, value)
-        if self.case_sensitive:
-            value = value.upper()
-        if value not in self.values:
-            self.error(obj, value)
-        return value
-
-    def devalidate(self, obj, value):
-        return self.validate(obj, value)
-
-
-class CaselessBytesEnum(TraitMixIn, EnumBytesTraitlet):
-    ''' Trait for an enumerated list of valid case-insensitive byte string values, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-        :param values: An iterable of valid byte strings to accept
-        :param case_sensitive: Whether to be case_sensitive
-    '''
-
-    doc_attrs = ('values', 'case_sensitive') + TraitMixIn.doc_attrs
-
-
-class CaselessStrEnum(TraitMixIn, traitlets.CaselessStrEnum):
-    ''' Trait for an enumerated list of valid case-insensitive unicode string values, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-        :param values: An iterable of valid unicode strings to accept
-    '''
-
-    doc_attrs = ('values',) + TraitMixIn.doc_attrs
-
-
-class Dict(TraitMixIn, traitlets.Dict):
-    ''' Trait for a python dict value, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''
-
-
-# class BoolTraitlet(traitlets.CBool):
-    # def __init__(self, trues=[True], falses=[False], **kws):
-    #     self._trues = [v.upper() if isinstance(v, str) else v for v in trues]
-    #     self._falses = [v.upper() if isinstance(v, str) else v for v in falses]
-    #     super(BoolTraitlet, self).__init__(**kws)
-    #
-    # def validate(self, obj, value):
-    #     if isinstance(value, str):
-    #         value = value.upper()
-    #     if value in self._trues:
-    #         return True
-    #     elif value in self._falses:
-    #         return False
-    #     elif not isinstance(value, numbers.Number):
-    #         raise ValueError(
-    #             'Need a boolean or numeric value to convert to integer, but given {} instead' \
-    #                 .format(repr(value)))
-    #     try:
-    #         return bool(value)
-    #     except:
-    #         self.error(obj, value)
-    #
-    # # Convert any castable value
-    # # to the first entry in self._trues or self._falses
-    # def devalidate(self, obj, value):
-    #     if self.validate(obj, value):
-    #         return self._trues[0]
-    #     else:
-    #         return self._falses[0]
-    #
-    # default_value = False
-
-
-class Bool(TraitMixIn, traitlets.CBool):
-    ''' Trait for a python boolean, with type checking.
-
-        :param default_value: initial value (in `settings` only, not `state`)
-        :param allow_none: whether to allow pythonic `None` to represent a null value
-        :param read_only: True if this should not accept a set (write) operation
-        :param write_only: True if this should not accept a get (read) operation (in `state` only, not `settings`)
-        :param cache: True if this should only read from the device once, then return that value in future calls (in `state` only, not `settings`)
-        :param getter: Function or other callable (no arguments) that retrieves the value from the remote device, or None (in `state` only, not `settings`)
-        :param setter: Function or other callable (one `value` argument) that sets the value from the remote device, or None (in `state` only, not `settings`)
-        :param remap: A dictionary {python_value: device_representation} to use as a look-up table that transforms python representation into the format expected by a device
-    '''
-
-    default_value = False
-
-
-class DisconnectedBackend(object):
-    ''' "Null Backend" implementation to raises an exception with discriptive
-        messages on attempts to use a backend before a Device is connected.
-    '''
-
-    def __init__(self, dev):
-        ''' dev may be a class or an object for error feedback
-        '''
-        self.__dev__ = dev
-
-    def __getattribute__(self, key):
-        try:
-            return object.__getattribute__(self, key)
-        except AttributeError:
-            if inspect.isclass(self.__dev__):
-                name = self.__dev__.__name__
-            else:
-                name = type(self.__dev__).__name__
-            raise ConnectionError(
-                'need to connect first to access backend.{key} in {clsname} instance (resource={resource})'
-                .format(key=key, clsname=name, resource=self.__dev__.settings.resource))
-
-    def __repr__(self):
-        return 'DisconnectedBackend()'
-
-
-class DeviceLogAdapter(logging.LoggerAdapter):
-    """
-    This example adapter expects the passed in dict-like object to have a
-    'connid' key, whose value in brackets is prepended to the log message.
-    """
-
-    def process(self, msg, kwargs):
-        return '%s - %s' % (self.extra['device'], msg), kwargs
 
 
 def wrap(obj, to_name, from_func):
@@ -860,6 +158,652 @@ def trim(docstring):
     return '\n'.join(trimmed)
 
 
+def list_devices(depth=1):
+    ''' Look for Device instances, and their names, in the calling
+        code context (depth == 1) or its callers (if depth in (2,3,...)).
+        Checks locals() in that context first.
+        If no Device instances are found there, search the first
+        argument of the first function argument, in case this is
+        a method in a class.
+    '''
+    from inspect import getouterframes, currentframe
+    from sortedcontainers import sorteddict
+
+    frame = currentframe()
+    f = getouterframes(frame)[depth]
+    try:
+        ret = sorteddict.SortedDict()
+        for k, v in list(f.frame.f_locals.items()):
+            if isinstance(v, Device):
+                ret[k] = v
+    
+        # If the context is a function, look in its first argument,
+        # in case it is a method. Search its class instance.
+        if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0:
+            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]]
+            for k, v in obj.__dict__.items():
+                if isinstance(v, Device):
+                    ret[k] = v
+    finally:
+        del frame, f
+
+    return ret
+
+def dynamic_init ():
+    ''' Wrapper function to call __init__ with adjusted function signature
+    '''
+
+    # The signature has been dynamically replaced and is unknown. Pull it in
+    # via locals() instead. We assume we're inside a __init__(self, ...) call.
+    items = dict(locals())
+    self = items.pop(next(iter(items.keys())))    
+    self.__init_wrapped__(**items)
+
+def wrap_dynamic_init(cls, fields: list, defaults: dict, positional:int = None,
+                      annotations:dict = {}):
+    ''' Replace cls.__init__ with a wrapper function with an explicit
+        call signature, replacing the actual call signature that can be
+        dynamic __init__(self, *args, **kws) call signature.
+        
+        :fields: iterable of names of each call signature argument
+        :
+    '''
+    # Is the existing cls.__init__ already a dynamic_init wrapper?
+    reuse = hasattr(cls.__init__, '__dynamic__')
+    
+    defaults = tuple(defaults.items())
+    
+    if positional is None:
+        positional = len(fields)
+
+    # Generate a code object with the adjusted signature
+    code = dynamic_init.__code__
+    code = types.CodeType(1+positional, # co_argcount
+                          len(fields)-positional, # co_kwonlyargcount
+                          len(fields)+1, # co_nlocals
+                          code.co_stacksize,
+                          code.co_flags,
+                          code.co_code,
+                          code.co_consts,
+                          code.co_names,
+                          ('self',)+tuple(fields),
+                          code.co_filename,
+                          code.co_name,
+                          code.co_firstlineno,
+                          code.co_lnotab,
+                          code.co_freevars,
+                          code.co_cellvars)
+
+    # Generate the new wrapper function and its signature
+    __globals__ = getattr(cls.__init__, '__globals__', builtins.__dict__)
+    wrapper = types.FunctionType(code,
+                                 __globals__,
+                                 cls.__init__.__name__)
+
+    wrapper.__doc__ = cls.__init__.__doc__
+    wrapper.__qualname__ = cls.__init__.__qualname__
+    wrapper.__defaults__ = tuple((v for k,v in defaults[:positional]))
+    wrapper.__kwdefaults__ = dict(((k,v) for k,v in defaults[positional:]))
+    wrapper.__annotations__ = annotations
+    wrapper.__dynamic__ = True
+
+    if reuse:
+        cls.__init__, cls.__init_wrapped__ = wrapper, cls.__init_wrapped__
+    else:
+        cls.__init__, cls.__init_wrapped__ = wrapper, cls.__init__
+
+
+class TraitMeta(type):
+    ''' Apples the specified type to the 'default_value' annotation
+    '''
+    def __init__(cls, name, bases, namespace):
+        super().__init__(name, bases, namespace)
+
+        # Complete annotation dictionary updated with the parent
+        annots = dict(getattr(cls.__mro__[1], '__annotations__',{}),
+                      **getattr(cls, '__annotations__', {}))
+        
+        cls.__annotations__ = dict(annots)
+        
+        annots = dict(((k,cls.type) if v is ThisType else (k,v) \
+                       for k,v in annots.items()))
+        
+        cls.__defaults__ = dict((k,getattr(cls,k)) for k in annots.keys())
+        
+        wrap_dynamic_init(cls, tuple(annots.keys()), cls.__defaults__, 1,
+                          annots)
+
+
+class Trait(metaclass=TraitMeta):
+    ''' Base class for Traits. These include hooks to perform  HasTraits
+        to 
+    '''
+    type = None
+
+    # These annotations define the arguments to __init__ @dataclass above
+    default_value: ThisType = None
+    command: Any = None
+    help: str = None
+    allow_none: bool = True
+    read_only: bool = False
+    write_only: bool = False
+    cache: bool = False
+    remap: dict = {}
+    label: str = ''
+    
+    # TODO: Decide whether this is better tagged inside the metadata attribute,
+    # or whether cache implies this
+    is_metadata: bool = False
+
+    __setter__ = None
+    __getter__ = None
+    
+    def __init__ (self, *args, **kws):
+        for k,v in kws.items():
+            setattr(self, k, v)           
+        self.previous = Undefined
+        self.metadata = {}
+
+    def __set_name__ (self, owner_cls, name):
+        self.__owner_cls__ = owner_cls
+        self.name = name
+
+    def __set__ (self, owner, value):
+        if self.read_only:
+            raise AttributeError(f"{self} is read-only")
+        if value is not None or not self.allow_none:
+            value = self.validate(value)
+            value = self.cast_from(value)
+
+        if self.__setter__ is not None:
+            self.__setter__(owner.__device__, value)
+        else:
+           owner.__set_state__(self, value)
+        owner.__notify__(self.name, value, 'set')
+        self.previous = value
+
+    def __get__ (self, owner, owner_cls=None):
+        # owner is None until the parent class has not been instantiated.
+        # allow direct access to this object until then.       
+        if self.write_only:
+            raise AttributeError(f"{self} is write-only")
+        
+        # Do caching
+        if self.cache and self.previous is not Undefined:
+            return self.previous
+        
+        if owner is None:
+            return self
+
+        if self.__getter__ is not None:
+            value = self.__getter__(owner.__device__)            
+        else:
+            value = owner.__get_state__(self)
+
+        if value is not None or not self.allow_none:
+            value = self.cast_from(value)
+            if value != self.validate(value):
+                owner.__device__.warning(f"received value '{repr(value)}' failed validation for '{repr(self)}'")
+        owner.__notify__(self.name, value, 'get')
+        self.previous = value
+        return value
+
+    def __repr__(self):
+        params = self.parameters(False)
+        params = (f'{k}={repr(getattr(self,k))}' for k in params\
+                  if getattr(self,k) != getattr(self.__class__, k))
+        params = ','.join(params)
+        ret = f'{self.__class__.__qualname__}({params})'
+
+        return ret
+    
+    def doc(self):
+        return f"`{repr(self)}` {self.help}"
+
+    __str__ = __repr__
+    
+    def __call__(self, func):
+        if func.__code__.co_argcount == 2:
+            return self.getter(func)
+        elif func.__code__.co_argcount == 3:
+            return self.setter(func)
+        else:
+            raise ValueError(f"@{self.name} must decorate a function with 2 arguments (a getter) or 3 arguments (a setter)")
+    
+    def setter(self, func):
+        self.__setter__ = func
+        return func
+    
+    def getter(self, func):
+        self.__getter__ = func
+        return func
+    
+    def tag(self, **kws):
+        self.metadata.update(kws)
+        return self
+
+    def cast_from(self, value):
+        ''' Convert a value from an unknown type to self.type.
+        '''
+        if self.type is None:
+            raise NotImplementedError(f'need to set {repr(self).type} to define the type')
+        return self.type(value)
+    
+    def cast_to(self, value):
+        ''' TODO: Perhaps a Device class should provide
+            this kind of method? This is a placeholder in the meantime
+            that simply returns the given value.
+        '''
+        return value
+
+    def validate(self, value):
+        ''' Override this method to implement bounds checking. 
+        
+            :value: the value to be validated (same type as self.type)
+        '''
+        return value
+        
+    def parameters(self, with_defaults=True):
+        ret = {}
+        for key in self.__defaults__:
+            v = getattr(self, key)
+            if v is not self.__defaults__[key]:
+                ret[key] = v
+        try:
+            del ret['help']
+        except KeyError:
+            pass
+        return ret
+
+
+class BoundedNumber(Trait):#, metaclass=NumberTraitMeta):
+    min: ThisType = None
+    max: ThisType = None
+    step: ThisType = None
+    
+    def validate(self, value):
+        # Convert type
+        value = self.cast_from(value)
+        
+        # Check bounds once it's a numerical type
+        if self.max is not None and value > self.max:
+            raise ValueError(f'{value} > the upper bound {self.max}')
+        if self.min is not None and value < self.min:
+            raise ValueError(f'{value} < the lower bound {self.min}')
+        if self.step is not None:
+            mod = value % self.step
+            if mod < self.step/2:
+                return value - mod
+            else:
+                return value - (mod-self.step)                
+        return value
+
+
+class Int(BoundedNumber):
+    type = int
+
+
+class Float(BoundedNumber):
+    type = float    
+
+
+class Complex(Trait):
+    type = complex
+
+
+class Bool(Trait):
+    type = bool
+
+    def cast_from(self, value):
+        pass
+
+            
+class Unicode(Trait):
+    type = str
+
+    def cast_from(self, value):
+        print('cast from ', value)
+        # Assume it is a mistake if we're left with the generic object.__str__
+        # output, which looks like '<__main__.T object at 0x000001EDB05176A0>'
+        if type(value).__str__ is object.__str__:
+            raise TypeError(f"object of type '{value.__class__.__qualname__}' does not support descriptive string conversion")
+        return self.type(value)
+
+    
+class Bytes(Trait):
+    type = bytes
+
+
+class Dict(Trait):
+    type = dict
+
+
+class List(Trait):
+    type = list
+    
+
+class EnumString(Trait):
+    values: list = None
+    case: bool = True
+
+    def validate(self, value):
+        if self.values is None:
+            raise ValueError(f"must set 'values' to use {self}")
+        if self.case_sensitive:
+            value = value.upper()
+            valid = (v.upper() for v in self.values)
+        else:
+            valid = self.values
+
+        if value not in valid:
+            raise ValueError(f"value '{value}' not one of the enum values '({','.join(self.values)})'")
+            
+        return value
+
+
+class BytesEnum(EnumString):
+    type = bytes
+
+
+class UnicodeEnum(EnumString):
+    type = str
+
+
+class CaselessBytesEnum(BytesEnum):
+    case: bool = False
+    
+    def validate(self, value):
+        warn('CaselessBytesEnum is deprecated - use BytesEnum(case=False)',
+             LabbenchDeprecationWarning)
+        return super().validate(value)
+
+
+class CaselessStrEnum(BytesEnum):
+    case: bool = False
+    
+    def validate(self, value):
+        warn('CaselessStrEnum is deprecated - use UnicodeEnum(case=False)',
+             LabbenchDeprecationWarning)    
+        return super().validate(value)
+
+
+class TCPAddress(Unicode):
+    def validate(self, value):        
+        ipaddress.ip_address(value)
+        return super().validate(value)        
+
+    
+def observe(obj, handler, **kws):
+    if 'names' in kws or 'type' in kws:
+        warn('the "names" and "type" arguments are deprecated',
+             LabbenchDeprecationWarning)
+    if isinstance(obj, HasTraits):
+        obj.__notify_list__.append(handler)
+    elif isinstance(obj, Device):
+        observe(obj.state, handler)
+        observe(obj.settings, handler)
+    else:
+        raise TypeError('object to observe must be a Device, State, or Settings instance')
+
+
+def unobserve(obj, handler):
+    if isinstance(obj, HasTraits):
+        obj.__notify_list__.remove(handler)
+    elif isinstance(obj, Device):
+        unobserve(obj.state, handler)
+        unobserve(obj.settings, handler)
+    else:
+        raise TypeError('object to observe must be a Device, State, or Settings instance')        
+
+
+def setter(func):
+    ''' Use this decorator to apply a setter function to a trait with the
+        same name. For example,
+        
+        ```python
+        class MyDevice(lb.Device):
+            param = lb.Int(min=0)
+            
+            @lb.getter
+            def param(self, value):
+                return self.write(f'GETMYPARAM {value}')
+        ```
+        
+        The trait needs to be defined before the setter function as shown.
+    '''
+    
+    frame = inspect.currentframe()
+    try:
+        try:
+            trait = frame.f_back.f_locals[func.__name__]
+        except KeyError:
+            msg = f'to define a setter for {func.__name__}, define a trait above with the same name'
+            raise NameError(msg)
+        if not isinstance(trait, Trait):
+            raise TypeError('expected "{func.__name__}" to be a trait instance, but it is of type "{type(trait).__qualname__}"')
+        trait.__setter__ = func
+    finally:
+        del frame
+    return trait
+
+def getter(func):
+    ''' Use this decorator to apply a getter function to a trait with the
+        same name. For example,
+        
+        ```python
+        class MyDevice(lb.Device):
+            param = lb.Int(min=0)
+            
+            @lb.getter
+            def param(self):
+                return self.query('GETMYPARAM?')
+        ```
+        
+        The trait needs to be defined before the getter function as shown.
+    '''
+    frame = inspect.currentframe()
+    try:
+        try:
+            trait = frame.f_back.f_locals[func.__name__]
+        except KeyError:
+            msg = f'to define a setter for {func.__name__}, define a trait above with the same name'
+            raise NameError(msg)
+        if not isinstance(trait, Trait):
+            raise TypeError('expected "{func.__name__}" to be a trait instance, but it is of type "{type(trait).__qualname__}"')
+        trait.__getter__ = func
+    finally:
+        del frame
+    return trait
+
+
+class HasTraitsMeta(type):
+    def __init__(cls, name, bases, namespace):
+        super().__init__(name, bases, namespace)
+        cls.__traits__ = dict(((k,v) for k,v in cls.__dict__.items()\
+                                    if isinstance(v,Trait)))
+
+    def __iter__ (cls):
+        return iter(dict(cls.__traits__).items())        
+        
+    def __getattr__ (cls, name):
+        if name == 'class_traits':
+            clsname = cls.__qualname__
+            warn(f"{clsname}.class_traits() is deprecated - use dict({clsname})",
+                  LabbenchDeprecationWarning)
+            func = lambda: dict(cls.__traits__)
+            return func    
+        elif name == 'getter':
+            def func(f):
+                cls.__get_state__ = f                
+            clsname = cls.__qualname__
+            warn(f"@{clsname}.getter() is deprecated, use lb.getter() instead",
+                  LabbenchDeprecationWarning)
+            return func
+        elif name == 'setter':
+            def func(f):
+                cls.__set_state__ = f                
+            clsname = cls.__qualname__
+            warn(f"@{clsname}.setter() is deprecated, use @lb.setter() instead",
+                  LabbenchDeprecationWarning)
+            return func
+        
+        else:
+            raise AttributeError(f"'{cls.__qualname__}' object has no attribute '{name}'")
+
+
+class HasTraits(metaclass=HasTraitsMeta):
+    __notify_list__ = []
+
+    def __init__ (self):
+        self.__post_init__()
+
+    def __post_init__(self):
+        self.__notify_list__ = []
+
+    def __setattr__ (self, name, value):
+        ''' Raise an exception for new attributes to avoid assignment mistakes
+        '''
+        if name.startswith('_') or name in self.__traits__: 
+            super().__setattr__(name, value)
+        else:
+            clsname = self.__class__.__qualname__
+            raise AttributeError(f"'{clsname}' object has no attribute '{name}'")
+
+    def __getattr__ (self, attr):
+        ''' Special cases for some deprecated attributes from the Traitlets days
+        '''
+        if attr == 'observe':
+            clsname = self.__class__.__qualname__
+            warn(f"{clsname}.observe(handler) is deprecated - use lb.observe({clsname},handler)",
+                  LabbenchDeprecationWarning)
+            func = lambda handler: observe(self, handler)
+            functools.update_wrapper(func, observe)
+            return func
+        elif attr == 'unobserve':
+            clsname = self.__class__.__qualname__
+            warn(f"{clsname}.unobserve(handler) is deprecated - lb.observe({clsname},handler)",
+                  LabbenchDeprecationWarning)
+            func = lambda handler: unobserve(self, handler)
+            functools.update_wrapper(func, unobserve)
+            return func
+        elif attr == 'traits':
+            clsname = self.__class__.__qualname__
+            warn(f"{clsname}.traits() is deprecated, use dict({clsname}) instead",
+                  LabbenchDeprecationWarning)
+            func = lambda: dict(self.__traits__)
+            functools.update_wrapper(func, self.__iter__)
+            return func
+        else:
+            clsname = self.__class__.__qualname__
+            raise AttributeError(f"'{clsname}' object has no attribute '{attr}'")
+        
+    def __iter__ (self):
+        return iter(dict(self.__traits__).items())
+    
+    def __getitem__ (self, name):
+        ''' Get the instance of the Trait named class (as opposed to
+            __getattr__, which fetches its value).
+        '''
+        return self.__traits__[name]
+    
+    def __dir__ (self):
+        return iter(self.__traits__.keys())
+
+    def __set_state__ (self, trait, value):
+        pass
+
+    def __get_state__ (self, trait):
+        return trait.default_value if trait.previous is Undefined else trait.previous
+
+    def __notify__ (self, name, value, type):
+        msg = dict(new=value,
+                   old=self[name].previous,
+                   owner=self,
+                   name=name,
+                   type=type)
+
+        for handler in self.__notify_list__:
+            handler(dict(msg))
+
+    @classmethod
+    def __new_trait__ (cls, name, trait):
+        setattr(cls, name, trait)
+        cls.__traits__[name] = trait
+        trait.__set_name__(cls, name)
+
+
+class Settings(HasTraits):
+    @classmethod
+    def define(cls, **kws):
+        for k,v in kws.items():
+            if k in cls.__traits__:
+                setattr(cls, k, v)
+            else:
+                raise AttributeError(f"no trait {k} in '{cls.__qualname__}'")
+        return cls
+
+
+class State(HasTraits):
+    def __init__ (self, owner):
+        self.__device__ = owner
+        self.__post_init__()
+
+    def __set_state__ (self, trait, value):        
+        if trait.command is None:
+            raise AttributeError(f'define {trait} with the command argument to set the state by command')
+        if self.__device__.__set_state__ is None:
+            raise AttributeError(f'implement {self.__owner.__qualname__}.__get_state__ to set the state')
+            
+        super().__set_state__(trait, value)
+        
+        self.__device__.__set_state__(trait.command, value)
+        
+    def __get_state__ (self, trait):
+        super().__get_state__(trait)
+        if trait.command is None:
+            raise AttributeError(f'define {trait} with the command argument to get the state by command')
+        if self.__device__.__get_state__ is None:
+            raise AttributeError(f'must set trait.command to implement a setter by commmand')
+            
+        return self.__device__.__get_state__(trait.command)
+
+
+class DisconnectedBackend(object):
+    ''' "Null Backend" implementation to raises an exception with discriptive
+        messages on attempts to use a backend before a Device is connected.
+    '''
+
+    def __init__(self, dev):
+        ''' dev may be a class or an object for error feedback
+        '''
+        self.__dev__ = dev
+
+    def __getattribute__(self, key):
+        try:
+            return object.__getattribute__(self, key)
+        except AttributeError:
+            if inspect.isclass(self.__dev__):
+                name = self.__dev__.__name__
+            else:
+                name = type(self.__dev__).__name__
+            raise ConnectionError(
+                'need to connect first to access backend.{key} in {clsname} instance (resource={resource})'
+                .format(key=key, clsname=name, resource=self.__dev__.settings.resource))
+
+    def __repr__(self):
+        return 'DisconnectedBackend()'
+
+
+class DeviceLogAdapter(logging.LoggerAdapter):
+    """
+    This example adapter expects the passed in dict-like object to have a
+    'connid' key, whose value in brackets is prepended to the log message.
+    """
+
+    def process(self, msg, kwargs):
+        return '%s - %s' % (self.extra['device'], msg), kwargs
+
+
 def __get_state__(obj, trait):
     ''' Implement a default state getter in a sub for all traits in
         `self.state`. This is usually implemented in a subclass by keys
@@ -891,170 +835,78 @@ def __set_state__(obj, trait, value):
         .format(cls=type(obj).__name__, attr=trait))
 
 
-def setter(func):
-    ''' Use this decorator to apply a setter function to a descriptor with the
-        same name. For example,
-        
-        ```python
-        class MyDevice(lb.Device):
-            param = lb.Int(min=0)
-            
-            @lb.getter
-            def param(self, value):
-                return self.write(f'GETMYPARAM {value}')
-        ```
-        
-        The descriptor needs to be defined before the setter function as shown.
-    '''
-    
-    curr_frame = inspect.currentframe()
-    frame = inspect.getouterframes(curr_frame)[1]
-    try:
-        try:
-            descriptor = frame.frame.f_locals[func.__name__]
-        except KeyError:
-            msg = f'to define a setter for {func.__name__}, define a descriptor above with the same name'
-            raise NameError(msg)
-        if not isinstance(descriptor, TraitMixIn):
-            raise TypeError('expected "{func.__name__}" to be a descriptor instance, but it is of type "{type(descriptor).__qualname__}"')
-        descriptor.__setter__ = func
-    finally:
-        del curr_frame, frame
-    return descriptor
-
-
-def getter(func):
-    ''' Use this decorator to apply a getter function to a descriptor with the
-        same name. For example,
-        
-        ```python
-        class MyDevice(lb.Device):
-            param = lb.Int(min=0)
-            
-            @lb.getter
-            def param(self):
-                return self.query('GETMYPARAM?')
-        ```
-        
-        The descriptor needs to be defined before the getter function as shown.
-    '''
-    
-    curr_frame = inspect.currentframe()
-    frame = inspect.getouterframes(curr_frame)[1]
-    try:
-        try:
-            descriptor = frame.frame.f_locals[func.__name__]
-        except KeyError:
-            msg = f'to define a setter for {func.__name__}, define a descriptor above with the same name'
-            raise NameError(msg)
-        if not isinstance(descriptor, TraitMixIn):
-            raise TypeError('expected "{func.__name__}" to be a descriptor instance, but it is of type "{type(descriptor).__qualname__}"')
-        descriptor.__getter__ = func
-    finally:
-        del curr_frame, frame
-    return descriptor
-
-
-class DeviceMetaclass(type):
-    ''' Dynamically adjust the class documentation strings to include the traits
-        defined in its settings. This way we get the documentation without
-        error-prone copy and paste.
+class DeviceMeta(type):
+    ''' Makes automatic adjustments to the Device class when it (or any of its
+        subclasses) is defined
     '''
     def __init__(cls, name, bases, namespace):
-        def autocomplete_wrapper(func, args, kws):
-            all_ = ','.join(args + [k + '=' + k for k in kws.keys()])
-            kws = dict(kws, __func__=func)
-            expr = "lambda {a},*args,**kws: __func__({a},*args,**kws)".format(
-                a=all_)
-            wrapper = eval(expr, kws, {})
-            for attr in '__name__', '__doc__', '__module__', '__qualname__':
-                setattr(wrapper, attr, getattr(func, attr))
-            return wrapper
+        super().__init__(name, bases, namespace)
 
-        def autosubclass(name, expected_parent_cls):
+        def add_state_traits():
+            ''' Add traits defined in the Device class to its .state
+            '''
+            for k,v in dict(cls.__dict__).items():
+                if isinstance(v, Trait):
+                    cls.state.__new_trait__(k, v)
+                    delattr(cls, k)
+
+        def add_settings_annotations():
+            ''' Add annotations defined in the Device class to its .settings
+            '''
+            
+            if not hasattr(cls, '__annotations__'):
+                return
+
+            for name, trait in getattr(cls, '__annotations__', {}).items():
+                cls.settings.__new_trait__(name, trait)
+            del cls.__annotations__
+                   
+
+        def subclass(name, expected_parent_cls):
             ''' Make cls.state and cls.settings subclasses of the parent class
                 state or settings if they are not already.
             '''
             member_cls = getattr(cls, name)
             
-            if len(member_cls.__mro__) == 2\
-               and not isinstance(member_cls, expected_parent_cls):
-                   parent_member_cls = getattr(cls.__mro__[1],name)
-                   new_member_cls = type(member_cls.__name__,
-                                         (parent_member_cls,),
-                                         dict(member_cls.__dict__))
-                   setattr(cls, name, new_member_cls)                   
-
-        super(DeviceMetaclass, cls).__init__(name, bases, namespace)
-
-        # Make cls.state and cls.settings subclasses of the
-        # parent class attributes, if they are not defined as subclasses
-        autosubclass('state', HasStateTraits)
-        autosubclass('settings', HasSettingsTraits)
-               
-        # Apply any default state setter and getter defined in the class
-        if cls.__get_state__ is not __get_state__:
-            cls.state.getter(cls.__get_state__)
-        if cls.__set_state__ is not __set_state__:
-            cls.state.setter(cls.__set_state__)
-
-        # Move any top-level traits into `state` and `settings`
-        for name, attr in dict(cls.__dict__).items():
-            if isinstance(attr, TraitMixIn):
-                try:
-                    attr._update_access(cls.state)
-                except UnimplementedState:
-                    setattr(cls.settings, name, attr)
-                    delattr(cls, name) 
-                else:
-                    setattr(cls.state, name, attr)
-                    delattr(cls, name)
+            if not issubclass(member_cls, expected_parent_cls):
+                raise TypeError(f'"{member_cls}" must be a subclass of "{expected_parent_cls}"')
+                
+            new_member_cls = type(member_cls.__name__,
+                                  (member_cls,)+member_cls.__bases__,
+                                  dict(member_cls.__dict__))
             
-        cls.state.setup_class(cls.state.__dict__)
+            new_member_cls.__qualname__ = cls.__qualname__ + '.' + new_member_cls.__name__
+            setattr(cls, name, new_member_cls)
 
-        # Update documentation
-        cls.state._update_doc()
-        cls.settings._update_doc()
+        def update_doc():
+            if cls.__doc__:
+                cls.__doc__ = trim(cls.__doc__)
+            else:
+                cls.__doc__ = ''
+                
+            if not cls.__init__.__doc__:
+                cls.__init__.__doc__ = ''
+    
+            txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k,t in cls.settings))
 
-        traits = cls.settings.class_traits()
+            cls.__init__.__doc__ += '\n\n' + txt
+            cls.__doc__ += '\n\n'+txt
 
-        # Skip read-only traits
-        traits = OrderedDict([(n, t)
-                              for n, t in traits.items() if not t.read_only])
+        subclass('state', State)
+        subclass('settings', Settings)
 
-        kws = OrderedDict(resource=traits['resource'].default_value)
-        for name, trait in traits.items():
-            if not trait.read_only:
-                kws[name] = trait.default_value
+        add_settings_annotations()
 
-        wrapped = cls.__init__
-        cls.__init__ = autocomplete_wrapper(cls.__init__, ['self'], kws)
-        #bind_wrapper_to_class(cls, '__init__')
-        import functools
-        functools.update_wrapper(cls.__init__, wrapped)
-        cls.__init__.__doc__ = dedent(
-            cls.__init__.__doc__) if cls.__init__.__doc__ else ''
+        defaults = dict(((k,v.default_value) for k,v in cls.settings if not v.read_only))
+        types = dict(((k,v.type) for k,v in cls.settings if not v.read_only))
 
-        if cls.__doc__ is None:
-            cls.__doc__ = ''
-        else:
-            cls.__doc__ = trim(cls.__doc__)
+        wrap_dynamic_init(cls, tuple(defaults.keys()), defaults, 1, types)
 
-        for name, trait in traits.items():
-#            ttype, text = trait.info_text.split(': ',1)
-#            line = '\n\n'+trait._make_doc()
-#            param `{type}` {name}:\n{info}'\
-#                   .format(help=trait.help,
-#                           type=ttype,
-#                           info=text,
-#                           name=name)
-
-            text = f'\n\n:{name}: {trait._make_doc()}'
-            cls.__init__.__doc__ += text
-            cls.__doc__ += text
+        add_state_traits()
+        update_doc()
 
 
-class Device(object, metaclass=DeviceMetaclass):
+class Device(metaclass=DeviceMeta):
     r'''`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
         driver.
@@ -1065,15 +917,12 @@ class Device(object, metaclass=DeviceMetaclass):
         * test state management for easy test logging and extension to UI
         * a degree automatic stylistic consistency between drivers
 
-        :param resource: resource identifier, with type and format determined by backend (see specific subclasses for details)
-        :param **local_states: set the local state for each supplied state key and value
-
         .. note::
-            Use `Device` by subXclassing it only if you are
-            implementing a driver that needs a new type of backend.
+            This `Device` base class is a boilerplate object. It has convenience
+            functions for device control, but no implementation.
 
-            Several types of backends have already been implemented
-            as part of labbench:
+            Implementation of protocols with general support for broad classes
+            of devices are provided by other labbench Device subclasses:
 
                 * VISADevice exposes a pyvisa backend for VISA Instruments
                 * CommandLineWrapper exposes a threaded pipes backend for command line tools
@@ -1083,50 +932,58 @@ class Device(object, metaclass=DeviceMetaclass):
             (and others). If you are implementing a driver that uses one of
             these backends, inherit from the corresponding class above, not
             `Device`.
-    '''
-
-    class settings(HasSettingsTraits):
-        """ Container for settings traits in a Device.
-
-            These settings
-            are stored only on the host; setting or getting these values do not
-            trigger live updates (or any communication) with the device. These
-            define connection addressing information, communication settings,
-            and options that only apply to implementing python support for the
-            device.
-
-            The device uses this container to define the keyword options supported
-            by its __init__ function. These are applied when you instantiate the device.
-            After you instantiate the device, you can still change the setting with::
-
-                Device.settings.resource = 'insert-your-address-string-here'
-        """
-
-        resource = Unicode(allow_none=True,
-                           help='Addressing information needed to make a connection to a device. Type and format are determined by the subclass implementation')
-        concurrency_support = Bool(default_value=True, read_only=True,
-                                   help='Whether this backend supports threading')
-
-    class state(HasStateTraits):
-        ''' Container for state traits in a Device. Getting or setting state traits
-            triggers live updates: communication with the device to get or set the
-            value on the Device. Therefore, getting or setting state traits
-            needs the device to be connected.
-
-            To set a state value inside the device, use normal python assigment::
-
-                device.state.parameter = value
-                
-            To get a state value from the device, you can also use it as a normal python variable::
             
-                variable = device.state.parameter + 1
-        '''
-        
-        pass
+            
+        Settings
+        ************************
+    '''
+    
+    """ Settings traits.
 
+        These are stored only on the host; setting or getting these values do not
+        trigger live updates (or any communication) with the device. These
+        define connection addressing information, communication settings,
+        and options that only apply to implementing python support for the
+        device.
+
+        The device uses this container to define the keyword options supported
+        by its __init__ function. These are applied when you instantiate the device.
+        After you instantiate the device, you can still change the setting with::
+
+            Device.settings.resource = 'insert-your-address-string-here'
+    """
+    settings = Settings
+    
+    resource: \
+        Unicode(allow_none=True,
+                help='URI for device connection, formatted according to subclass implementation')
+        
+    concurrency_support: \
+        Bool(True, read_only=True,
+             help='`True` if this backend supports threading')
+
+    ''' Container for state traits in a Device. Getting or setting state traits
+        triggers live updates: communication with the device to get or set the
+        value on the Device. Therefore, getting or setting state traits
+        needs the device to be connected.
+
+        To set a state value inside the device, use normal python assigment::
+
+            device.state.parameter = value
+            
+        To get a state value from the device, you can also use it as a normal python variable::
+        
+            variable = device.state.parameter + 1
+    '''
+    state = State
+    connected = Bool(help='whether the :class:`Device` instance is connected')
+
+    @getter
+    def connected(self):
+        return not isinstance(self.backend, DisconnectedBackend)
 
     backend = DisconnectedBackend(None)
-    ''' .. attribute::state is the backend that controls communication with the device.
+    ''' .. this attribute is some reference to a controller for the device.
         it is to be set in `connect` and `disconnect` by the subclass that implements the backend.
     '''
 
@@ -1149,32 +1006,23 @@ class Device(object, metaclass=DeviceMetaclass):
     __set_state__ = __set_state__
     __warn_state_names__ = []
     __warn_settings_names__ = []
+    
+    def __init__ (self, **kws):
+        ''' Apply initial settings here, then invoke `connect()` to use the driver.
+        '''
+        self.settings = self.settings()
+        for k,v in kws.items():
+            setattr(self.settings, k, v)
+        self.state = self.state(self)
 
-    def __init__(self, resource=None, **settings):
         self.__wrapped__ = {}
 
         # Instantiate state, and observe connection state
         self.settings = self.settings(self)
 
         self.__imports__()
-
+        
         self.backend = DisconnectedBackend(self)
-
-        # Set local settings according to local_states
-        all_settings = self.settings.traits()
-
-        for k, v in dict(settings, resource=resource).items():
-            if k == 'resource' and resource is None:
-                continue
-            if k not in all_settings:
-                raise KeyError('tried to set initialize setting {k}, but it is not defined in {clsname}.settings'
-                               .format(k=repr(k), clsname=type(self).__name__))
-            setattr(self.settings, k, v)
-
-        self.__params = ['resource={}'.format(repr(self.settings.resource))] + \
-                        ['{}={}'.format(k, repr(v))
-                         for k, v in settings.items()]
-
         self.logger = DeviceLogAdapter(logger, {'device': repr(self)})
 
         # Instantiate state now. It needs to be here, after settings are fully
@@ -1194,10 +1042,10 @@ class Device(object, metaclass=DeviceMetaclass):
         if not hasattr(self, name):
             if name in self.__warn_state_names__:
                 msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait state.{name} instead?'
-                warnings.warn(msg)
+                warn(msg)
             if name in self.__warn_settings_names__:
                 msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait settings.{name} instead?'
-                warnings.warn(msg)
+                warn(msg)
         super().__setattr__(name, value)
 
     def __getattr__(self, name):
@@ -1206,17 +1054,16 @@ class Device(object, metaclass=DeviceMetaclass):
         '''
         if name in self.__warn_state_names__:
             msg = f'{self}: did you mean to access the trait state.{name} instead?'
-            warnings.warn(msg)                   
+            warn(msg)                   
         if name in self.__warn_settings_names__:
             msg = f'{self}: did you mean to access the trait in settings.{name} instead?'
-            warnings.warn(msg)
+            warn(msg)
         raise AttributeError(f"'{self.__class__.__qualname__}' object has no attribute '{name}'")
 
     def __connect_wrapper__(self, *args, **kws):
-        ''' A wrapper for the connect() method. It works through the
-            method resolution order of self.__class__, starting by
-            calling labbench.Device.connect() and working down the
-            class heirarchy
+        ''' A wrapper for the connect() method. It steps through the
+            method resolution order of self.__class__ and invokes each connect()
+            method, working down from labbench.Device and working down
         '''
         if self.state.connected:
             self.logger.debug('{} already connected'.format(repr(self)))
@@ -1247,7 +1094,7 @@ class Device(object, metaclass=DeviceMetaclass):
         for disconnect in methods:
             try:
                 disconnect(self)
-            except BaseException as e:
+            except BaseException:
                 all_ex.append(sys.exc_info())
 
         # Print tracebacks for any suppressed exceptions
@@ -1294,42 +1141,4 @@ class Device(object, metaclass=DeviceMetaclass):
         return '{}({})'.format(type(self).__name__,
                                repr(self.settings.resource))
 
-    connected = Bool(help='whether the :class:`Device` instance is connected')
-
-    @connected.getter
-    def __(self):
-        return not isinstance(self.backend, DisconnectedBackend)
-
     __str__ = __repr__
-
-
-def list_devices(depth=1):
-    ''' Look for Device instances, and their names, in the calling
-        code context (depth == 1) or its callers (if depth in (2,3,...)).
-        Checks locals() in that context first.
-        If no Device instances are found there, search the first
-        argument of the first function argument, in case this is
-        a method in a class.
-    '''
-    from inspect import getouterframes, currentframe
-    from sortedcontainers import sorteddict
-
-    frame = currentframe()
-    f = getouterframes(frame)[depth]
-    try:
-        ret = sorteddict.SortedDict()
-        for k, v in list(f.frame.f_locals.items()):
-            if isinstance(v, Device):
-                ret[k] = v
-    
-        # If the context is a function, look in its first argument,
-        # in case it is a method. Search its class instance.
-        if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0:
-            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]]
-            for k, v in obj.__dict__.items():
-                if isinstance(v, Device):
-                    ret[k] = v
-    finally:
-        del frame, f
-
-    return ret

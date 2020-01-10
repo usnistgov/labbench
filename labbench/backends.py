@@ -66,15 +66,14 @@ class CommandLineWrapper(core.Device):
         queued stdout.
     """
 
-    class settings(core.Device.settings):
-        binary_path = core.Unicode(
-            core.Undefined, is_metadata=True, help='path to the file to run')
-        timeout = core.Float(1, min=0, is_metadata=True,
-                             help='Timeout (sec) after disconnect is called before killing the process')
-        arguments = core.List(
-            [], help='list of command line arguments to pass into the executable')
-        arguments_min = core.Int(0, min=0, read_only=True,
-                                 help='minimum number of extra command line arguments to pass to the executable')
+    binary_path: core.Unicode(
+        core.Undefined, is_metadata=True, help='path to the file to run')
+    timeout: core.Float(1, min=0, is_metadata=True,
+                         help='Timeout (sec) after disconnect is called before killing the process')
+    arguments: core.List(
+        [], help='list of command line arguments to pass into the executable')
+    arguments_min: core.Int(0, min=0, read_only=True,
+                             help='minimum number of extra command line arguments to pass to the executable')
 
     def __imports__(self):
         global sp
@@ -534,18 +533,14 @@ class LabviewSocketInterface(core.Device):
         TCP/IP ports where communication is to take place.
     """
 
-    class state(core.Device.state):
-        pass
-
-    class settings(core.Device.settings):
-        resource = core.Unicode(default_value='127.0.0.1',
-                                help='IP address where the LabView VI listens for a socket')
-        tx_port = core.Int(default_value=61551, help='TX port to send to the LabView VI')
-        rx_port = core.Int(default_value=61552, help='TX port to send to the LabView VI')
-        delay = core.Float(default_value=1, help='time to wait after each state write or query')
-        timeout = core.Float(default_value=2,
-                             help='maximum time to wait for a reply after sending before raising an Exception')
-        rx_buffer_size = core.Int(default_value=1024)
+    resource: core.TCPAddress(default_value='127.0.0.1',
+                              help='IP address where the LabView VI listens for a socket')
+    tx_port: core.Int(default_value=61551, help='TX port to send to the LabView VI')
+    rx_port: core.Int(default_value=61552, help='TX port to send to the LabView VI')
+    delay: core.Float(default_value=1, help='time to wait after each state write or query')
+    timeout: core.Float(default_value=2,
+                         help='maximum time to wait for a reply after sending before raising an Exception')
+    rx_buffer_size = core.Int(default_value=1024)
 
     def connect(self):
         self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
@@ -628,24 +623,23 @@ class SerialDevice(core.Device):
         how the state descriptors set and get operations.
     """
 
-    class settings(core.Device.settings):
-        # Connection settings
-        timeout = core.Float(2, min=0, is_metadata=True,
-                             help='Max time to wait for a connection before raising TimeoutError.')
-        write_termination = core.Bytes('\n', is_metadata=True,
-                             help='Termination character to send after a write.')
-        baud_rate = core.Int(9600, min=1, is_metadata=True,
-                             help='Data rate of the physical serial connection.')
-        parity = core.Bytes('N', is_metadata=True,
-                            help='Parity in the physical serial connection.')
-        stopbits = core.Float(1, min=1, max=2, step=0.5, is_metadata=True,
-                            help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
-        xonxoff = core.Bool(False, is_metadata=True,
-                            help='Set `True` to enable software flow control.')
-        rtscts = core.Bool(False, is_metadata=True,
-                            help='Whether to enable hardware (RTS/CTS) flow control.')
-        dsrdtr = core.Bool(False, is_metadata=True,
-                            help='Whether to enable hardware (DSR/DTR) flow control.')
+    # Connection settings
+    timeout: core.Float(2, min=0, is_metadata=True,
+                        help='Max time to wait for a connection before raising TimeoutError.')
+    write_termination: core.Bytes('\n', is_metadata=True,
+                        help='Termination character to send after a write.')
+    baud_rate: core.Int(9600, min=1, is_metadata=True,
+                         help='Data rate of the physical serial connection.')
+    parity: core.Bytes('N', is_metadata=True,
+                       help='Parity in the physical serial connection.')
+    stopbits: core.Float(1, min=1, max=2, step=0.5, is_metadata=True,
+                        help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
+    xonxoff: core.Bool(False, is_metadata=True,
+                       help='Set `True` to enable software flow control.')
+    rtscts: core.Bool(False, is_metadata=True,
+                      help='Whether to enable hardware (RTS/CTS) flow control.')
+    dsrdtr: core.Bool(False, is_metadata=True,
+                      help='Whether to enable hardware (DSR/DTR) flow control.')
 
     def __imports__(self):
         global serial
@@ -735,15 +729,14 @@ class SerialLoggingDevice(SerialDevice):
         from the serial port.
     """
 
-    class settings(SerialDevice.settings):
-        poll_rate = core.Float(0.1, min=0, is_metadata=True,
-                               help='Data retreival rate from the device (in seconds)')
-        data_format = core.Bytes('', is_metadata=True,
-                                 help='Data format metadata')
-        stop_timeout = core.Float(0.5, min=0, is_metadata=True,
-                                  help='Delay after a call to `stop` before terminating the runloop thread')
-        max_queue_size = core.Int(100000, min=1, is_metadata=True,
-                                  help='Number of bytes to allocate in the data retreival buffer')
+    poll_rate: core.Float(0.1, min=0, is_metadata=True,
+                           help='Data retreival rate from the device (in seconds)')
+    data_format: core.Bytes('', is_metadata=True,
+                             help='Data format metadata')
+    stop_timeout: core.Float(0.5, min=0, is_metadata=True,
+                              help='Delay after a call to `stop` before terminating the runloop thread')
+    max_queue_size: core.Int(100000, min=1, is_metadata=True,
+                              help='Number of bytes to allocate in the data retreival buffer')
 
     def configure(self):
         """ This is called at the beginning of the logging thread that runs
@@ -848,11 +841,10 @@ class TelnetDevice(core.Device):
         the state set and get operations (as appropriate).
     """
 
-    class settings(core.Device.settings):
-        # Connection settings
-        timeout = core.Float(2, min=0, is_metadata=True,
-                             help='maximum time to wait for a connection before ')
-        port = core.Int(23, min=1, is_metadata=True)
+    # Connection settings
+    timeout: core.Float(2, min=0, is_metadata=True,
+                         help='maximum time to wait for a connection before ')
+    port: core.Int(23, min=1, is_metadata=True)
 
     def __imports__(self):
         global Telnet
@@ -895,22 +887,29 @@ class VISADevice(core.Device):
         automatic state logging, or to build a UI.
     """
 
-    class state(core.Device.state):
-        identity = core.Unicode(read_only=True, command='*IDN', cache=True, is_metadata=True,
-                                help='identity string reported by the instrument')
-        options = core.Unicode(read_only=True, command='*OPT', cache=True, is_metadata=True,
-                               help='options reported by the instrument')
-        status_byte = core.Dict(read_only=True, command='*STB',
-                                help='VISA status byte reported by the instrument')
+    read_termination: core.Unicode('\n', read_only='connected',
+                                    help='termination character to indicate end of message on receive from the instrument')
+    write_termination: core.Unicode('\n', read_only='connected',
+                                     help='termination character to indicate end of message in messages sent to the instrument')
 
-    class settings(core.Device.settings):
-        read_termination = core.Unicode('\n', read_only='connected',
-                                        help='termination character to indicate end of message on receive from the instrument')
-        write_termination = core.Unicode('\n', read_only='connected',
-                                         help='termination character to indicate end of message in messages sent to the instrument')
-
-    __opc = False  # Whether or not to append ;*OPC to each call to write()
-    _rm = None
+    # States    
+    identity = core.Unicode(read_only=True, command='*IDN', cache=True, is_metadata=True,
+                            help='identity string reported by the instrument')
+    options = core.Unicode(read_only=True, command='*OPT', cache=True, is_metadata=True,
+                           help='options reported by the instrument')
+    status_byte = core.Dict(read_only=True, command='*STB',
+                            help='VISA status byte reported by the instrument')
+    @core.getter
+    def status_byte(self):
+        code = int(self.query('*STB?'))
+        return {'error queue not empty': bool(code & 0b00000100),
+                'questionable state': bool(code & 0b00001000),
+                'message available': bool(code & 0b00010000),
+                'event status flag': bool(code & 0b00100000),
+                'service request': bool(code & 0b01000000),
+                'master status summary': bool(code & 0b01000000),
+                'operating': bool(code & 0b10000000),
+                }    
 
     @classmethod
     def __imports__(cls):
@@ -1108,32 +1107,20 @@ class VISADevice(core.Device):
             return exctype == pyvisa.errors.VisaIOError \
                 and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
 
-    @state.status_byte.getter
-    def _(self):
-        code = int(self.query('*STB?'))
-        return {'error queue not empty': bool(code & 0b00000100),
-                'questionable state': bool(code & 0b00001000),
-                'message available': bool(code & 0b00010000),
-                'event status flag': bool(code & 0b00100000),
-                'service request': bool(code & 0b01000000),
-                'master status summary': bool(code & 0b01000000),
-                'operating': bool(code & 0b10000000),
-                }
 
-
-class EmulatedVISADevice(core.Device):
+class EmulatedVISADevice(VISADevice):
     """ Act as a VISA device without dispatching any visa commands
     """
 
     generators = {core.Bool: lambda trait: str(np.random.choice(trait._trues + trait._falses)),
                   core.Bytes: lambda trait: 'text',
                   core.Float: lambda trait: str(np.random.uniform(low=trait.min, high=trait.max)), }
-
-    class state(VISADevice.state):
-        pass
-
-    class settings(VISADevice.settings):
-        pass
+#
+#    class state(VISADevice.state):
+#        pass
+#
+#    class settings(VISADevice.settings):
+#        pass
 
 
         # #        # Spoof the remote responses for some built-in VISA items
@@ -1178,11 +1165,10 @@ class Win32ComDevice(core.Device):
         this thread support wrapper is applied to the dispatched Win32Com object.
     """
 
-    class settings(core.Device.settings):
-        com_object = core.Unicode('', is_metadata=True,
-                                  help='the win32com object string')  # Must be a module
-        concurrency_support = core.Bool(default_value=True, read_only=False, is_metadata=True,
-                                        help='whether this :class:`Device` implementation supports threading')
+    com_object: core.Unicode('', is_metadata=True,
+                             help='the win32com object string')  # Must be a module
+    concurrency_support: core.Bool(default_value=True, read_only=False, is_metadata=True,
+                                   help='whether this :class:`Device` implementation supports threading')
 
     def __imports__(self):
         global win32com

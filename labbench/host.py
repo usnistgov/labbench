@@ -24,6 +24,9 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
+import time
+t0 = time.time()
+
 from . import core
 import datetime
 import os
@@ -31,7 +34,6 @@ import socket
 import logging
 import sys
 import io
-import time
 import pandas as pd
 
 __all__ = ['Host', 'Email', 'LogStderr']
@@ -85,19 +87,18 @@ class Email(core.Device):
         in the main body. Otherwise, the message is a success message in the
         subject line. Stderr is also sent.
     '''
-    class settings(core.Device.settings):
-        resource = core.TCPAddress(('smtp.nist.gov', 25),
-                                   help='smtp server to use')
-        sender = core.Unicode('myemail@nist.gov',
-                              help='email address of the sender')
-        recipients = core.List(['myemail@nist.gov'],
-                               help='list of email addresses of recipients')
-        success_message = core.Unicode('Test finished normally',
-                                       allow_none=True,
-                                       help='subject line for test success emails, or None to suppress success emails')
-        failure_message = core.Unicode('Exception ended test early',
-                                       allow_none=True,
-                                       help='subject line for test failure emails, or None to suppress success emails')
+    resource: core.TCPAddress(('smtp.nist.gov', 25),
+                               help='smtp server to use')
+    sender: core.Unicode('myemail@nist.gov',
+                          help='email address of the sender')
+    recipients: core.List(['myemail@nist.gov'],
+                           help='list of email addresses of recipients')
+    success_message: core.Unicode('Test finished normally',
+                                   allow_none=True,
+                                   help='subject line for test success emails, or None to suppress success emails')
+    failure_message: core.Unicode('Exception ended test early',
+                                   allow_none=True,
+                                   help='subject line for test failure emails, or None to suppress success emails')
 
     def _send(self, subject, body):
         sys.stderr.flush()
@@ -168,18 +169,6 @@ class Host(core.Device):
     log_format = '%(asctime)s.%(msecs).03d %(levelname)10s %(message)s'
     time_format = '%Y-%m-%d %H:%M:%S'
 
-    class state(core.Device.state):
-        time = core.Unicode(read_only=True)
-        log = core.Unicode(read_only=True).tag(relational=True)
-        git_commit_id = core.Unicode(read_only=True, is_metadata=True)
-        git_remote_url = core.Unicode(
-            read_only=True, is_metadata=True, cache=True)
-        git_browse_url = core.Unicode(read_only=True, is_metadata=True)
-        hostname = core.Unicode(read_only=True, is_metadata=True, cache=True)
-
-#    def __init__ (self, *args, **kws):
-#        super(Host, self).__init__(*args, **kws)
-
     def connect(self):
         ''' The host setup method tries to commit current changes to the tree
         '''
@@ -203,6 +192,7 @@ class Host(core.Device):
         else:
             self.repo.index.commit('start of measurement')
 
+    @classmethod
     def __imports__(self):
         global git, pip
         import git
@@ -246,23 +236,26 @@ class Host(core.Device):
     #                 'git_browse_commit_url': browse_url})
     #
     #     return ret
-
-    @state.time.getter
-    def get_time(self):
+    
+    time = core.Unicode(read_only=True)   
+    @core.getter
+    def time(self):
         ''' Get a timestamp of the current time
         '''
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
-    @state.log.getter
-    def get_log(self):
+    log = core.Unicode(read_only=True).tag(relational=True)
+    @core.getter
+    def log(self):
         ''' Get the current host log contents.
         '''
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
 
-    @state.git_commit_id.getter
-    def get_git_commit(self):
+    git_commit_id = core.Unicode(read_only=True, is_metadata=True)
+    @core.getter
+    def git_commit_id(self):
         ''' Try to determine the current commit hash of the current git repo
         '''
         try:
@@ -271,8 +264,9 @@ class Host(core.Device):
         except git.NoSuchPathError:
             return ''
 
-    @state.git_remote_url.getter
-    def get_git_remote_url(self):
+    git_remote_url = core.Unicode(read_only=True, is_metadata=True, cache=True)
+    @core.getter
+    def git_remote_url(self):
         ''' Try to identify the remote URL of the repository of the current git repo
         '''
         try:
@@ -280,14 +274,16 @@ class Host(core.Device):
         except BaseException:
             return ''
 
-    @state.hostname.getter
-    def get_hostname(self):
+    hostname = core.Unicode(read_only=True, is_metadata=True, cache=True)
+    @core.getter
+    def hostname(self):
         ''' Get the name of the current host
         '''
         return socket.gethostname()
 
-    @state.git_browse_url.getter
-    def get_git_browse_url(self):
+    git_browse_url = core.Unicode(read_only=True, is_metadata=True)
+    @core.getter
+    def git_browse_url(self):
         ''' URL for browsing the current git repository
         '''
         return '{}/tree/{}'.\

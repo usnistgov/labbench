@@ -26,6 +26,8 @@
 .. licenses.
 """
 
+from time import time
+
 from .core import *
 from .data import *
 from .host import *

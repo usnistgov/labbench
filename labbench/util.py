@@ -24,9 +24,10 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
+from . import core
+
 from collections import OrderedDict
 from contextlib import contextmanager, _GeneratorContextManager
-from . import core
 import inspect
 import pandas as pd
 import os
@@ -437,6 +438,7 @@ class Call(object):
             else:
                 func.name = name
             if name in ret:
+                print('\n\n', name_func_pairs)
                 msg = f'another callable is already named {repr(name)} - '\
                       f'pass as a keyword argument to specify a different name'
                 raise KeyError(msg)

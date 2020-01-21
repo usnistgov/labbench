@@ -96,7 +96,7 @@ def single(inst, inst_name):
         html.value = _df.style.set_caption(caption).set_table_attributes(
             'class="table"').set_table_styles(table_styles).render()
 
-    inst.state.observe(_on_change, names=traitlets.All, type=traitlets.All)
+    inst.observe(_on_change, names=traitlets.All, type=traitlets.All)
     inst.settings.observe(_on_change, names=traitlets.All, type=traitlets.All)
 
     return widgets.HBox([html])

@@ -66,14 +66,14 @@ class CommandLineWrapper(core.Device):
         queued stdout.
     """
 
-    binary_path: core.Unicode(
-        core.Undefined, is_metadata=True, help='path to the file to run')
-    timeout: core.Float(1, min=0, is_metadata=True,
-                         help='Timeout (sec) after disconnect is called before killing the process')
-    arguments: core.List(
-        [], help='list of command line arguments to pass into the executable')
-    arguments_min: core.Int(0, min=0, read_only=True,
-                             help='minimum number of extra command line arguments to pass to the executable')
+    binary_path: core.Unicode\
+        (default=core.Undefined, help='path to the file to run')
+    timeout: core.Float\
+        (default=1, min=0, label='s', help='wait time after disconnect before killing the process')
+    arguments: core.List\
+        (default=[], help='list of command line arguments to pass into the executable')
+    arguments_min: core.Int\
+        (default=0, settable=False, min=0, help='minimum extra command line arguments needed to run')
 
     def __imports__(self):
         global sp
@@ -105,7 +105,7 @@ class CommandLineWrapper(core.Device):
 
         # Monitor state changes
         states = set(self.settings.traits().keys())\
-            .difference(dir(CommandLineWrapper.state))
+            .difference(dir(CommandLineWrapper))
         self.settings.observe(check_state_change, tuple(states))
 
     @property
@@ -398,7 +398,7 @@ class CommandLineWrapper(core.Device):
         # Cache the current running one for a second in case the backend
         # "disconnects"
         backend = self.backend
-        return self.state.connected \
+        return self.connected \
             and backend is not None \
             and backend.poll() is None
 
@@ -533,14 +533,18 @@ class LabviewSocketInterface(core.Device):
         TCP/IP ports where communication is to take place.
     """
 
-    resource: core.TCPAddress(default_value='127.0.0.1',
-                              help='IP address where the LabView VI listens for a socket')
-    tx_port: core.Int(default_value=61551, help='TX port to send to the LabView VI')
-    rx_port: core.Int(default_value=61552, help='TX port to send to the LabView VI')
-    delay: core.Float(default_value=1, help='time to wait after each state write or query')
-    timeout: core.Float(default_value=2,
-                         help='maximum time to wait for a reply after sending before raising an Exception')
-    rx_buffer_size = core.Int(default_value=1024)
+    resource: core.Address\
+        (default='127.0.0.1', help='TCP/IP host address of the LabView VI host')
+    tx_port: core.Int\
+        (default=61551, help='TX port to send to the LabView VI')
+    rx_port: core.Int\
+        (default=61552, help='TX port to send to the LabView VI')
+    delay: core.Float\
+        (default=1, help='time to wait after each state write or query')
+    timeout: core.Float\
+        (default=2, help='maximum wait replies before raising TimeoutError')
+    rx_buffer_size: core.Int\
+        (default=1024, min=1)
 
     def connect(self):
         self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
@@ -567,10 +571,10 @@ class LabviewSocketInterface(core.Device):
                                         self.settings.tx_port))
         util.sleep(self.settings.delay)
 
-    def __set_state__(self, trait, value):
+    def __command_set__(self, name, command, value):
         """ Send a formatted command string to implement state control.
         """
-        self.write(f'{trait.command} {value} ')
+        self.write(f'{command} {value}')
 
     def read(self, convert_func=None):
         """ Receive from the rx socket until `self.settings.rx_buffer_size` samples
@@ -624,22 +628,22 @@ class SerialDevice(core.Device):
     """
 
     # Connection settings
-    timeout: core.Float(2, min=0, is_metadata=True,
-                        help='Max time to wait for a connection before raising TimeoutError.')
-    write_termination: core.Bytes('\n', is_metadata=True,
-                        help='Termination character to send after a write.')
-    baud_rate: core.Int(9600, min=1, is_metadata=True,
-                         help='Data rate of the physical serial connection.')
-    parity: core.Bytes('N', is_metadata=True,
-                       help='Parity in the physical serial connection.')
-    stopbits: core.Float(1, min=1, max=2, step=0.5, is_metadata=True,
-                        help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
-    xonxoff: core.Bool(False, is_metadata=True,
-                       help='Set `True` to enable software flow control.')
-    rtscts: core.Bool(False, is_metadata=True,
-                      help='Whether to enable hardware (RTS/CTS) flow control.')
-    dsrdtr: core.Bool(False, is_metadata=True,
-                      help='Whether to enable hardware (DSR/DTR) flow control.')
+    timeout: core.Float\
+        (default=2,min=0, help='Max time to wait for a connection before raising TimeoutError.')
+    write_termination: core.Bytes\
+        (default=b'\n', help='Termination character to send after a write.')
+    baud_rate: core.Int\
+        (default=9600,min=1, help='Data rate of the physical serial connection.')
+    parity: core.Bytes\
+        (default=b'N', help='Parity in the physical serial connection.')
+    stopbits: core.Float\
+        (default=1, min=1, max=2, step=0.5, help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
+    xonxoff: core.Bool\
+        (default=False, help='`True` to enable software flow control.')
+    rtscts: core.Bool\
+        (default=False, help='`True` to enable hardware (RTS/CTS) flow control.')
+    dsrdtr: core.Bool\
+        (default=False, help='`True` to enable hardware (DSR/DTR) flow control.')
 
     def __imports__(self):
         global serial
@@ -652,7 +656,7 @@ class SerialDevice(core.Device):
         """
         keys = 'timeout', 'parity', 'stopbits',\
                'xonxoff', 'rtscts', 'dsrdtr'
-        params = dict([(k, getattr(self.state, k)) for k in keys])
+        params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(
             self.settings.resource, self.baud_rate, **params)
         self.logger.debug(f'{repr(self)} connected')
@@ -729,14 +733,14 @@ class SerialLoggingDevice(SerialDevice):
         from the serial port.
     """
 
-    poll_rate: core.Float(0.1, min=0, is_metadata=True,
-                           help='Data retreival rate from the device (in seconds)')
-    data_format: core.Bytes('', is_metadata=True,
-                             help='Data format metadata')
-    stop_timeout: core.Float(0.5, min=0, is_metadata=True,
-                              help='Delay after a call to `stop` before terminating the runloop thread')
-    max_queue_size: core.Int(100000, min=1, is_metadata=True,
-                              help='Number of bytes to allocate in the data retreival buffer')
+    poll_rate: core.Float\
+        (default=0.1, min=0, help='Data retreival rate from the device (in seconds)')
+    data_format: core.Bytes\
+        (default=b'', help='Data format metadata')
+    stop_timeout: core.Float\
+        (default=0.5, min=0, help='delay after `stop` before terminating run thread')
+    max_queue_size: core.Int\
+        (default=100000, min=1, help='bytes to allocate in the data retreival buffer')
 
     def configure(self):
         """ This is called at the beginning of the logging thread that runs
@@ -837,14 +841,15 @@ class TelnetDevice(core.Device):
         or by setting them afterward in `settings`.
 
         Subclassed devices that need state descriptors will need
-        to implement __get_state__ and __set_state__ methods to implement
+        to implement __command_get__ and __command_set__ methods to implement
         the state set and get operations (as appropriate).
     """
 
     # Connection settings
-    timeout: core.Float(2, min=0, is_metadata=True,
-                         help='maximum time to wait for a connection before ')
-    port: core.Int(23, min=1, is_metadata=True)
+    timeout: core.Float\
+        (default=2, min=0, label='s', help='connection timeout')
+    port: core.Int\
+        (default=23, min=1)
 
     def __imports__(self):
         global Telnet
@@ -869,13 +874,13 @@ class VISADevice(core.Device):
         VISADevice instances control VISA instruments using a
         pyvisa backend. Compared to direct use of pyvisa, this
         style of use permits use of labbench device `state`
-        goodies for compact, readable code, as well as type checking.
+        goodies for compact, gettable code, as well as type checking.
 
         For example, the following fetches the
         identity string from the remote instrument::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
-                print(inst.state.identity)
+                print(inst.identity)
 
         This is equivalent to the more pyvisa-style use as follows::
 
@@ -883,24 +888,29 @@ class VISADevice(core.Device):
             inst.connect()
             print(inst.query('*IDN?'))
 
-        Use of `inst.state` makes it possible to add callbacks to support
+        Use of `inst` makes it possible to add callbacks to support
         automatic state logging, or to build a UI.
     """
+    
+    # Settings
+    read_termination: core.Unicode\
+        (default='\n', help='end-of-receive termination character')
 
-    read_termination: core.Unicode('\n', read_only='connected',
-                                    help='termination character to indicate end of message on receive from the instrument')
-    write_termination: core.Unicode('\n', read_only='connected',
-                                     help='termination character to indicate end of message in messages sent to the instrument')
+    write_termination: core.Unicode\
+        (default='\n', help='end-of-transmit termination character')
 
-    # States    
-    identity = core.Unicode(read_only=True, command='*IDN', cache=True, is_metadata=True,
-                            help='identity string reported by the instrument')
-    options = core.Unicode(read_only=True, command='*OPT', cache=True, is_metadata=True,
-                           help='options reported by the instrument')
-    status_byte = core.Dict(read_only=True, command='*STB',
-                            help='VISA status byte reported by the instrument')
-    @core.getter
+    # States
+    identity = core.Unicode\
+        (command='*IDN', settable=False, cache=True,
+         help='identity string reported by the instrument')
+
+    options = core.Unicode\
+        (command='*OPT', settable=False, cache=True,
+         help='options reported by the instrument')
+
+    @core.Dict(command='*STB', settable=False)
     def status_byte(self):
+        ''' VISA status byte reported by the instrument '''
         code = int(self.query('*STB?'))
         return {'error queue not empty': bool(code & 0b00000100),
                 'questionable state': bool(code & 0b00001000),
@@ -909,8 +919,10 @@ class VISADevice(core.Device):
                 'service request': bool(code & 0b01000000),
                 'master status summary': bool(code & 0b01000000),
                 'operating': bool(code & 0b10000000),
-                }    
+                }
 
+    _rm = None
+    
     @classmethod
     def __imports__(cls):
         global pyvisa
@@ -938,23 +950,17 @@ class VISADevice(core.Device):
             sets up a connected instance::
 
                 with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as inst:
-                    print(inst.state.identity)
-                    print(inst.state.status_byte)
-                    print(inst.state.options)
+                    print(inst.identity)
+                    print(inst.status_byte)
+                    print(inst.options)
 
             would instantiate a `VISADevice` and guarantee
             it is disconnected either at the successful completion
             of the `with` block, or if there is any exception.
         """
         # The resource manager is "global" at the class level here
-        try:
-            if VISADevice._rm is None:
-                VISADevice._rm = pyvisa.ResourceManager('@ni')
-        except OSError as e:
-            e.args = e.args + \
-                (
-                    'labbench VISA support requires NI VISA; is it installed?\nhttp://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe',)
-            raise e
+        if VISADevice._rm is None:
+             self.set_backend('@ni')
 
         self.backend = VISADevice._rm.open_resource(self.settings.resource,
                                                     read_termination=self.settings.read_termination,
@@ -984,7 +990,13 @@ class VISADevice(core.Device):
             :param backend_name str: '@ni' (the default) or '@py'
             :returns: None
         """
-        VISADevice._rm = pyvisa.ResourceManager(backend_name)
+        try:
+            cls._rm = pyvisa.ResourceManager(backend_name)
+        except OSError as e:
+            e.args = e.args + \
+            (
+                    'labbench VISA support requires NI VISA; is it installed?\nhttp://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe',)
+            raise e
 
     @classmethod
     def list_resources(cls):
@@ -1031,7 +1043,7 @@ class VISADevice(core.Device):
         self.logger.debug(f'      -> {msg_out}')
         return ret
 
-    def __get_state__(self, trait):
+    def __command_get__(self, name, command):
         """ Send an SCPI command to get a state value from the
             device. This function
             adds a '?' to match SCPI convention. This is
@@ -1041,9 +1053,9 @@ class VISADevice(core.Device):
             :param str command: The SCPI command to send
             :param trait: The trait state corresponding with the command (ignored)
         """
-        return self.query(trait.command + '?').rstrip()
+        return self.query(command + '?').rstrip()
 
-    def __set_state__(self, trait, value):
+    def __command_set__(self, name, command, value):
         """ Send an SCPI command to set a state value on the
             device. This function adds a '?' to match SCPI convention. This is
             automatically called for `state` attributes that
@@ -1053,7 +1065,7 @@ class VISADevice(core.Device):
             :param trait: The trait state corresponding with the command (ignored)
             :param str value: The value to assign to the parameter
         """
-        self.write(trait.command + ' ' + str(value))
+        self.write(command + ' ' + str(value))
 
     def wait(self):
         """ Convenience function to send standard SCPI '\\*WAI'
@@ -1108,48 +1120,61 @@ class VISADevice(core.Device):
                 and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
 
 
-class EmulatedVISADevice(VISADevice):
+class EmulatedVISADevice(core.Device):
     """ Act as a VISA device without dispatching any visa commands
     """
 
-    generators = {core.Bool: lambda trait: str(np.random.choice(trait._trues + trait._falses)),
-                  core.Bytes: lambda trait: 'text',
-                  core.Float: lambda trait: str(np.random.uniform(low=trait.min, high=trait.max)), }
-#
-#    class state(VISADevice.state):
-#        pass
-#
-#    class settings(VISADevice.settings):
-#        pass
+    # Settings
+    read_termination: core.Unicode\
+        (default='\n', help='end-of-receive termination character')
+
+    write_termination: core.Unicode\
+        (default='\n', help='end-of-transmit termination character')
+
+    # States
+    @core.Unicode(command='*IDN', settable=False, cache=True)
+    def identity(self):
+        ''' identity string reported by the instrument '''
+        return self.__class__.__qualname__
+
+    @core.Unicode(command='*OPT', settable=False, cache=True)
+    def options(self):
+        ''' options reported by the instrument '''
+        
+        return ','.join(((f"{s.name}={repr(s.previous)}"\
+                          for s in self.settings)))
+
+    @core.Dict(command='*STB', settable=False)
+    def status_byte(self):
+        ''' VISA status byte reported by the instrument '''
+        return {'error queue not empty': False,
+                'questionable state': False,
+                'message available': False,
+                'event status flag': False,
+                'service request': False,
+                'master status summary': False,
+                'operating': True,
+                }
+
+    def __command_get__(self, name, command):
+        trait = self[name]
+        
+        if isinstance(trait, core.Bool):
+            if trait.remap:
+                return np.random.choice(trait.remap.values())
+            else:
+                return np.random.choice(('TRUE', 'FALSE'))
+
+        elif isinstance(trait, core.Unicode):
+            return 'text'
+        elif isinstance(trait, core.Float):
+            return str(np.random.uniform(low=trait.min, high=trait.max))
+        else:
+            raise TypeError('No emulated values implemented for trait {repr(trait)}')
 
 
-        # #        # Spoof the remote responses for some built-in VISA items
-        # status_byte = core.Unicode(default_value='0', read_only=True)
-        # identity = core.Unicode(
-        #     default_value='Emulated VISA Device', read_only=True, is_metadata=True)
-        # options = core.Unicode(
-        #     default_value='Terrific Options', read_only=True, is_metadata=True)
-
-    # Overload methods as needed to implement RemoteDevice
-    @classmethod
-    def set_backend(cls, backend_name):
-        """ backend_name can be 'py' or 'ni'
-        """
+    def __command_set__(self, name, command, value):
         pass
-
-    def connect(self):
-        self.backend = self.generators
-
-    def disconnect(self):
-        pass
-
-    def __get_state__(self, trait):
-        ret = self.generators[type(trait)](trait)
-        self.backend[trait] = ret
-        return ret
-
-    def __set_state__(self, trait, value):
-        self.backend[trait] = value
 
 
 class Win32ComDevice(core.Device):
@@ -1165,10 +1190,13 @@ class Win32ComDevice(core.Device):
         this thread support wrapper is applied to the dispatched Win32Com object.
     """
 
-    com_object: core.Unicode('', is_metadata=True,
-                             help='the win32com object string')  # Must be a module
-    concurrency_support: core.Bool(default_value=True, read_only=False, is_metadata=True,
-                                   help='whether this :class:`Device` implementation supports threading')
+    com_object: \
+        core.Unicode(default='',
+                     help='the win32com object string')  # Must be a module
+
+    concurrency_support:\
+        core.Bool(default=True,
+                     help='whether this implementation supports threading')
 
     def __imports__(self):
         global win32com

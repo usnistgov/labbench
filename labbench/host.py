@@ -64,7 +64,7 @@ class LogStderr(core.Device):
         self._stderr, self._buf, sys.stderr = sys.stderr, io.StringIO(), self
 
     def disconnect(self):
-        if self.state.connected:
+        if self.connected:
             sys.stderr = self._stderr
             self.log = self._buf.getvalue()
             self._buf.close()
@@ -87,18 +87,24 @@ class Email(core.Device):
         in the main body. Otherwise, the message is a success message in the
         subject line. Stderr is also sent.
     '''
-    resource: core.TCPAddress(('smtp.nist.gov', 25),
-                               help='smtp server to use')
-    sender: core.Unicode('myemail@nist.gov',
-                          help='email address of the sender')
-    recipients: core.List(['myemail@nist.gov'],
-                           help='list of email addresses of recipients')
-    success_message: core.Unicode('Test finished normally',
-                                   allow_none=True,
-                                   help='subject line for test success emails, or None to suppress success emails')
-    failure_message: core.Unicode('Exception ended test early',
-                                   allow_none=True,
-                                   help='subject line for test failure emails, or None to suppress success emails')
+
+    resource: core.Address\
+        (default='smtp.nist.gov', help='smtp server to use')
+
+    port: core.Int\
+        (default=25, min=1, help='TCP/IP port')
+    
+    sender: core.Unicode\
+        (default='myemail@nist.gov', help='email address of the sender')
+    
+    recipients: core.List\
+        (default=['myemail@nist.gov'], help='list of email addresses of recipients')
+
+    success_message: core.Unicode\
+        (default='Test finished normally', help='subject line for test success emails (None to suppress the emails)')
+
+    failure_message: core.Unicode\
+        (default='Exception ended test early', help='subject line for test failure emails (None to suppress the emails)')
 
     def _send(self, subject, body):
         sys.stderr.flush()
@@ -110,7 +116,8 @@ class Email(core.Device):
         msg['From'] = self.settings.sender
         msg['Subject'] = subject
         msg['To'] = ", ".join(self.settings.recipients)
-        self.server = smtplib.SMTP(*self.settings.resource)
+        self.server = smtplib.SMTP(self.settings.resource, self.settings.port)
+        
         try:
             self.server.sendmail(self.settings.sender,
                                  self.settings.recipients,
@@ -119,12 +126,11 @@ class Email(core.Device):
             self.server.quit()
 
     def connect(self):
-        print('enter host')
         self.backend = LogStderr()
         self.backend.connect()
 
     def disconnect(self):
-        if self.state.connected:
+        if self.connected:
             self.backend.disconnect()
             time.sleep(1)
             self.send_summary()
@@ -223,38 +229,22 @@ class Host(core.Device):
         running = dict(sorted([(k, versions[k.lower()])
                                for k in sys.modules.keys() if k in versions]))
         return pd.Series(running).sort_index()
-
-    # def metadata(self, name):
-    #     ret = super(type(self),self).metadata()
-    #
-    #     commit_id = self.state.git_commit_id
-    #     url = self.state.git_remote_url
-    #     browse_url = '{}/tree/{}'.format(url, commit_id)
-    #
-    #     ret.update({'git_commit_id': commit_id,
-    #                 'git_remote_url': url,
-    #                 'git_browse_commit_url': browse_url})
-    #
-    #     return ret
-    
-    time = core.Unicode(read_only=True)   
-    @core.getter
+   
+    @core.Unicode()
     def time(self):
         ''' Get a timestamp of the current time
         '''
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
-    log = core.Unicode(read_only=True).tag(relational=True)
-    @core.getter
+    @core.Unicode()
     def log(self):
         ''' Get the current host log contents.
         '''
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
-
-    git_commit_id = core.Unicode(read_only=True, is_metadata=True)
-    @core.getter
+    
+    @core.Unicode(cache=True)
     def git_commit_id(self):
         ''' Try to determine the current commit hash of the current git repo
         '''
@@ -264,8 +254,7 @@ class Host(core.Device):
         except git.NoSuchPathError:
             return ''
 
-    git_remote_url = core.Unicode(read_only=True, is_metadata=True, cache=True)
-    @core.getter
+    @core.Unicode(cache=True)
     def git_remote_url(self):
         ''' Try to identify the remote URL of the repository of the current git repo
         '''
@@ -274,27 +263,24 @@ class Host(core.Device):
         except BaseException:
             return ''
 
-    hostname = core.Unicode(read_only=True, is_metadata=True, cache=True)
-    @core.getter
+    @core.Unicode(cache=True)
     def hostname(self):
         ''' Get the name of the current host
         '''
         return socket.gethostname()
 
-    git_browse_url = core.Unicode(read_only=True, is_metadata=True)
-    @core.getter
+    @core.Unicode(cache=True)
     def git_browse_url(self):
         ''' URL for browsing the current git repository
         '''
         return '{}/tree/{}'.\
-               format(self.state.git_remote_url, self.state.git_commit_id)
-
+               format(self.git_remote_url, self.git_commit_id)
 
 if __name__ == '__main__':
     #    core.show_messages('DEBUG')
     #
     #    with Host() as pc:
-    #        print(pc.state.time)
+    #        print(pc.time)
 
     with Email(recipients=['daniel.kuester@nist.gov']) as email:
         pass

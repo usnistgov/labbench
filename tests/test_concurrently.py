@@ -26,7 +26,6 @@
 
 import unittest
 import importlib
-import threading
 import sys
 import time
 from contextlib import contextmanager
@@ -43,13 +42,15 @@ class LaggyInstrument(lb.EmulatedVISADevice):
     demonstrate the process of setting
     up a measurement.
     '''
-    class settings (lb.EmulatedVISADevice.settings):
-        delay = lb.Float(0, min=0, help='connection time')
-        fetch_time = lb.Float(0, min=0, help='fetch time')
-        fail_disconnect = lb.Bool(False, help='whether to raise DivideByZero on disconnect')
+    delay: lb.Float\
+        (default=0, min=0, help='connection time')
+    fetch_time: lb.Float\
+        (default=0, min=0, help='fetch time')
+    fail_disconnect: lb.Bool\
+        (default=False, help='whether to raise DivideByZero on disconnect')
 
     def connect(self):
-        self.logger.info(f'{self} connect start')        
+        self.logger.info(f'{self} connect start')
         lb.sleep(self.settings.delay)
         self.logger.info(f'{self} connected')
         
@@ -83,9 +84,9 @@ class Testbed2(lb.Testbed):
     inst1 = LaggyInstrument('a', delay=.12)
     inst2 = LaggyInstrument('b', delay=.06)
     
-class TestCases(unittest.TestCase):
+class Tests(unittest.TestCase):
     # Acceptable error in delay time meaurement
-    delay_tol = 0.06
+    delay_tol = 0.08
 
     @contextmanager
     def assert_delay(self, expected_delay):
@@ -110,16 +111,17 @@ class TestCases(unittest.TestCase):
             lb.logger.info(f'acceptable time elapsed {elapsed:0.3f}s'.lstrip())
 
     def test_concurrent_connect_delay(self):
+        global inst1, inst2
         inst1 = LaggyInstrument(resource='fast', delay=0.16)
         inst2 = LaggyInstrument(resource='slow', delay=0.26)
 
         expect_delay = max((inst1.settings.delay,inst2.settings.delay))
         with self.assert_delay(expect_delay):
             with lb.concurrently(inst1, inst2):
-                self.assertEqual(inst1.state.connected, True)
-                self.assertEqual(inst2.state.connected, True)
-        self.assertEqual(inst1.state.connected, False)
-        self.assertEqual(inst2.state.connected, False)
+                self.assertEqual(inst1.connected, True)
+                self.assertEqual(inst2.connected, True)
+        self.assertEqual(inst1.connected, False)
+        self.assertEqual(inst2.connected, False)
 
     def test_concurrent_fetch_delay(self):
         inst1 = LaggyInstrument(resource='fast', fetch_time=0.26)
@@ -128,8 +130,8 @@ class TestCases(unittest.TestCase):
         expect_delay = max((inst1.settings.fetch_time,inst2.settings.fetch_time))
         with self.assert_delay(expect_delay):
             with inst1, inst2:
-                self.assertEqual(inst1.state.connected, True)
-                self.assertEqual(inst2.state.connected, True)               
+                self.assertEqual(inst1.connected, True)
+                self.assertEqual(inst2.connected, True)               
                 lb.concurrently(fetch1=inst1.fetch,
                                 fetch2=inst2.fetch)
         
@@ -138,8 +140,8 @@ class TestCases(unittest.TestCase):
         inst2 = LaggyInstrument(resource='slow')
         
         with inst1, inst2:
-            self.assertEqual(inst1.state.connected, True)
-            self.assertEqual(inst2.state.connected, True)               
+            self.assertEqual(inst1.connected, True)
+            self.assertEqual(inst2.connected, True)               
             ret = lb.concurrently(**{inst1.settings.resource: inst1.fetch,
                                      inst2.settings.resource: inst2.fetch})
         self.assertIn(inst1.settings.resource, ret)
@@ -154,8 +156,8 @@ class TestCases(unittest.TestCase):
         inst2 = LaggyInstrument(resource='slow', fetch_time=.03)
         
         with inst1, inst2:
-            self.assertEqual(inst1.state.connected, True)
-            self.assertEqual(inst2.state.connected, True)               
+            self.assertEqual(inst1.connected, True)
+            self.assertEqual(inst2.connected, True)               
             ret = lb.concurrently(fetch_0=inst1.fetch,
                                   fetch_1=inst2.fetch)
         self.assertIn('fetch_0', ret)
@@ -172,10 +174,10 @@ class TestCases(unittest.TestCase):
         expect_delay = inst1.settings.delay + inst2.settings.delay
         with self.assert_delay(expect_delay):
             with lb.sequentially(inst1, inst2):
-                self.assertEqual(inst1.state.connected, True)
-                self.assertEqual(inst2.state.connected, True)
-        self.assertEqual(inst1.state.connected, False)
-        self.assertEqual(inst2.state.connected, False)
+                self.assertEqual(inst1.connected, True)
+                self.assertEqual(inst2.connected, True)
+        self.assertEqual(inst1.connected, False)
+        self.assertEqual(inst2.connected, False)
 
     def test_sequential_fetch_delay(self):
         inst1 = LaggyInstrument(resource='fast', fetch_time=0.26)
@@ -184,8 +186,8 @@ class TestCases(unittest.TestCase):
         expect_delay = inst1.settings.fetch_time + inst2.settings.fetch_time
         with self.assert_delay(expect_delay):
             with inst1, inst2:
-                self.assertEqual(inst1.state.connected, True)
-                self.assertEqual(inst2.state.connected, True)               
+                self.assertEqual(inst1.connected, True)
+                self.assertEqual(inst2.connected, True)               
                 lb.sequentially(fetch1=inst1.fetch,
                                 fetch2=inst2.fetch)
         
@@ -194,8 +196,8 @@ class TestCases(unittest.TestCase):
         inst2 = LaggyInstrument(resource='slow', fetch_time=.003)
         
         with inst1, inst2:
-            self.assertEqual(inst1.state.connected, True)
-            self.assertEqual(inst2.state.connected, True)               
+            self.assertEqual(inst1.connected, True)
+            self.assertEqual(inst2.connected, True)               
             ret = lb.sequentially(**{inst1.settings.resource: inst1.fetch,
                                      inst2.settings.resource: inst2.fetch})
         self.assertIn(inst1.settings.resource, ret)
@@ -210,8 +212,8 @@ class TestCases(unittest.TestCase):
         inst2 = LaggyInstrument(resource='slow', fetch_time=.003)
         
         with inst1, inst2:
-            self.assertEqual(inst1.state.connected, True)
-            self.assertEqual(inst2.state.connected, True)               
+            self.assertEqual(inst1.connected, True)
+            self.assertEqual(inst2.connected, True)               
             ret = lb.sequentially(fetch_0=inst1.fetch,
                                   fetch_1=inst2.fetch)
         self.assertIn('fetch_0', ret)
@@ -231,12 +233,12 @@ class TestCases(unittest.TestCase):
 
         with self.assert_delay(expect_delay):
             with lb.sequentially(inst1, lb.concurrently(inst2, inst3)):
-                self.assertEqual(inst1.state.connected, True)
-                self.assertEqual(inst2.state.connected, True)
-                self.assertEqual(inst3.state.connected, True)
-        self.assertEqual(inst1.state.connected, False)
-        self.assertEqual(inst2.state.connected, False)
-        self.assertEqual(inst3.state.connected, False)
+                self.assertEqual(inst1.connected, True)
+                self.assertEqual(inst2.connected, True)
+                self.assertEqual(inst3.connected, True)
+        self.assertEqual(inst1.connected, False)
+        self.assertEqual(inst2.connected, False)
+        self.assertEqual(inst3.connected, False)
 
     def test_nested_fetch_delay(self):
         inst1 = LaggyInstrument(resource='a', fetch_time=0.16)
@@ -297,16 +299,16 @@ class TestCases(unittest.TestCase):
         expected_delay = max(testbed.inst1.settings.delay,
                              testbed.inst2.settings.delay)
 
-        self.assertEqual(testbed.inst1.state.connected, False)
-        self.assertEqual(testbed.inst2.state.connected, False)
+        self.assertEqual(testbed.inst1.connected, False)
+        self.assertEqual(testbed.inst2.connected, False)
         
         with self.assert_delay(expected_delay):
             with testbed:
-                self.assertEqual(testbed.inst1.state.connected, True)
-                self.assertEqual(testbed.inst2.state.connected, True)
+                self.assertEqual(testbed.inst1.connected, True)
+                self.assertEqual(testbed.inst2.connected, True)
 
-        self.assertEqual(testbed.inst1.state.connected, False)
-        self.assertEqual(testbed.inst2.state.connected, False)
+        self.assertEqual(testbed.inst1.connected, False)
+        self.assertEqual(testbed.inst2.connected, False)
 
     def test_flatten(self):        
         inst1 = LaggyInstrument(resource='a')
@@ -347,6 +349,3 @@ class TestCases(unittest.TestCase):
 if __name__ == '__main__':
     lb.show_messages('warning')
     unittest.main()
-#    tests = TestCases()
-#    tests.test_flatten()
-#    testbed = Testbed()

@@ -17,7 +17,7 @@
 # INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
 # OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
 # WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
+# BY PERSONS OR Decorator OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
 # FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
 # PROVIDED HEREUNDER. Distributions of NIST software should also include
 # copyright and licensing statements of any third-party software that are
@@ -46,138 +46,76 @@ flag_start = False
 
 class MockBase(lb.Device):
     _getter_counts = {}
-    
-    class state(lb.Device.state):
-        param = lb.Int(min=0, max=10, command=True)
-        flag = lb.Bool(remap=remap, command=True)
+
+    param = lb.Int(command='param', min=0, max=10)
+    flag = lb.Bool(command='flag', remap=remap)
 
     def connect(self):
         self.values = {}
-        for k in self.state.class_traits().keys():
-            if k in start:
-                v = start[k]
-                self.values[k] = remap.get(v, v)
-                
+        
+        for name,value in start.items():
+            self.values[name] = remap.get(value, value)
+            
+    def add_get_count(self, name):
+        self._getter_counts.setdefault(name,0)
+        self._getter_counts[name] += 1
+
     def clear_counts(self):
         self._getter_counts = {}
 
 
-class MockOldTraitWrapper(MockBase):    
-    class state(MockBase.state):
-        pass
-
-    @state.param.getter
-    def _(self):
-        self._getter_counts.setdefault('param',0)
-        self._getter_counts['param'] += 1
-
-        self.logger.debug('get param')
+class MockDecorator(MockBase):    
+    @param
+    def param(self):
+        self.add_get_count('param')
         return self.values['param']
-
-    @state.param.setter
-    def _(self, value):
+    def param(self, value):
         self.values['param'] = value
 
-    @state.flag.getter
-    def _(self):
-        self._getter_counts.setdefault('flag',0)
-        self._getter_counts['flag'] += 1        
-        
+    @flag
+    def flag(self):
+        self.add_get_count('flag')
         return self.values['flag']
-
-    @state.flag.setter
-    def _(self, value):
+    def flag(self, value):
         self.values['flag'] = value
 
 
-class MockOldStateWrapper(MockBase):
-    class state(MockBase.state):
-        pass
+class MockCommand(MockBase):
+    def __command_get__(self, name, command):
+        self.add_get_count(command)
+        return self.values[command]
 
-    @state.getter
-    def _(self, trait):
-        return self.values[trait.name]
-
-    @state.setter
-    def _(self, trait, value):
-        print('*****', trait, repr(value))
-        self.values[trait.name] = value
-
-class MockTraitWrapper(MockBase):    
-    param = lb.Int(min=0, max=10)
-    flag = lb.Bool(remap=remap)
-
-    @param.getter
-    def _(self):
-        self._getter_counts.setdefault('param',0)
-        self._getter_counts['param'] += 1
-
-        self.logger.debug('get param')
-        return self.values['param']
-
-    @param.setter
-    def _(self, value):
-        self.values['param'] = value
-
-    @flag.getter
-    def _(self):
-        self._getter_counts.setdefault('flag',0)
-        self._getter_counts['flag'] += 1        
-        
-        return self.values['flag']
-
-    @flag.setter
-    def _(self, value):
-        self.values['flag'] = value
-        
-class MockStateWrapper(MockBase):
-    def __get_state__(self, trait):
-        return self.values[trait.name]
-
-    def __set_state__(self, trait, value):
-        print('*****', trait, repr(value))
-        self.values[trait.name] = value        
+    def __command_set__(self, name, command, value):
+        self.values[command] = value
 
 
-class TestWrappers(unittest.TestCase):
-    def test_old_state_wrapper_type(self):
-        with MockOldStateWrapper() as m:
-            self.do(m)            
-
-    def test_old_trait_wrapper_type(self):
-        with MockOldTraitWrapper() as m:
-            self.do(m)
-            
-    def test_state_wrapper_type(self):
-        with MockStateWrapper() as m:
+class TestWrappers(unittest.TestCase):            
+    def test_command_type(self):
+        with MockCommand() as m:
             self.do(m)
 
-    def test_trait_wrapper_type(self):
-        with MockTraitWrapper() as m:
+    def test_decorator_type(self):
+        with MockDecorator() as m:
             self.do(m)
-            
+
     def do(self, m):
         m.clear_counts()
-        
-        self.assertEqual(m.state.param, start['param'])
-        m.state.param = stop['param']
-        self.assertEqual(m.state.param, stop['param'])
 
-        self.assertEqual(m.state.flag, False)
-        m.state.flag = stop['flag']
-        
-        self.assertEqual(m.state.flag, stop['flag'])
+        self.assertEqual(m.param, start['param'])
+        m.param = stop['param']
+        self.assertEqual(m.param, stop['param'])
+
+        self.assertEqual(m.flag, start['flag'])
+        m.flag = stop['flag']
+        self.assertEqual(m.flag, stop['flag'])
+
         self.assertEqual(m.values['flag'], remap[stop['flag']])
-        
-        self.assertEqual(m._getter_counts['flag'], 4)
-        self.assertEqual(m._getter_counts['param'], 4)
+
+        self.assertEqual(m._getter_counts['flag'], 3)
+        self.assertEqual(m._getter_counts['param'], 3)
+
+        self.assertEqual(len(m), 1 + len(remap))
 
 if __name__ == '__main__':
     lb.show_messages('debug')
     unittest.main()
-
-#    with MockTraitWrapper() as m:
-#        m.state.param = 4
-#        print(dir(m.state))
-#        print(m.state.__doc__)
-#        print(m.settings.__doc__)

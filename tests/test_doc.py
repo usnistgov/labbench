@@ -32,14 +32,12 @@ if '..' not in sys.path:
 import labbench as lb
 lb = importlib.reload(lb)
 
-
 int_start = 3
 int_stop = 10
 
 
 class MockBase(lb.Device):
-    class state(lb.Device.state):
-        param = lb.Int(min=0, max=10)
+    param = lb.Int(min=0, max=10)
 
     def connect(self):
         self.values = {'param': int_start}
@@ -48,49 +46,25 @@ class MockBase(lb.Device):
 class MockTraitWrapper(MockBase):
     ''' Helpful driver wrapper
     '''
-    class state(MockBase.state):
-        pass
-
-    @state.param.getter
-    def _(self):
+    @param
+    def param(self):
         return self.values['param']
-
-    @state.param.setter
-    def _(self, value):
+    def param(self, value):
         self.values['param'] = value
 
 
 class MockStateWrapper(MockBase):
-    class state(MockBase.state):
-        pass
+    def __command_get__(self, command):
+        return self.values[command]
 
-    @state.getter
-    def _(self, trait):
-        return self.values[trait.name]
-
-    @state.setter
-    def _(self, trait, value):
+    def __command_set__(self, trait, value):
         self.values[trait.name] = value
-
-# class TestWrappers(unittest.TestCase):
-#     def test_state_wrapper_type(self):
-#         with MockStateWrapper() as m:
-#             self.assertEqual(m.state.param,int_start)
-#             m.state.param = int_stop
-#             self.assertEqual(m.state.param,int_stop)
-#
-#
-#     def test_trait_wrapper_type(self):
-#         with MockTraitWrapper() as m:
-#             self.assertEqual(m.state.param,int_start)
-#             m.state.param = int_stop
-#             self.assertEqual(m.state.param,int_stop)
 
 
 if __name__ == '__main__':
     device = MockTraitWrapper(resource='null')
     
 
-    print('instance doc: \n', device.state.__doc__)
-    print('class doc: ', MockTraitWrapper.state.__doc__)
-    print('class parent doc: ', super(MockTraitWrapper.state,MockTraitWrapper.state), super(MockTraitWrapper.state,MockTraitWrapper.state).__doc__)
+    print('instance doc: \n', device.__doc__)
+    print('class doc: ', MockTraitWrapper.__doc__)
+#    print('class parent doc: ', super(MockTraitWrapper,MockTraitWrapper), super(MockTraitWrapper,MockTraitWrapper).__doc__)

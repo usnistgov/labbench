@@ -50,7 +50,7 @@ class MockBase(lb.Device):
     param = lb.Int(command='param', min=0, max=10)
     flag = lb.Bool(command='flag', remap=remap)
 
-    def connect(self):
+    def open(self):
         self.values = {}
         
         for name,value in start.items():
@@ -89,7 +89,7 @@ class MockCommand(MockBase):
         self.values[command] = value
 
 
-class TestWrappers(unittest.TestCase):            
+class TestStates(unittest.TestCase):            
     def test_command_type(self):
         with MockCommand() as m:
             self.do(m)

@@ -35,6 +35,7 @@ from . import util
 from copy import copy, deepcopy
 from typing import Generic, T
 from warnings import warn, simplefilter
+from functools import wraps
 
 import builtins
 import inspect
@@ -106,21 +107,6 @@ class CommandNotImplementedError(NotImplementedError):
     """ A command that has been defined but not implemented
     """
     pass
-
-def issamecode(obj1, obj2):
-    return obj1.__code__.co_code == obj2.__code__.co_code
-
-def wrap(obj, to_name, from_func):
-    """ TODO: This looks like it duplicates functools.wrap - switch to
-        functools.wrap?
-    """
-    to_func = object.__getattribute__(obj, to_name)
-    obj.__wrapped__[to_name] = to_func
-    from_func.__func__.__doc__ = to_func.__doc__
-    from_func.__func__.__name__ = to_func.__name__
-    from_func.__func__.__qualname__ = to_func.__qualname__
-    setattr(obj, to_name, from_func)
-
 
 def trace_methods(cls, name, until_cls=None):
     """ Look for a method called `name` in cls and all of its parent classes.
@@ -672,9 +658,6 @@ class HasTraits(metaclass=HasTraitsMeta):
         """
         return self.__traits__[name]
 
-    def __dir__(self):
-        return iter(self.__traits__.keys())
-
     def __notify__(self, name, value, type):
         old = self.__previous__.setdefault(name, Undefined)
         msg = dict(new=value, old=old, owner=self, name=name, type=type)
@@ -702,6 +685,9 @@ class HasSettings(HasTraits):
         # load up all the defaults as if they've been set already
         for name, trait in self.__traits__.items():
             self.__previous__[name] = trait.default
+
+    def __dir__(self):
+        return iter(self.__traits__.keys())
 
     def __get_value__ (self, name):
         """ Get value of a trait for this settings instance
@@ -1104,7 +1090,7 @@ class Device(HasStates):
         super().__init_subclass__()
 
     def __init__(self, **settings):
-        """ Apply initial settings here, then invoke `connect()` to use the driver.
+        """ Apply initial settings here; use a `with` block or invoke `open()` to use the driver.
         """
         super().__init__()
 
@@ -1125,8 +1111,8 @@ class Device(HasStates):
         # Instantiate state now. It needs to be here, after settings are fully
         # instantiated, in case state implementation depends on settings
 
-        wrap(self, 'open', self.__open_wrapper__)
-        wrap(self, 'close', self.__close_wrapper__)
+        setattr(self, 'open', self.__open_wrapper__)
+        setattr(self, 'close', self.__close_wrapper__)
 
         self.__warn_state_names__ = tuple(self.__traits__.keys())
         self.__warn_settings_names__ = tuple(self.settings.__traits__.keys())
@@ -1144,7 +1130,8 @@ class Device(HasStates):
                 warn(msg)
         super().__setattr__(name, value)
 
-    def __open_wrapper__(self, *args, **kws):
+    @wraps(open)
+    def __open_wrapper__(self):
         """ A wrapper for the connect() method. It steps through the
             method resolution order of self.__class__ and invokes each open()
             method, starting with labbench.Device and working down
@@ -1161,7 +1148,8 @@ class Device(HasStates):
         # Force an update to self.connected
         self.connected
 
-    def __close_wrapper__(self, *args, **kws):
+    @wraps(close)
+    def __close_wrapper__(self):
         """ A wrapper for the close() method that runs
             cleanup() before calling close(). close()
             will still be called if there is an exception in cleanup().

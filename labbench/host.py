@@ -126,11 +126,11 @@ class Email(core.Device):
 
     def open(self):
         self.backend = LogStderr()
-        self.backend.connect()
+        self.backend.open()
 
     def close(self):
         if self.connected:
-            self.backend.disconnect()
+            self.backend.close()
             time.sleep(1)
             self.send_summary()
 

@@ -56,7 +56,7 @@ class Mock(lb.Device):
 class UpdateMock(Mock):
     float0: 7
 
-class Tests(unittest.TestCase):
+class TestSettings(unittest.TestCase):
     def test_defaults(self):
         with Mock() as m:
             for name, trait in m.settings.__traits__.items():

@@ -78,7 +78,7 @@ class EmulatedInstrument(lb.EmulatedVISADevice):
         return series
 
 
-class TestWrappers(unittest.TestCase):
+class TestDB(unittest.TestCase):
     def test_state_wrapper_type(self):
         with EmulatedInstrument() as m,\
                 lb.StatesToSQLite(path) as db:

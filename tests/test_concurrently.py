@@ -49,7 +49,7 @@ class LaggyInstrument(lb.EmulatedVISADevice):
     fail_disconnect: lb.Bool\
         (default=False, help='whether to raise DivideByZero on disconnect')
 
-    def connect(self):
+    def open(self):
         self.logger.info(f'{self} connect start')
         lb.sleep(self.settings.delay)
         self.logger.info(f'{self} connected')
@@ -70,7 +70,7 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         '''
         return None
 
-    def disconnect(self):
+    def close(self):
         self.logger.info(f'{self} disconnected')
         if self.settings.fail_disconnect:
             1 / 0

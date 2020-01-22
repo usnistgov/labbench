@@ -39,7 +39,7 @@ int_stop = 10
 class MockBase(lb.Device):
     param = lb.Int(min=0, max=10)
 
-    def connect(self):
+    def open(self):
         self.values = {'param': int_start}
 
 

@@ -54,7 +54,7 @@ class CommandLineWrapper(core.Device):
         executable. It supports threaded data logging through standard
         input, standard output, and standard error pipes.
 
-        On connection, the `backend` attribute is None. On a
+        On open, the `backend` attribute is None. On a
         call to execute(), `backend` becomes is a subprocess instance. When
         EOF is reached on the executable's stdout, the backend is assumed
         terminated and is reset to None.
@@ -68,7 +68,7 @@ class CommandLineWrapper(core.Device):
     binary_path: core.Unicode\
         (default=core.Undefined, help='path to the file to run')
     timeout: core.Float\
-        (default=1, min=0, label='s', help='wait time after disconnect before killing the process')
+        (default=1, min=0, label='s', help='wait time after close before killing the process')
     arguments: core.List\
         (default=[], help='list of command line arguments to pass into the executable')
     arguments_min: core.Int\
@@ -81,10 +81,10 @@ class CommandLineWrapper(core.Device):
         except BaseException:
             import subprocess as sp
 
-    def connect(self):
-        """ The :meth:`connect` method exists to comply with the
+    def open(self):
+        """ The :meth:`open` method implements opening in the
             :class:`Device` object protocol. Call the
-            :meth:`execute` method when connected to
+            :meth:`execute` method when open to
             execute the binary.
         """
         self.__contexts = {}
@@ -394,8 +394,7 @@ class CommandLineWrapper(core.Device):
 
             :returns: True if running, otherwise False
         """
-        # Cache the current running one for a second in case the backend
-        # "disconnects"
+        # Cache the current running one for a second in case the backend "closes"
         backend = self.backend
         return self.connected \
             and backend is not None \
@@ -406,7 +405,7 @@ class CommandLineWrapper(core.Device):
         """
         self.read_stdout()
 
-    def disconnect(self):
+    def close(self):
         self.kill()
 
     @staticmethod
@@ -445,7 +444,7 @@ class DotNetDevice(core.Device):
 
         Other attributes of DotNetDevice use the following conventions
 
-        * `backend` may be set by a subclass `connect` method (otherwise it is left as None)
+        * `backend` may be set by a subclass `open` method (otherwise it is left as None)
 
     """
     library = None  # Must be a module
@@ -512,7 +511,7 @@ class DotNetDevice(core.Device):
         except AttributeError:  # Race condition =/
             pass
 
-    def connect(self):
+    def open(self):
         pass
 
 
@@ -545,7 +544,7 @@ class LabviewSocketInterface(core.Device):
     rx_buffer_size: core.Int\
         (default=1024, min=1)
 
-    def connect(self):
+    def open(self):
         self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
                         'rx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM)}
 
@@ -554,7 +553,7 @@ class LabviewSocketInterface(core.Device):
         self.backend['rx'].settimeout(self.settings.timeout)
         self.clear()
 
-    def disconnect(self):
+    def close(self):
         for sock in list(self.backend.values()):
             try:
                 sock.shutdown(socket.SHUT_RDWR)
@@ -612,7 +611,7 @@ class SerialDevice(core.Device):
     """ A general base class for communication with serial devices.
         Unlike (for example) VISA instruments, there is no
         standardized command format like SCPI. The implementation is
-        therefore limited to connect and disconnect, which open
+        therefore limited to open and close, which open
         or close a pyserial connection object: the `link` attribute.
         Subclasses can read or write with the link attribute like they
         would any other serial instance.
@@ -649,7 +648,7 @@ class SerialDevice(core.Device):
         import serial
 
     # Overload methods as needed to implement the Device object protocol
-    def connect(self):
+    def open(self):
         """ Connect to the serial device with the VISA resource string defined
             in self.settings.resource
         """
@@ -660,11 +659,11 @@ class SerialDevice(core.Device):
             self.settings.resource, self.baud_rate, **params)
         self.logger.debug(f'{repr(self)} connected')
 
-    def disconnect(self):
+    def close(self):
         """ Disconnect the serial instrument
         """
         self.backend.close()
-        self.logger.debug(f'{repr(self)} disconnected')
+        self.logger.debug(f'{repr(self)} closed')
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):
@@ -771,7 +770,7 @@ class SerialLoggingDevice(SerialDevice):
                         10 * self.settings.baud_rate * self.settings.poll_rate))
             except SerialException as e:
                 self._stop.set()
-                self.disconnect()
+                self.close()
                 raise e
             finally:
                 self.logger.debug(f'{repr(self)} ending log acquisition')
@@ -822,7 +821,7 @@ class SerialLoggingDevice(SerialDevice):
         """
         self.fetch()
 
-    def disconnect(self):
+    def close(self):
         self.stop()
 
 
@@ -830,7 +829,7 @@ class TelnetDevice(core.Device):
     """ A general base class for communication devices via telnet.
         Unlike (for example) VISA instruments, there is no
         standardized command format like SCPI. The implementation is
-        therefore limited to connect and disconnect, which open
+        therefore limited to open and close, which open
         or close a pyserial connection object: the `backend` attribute.
         Subclasses can read or write with the backend attribute like they
         would any other telnetlib instance.
@@ -854,14 +853,14 @@ class TelnetDevice(core.Device):
         global Telnet
         from telnetlib import Telnet
 
-    def connect(self):
-        """ Make the telnet connection to the host defined
+    def open(self):
+        """ Open a telnet connection to the host defined
             by the string in self.settings.resource
         """
         self.backend = Telnet(self.settings.resource, port=self.settings.port,
                               timeout=self.settings.timeout)
 
-    def disconnect(self):
+    def close(self):
         """ Disconnect the telnet connection
         """
         self.backend.close()
@@ -884,7 +883,7 @@ class VISADevice(core.Device):
         This is equivalent to the more pyvisa-style use as follows::
 
             inst = VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR')
-            inst.connect()
+            inst.open()
             print(inst.query('*IDN?'))
 
         Use of `inst` makes it possible to add callbacks to support
@@ -936,17 +935,17 @@ class VISADevice(core.Device):
                                               pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL)
 
     # Overload methods as needed to implement RemoteDevice
-    def connect(self):
+    def open(self):
         """ Connect to the VISA instrument defined by the VISA resource
             set by `self.settings.resource`. The pyvisa backend object is assigned
             to `self.backend`.
 
             :returns: None
 
-            Instead of calling `connect` directly, consider using
-            `with` statements to guarantee proper disconnection
+            Instead of calling `open` directly, consider using
+            `with` statements to guarantee a call to `close`
             if there is an error. For example, the following
-            sets up a connected instance::
+            sets up a opened instance::
 
                 with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as inst:
                     print(inst.identity)
@@ -954,7 +953,7 @@ class VISADevice(core.Device):
                     print(inst.options)
 
             would instantiate a `VISADevice` and guarantee
-            it is disconnected either at the successful completion
+            a call to `close` either at the successful completion
             of the `with` block, or if there is any exception.
         """
         # The resource manager is "global" at the class level here
@@ -965,7 +964,7 @@ class VISADevice(core.Device):
                                                     read_termination=self.settings.read_termination,
                                                     write_termination=self.settings.write_termination)
 
-    def disconnect(self):
+    def close(self):
         """ Disconnect the VISA instrument. If you use a `with` block
             this is handled automatically and you do not need to
             call this method.
@@ -978,7 +977,7 @@ class VISADevice(core.Device):
             with contextlib.suppress(pyvisa.Error):
                 self.backend.clear()
         except BaseException as e:
-            self.logger.warning('unhandled disconnect error: ' + str(e))
+            self.logger.warning('unhandled close error: ' + str(e))
         finally:
             self.backend.close()
 
@@ -1204,7 +1203,7 @@ class Win32ComDevice(core.Device):
         import win32com
         import win32com.client
 
-    def connect(self):
+    def open(self):
         """ Connect to the win32 com object
         """
 
@@ -1231,5 +1230,5 @@ class Win32ComDevice(core.Device):
         else:
             self.backend = win32com.client.Dispatch(self.settings.com_object)
 
-    def disconnect(self):
+    def close(self):
         pass

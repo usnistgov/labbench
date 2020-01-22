@@ -108,7 +108,7 @@ def retry(exception_or_exceptions, tries=4, delay=0,
     
         # Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError
         @retry(ConnectionRefusedError, tries=5)
-        def connect(host, port):
+        def open(host, port):
             t = telnetlib.Telnet()
             t.open(host,port,5)
             return t
@@ -171,7 +171,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
         import telnetlib
     
         @until_timeout(ConnectionRefusedError, 5)
-        def connect(host, port):
+        def open(host, port):
             t = telnetlib.Telnet()
             t.open(host,port,5)
             return t

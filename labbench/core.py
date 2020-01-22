@@ -941,7 +941,7 @@ class DisconnectedBackend(object):
             else:
                 name = self.__dev__.__class__.__qualname__
             raise ConnectionError(
-                'need to connect first to access backend.{key} in {clsname} instance (resource={resource})'
+                'call open() first to access backend.{key} in {clsname} instance (resource={resource})'
                     .format(key=key, clsname=name, resource=self.__dev__.settings.resource))
 
     def __repr__(self):
@@ -1006,7 +1006,7 @@ class Device(HasStates):
     """
     settings = HasSettings
 
-    resource: Unicode(allow_none=True, help='device connection URI')
+    resource: Unicode(allow_none=True, help='device address or URI')
 
     concurrency_support: Bool(default=True, settable=False,
                               help='`True` if this device supports threading')
@@ -1031,13 +1031,13 @@ class Device(HasStates):
 
     # Backend classes may optionally overload these, and do not need to call the parents
     # defined here
-    def connect(self):
+    def open(self):
         """ Backend implementations overload this to open a backend
             connection to the resource.
         """
         pass
 
-    def disconnect(self):
+    def close(self):
         """ Backend implementations must overload this to disconnect an
             existing connection to the resource encapsulated in the object.
         """
@@ -1125,8 +1125,8 @@ class Device(HasStates):
         # Instantiate state now. It needs to be here, after settings are fully
         # instantiated, in case state implementation depends on settings
 
-        wrap(self, 'connect', self.__connect_wrapper__)
-        wrap(self, 'disconnect', self.__disconnect_wrapper__)
+        wrap(self, 'open', self.__open_wrapper__)
+        wrap(self, 'close', self.__close_wrapper__)
 
         self.__warn_state_names__ = tuple(self.__traits__.keys())
         self.__warn_settings_names__ = tuple(self.settings.__traits__.keys())
@@ -1144,39 +1144,39 @@ class Device(HasStates):
                 warn(msg)
         super().__setattr__(name, value)
 
-    def __connect_wrapper__(self, *args, **kws):
+    def __open_wrapper__(self, *args, **kws):
         """ A wrapper for the connect() method. It steps through the
-            method resolution order of self.__class__ and invokes each connect()
+            method resolution order of self.__class__ and invokes each open()
             method, starting with labbench.Device and working down
         """
         if self.connected:
-            self.logger.debug('{} already connected'.format(repr(self)))
+            self.logger.debug('{} already open'.format(repr(self)))
             return
 
         self.backend = None
 
-        for connect in trace_methods(self.__class__, 'connect', Device)[::-1]:
-            connect(self)
+        for opener in trace_methods(self.__class__, 'open', Device)[::-1]:
+            opener(self)
 
         # Force an update to self.connected
         self.connected
 
-    def __disconnect_wrapper__(self, *args, **kws):
-        """ A wrapper for the disconnect() method that runs
-            cleanup() before calling disconnect(). disconnect()
+    def __close_wrapper__(self, *args, **kws):
+        """ A wrapper for the close() method that runs
+            cleanup() before calling close(). close()
             will still be called if there is an exception in cleanup().
         """
         # Try to run cleanup(), but make sure to run
-        # disconnect() even if it fails
+        # close() even if it fails
         if not self.connected:
             return
 
-        methods = trace_methods(self.__class__, 'disconnect', Device)
+        methods = trace_methods(self.__class__, 'close', Device)
 
         all_ex = []
-        for disconnect in methods:
+        for closer in methods:
             try:
-                disconnect(self)
+                closer(self)
             except BaseException:
                 all_ex.append(sys.exc_info())
 
@@ -1188,18 +1188,18 @@ class Device(HasStates):
                 depth = len(tuple(traceback.walk_tb(ex[2])))
                 traceback.print_exception(*ex, limit=-(depth - 1))
                 sys.stderr.write(
-                    '(Exception suppressed to continue disconnect)\n\n')
+                    '(Exception suppressed to continue close)\n\n')
 
         self.connected
 
-        self.logger.debug(f'now disconnected')
+        self.logger.debug(f'now closed')
 
     def __imports__(self):
         pass
 
     def __enter__(self):
         try:
-            self.connect()
+            self.open()
             return self
         except BaseException as e:
             args = list(e.args)
@@ -1210,7 +1210,7 @@ class Device(HasStates):
 
     def __exit__(self, type_, value, traceback):
         try:
-            self.disconnect()
+            self.close()
         except BaseException as e:
             args = list(e.args)
             args[0] = '{}: {}'.format(repr(self), str(args[0]))
@@ -1218,7 +1218,7 @@ class Device(HasStates):
             raise e
 
     def __del__(self):
-        self.disconnect()
+        self.close()
 
     def __repr__(self):
         name = self.__class__.__qualname__

@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
 ## [Unreleased]
+**This is a significant refactor, and is not API compatible with 0.20!** 
 ### Added
 - Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
 
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - text file outputs in relational databases are now encoded as utf-8
 - Removed Trait parameters `default_value`, `read_only`, and `write_only`; replaced with Trait parameters `default`, `settable`, `gettable`, `allow`
 - Removed Device methods `__get_state__`, `__set_state__`; added methods `__get_command__`
+- Replaced Device methods `connect` and `disconnect` with `open` and `close` to more closely match python convention
 - Support for updating default values of settings in subclasses as annotations
 - Reduced import time by waiting to import heavier packages pyvisa and pandas
 - lb.notebook is no longer pulled in by default; importing it now injects wrappers around builtins.range and np.linspace 

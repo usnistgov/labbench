@@ -36,14 +36,14 @@ class Testbed(object):
     ''' A collection of Device instances, database managers, and methods that
         implement an automated experiment.
 
-        Use a `with` block with the testbed instance to connect everything
+        Use a `with` block with the testbed instance to open everything
         at once like so::
 
             with Testbed() as testbed:
                 # use the testbed here
                 pass
 
-        or optionally connect only a subset of devices like this::
+        or optionally open only a subset of devices like this::
 
             testbed = Testbed()
             with testbed.dev1, testbed.dev2:
@@ -53,10 +53,10 @@ class Testbed(object):
         Make your own subclass of Testbed with a custom `make`
         method to define the Device or database manager instances, and
         a custom `startup` method to implement custom code to set up the
-        testbed after each Device is connected.
+        testbed after all Device instances are open.
     '''
 
-    # Specify (in order) any context manager types to connect before others
+    # Specify (in order) any context manager types to open before others
     enter_first = Email, StateAggregator, Host
 
     def __init__(self, config=None, concurrent=True):
@@ -131,30 +131,30 @@ class Testbed(object):
         pass
 
     def startup(self):
-        ''' This is called automatically after connect if the testbed is
-            connected using the `with` statement block.
+        ''' This is called automatically after open if the testbed is
+            opened using the `with` statement block.
 
             Implement any custom code here in Testbed subclasses to
-            implement startup of the testbed given connected Device
+            implement startup of the testbed given open Device
             instances.
         '''
         pass
 
     def cleanup(self):
-        ''' This is called automatically immediately before disconnect if the
-            testbed is connected using the `with` context block.
+        ''' This is called automatically immediately before close if the
+            testbed is opened using the `with` context block.
             
             This is called even if the `with` context is left as a result of
             an exception.
 
             Implement any custom code here in Testbed subclasses to
-            implement teardown of the testbed given connected Device
+            implement teardown of the testbed given open Device
             instances.
         '''
         pass
     
     def after(self):
-        ''' This is called automatically after disconnect, if no exceptions
+        ''' This is called automatically after open, if no exceptions
             were raised.
         '''
         pass

@@ -59,10 +59,10 @@ class LogStderr(core.Device):
     '''
     log = ''
 
-    def connect(self):
+    def open(self):
         self._stderr, self._buf, sys.stderr = sys.stderr, io.StringIO(), self
 
-    def disconnect(self):
+    def close(self):
         if self.connected:
             sys.stderr = self._stderr
             self.log = self._buf.getvalue()
@@ -124,11 +124,11 @@ class Email(core.Device):
         finally:
             self.server.quit()
 
-    def connect(self):
+    def open(self):
         self.backend = LogStderr()
         self.backend.connect()
 
-    def disconnect(self):
+    def close(self):
         if self.connected:
             self.backend.disconnect()
             time.sleep(1)
@@ -174,7 +174,7 @@ class Host(core.Device):
     log_format = '%(asctime)s.%(msecs).03d %(levelname)10s %(message)s'
     time_format = '%Y-%m-%d %H:%M:%S'
 
-    def connect(self):
+    def open(self):
         ''' The host setup method tries to commit current changes to the tree
         '''
         logger = logging.getLogger('labbench')
@@ -203,7 +203,7 @@ class Host(core.Device):
         import git
         import pip
 
-    def disconnect(self):
+    def close(self):
         try:
             self.backend['logger'].removeHandler(self.backend['log_handler'])
         except (AttributeError, TypeError):

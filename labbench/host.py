@@ -34,9 +34,9 @@ import socket
 import logging
 import sys
 import io
+import yaml
 
 __all__ = ['Host', 'Email', 'LogStderr']
-
 
 class LogStreamBuffer:
     def __init__(self):
@@ -78,7 +78,7 @@ class LogStderr(core.Device):
             self.log += self._buf.getvalue()
         except ValueError:
             pass
-
+        
 
 class Email(core.Device):
     ''' Sends a notification message on disconnection. If an exception
@@ -170,20 +170,51 @@ class Email(core.Device):
         return subject, message
 
 
-class Host(core.Device):
-    log_format = '%(asctime)s.%(msecs).03d %(levelname)10s %(message)s'
-    time_format = '%Y-%m-%d %H:%M:%S'
+class Dumper(yaml.Dumper):
+    def represent_dict_preserve_order(self, data):
+        return self.represent_dict(data.items())
 
+Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
+
+
+class Formatter(logging.Formatter):    
+    def format(self, rec):
+        """ Return a YAML string for each logger message
+        """
+
+        msg = dict(message=rec.msg,
+                   time=datetime.datetime.fromtimestamp(rec.created),                   
+                   level=rec.levelname)
+        
+        if hasattr(rec, 'device'):
+            msg['device'] = rec.device
+        if rec.threadName != 'MainThread':
+            msg['thread']=rec.threadName
+        
+        self._last = (rec,msg)
+        
+        return yaml.dump([msg], Dumper=Dumper,
+                         indent=4, default_flow_style=False)
+
+
+class Host(core.Device):
+    time_format = '%Y-%m-%d %H:%M:%S'
+    
     def open(self):
         ''' The host setup method tries to commit current changes to the tree
         '''
-        logger = logging.getLogger('labbench')
-        logger.setLevel(logging.DEBUG)
+        
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
-        sh.setFormatter(logging.Formatter(self.log_format, self.time_format))
+        self._formatter = Formatter()
+        sh.setFormatter(self._formatter)
         sh.setLevel(logging.DEBUG)
+
+        # Add to the labbench logger handler        
+        logger = logging.getLogger('labbench')
+        logger.setLevel(logging.DEBUG)        
         logger.addHandler(sh)
+        
         self.backend = {'logger': logger,
                         'log_stream': stream,
                         'log_handler': sh}

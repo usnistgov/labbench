@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support for updating default values of settings in subclasses as annotations
 - Reduced import time by waiting to import heavier packages pyvisa and pandas
 - lb.notebook is no longer pulled in by default; importing it now injects wrappers around builtins.range and np.linspace 
+- `host_log.txt` is now in YAML
 
 ### Removed
 - FilenameDict and ConcurrentRunner, which have been deprecated for a while

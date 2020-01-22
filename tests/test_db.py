@@ -100,8 +100,10 @@ if __name__ == '__main__':
 
         inst.fetch_trace()
         
-        for inst.frequency in np.linspace(10e6, 100e6, 21):
+        for inst.frequency in np.linspace(10e6, 100e6, 5):
             inst.settings.whatever = inst.frequency
+            inst.logger.debug('debug message!')
+            lb.logger.debug('general debug message')
             trace = inst.fetch_trace()
             db.append(power_GW='1.21', trace=trace, potato=7)
 #        db.write()

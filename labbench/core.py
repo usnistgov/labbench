@@ -931,17 +931,7 @@ class DisconnectedBackend(object):
                     .format(key=key, clsname=name, resource=self.__dev__.settings.resource))
 
     def __repr__(self):
-        return 'DisconnectedBackend()'
-
-
-class DeviceLogAdapter(logging.LoggerAdapter):
-    """
-    This example adapter expects the passed in dict-like object to have a
-    'connid' key, whose value in brackets is prepended to the log message.
-    """
-
-    def process(self, msg, kwargs):
-        return '%s - %s' % (self.extra['device'], msg), kwargs
+        return 'DisconnectedBackend()' 
 
 
 class Device(HasStates):
@@ -1047,7 +1037,7 @@ class Device(HasStates):
                 trait = getattr(cls.settings, name)
                 try:
                     v = trait.to_pythonic(v)
-                except BaseException as e:
+                except BaseException:
                     raise
 
                 annotations[name] = trait.copy(default=v)
@@ -1065,21 +1055,21 @@ class Device(HasStates):
         if annotations:
             del cls.__annotations__
 
-
         # Update __doc__ with settings
         if cls.__doc__:
             cls.__doc__ = trim(cls.__doc__)
         else:
             cls.__doc__ = ''
 
-        if not cls.__init__.__doc__:
+        if cls.__init__.__doc__:
+            cls.__init__.__doc__ = trim(cls.__init__.__doc__)
+        else:
             cls.__init__.__doc__ = ''
 
         # Update cls.__doc__
         settings = list(cls.settings.__traits__.items())
         txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in settings))        
         cls.__doc__ += '\n\n' + txt
-        
 
         defaults = dict(((k, v.default) for k, v in settings if v.gettable))
         types = dict(((k, v.type) for k, v in settings if v.gettable))
@@ -1106,7 +1096,7 @@ class Device(HasStates):
         self.__imports__()
 
         self.backend = DisconnectedBackend(self)
-        self.logger = DeviceLogAdapter(logger, {'device': repr(self)})
+        self.logger = logging.LoggerAdapter(logger, {'device': repr(self)})
 
         # Instantiate state now. It needs to be here, after settings are fully
         # instantiated, in case state implementation depends on settings

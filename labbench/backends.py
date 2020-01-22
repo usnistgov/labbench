@@ -28,7 +28,6 @@ from . import core, util
 from collections import OrderedDict
 import contextlib
 import inspect
-import numpy as np
 import os
 import psutil
 from queue import Queue, Empty
@@ -1157,6 +1156,8 @@ class EmulatedVISADevice(core.Device):
                 }
 
     def __command_get__(self, name, command):
+        import numpy as np
+
         trait = self[name]
         
         if isinstance(trait, core.Bool):

@@ -24,14 +24,12 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import traitlets
 from . import core
 from .backends import VISADevice
 from .host import Host
 from .util import show_messages
 from .testbed import Testbed
-import pandas as pd
-import numpy as np
+
 import logging
 import time
 from io import StringIO
@@ -46,12 +44,6 @@ skip_state_by_type = {VISADevice: ['identity'],
                       }
 
 
-def __imports__():
-    global display, widgets
-    from IPython.display import display
-    import ipywidgets as widgets
-
-
 def single(inst, inst_name):
     ''' Generate a formatted html table widget which updates with the most recently observed states
         in a device.
@@ -59,7 +51,9 @@ def single(inst, inst_name):
         :param inst_name: the name to use to label the table
         :returns: :class:`ipywidgdets.HBox` instance containing a single :class:`ipywidgets.HTML` instance
     '''
-    __imports__()
+    import ipywidgets as widgets
+    import pandas as pd
+
     _df = pd.DataFrame([], columns=['value'])
     table_styles = [{'selector': '.col_heading, .blank',
                      'props': [('display', 'none;')]}]
@@ -84,27 +78,24 @@ def single(inst, inst_name):
         if name in skip_attrs:
             return
 
-        if hasattr(
-                obj, 'connected') and name != 'connected' and not obj.connected:
+        if hasattr(obj, 'connected') and name != 'connected' and not obj.connected:
             if name in _df.index:
                 _df.drop(name, inplace=True)
             return
-        label = obj.trait_metadata(name, 'label')
+        label = obj.__traits__[name].label
         _df.loc[name] = str(value) + ' ' + str('' if label is None else label),
         _df.sort_index(inplace=True)
         caption = caption_fmt.format(inst_name).replace(',', '<br>')
         html.value = _df.style.set_caption(caption).set_table_attributes(
             'class="table"').set_table_styles(table_styles).render()
 
-    inst.observe(_on_change, names=traitlets.All, type=traitlets.All)
-    inst.settings.observe(_on_change, names=traitlets.All, type=traitlets.All)
+    core.observe(inst, _on_change)
+    core.observe(inst.settings, _on_change)
 
     return widgets.HBox([html])
 
 
 class TextareaLogHandler(logging.StreamHandler):
-    __imports__()
-
     log_format = '%(asctime)s.%(msecs).03d %(levelname)10s %(message)s'
     time_format = '%Y-%m-%d %H:%M:%S'
     max_buffer = 10000
@@ -203,8 +194,6 @@ def range(*args, **kws):
     ''' the same as python `range`, but with a progress bar representing progress
         iterating through the range
     '''
-    __imports__()
-
     title = kws.pop('title', None)
     return log_progress(builtins.range(*args, **kws), title=title)
 
@@ -214,7 +203,7 @@ def linspace(*args, **kws):
         iterating through the range, and an optional title= keyword argument to
         set the title
     '''
-    __imports__()
+    import numpy as np
 
     title = kws.pop('title', None)
     return log_progress(np.linspace(*args, **kws), title=title)
@@ -233,9 +222,6 @@ def log_progress(sequence, every=None, size=None, title=None):
     :param title: title text
     :return: iterator that yields the elements of `sequence`
     '''
-    """
-    """
-    __imports__()
 
     from ipywidgets import IntProgress, HTML, VBox
     from IPython.display import display

@@ -34,7 +34,6 @@ import socket
 import logging
 import sys
 import io
-import pandas as pd
 
 __all__ = ['Host', 'Email', 'LogStderr']
 
@@ -224,6 +223,8 @@ class Host(core.Device):
     def __python_module_versions(self):
         ''' Enumerate the versions of installed python modules
         '''
+        import pandas as pd
+
         versions = dict([str(d).lower().split(' ')
                          for d in pip.get_installed_distributions()])
         running = dict(sorted([(k, versions[k.lower()])

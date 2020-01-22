@@ -29,10 +29,7 @@ from . import core
 from collections import OrderedDict
 from contextlib import contextmanager, _GeneratorContextManager
 import inspect
-import pandas as pd
-import os
 from queue import Queue, Empty
-from sortedcontainers import SortedDict
 import sys
 from threading import Thread, ThreadError, Event
 from functools import wraps
@@ -45,7 +42,7 @@ import time
 import traceback
 
 __all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
-           'ConfigStore', 'ConcurrentRunner', 'FilenameDict', 'hash_caller',
+           'ConfigStore', 'ConcurrentRunner', 'hash_caller',
            'kill_by_name', 'check_master',
            'retry', 'show_messages', 'sleep', 'stopwatch', 'ThreadSandbox',
            'ThreadEndedByMaster', 'until_timeout']
@@ -1129,62 +1126,64 @@ class ConfigStore:
         ''' Return a pandas DataFrame containing all attributes
             in the class
         '''
+        import pandas as pd
+
         df = pd.DataFrame([cls.all()]).T
         df.columns.name = 'Value'
         df.index.name = 'Parameter'
         return df
 
 
-class FilenameDict(SortedDict):
-    ''' Sometimes instrument configuration file can be defined according
-        to a combination of several test parameters.
-
-        This class provides a way of mapping these parameters to and from a
-        filename string.
-
-        They keys are sorted alphabetically, just as in the underlying
-        SortedDict.
-    '''
-
-    def __init__(self, *args, **kws):
-        if len(args) == 1 and isinstance(args[0], str):
-            d = self.from_filename(args[0])
-            super(FilenameDict, self).__init__()
-            self.update(d)
-        elif len(args) >= 1 and isinstance(args[0], (pd.Series, pd.DataFrame)):
-            d = self.from_index(*args, **kws)
-            super(FilenameDict, self).__init__()
-            self.update(d)
-        else:
-            super(FilenameDict, self).__init__(*args, **kws)
-
-    def __str__(self):
-        ''' Convert the dictionary to a filename. It is not guaranteed
-            to fit within file name length limit of any filesystem.
-        '''
-        return ','.join([f'{k}={v}' for k, v in self.items()])
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({repr(str(self))})'
-
-    @classmethod
-    def from_filename(cls, filename):
-        ''' Convert from a FilenameDict filename string to a FilenameDict
-            object.
-        '''
-        filename = os.path.splitext(os.path.basename(filename))[0]
-        fields = filename.split(',')
-        fields = [f.split('=') for f in fields]
-        return cls(fields)
-
-    @classmethod
-    def from_index(cls, df, value=None):
-        ''' Make a FilenameDict where the keys are taken from df.index
-            and the values are constant values provided.
-        '''
-        keys = df.index.tolist()
-        values = len(keys) * [value]
-        return cls(zip(keys, values))
+# class FilenameDict(SortedDict):
+#     ''' Sometimes instrument configuration file can be defined according
+#         to a combination of several test parameters.
+#
+#         This class provides a way of mapping these parameters to and from a
+#         filename string.
+#
+#         They keys are sorted alphabetically, just as in the underlying
+#         SortedDict.
+#     '''
+#
+#     def __init__(self, *args, **kws):
+#         if len(args) == 1 and isinstance(args[0], str):
+#             d = self.from_filename(args[0])
+#             super(FilenameDict, self).__init__()
+#             self.update(d)
+#         elif len(args) >= 1 and isinstance(args[0], (pd.Series, pd.DataFrame)):
+#             d = self.from_index(*args, **kws)
+#             super(FilenameDict, self).__init__()
+#             self.update(d)
+#         else:
+#             super(FilenameDict, self).__init__(*args, **kws)
+#
+#     def __str__(self):
+#         ''' Convert the dictionary to a filename. It is not guaranteed
+#             to fit within file name length limit of any filesystem.
+#         '''
+#         return ','.join([f'{k}={v}' for k, v in self.items()])
+#
+#     def __repr__(self):
+#         return f'{self.__class__.__name__}({repr(str(self))})'
+#
+#     @classmethod
+#     def from_filename(cls, filename):
+#         ''' Convert from a FilenameDict filename string to a FilenameDict
+#             object.
+#         '''
+#         filename = os.path.splitext(os.path.basename(filename))[0]
+#         fields = filename.split(',')
+#         fields = [f.split('=') for f in fields]
+#         return cls(fields)
+#
+#     @classmethod
+#     def from_index(cls, df, value=None):
+#         ''' Make a FilenameDict where the keys are taken from df.index
+#             and the values are constant values provided.
+#         '''
+#         keys = df.index.tolist()
+#         values = len(keys) * [value]
+#         return cls(zip(keys, values))
 
 
 class ConcurrentRunner:

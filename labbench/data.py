@@ -36,15 +36,11 @@ import copy
 import inspect
 import io
 import logging
-import numpy as np
 import os
-import pandas as pd
 import pickle
 import shutil
-import tarfile
 import textwrap
 import warnings
-from pyarrow.feather import read_feather
 
 
 class StateAggregator(object):
@@ -392,6 +388,8 @@ class MungerBase(object):
         return row
 
     def write_metadata(self, name, key):
+        import pandas as pd
+
         if os.path.exists(os.path.join(self.path, self.metadata_dirname)):
             return
 
@@ -440,6 +438,8 @@ class MungerBase(object):
         :param row: row dictionary, or None (the default) to write to the metadata folder
         :return: the path to the file, relative to the directory that contains the master database
         '''
+
+        import pandas as pd
 
         def write(stream, ext, value):
             if ext == 'csv':
@@ -1018,6 +1018,8 @@ class StatesToCSV(StatesToRelationalTable):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         '''
+        import pandas as pd
+
         if not self.path.lower().endswith('.csv'):
             self.path += '.csv'
         if os.path.exists(self.path) and not self._overwrite:
@@ -1036,6 +1038,8 @@ class StatesToCSV(StatesToRelationalTable):
             If the class was created with overwrite=True, then the first call to _write_master() will overwrite
             the preexisting file; subsequent calls append.
         '''
+        import pandas as pd
+
         if len(self.pending) == 0:
             return
         isfirst = self.df is None
@@ -1090,8 +1094,9 @@ class StatesToSQLite(StatesToRelationalTable):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         '''
+        import pandas as pd
 
-#        if not self.path.lower().endswith('.db'):
+        #        if not self.path.lower().endswith('.db'):
 #            self.path += '.db'
         os.makedirs(self.path, exist_ok=True)
         path = os.path.join(self.path, self.master_filename)
@@ -1129,6 +1134,7 @@ class StatesToSQLite(StatesToRelationalTable):
             If the class was created with overwrite=True, then the first call to _write_master() will overwrite
             the preexisting file; subsequent calls append.
         '''
+        import pandas as pd
 
         if len(self.pending) == 0:
             return
@@ -1211,6 +1217,8 @@ class StatesToSQLite(StatesToRelationalTable):
         and it contains NA values, this infers the datatype of the not-NA
         values.  Needed for inserting typed data containing NULLs, GH8778.
         """
+        import pandas as pd
+
         col_for_inference = col
         if col.dtype == 'object':
             notnulldata = col[~pd.isnull(col)]
@@ -1231,6 +1239,7 @@ def to_feather(data, path):
     :return: None
 
     '''
+    import numpy as np
 
     iname, data.index.name = data.index.name, None
     cname, data.columns.name = data.columns.name, None
@@ -1257,6 +1266,7 @@ def read_sqlite(path, table_name='master', columns=None, nrows=None,
     :return: pandas.DataFrame instance containing data loaded from `path`
     '''
 
+    import pandas as pd
     from sqlalchemy import create_engine
 
     engine = create_engine(f'sqlite:///{path}')
@@ -1266,21 +1276,6 @@ def read_sqlite(path, table_name='master', columns=None, nrows=None,
     if nrows is not None:
         df = df.iloc[:nrows]
     return df
-
-
-reader_guess = {'p': pd.read_pickle,
-                'pickle': pd.read_pickle,
-                'db': read_sqlite,
-                'sqlite': read_sqlite,
-                'json': pd.read_json,
-                'csv': pd.read_csv}
-
-try:
-    reader_guess.update({'f': read_feather,
-                         'feather': read_feather})
-except BaseException:
-    warnings.warn(
-        'feather format is not available in this pandas installation, and will not be supported in labbench')
 
 
 def read(path_or_buf, columns=None, nrows=None, format='auto', **kws):
@@ -1294,6 +1289,23 @@ def read(path_or_buf, columns=None, nrows=None, format='auto', **kws):
     :param kws: additional keyword arguments to pass to the pandas read_<ext> function matching the file extension
     :return: pandas.DataFrame instance containing data read from file
     '''
+
+    import pandas as pd
+    from pyarrow.feather import read_feather
+
+    reader_guess = {'p': pd.read_pickle,
+                    'pickle': pd.read_pickle,
+                    'db': read_sqlite,
+                    'sqlite': read_sqlite,
+                    'json': pd.read_json,
+                    'csv': pd.read_csv}
+
+    try:
+        reader_guess.update({'f': read_feather,
+                             'feather': read_feather})
+    except BaseException:
+        warnings.warn(
+            'feather format is not available in this pandas installation, and will not be supported in labbench')
 
     if isinstance(path_or_buf, str):
         if os.path.getsize(path_or_buf) == 0:
@@ -1326,6 +1338,7 @@ class MungeTarReader:
     tarnames = 'data.tar', 'data.tar.gz', 'data.tar.bz2', 'data.tar.lz4'
 
     def __init__(self, path, tarname='data.tar'):
+        import tarfile
         self.tarfile = tarfile.open(os.path.join(path, tarname), 'r')
 
     def __call__(self, key, *args, **kws):
@@ -1395,6 +1408,8 @@ def read_relational(path, expand_col, master_cols=None, target_cols=None,
         :returns: the expanded dataframe
 
     '''
+
+    import pandas as pd
 
     # if not isinstance(master, (pd.DataFrame,pd.Series)):
     #     raise ValueError('expected master to be a DataFrame instance, but it is {} instead'\

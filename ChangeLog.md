@@ -21,8 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Removed Trait parameters 'default_value', 'read_only', and 'write_only'; added Trait parameters 'default', 'settable', 'gettable', 'allow', have been added
 - Removed Device methods '__get_state__', '__set_state__'; added methods '__get_command__'
 - Support for updating default values of settings in subclasses as annotations
+- Reduced import time by waiting to import heavier packages pyvisa and pandas 
 ### Removed
-- 
+- FilenameDict, which has been deprecated for a while
 
 ## [0.20 - 2019-10-09]
 ### Added

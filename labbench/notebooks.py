@@ -33,16 +33,25 @@ from .testbed import Testbed
 import logging
 import time
 from io import StringIO
-import builtins
 import numbers
+import builtins
 
-__all__ = ['panel', 'log_progress', 'range', 'linspace']
+import pandas as pd
+import numpy as np
+
+import ipywidgets as widgets
+from ipywidgets import IntProgress, HTML, VBox
+from IPython.display import display
+
+__all__ = ['panel', 'log_progress']
 
 skip_state_by_type = {VISADevice: ['identity'],
                       Host: ['log'],
                       core.Device: ['connected']
                       }
 
+__wrapped__ = dict(range=builtins.range,
+                   linspace=np.linspace)
 
 def single(inst, inst_name):
     ''' Generate a formatted html table widget which updates with the most recently observed states
@@ -51,8 +60,6 @@ def single(inst, inst_name):
         :param inst_name: the name to use to label the table
         :returns: :class:`ipywidgdets.HBox` instance containing a single :class:`ipywidgets.HTML` instance
     '''
-    import ipywidgets as widgets
-    import pandas as pd
 
     _df = pd.DataFrame([], columns=['value'])
     table_styles = [{'selector': '.col_heading, .blank',
@@ -195,7 +202,7 @@ def range(*args, **kws):
         iterating through the range
     '''
     title = kws.pop('title', None)
-    return log_progress(builtins.range(*args, **kws), title=title)
+    return log_progress(__wrapped__['range'](*args, **kws), title=title)
 
 
 def linspace(*args, **kws):
@@ -203,10 +210,8 @@ def linspace(*args, **kws):
         iterating through the range, and an optional title= keyword argument to
         set the title
     '''
-    import numpy as np
-
     title = kws.pop('title', None)
-    return log_progress(np.linspace(*args, **kws), title=title)
+    return log_progress(__wrapped__['linspace'](*args, **kws), title=title)
 
 
 def log_progress(sequence, every=None, size=None, title=None):
@@ -222,9 +227,6 @@ def log_progress(sequence, every=None, size=None, title=None):
     :param title: title text
     :return: iterator that yields the elements of `sequence`
     '''
-
-    from ipywidgets import IntProgress, HTML, VBox
-    from IPython.display import display
 
     is_iterator = False
     if size is None:
@@ -272,3 +274,6 @@ def log_progress(sequence, every=None, size=None, title=None):
         progress.bar_style = 'success'
         progress.value = index
         label.value = f'{title}Finished {index}'
+
+np.linspace = linspace
+__builtins__.range = range

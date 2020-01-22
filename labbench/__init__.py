@@ -31,7 +31,6 @@ from time import time
 from .core import *
 from .data import *
 from .host import *
-from .notebooks import *
 from .version import __version__
 from .util import *
 from .backends import *

@@ -330,10 +330,12 @@ class Trait:
     __setter__ = None
     __getter__ = None
 
-    def __init__(self, *args, **kws):
+    def __init__(self, **kws):
         # Apply the settings
         for k, v in kws.items():
             setattr(self, k, v)
+
+        self.kws = kws
 
         # Now go back and type-check
         for k, v in kws.items():
@@ -353,7 +355,7 @@ class Trait:
                 tname = t.__qualname__
                 vname = type(v).__qualname__
                 raise ValueError(f"argument '{k}' has type '{vname}', but it should be '{tname}'")
-
+                
         # Some trickery to define with
         if self.remap and self.only:
             raise ValueError(f"the 'remap' and 'valid' parameters are redundant")
@@ -390,6 +392,9 @@ class Trait:
         cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys())
         wrap_dynamic_init(cls, tuple(annots.keys()), cls.__defaults__, 1,
                           annots)
+
+    def copy(self, **update_kws):
+        return self.__class__(**dict(self.kws, **update_kws))
 
     ### Descriptor methods (called automatically by the owning class or instance)
     def __set_name__(self, owner_cls, name):
@@ -441,9 +446,14 @@ class Trait:
         # Validate the pythonic value
         if value is not None:
             # Convert to the representation expected by owner.__command_set__
-            value = Trait.to_pythonic(self, value)
-            value = self.validate(value)
-
+            try:
+                value = Trait.to_pythonic(self, value)
+                value = self.validate(value)
+            except BaseException as e:
+                name = owner.__class__.__qualname__ + '.' + self.name
+                e.args = (e.args[0] + f" in attempt to set '{name}'",) + e.args[1:]
+                raise e
+            
             if len(self.only) > 0 and not self.contains(self.only, value):
                 raise ValueError(f"value '{value}' is not among the allowed values {repr(self.only)}")
         elif self.allow_none:
@@ -451,7 +461,12 @@ class Trait:
         else:
             raise ValueError(f"None value not allowed for trait '{repr(self)}'")
 
-        value = self.from_pythonic(value)
+        try:
+            value = self.from_pythonic(value)
+        except BaseException as e:
+            name = owner.__class__.__qualname__ + '.' + self.name
+            e.args = (e.args[0] + f" in attempt to set '{name}'",) + e.args[1:]
+            raise e
 
         # Apply value
         if self.__setter__ is not None:
@@ -499,8 +514,13 @@ class Trait:
             pass
         else:
             # skip validation if None and None values are allowed
-            value = self.to_pythonic(value)
-
+            try:
+                value = self.to_pythonic(value)
+            except BaseException as e:
+                name = owner.__class__.__qualname__ + '.' + self.name
+                e.args = (e.args[0] + f" in attempt to get '{name}'",) + e.args[1:]
+                raise e
+            
             # Once we have a python value, give warnings (not errors) if the device value fails further validation
             if isinstance(owner, Device):
                 log = owner.logger.warning
@@ -1031,10 +1051,29 @@ class Device(HasStates):
     def __init_subclass__(cls):
         # Make a new cls.settings subclass that includes the new settings
         annotations = getattr(cls, '__annotations__', {})
+
         settings = type('settings', (cls.settings,),
-                        dict(cls.settings.__dict__, **annotations))
+                        dict(cls.settings.__dict__))
+
+        for name, v in annotations.items():
+            if isinstance(v, Trait):
+                # explicitly define a new setting
+                setattr(cls.settings, name, v)
+            elif hasattr(cls.settings, name):
+                # update the default value of an existing setting, if it is valid
+                trait = getattr(cls.settings, name)
+                try:
+                    v = trait.to_pythonic(v)
+                except:
+                    raise
+                setattr(cls.settings, name, trait.copy(default=v))
+            else:
+                clsname = cls.__qualname__
+                raise AttributeError(f"the '{clsname}' setting annotation '{name}' "\
+                                     f"must be a Trait or an updated default value")
         if annotations:
             del cls.__annotations__
+
         settings.__qualname__ = cls.__qualname__ + '.settings'
         cls.settings = settings
 

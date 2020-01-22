@@ -184,7 +184,7 @@ class CommandLineWrapper(core.Device):
 
             Once the background process is running,
 
-            * Retreive standard output from the executable with self.read_stdout
+            * Retrieve standard output from the executable with self.read_stdout
 
             * Write to standard input self.write_stdin
 
@@ -294,12 +294,12 @@ class CommandLineWrapper(core.Device):
 
         if self.__contexts.setdefault('use_state_arguments', True):
             all_flags = dict(
-                [(k, v) for k, v in self.settings.traits().items() if v.command])
+                [(k, v) for k, v in self.settings.traits().items() if v.metadata['flag']])
 
             # Check for invalid flags
             bad_flags = set(flags.keys()).difference(all_flags.keys())
             if len(bad_flags) > 0:
-                msg = f'commandline keyword arguments {repr(tuple(bad_flags))} not found in {repr(self)}.settings'
+                msg = f'command line keyword arguments {repr(tuple(bad_flags))} not found in {repr(self)}.settings'
                 raise ValueError(msg)
 
             args = list(self.settings.arguments)

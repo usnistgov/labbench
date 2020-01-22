@@ -52,8 +52,13 @@ class Mock(lb.Device):
     str1: lb.Unicode(default='hello')
     str2: lb.Unicode(default='moose', only=('moose', 'squirrel'))
     str3: lb.Unicode(default='moose', only=('MOOSE', 'squirrel'), case=False)
+    
+class UpdateMock(lb.Device):
+    float0: 7
 
-
+class UnsetMock(lb.Device):
+    float0: 7
+    
 class Tests(unittest.TestCase):
     def test_defaults(self):
         with Mock() as m:
@@ -147,6 +152,13 @@ class Tests(unittest.TestCase):
         self.assertIn('descriptive', Mock.__init__.__doc__)
         with Mock() as m:
             self.assertIn('descriptive', m.__init__.__doc__)
+            
+    def test_update(self):
+        with UpdateMock() as m:
+            self.assertEqual(m.settings.float0, 7)
+            
+        with UnsetMock() as m:
+            pass
 
 
 if __name__ == '__main__':

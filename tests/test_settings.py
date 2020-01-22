@@ -53,12 +53,9 @@ class Mock(lb.Device):
     str2: lb.Unicode(default='moose', only=('moose', 'squirrel'))
     str3: lb.Unicode(default='moose', only=('MOOSE', 'squirrel'), case=False)
     
-class UpdateMock(lb.Device):
+class UpdateMock(Mock):
     float0: 7
 
-class UnsetMock(lb.Device):
-    float0: 7
-    
 class Tests(unittest.TestCase):
     def test_defaults(self):
         with Mock() as m:
@@ -153,12 +150,16 @@ class Tests(unittest.TestCase):
         with Mock() as m:
             self.assertIn('descriptive', m.__init__.__doc__)
             
-    def test_update(self):
+    def test_subclassing(self):
         with UpdateMock() as m:
-            self.assertEqual(m.settings.float0, 7)
-            
-        with UnsetMock() as m:
-            pass
+            print(m.settings.float0)
+            self.assertEqual(m.settings.float0, 7.0)
+        
+        with self.assertRaises(AttributeError):
+            # this should raise an exception, because no parent class
+            # has defined a prior trait to update with a new default value
+            class UnsetMock(lb.Device):
+                float0: 7
 
 
 if __name__ == '__main__':

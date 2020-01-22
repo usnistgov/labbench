@@ -330,7 +330,7 @@ class Trait:
     __setter__ = None
     __getter__ = None
 
-    def __init__(self, **kws):
+    def __init__(self, *args, **kws):
         # Apply the settings
         for k, v in kws.items():
             setattr(self, k, v)
@@ -1052,30 +1052,33 @@ class Device(HasStates):
         # Make a new cls.settings subclass that includes the new settings
         annotations = getattr(cls, '__annotations__', {})
 
-        settings = type('settings', (cls.settings,),
-                        dict(cls.settings.__dict__))
-
-        for name, v in annotations.items():
+        for name, v in dict(annotations).items():
             if isinstance(v, Trait):
                 # explicitly define a new setting
-                setattr(cls.settings, name, v)
+                continue
             elif hasattr(cls.settings, name):
                 # update the default value of an existing setting, if it is valid
                 trait = getattr(cls.settings, name)
                 try:
                     v = trait.to_pythonic(v)
-                except:
+                except BaseException as e:
                     raise
-                setattr(cls.settings, name, trait.copy(default=v))
+
+                annotations[name] = trait.copy(default=v)
             else:
                 clsname = cls.__qualname__
                 raise AttributeError(f"the '{clsname}' setting annotation '{name}' "\
                                      f"must be a Trait or an updated default value")
+        settings = type('settings', (cls.settings,),
+                        dict(cls.settings.__dict__,
+                             __traits__=dict(cls.settings.__traits__),
+                             **annotations))
+        settings.__qualname__ = cls.__qualname__ + '.settings'
+        cls.settings = settings
+
         if annotations:
             del cls.__annotations__
 
-        settings.__qualname__ = cls.__qualname__ + '.settings'
-        cls.settings = settings
 
         # Update __doc__ with settings
         if cls.__doc__:

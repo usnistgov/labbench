@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Show warnings on trait assignment typos like `device.frequency = 5` instead of `device.state.frequency = 5`
-- `state` or `settings` traits can be defined directly in a `labbench.Device` class. Settings are defined as annotations (':') and states are defined with assignment ('=')
+- `state` or `settings` traits can be defined directly in a `labbench.Device` class. Settings are defined as annotations ('`:`') and states are defined with assignment ('`=`')
 - Add first 40 lines of CommandLineWrapper output to debug logs
 - Removed logger warnings when calls to CommandLineWrapper.kill() do not kill any process
 - Tightened the message about a pending exception in lb.concurrently
@@ -18,12 +18,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Testbed objects now support entering contexts of specified types first, which are listed (in order) by the new enter_first class attribute
 - concurrently and sequentially now raise an exception of two callables have the same name; specify a different name with a keyword argument instead to avoid naming conflicts
 - text file outputs in relational databases are now encoded as utf-8
-- Removed Trait parameters 'default_value', 'read_only', and 'write_only'; added Trait parameters 'default', 'settable', 'gettable', 'allow', have been added
-- Removed Device methods '__get_state__', '__set_state__'; added methods '__get_command__'
+- Removed Trait parameters `default_value`, `read_only`, and `write_only`; replaced with Trait parameters `default`, `settable`, `gettable`, `allow`
+- Removed Device methods `__get_state__`, `__set_state__`; added methods `__get_command__`
 - Support for updating default values of settings in subclasses as annotations
-- Reduced import time by waiting to import heavier packages pyvisa and pandas 
+- Reduced import time by waiting to import heavier packages pyvisa and pandas
+- lb.notebook is no longer pulled in by default; importing it now injects wrappers around builtins.range and np.linspace 
+
 ### Removed
-- FilenameDict, which has been deprecated for a while
+- FilenameDict and ConcurrentRunner, which have been deprecated for a while
 
 ## [0.20 - 2019-10-09]
 ### Added

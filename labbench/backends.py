@@ -1140,7 +1140,7 @@ class EmulatedVISADevice(core.Device):
     def options(self):
         ''' options reported by the instrument '''
         
-        return ','.join(((f"{s.name}={repr(s.previous)}"\
+        return ','.join(((f"{s.name}={repr(self.settings.__previous__[s.name])}"\
                           for s in self.settings)))
 
     @core.Dict(command='*STB', settable=False)

@@ -1186,7 +1186,7 @@ class Win32ComDevice(core.Device):
         not for the faint of heart. Threading support is instead realized
         with util.ThreadSandbox, which ensures that all calls to the dispatched
         COM object block until the previous calls are completed from within
-        a background thread. Set concurrency_support=True to decide whether
+        a background thread. Set concurrency=True to decide whether
         this thread support wrapper is applied to the dispatched Win32Com object.
     """
 
@@ -1194,7 +1194,7 @@ class Win32ComDevice(core.Device):
         core.Unicode(default='',
                      help='the win32com object string')  # Must be a module
 
-    concurrency_support:\
+    concurrency:\
         core.Bool(default=True,
                      help='whether this implementation supports threading')
 
@@ -1225,7 +1225,7 @@ class Win32ComDevice(core.Device):
         if self.settings.com_object == '':
             raise Exception('settings.com_object needs to be set')
 
-        if self.settings.concurrency_support:
+        if self.settings.concurrency:
             self.backend = util.ThreadSandbox(factory, should_sandbox)
         else:
             self.backend = win32com.client.Dispatch(self.settings.com_object)

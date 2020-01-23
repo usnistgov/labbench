@@ -30,6 +30,7 @@ import sys
 if '..' not in sys.path:
     sys.path.insert(0, '..')
 import labbench as lb
+from copy import copy
 lb = importlib.reload(lb)
 
 
@@ -47,16 +48,17 @@ flag_start = False
 class MockBase(lb.Device):
     _getter_counts = {}
 
-    param = lb.Int(command='param', min=0, max=10)
-    flag = lb.Bool(command='flag', remap=remap)
+    # param = lb.Int(command='param', min=0, max=10)
+    # flag = lb.Bool(command='flag', remap=remap)
 
     def open(self):
+        self._getter_counts = {}
         self.values = {}
         self._last = {}
         
         for name,value in start.items():
             self.values[name] = remap.get(value, value)
-            
+
     def add_get_count(self, name):
         self._getter_counts.setdefault(name,0)
         self._getter_counts[name] += 1
@@ -65,23 +67,37 @@ class MockBase(lb.Device):
         self._getter_counts = {}
 
 
-class MockDecorator(MockBase):    
-    @param
-    def param(self):
-        self.add_get_count('param')
-        return self.values['param']
+class MockDecorator(MockBase):
+    @lb.Int(min=0, max=10)
     def param(self, value):
         self.values['param'] = value
 
-    @flag
-    def flag(self):
-        self.add_get_count('flag')
-        return self.values['flag']
+    def param(self):
+        self.add_get_count('param')
+        return self.values['param']
+    
+    @lb.Bool(remap=remap)
     def flag(self, value):
         self.values['flag'] = value
 
+    def flag(self):
+        self.add_get_count('flag')
+        return self.values['flag']
+
+
+class MockReturner(MockBase):
+    param = lb.Int(command='param', min=0, max=10)
+    flag = lb.Bool(command='flag', remap=remap)
+    
+    @param
+    def param(self, a, b,c):
+        return a+b+c
+
 
 class MockCommand(MockBase):
+    param = lb.Int(command='param', min=0, max=10)
+    flag = lb.Bool(command='flag', remap=remap)
+    
     def __command_get__(self, name, command):
         self.add_get_count(command)
         return self.values[command]
@@ -93,16 +109,18 @@ class MockCommand(MockBase):
 
 class TestStates(unittest.TestCase):            
     def test_command_type(self):
+        global m
         with MockCommand() as m:
             self.general(m)
 
     def test_decorator_type(self):
+        global m
         with MockDecorator() as m:
             self.general(m)
 
     def general(self, m):
         m.clear_counts()
-
+       
         self.assertEqual(m.param, start['param'])
         m.param = stop['param']
         self.assertEqual(m.param, stop['param'])
@@ -118,6 +136,18 @@ class TestStates(unittest.TestCase):
 
         self.assertEqual(len(m), 1 + len(remap))
 
+    def test_returner_type(self):
+        def callback(msg):
+            if msg['name'] == 'param':
+                self.assertEqual(msg['new'], 6)
+            
+        with MockReturner() as m:
+            lb.observe(m, callback)
+            self.assertEqual(m.param(1,2,3), 6)
+
 if __name__ == '__main__':
     lb.show_messages('debug')
     unittest.main()
+    
+    # with MockDecorator() as m:
+    #     pass

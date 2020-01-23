@@ -206,7 +206,7 @@ class Host(core.Device):
         
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
-        self.formatter = Formatter()
+        self._formatter = Formatter()
         sh.setFormatter(self._formatter)
         sh.setLevel(logging.DEBUG)
 

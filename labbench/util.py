@@ -661,7 +661,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         func = func_in.func if isinstance(func_in, Call) else func_in
         if hasattr(func, '__self__') \
                 and isinstance(func.__self__, core.Device):
-            if not func.__self__.settings.concurrency_support:
+            if not func.__self__.settings.concurrency:
                 raise ConcurrentException(
                     f'{func.__self__} does not support concurrency')
         return func_in
@@ -825,7 +825,7 @@ def concurrently(*objs, **kws):
         - Be careful about thread safety.
 
         When the callable object is a Device method, :func concurrency: checks
-        the Device object state.concurrency_support for compatibility
+        the Device object state.concurrency for compatibility
         before execution. If this check returns `False`, this method
         raises a ConcurrentException.
 
@@ -899,7 +899,7 @@ def sequentially(*objs, **kws):
           means that any remaining context managers will not be entered.
 
         When the callable object is a Device method, :func concurrency: checks
-        the Device object state.concurrency_support for compatibility
+        the Device object state.concurrency for compatibility
         before execution. If this check returns `False`, this method
         raises a ConcurrentException.
         '''

@@ -28,8 +28,8 @@ longdescription = \
 ''' The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
 
 A device driver implemented with labbench is a light wrapper around another instrument control library.
-This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level routines. The labbench
-abstraction provides several benefits:
+This library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level to access instrument.
+The labbench driver gives a declarative-style abstraction provides several benefits:
 
 * automatic acquisition logging into an SQLite database,
 * automatically-generated jupyter notebook monitoring widgets,
@@ -67,15 +67,7 @@ if __name__ == '__main__':
           author_email='daniel.kuester@nist.gov',
           url='https://github.com/usnistgov/labbench',
           packages=setuptools.find_packages(),
-          # package_data=dict(labbench=['py.typed']),
-          #ext_modules=[Extension('labbench', glob('labbench/*.pyi'))],
           package_data={'labbench': ['*.pyi']},
-          # data_files=[
-          #     (
-          #         f'shared/typehints/python{sys.version_info[0]}.{sys.version_info[1]}/labbench-{__version__}',
-          #         ["labbench/__init__.pyi"]
-          #     ),
-          # ],
           license='NIST',
           install_requires=['pandas(>=0.20)',
                             'pyserial(>=3.0)',

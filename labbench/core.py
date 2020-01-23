@@ -315,7 +315,7 @@ class Trait:
     # implement communication with a device
     __setter__ = None
     __getter__ = None
-
+    
     def __init__(self, *args, **kws):
         # Apply the settings
         for k, v in kws.items():
@@ -378,6 +378,10 @@ class Trait:
         cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys())
         wrap_dynamic_init(cls, tuple(annots.keys()), cls.__defaults__, 1,
                           annots)
+        
+        # As a note for the future: this offered no benefit, even to import
+        # time in a library of ~40 drivers
+        # cls.__slots__ = [n for n in dir(cls) if not n.startswith('_')]
 
     def copy(self, **update_kws):
         return self.__class__(**dict(self.kws, **update_kws))

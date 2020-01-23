@@ -34,6 +34,4 @@ from .util import *
 from .backends import *
 from .testbed import *
 
-show_messages('info')
-
 name = 'labbench'

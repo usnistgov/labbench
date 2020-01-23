@@ -52,6 +52,7 @@ class MockBase(lb.Device):
 
     def open(self):
         self.values = {}
+        self._last = {}
         
         for name,value in start.items():
             self.values[name] = remap.get(value, value)
@@ -86,19 +87,20 @@ class MockCommand(MockBase):
         return self.values[command]
 
     def __command_set__(self, name, command, value):
+        self._last[command] = value
         self.values[command] = value
 
 
 class TestStates(unittest.TestCase):            
     def test_command_type(self):
         with MockCommand() as m:
-            self.do(m)
+            self.general(m)
 
     def test_decorator_type(self):
         with MockDecorator() as m:
-            self.do(m)
+            self.general(m)
 
-    def do(self, m):
+    def general(self, m):
         m.clear_counts()
 
         self.assertEqual(m.param, start['param'])

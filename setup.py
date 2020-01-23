@@ -24,8 +24,6 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from __future__ import print_function
-
 longdescription = \
 ''' The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
 
@@ -50,13 +48,14 @@ and heterogeneous datasets.
 '''
 
 if __name__ == '__main__':
-    from distutils.core import setup
+    from distutils.core import setup, Extension
     import setuptools
     import sys
+    from glob import glob
     sys.path.insert(0, './labbench')
     from version import __version__
 
-    py_version_req = (3, 6)
+    py_version_req = (3, 7)
     if sys.version_info < py_version_req:
         raise ValueError(
             f"python version is {sys.version} but install requires >={'.'.join(py_version_req)}")
@@ -68,6 +67,15 @@ if __name__ == '__main__':
           author_email='daniel.kuester@nist.gov',
           url='https://github.com/usnistgov/labbench',
           packages=setuptools.find_packages(),
+          # package_data=dict(labbench=['py.typed']),
+          #ext_modules=[Extension('labbench', glob('labbench/*.pyi'))],
+          package_data={'labbench': ['*.pyi']},
+          # data_files=[
+          #     (
+          #         f'shared/typehints/python{sys.version_info[0]}.{sys.version_info[1]}/labbench-{__version__}',
+          #         ["labbench/__init__.pyi"]
+          #     ),
+          # ],
           license='NIST',
           install_requires=['pandas(>=0.20)',
                             'pyserial(>=3.0)',

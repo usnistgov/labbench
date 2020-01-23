@@ -75,16 +75,16 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         if self.settings.fail_disconnect:
             1 / 0
 
-class Testbed(lb.Testbed):
+class MyTestbed(lb.Testbed):
     def make(self):
         self.inst1 = LaggyInstrument('a',delay=.18)
         self.inst2 = LaggyInstrument('b',delay=.06)
 
-class Testbed2(lb.Testbed):
+class MyTestbed2(lb.Testbed):
     inst1 = LaggyInstrument('a', delay=.12)
     inst2 = LaggyInstrument('b', delay=.06)
     
-class Tests(unittest.TestCase):
+class TestConcurrency(unittest.TestCase):
     # Acceptable error in delay time meaurement
     delay_tol = 0.08
 
@@ -281,7 +281,7 @@ class Tests(unittest.TestCase):
                                   data2 = inst2.none,
                                   nones = False)
         self.assertEqual(ret, {})
-        
+
         with inst1, inst2:
             ret = lb.concurrently(data1 = inst1.none,
                                   data2 = inst2.none,
@@ -291,24 +291,24 @@ class Tests(unittest.TestCase):
         self.assertEqual(ret['data1'], None)
         self.assertEqual(ret['data2'], None)
         
-    def test_testbed_instantiation(self):        
+    def test_MyTestbed_instantiation(self):        
         with self.assert_delay(0):
-            testbed = Testbed(concurrent=True)
+            MyTestbed = MyTestbed(concurrent=True)
         
 
-        expected_delay = max(testbed.inst1.settings.delay,
-                             testbed.inst2.settings.delay)
+        expected_delay = max(MyTestbed.inst1.settings.delay,
+                             MyTestbed.inst2.settings.delay)
 
-        self.assertEqual(testbed.inst1.connected, False)
-        self.assertEqual(testbed.inst2.connected, False)
+        self.assertEqual(MyTestbed.inst1.connected, False)
+        self.assertEqual(MyTestbed.inst2.connected, False)
         
         with self.assert_delay(expected_delay):
-            with testbed:
-                self.assertEqual(testbed.inst1.connected, True)
-                self.assertEqual(testbed.inst2.connected, True)
+            with MyTestbed:
+                self.assertEqual(MyTestbed.inst1.connected, True)
+                self.assertEqual(MyTestbed.inst2.connected, True)
 
-        self.assertEqual(testbed.inst1.connected, False)
-        self.assertEqual(testbed.inst2.connected, False)
+        self.assertEqual(MyTestbed.inst1.connected, False)
+        self.assertEqual(MyTestbed.inst2.connected, False)
 
     def test_flatten(self):        
         inst1 = LaggyInstrument(resource='a')

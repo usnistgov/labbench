@@ -49,17 +49,22 @@ class LaggyInstrument(lb.EmulatedVISADevice):
     fail_disconnect: lb.Bool\
         (default=False, help='whether to raise DivideByZero on disconnect')
 
-    def open(self):
+    def open(self):        
+        self.perf = {}
         self.logger.info(f'{self} connect start')
+        t0 = time.perf_counter()
         lb.sleep(self.settings.delay)
+        self.perf['open'] = time.perf_counter() - t0
         self.logger.info(f'{self} connected')
         
     def fetch(self):
         ''' Return the argument after a 1s delay
         '''
         lb.logger.info(f'{self}.fetch start')
+        t0 = time.perf_counter()
         lb.sleep(self.settings.fetch_time)
         lb.logger.info(f'{self}.fetch done')
+        self.perf['fetch'] = time.perf_counter() - t0
         return self.settings.fetch_time
     
     def dict(self):
@@ -107,13 +112,13 @@ class TestConcurrency(unittest.TestCase):
             raise
         else:
             elapsed = time.perf_counter()-t0
-            self.assertAlmostEqual(elapsed, expected_delay, delta=self.delay_tol)                
+            self.assertAlmostEqual(elapsed, expected_delay, delta=self.delay_tol)
             lb.logger.info(f'acceptable time elapsed {elapsed:0.3f}s'.lstrip())
 
     def test_concurrent_connect_delay(self):
         global inst1, inst2
         inst1 = LaggyInstrument(resource='fast', delay=0.16)
-        inst2 = LaggyInstrument(resource='slow', delay=0.26)
+        inst2 = LaggyInstrument(resource='slow', delay=0.36)
 
         expect_delay = max((inst1.settings.delay,inst2.settings.delay))
         with self.assert_delay(expect_delay):
@@ -291,24 +296,24 @@ class TestConcurrency(unittest.TestCase):
         self.assertEqual(ret['data1'], None)
         self.assertEqual(ret['data2'], None)
         
-    def test_MyTestbed_instantiation(self):        
+    def test_testbed_instantiation(self):        
         with self.assert_delay(0):
-            MyTestbed = MyTestbed(concurrent=True)
+            testbed = MyTestbed(concurrent=True)
         
 
-        expected_delay = max(MyTestbed.inst1.settings.delay,
-                             MyTestbed.inst2.settings.delay)
+        expected_delay = max(testbed.inst1.settings.delay,
+                             testbed.inst2.settings.delay)
 
-        self.assertEqual(MyTestbed.inst1.connected, False)
-        self.assertEqual(MyTestbed.inst2.connected, False)
+        self.assertEqual(testbed.inst1.connected, False)
+        self.assertEqual(testbed.inst2.connected, False)
         
         with self.assert_delay(expected_delay):
-            with MyTestbed:
-                self.assertEqual(MyTestbed.inst1.connected, True)
-                self.assertEqual(MyTestbed.inst2.connected, True)
+            with testbed:
+                self.assertEqual(testbed.inst1.connected, True)
+                self.assertEqual(testbed.inst2.connected, True)
 
-        self.assertEqual(MyTestbed.inst1.connected, False)
-        self.assertEqual(MyTestbed.inst2.connected, False)
+        self.assertEqual(testbed.inst1.connected, False)
+        self.assertEqual(testbed.inst2.connected, False)
 
     def test_flatten(self):        
         inst1 = LaggyInstrument(resource='a')

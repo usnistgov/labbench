@@ -38,5 +38,5 @@ from test_concurrently import *
 # from test_doc import *
 
 if __name__ == '__main__':
-    lb.show_messages('debug')
+    lb.show_messages('warning')
     unittest.main()

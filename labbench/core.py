@@ -51,7 +51,7 @@ __all__ = ['DeviceException', 'DeviceNotReady', 'DeviceFatalError',
            'TraitNotImplementedError', 'CommandNotImplementedError',
 
            'Trait', 'Int', 'Float', 'Unicode', 'Complex', 'Bytes',
-           'Bool', 'List', 'Dict', 'Address',
+           'Bool', 'List', 'Dict', 'Address', 'NonScalar',
 
            'Device', 'list_devices', 'logger',
            'observe', 'unobserve'
@@ -443,7 +443,6 @@ class Trait:
         else:
             # some other kind of Trait behavior?
             invalid = tuple()
-
 
         for k in invalid:
             if self.__defaults__[k] != getattr(self, k):
@@ -883,6 +882,15 @@ class BoundedNumber(Trait):
             raise ValueError(f'{value} < the lower bound {self.min}')
         return value
 
+
+class NonScalar(Any):
+    """ generically non-scalar data, such as a list, array, but not including a string or bytes """
+    def validate(self, value):
+        if isinstance(value, (bytes,str)):
+            raise ValueError(f"given text data but expected a non-scalar data")
+        if not hasattr(value, '__iter__') and not hasattr(value, '__len__'):
+            raise ValueError(f"expected non-scalar data but given a non-iterable")
+        return value
 
 class Int(BoundedNumber, type=int):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """

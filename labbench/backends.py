@@ -569,7 +569,7 @@ class LabviewSocketInterface(core.Device):
                                         self.settings.tx_port))
         util.sleep(self.settings.delay)
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         """ Send a formatted command string to implement state control.
         """
         self.write(f'{command} {value}')
@@ -839,7 +839,7 @@ class TelnetDevice(core.Device):
         or by setting them afterward in `settings`.
 
         Subclassed devices that need state descriptors will need
-        to implement __command_get__ and __command_set__ methods to implement
+        to implement __get_by_key__ and __set_by_key__ methods to implement
         the state set and get operations (as appropriate).
     """
 
@@ -1041,7 +1041,7 @@ class VISADevice(core.Device):
         self.logger.debug(f'      -> {msg_out}')
         return ret
 
-    def __command_get__(self, name, command):
+    def __get_by_key__(self, name, command):
         """ Send an SCPI command to get a state value from the
             device. This function
             adds a '?' to match SCPI convention. This is
@@ -1053,7 +1053,7 @@ class VISADevice(core.Device):
         """
         return self.query(command + '?').rstrip()
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         """ Send an SCPI command to set a state value on the
             device. This function adds a '?' to match SCPI convention. This is
             automatically called for `state` attributes that
@@ -1154,7 +1154,7 @@ class EmulatedVISADevice(core.Device):
                 'operating': True,
                 }
 
-    def __command_get__(self, name, command):
+    def __get_by_key__(self, name, command):
         import numpy as np
 
         trait = self[name]
@@ -1173,7 +1173,7 @@ class EmulatedVISADevice(core.Device):
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         pass
 
 

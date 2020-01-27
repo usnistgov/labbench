@@ -292,7 +292,7 @@ class Trait:
         * A _state trait_ triggers set and get operations that are implemented by the
           owning class. Implement the get and set operations in the owning class;
           hook them to this trait by decorating with this trait, or through
-          __command_get__ and __command_set__ in the owning class.
+          __get_by_key__ and __set_by_key__ in the owning class.
 
         The trait behavior is determined by whether its owner is a Device or HasSettings
         instance.
@@ -528,7 +528,7 @@ class Trait:
 
         # Validate the pythonic value
         if value is not None:
-            # Convert to the representation expected by owner.__command_set__
+            # Convert to the representation expected by owner.__set_by_key__
             try:
                 value = Trait.to_pythonic(self, value)
                 value = self.validate(value)
@@ -566,14 +566,14 @@ class Trait:
             raise AttributeError(f"cannot set {objname}: no @{self.name} "\
                                  f"setter is defined, and command is None")
         else:
-            owner.__command_set__(self.name, self.key, value)
+            owner.__set_by_key__(self.name, self.key, value)
 
         owner.__notify__(self.name, value, 'set')
 
     def __get__(self, owner, owner_cls=None):
         ''' Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
-        decorator function or the owner's __command_get__ method to retrieve
+        decorator function or the owner's __get_by_key__ method to retrieve
         the result.
 
         :return: retreived value
@@ -608,13 +608,13 @@ class Trait:
             value = self.__getter__(owner)
             
         else:
-            # otherwise, get with owner.__command_get__, if available
+            # otherwise, get with owner.__get_by_key__, if available
             if self.key is None:
                 # otherwise, 'get' 
                 objname = owner.__class__.__qualname__ + '.' + self.name
                 raise AttributeError(f"cannot set {objname}: no @{self.name} "\
                                      f"getter is defined, and command is None")
-            value = owner.__command_get__(self.name, self.key)
+            value = owner.__get_by_key__(self.name, self.key)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -835,15 +835,15 @@ class HasTraits(metaclass=HasTraitsMeta):
 
         self.__previous__[name] = value
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         objname = self.__class__.__qualname__ + '.' + name
         raise AttributeError(f"cannot set {objname}: no @{name} "\
-                             f"setter is defined, and {name}.__command_set__ is not defined")
+                             f"setter is defined, and {name}.__set_by_key__ is not defined")
 
-    def __command_get__(self, name, command):
+    def __get_by_key__(self, name, command):
         objname = self.__class__.__qualname__ + '.' + name
         raise AttributeError(f"cannot get {objname}: no @{name} "\
-                             f"getter is defined, and {name}.__command_get__ is not defined")
+                             f"getter is defined, and {name}.__get_by_key__ is not defined")
 
 
 class HasSettings(HasTraits):

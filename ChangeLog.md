@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Testbed objects now support entering contexts of specified types first, which are listed (in order) by the new enter_first class attribute
 - concurrently and sequentially now raise an exception of two callables have the same name; specify a different name with a keyword argument instead to avoid naming conflicts
 - text file outputs in relational databases are now encoded as utf-8
-- Removed Trait parameters `default_value`, `read_only`, and `write_only`; replaced with Trait parameters `default`, `settable`, `gettable`, `allow`
-- Removed Device methods `__get_state__`, `__set_state__`; added methods `__get_command__`
+- Removed Trait parameters `command`, `default_value`, `read_only`, and `write_only`; replaced with Trait parameters `key`, `default`, `settable`, `gettable`, `allow`
+- Removed Device methods `__get_state__`, `__set_state__`; added methods `__get_by_key__`, `__set_by_key__`
 - Replaced Device methods `connect` and `disconnect` with `open` and `close` to more closely match python convention
 - Support for updating default values of settings in subclasses as annotations
 - Reduced import time by waiting to import heavier packages pyvisa and pandas

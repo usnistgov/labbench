@@ -36,35 +36,24 @@ int_start = 3
 int_stop = 10
 
 
-class MockBase(lb.Device):
+class Child(lb.Device):
     param = lb.Int(min=0, max=10)
 
     def open(self):
-        self.values = {'param': int_start}
+        print('connect child')
+        
+    def close(self):
+        print('disconnect child')
+        
 
-
-class MockTraitWrapper(MockBase):
+class Mock(lb.Device):
     ''' Helpful driver wrapper
     '''
-    @param
-    def param(self):
-        return self.values['param']
-    def param(self, value):
-        self.values['param'] = value
-
-
-class MockStateWrapper(MockBase):
-    def __command_get__(self, command):
-        return self.values[command]
-
-    def __command_set__(self, trait, value):
-        self.values[trait.name] = value
+    
+    child0 = Child('addr0')
+    child1 = Child('addr1')
 
 
 if __name__ == '__main__':
-    device = MockTraitWrapper(resource='null')
-    
-
-    print('instance doc: \n', device.__doc__)
-    print('class doc: ', MockTraitWrapper.__doc__)
-#    print('class parent doc: ', super(MockTraitWrapper,MockTraitWrapper), super(MockTraitWrapper,MockTraitWrapper).__doc__)
+    with Mock() as m:
+        pass

@@ -27,20 +27,16 @@
 import unittest
 import pandas as pd
 import numpy as np
-import labbench as lb
 import importlib
 
 import sys
 if '..' not in sys.path:
     sys.path.insert(0, '..')
-
-
+import labbench as lb
 lb = importlib.reload(lb)
-
 
 int_start = 3
 int_stop = 10
-   
 
 class EmulatedInstrument(lb.EmulatedVISADevice):
     ''' This "instrument" makes mock data and instrument states to
@@ -52,13 +48,12 @@ class EmulatedInstrument(lb.EmulatedVISADevice):
     whatever: lb.Int(default=5)
 
     # States
-    initiate_continuous = lb.Bool(command='INIT:CONT')
-    output_trigger = lb.Bool(command='OUTP:TRIG')
-    sweep_aperture = lb.Float(
-        command='SWE:APER', min=20e-6, max=200e-3, help='time (in s)')
-    frequency = lb.Float(command='SENS:FREQ', min=10e6,
+    initiate_continuous = lb.Bool(key='INIT:CONT')
+    output_trigger = lb.Bool(key='OUTP:TRIG')
+    sweep_aperture = lb.Float(key='SWE:APER', min=20e-6, max=200e-3, help='time (in s)')
+    frequency = lb.Float(key='SENS:FREQ', min=10e6,
                          max=18e9, help='center frequency (in Hz)')
-    atten = lb.Float(command='POW', min=0, max=100, step=0.5)
+    atten = lb.Float(key='POW', min=0, max=100, step=0.5)
 
     def trigger(self):
         ''' This would tell the instrument to start a measurement
@@ -68,6 +63,8 @@ class EmulatedInstrument(lb.EmulatedVISADevice):
     def method(self):
         print('method!')
 
+    @lb.method # interact with fetch_trace as a function
+    @lb.NonScalar()
     def fetch_trace(self, N=1001):
         ''' Generate N points of junk data as a pandas series.
         '''
@@ -78,23 +75,22 @@ class EmulatedInstrument(lb.EmulatedVISADevice):
         return series
 
 
-class TestDB(unittest.TestCase):
-    def test_state_wrapper_type(self):
-        with EmulatedInstrument() as m,\
-                lb.StatesToSQLite(path) as db:
-            self.assertEqual(m.param, int_start)
-            m.param = int_stop
-            self.assertEqual(m.param, int_stop)
-
+# class TestDB(unittest.TestCase):
+#     def test_state_wrapper_type(self):
+#         with EmulatedInstrument() as m,\
+#                 lb.StatesToSQLite(path) as db:
+#             self.assertEqual(m.param, int_start)
+#             m.param = int_stop
+#             self.assertEqual(m.param, int_stop)
+#
 
 if __name__ == '__main__':
-    path = 'test'
-
     lb.show_messages('debug')
-    
-    with EmulatedInstrument() as inst,\
-         lb.StatesToSQLite(path, tar=False) as db:
 
+    inst = EmulatedInstrument()
+    db = lb.StatesToSQLite('data-root-directory', tar=False)
+
+    with db, inst:
         db.observe_states(inst, changes=True, always='sweep_aperture')
         db.observe_settings(inst, changes=True)
 
@@ -102,31 +98,17 @@ if __name__ == '__main__':
         
         for inst.frequency in np.linspace(10e6, 100e6, 5):
             inst.settings.whatever = inst.frequency
-            inst.logger.debug('debug message!')
-            lb.logger.debug('general debug message')
+            inst.logger.debug(f'debug message through {inst}')
+            lb.logger.info(f'info about frequency point {inst.frequency} in through lb.logger')
             trace = inst.fetch_trace()
-            db.append(power_GW='1.21', trace=trace, potato=7)
-#        db.write()
 
-#    #%%
-    df = lb.read(path+'/master.db')
-    df.to_csv(path+'/master.csv')
-# df = pd.read_csv(path)
-#    print(df.tail(11))
-#
-# class TestWrappers(unittest.TestCase):
-#    def test_state_wrapper_type(self):
-#        with MockStateWrapper() as m:
-#            self.assertEqual(m.param,int_start)
-#            m.param = int_stop
-#            self.assertEqual(m.param,int_stop)
-#
-#
-#    def test_trait_wrapper_type(self):
-#        with MockTraitWrapper() as m:
-#            self.assertEqual(m.param,int_start)
-#            m.param = int_stop
-#            self.assertEqual(m.param,int_stop)
-#
-# if __name__ == '__main__':
-#    unittest.main()
+            try:
+                1//0
+            except ZeroDivisionError:
+                inst.logger.error('this frequency was no good, but I worked around it somehow')
+                
+            db.append(power_GW='1.21', trace=trace, potato=7)
+        db.write()
+
+    df = lb.read(db.path+'/master.db')
+    df.to_csv(db.path+'/master.csv')

@@ -66,7 +66,7 @@ class CommandLineWrapper(core.Device):
     """
 
     binary_path: core.Unicode\
-        (default=core.Undefined, help='path to the file to run')
+        (default=None, allow_none=True, help='path to the file to run')
     timeout: core.Float\
         (default=1, min=0, label='s', help='wait time after close before killing the process')
     arguments: core.List\
@@ -328,12 +328,12 @@ class CommandLineWrapper(core.Device):
             for k, trait in self.settings.traits().items():
                 v = getattr(self.settings, k)
 
-                if trait.command and v is not None:
+                if trait.key and v is not None:
                     if isinstance(trait, core.Bool):
                         if v:
-                            cmd = cmd + (trait.command,)
+                            cmd = cmd + (trait.key,)
                     elif v is not None:
-                        cmd = cmd + (trait.command, str(v))
+                        cmd = cmd + (trait.key, str(v))
 
         return cmd
 
@@ -520,7 +520,7 @@ class LabviewSocketInterface(core.Device):
         This implementation uses a transmit and receive socket.
 
         State sets are implemented by simple ' command value' strings
-        and implemented with the 'command' keyword (like VISA strings).
+        and implemented with the 'key' keyword (like VISA strings).
         Subclasses can therefore implement support for commands in
         specific labview VI the same was as in VISA commands by
         assigning the commands implemented in the corresponding labview VI.
@@ -899,14 +899,14 @@ class VISADevice(core.Device):
 
     # States
     identity = core.Unicode\
-        (command='*IDN', settable=False, cache=True,
+        (key='*IDN', settable=False, cache=True,
          help='identity string reported by the instrument')
 
     options = core.Unicode\
-        (command='*OPT', settable=False, cache=True,
+        (key='*OPT', settable=False, cache=True,
          help='options reported by the instrument')
 
-    @core.Dict(command='*STB', settable=False)
+    @core.Dict(key='*STB', settable=False)
     def status_byte(self):
         ''' VISA status byte reported by the instrument '''
         code = int(self.query('*STB?'))
@@ -1048,7 +1048,7 @@ class VISADevice(core.Device):
             automatically called for `state` attributes that
             define a message.
 
-            :param str command: The SCPI command to send
+            :param str key: The SCPI command to send
             :param trait: The trait state corresponding with the command (ignored)
         """
         return self.query(command + '?').rstrip()
@@ -1059,7 +1059,7 @@ class VISADevice(core.Device):
             automatically called for `state` attributes that
             define a message.
 
-            :param str command: The SCPI command to send
+            :param str key: The SCPI command to send
             :param trait: The trait state corresponding with the command (ignored)
             :param str value: The value to assign to the parameter
         """
@@ -1130,19 +1130,19 @@ class EmulatedVISADevice(core.Device):
         (default='\n', help='end-of-transmit termination character')
 
     # States
-    @core.Unicode(command='*IDN', settable=False, cache=True)
+    @core.Unicode(key='*IDN', settable=False, cache=True)
     def identity(self):
         ''' identity string reported by the instrument '''
         return self.__class__.__qualname__
 
-    @core.Unicode(command='*OPT', settable=False, cache=True)
+    @core.Unicode(key='*OPT', settable=False, cache=True)
     def options(self):
         ''' options reported by the instrument '''
         
         return ','.join(((f"{s.name}={repr(self.settings.__previous__[s.name])}"\
                           for s in self.settings)))
 
-    @core.Dict(command='*STB', settable=False)
+    @core.Dict(key='*STB', settable=False)
     def status_byte(self):
         ''' VISA status byte reported by the instrument '''
         return {'error queue not empty': False,

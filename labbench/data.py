@@ -301,6 +301,11 @@ class StateAggregator(object):
 
         raise Exception(f"failed to automatically label {repr(obj)}")
 
+    def __set_name__ (self, owner_cls, name):
+        for owner
+        self.observe_states(inst, changes=True, always='sweep_aperture')
+        self.observe_settings(inst, changes=True)
+
 
 class MungerBase(object):
     ''' This is where ugly but necessary sausagemaking happens to organize

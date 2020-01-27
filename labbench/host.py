@@ -24,19 +24,19 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import time
-t0 = time.time()
-
 from . import core
+
 import datetime
+import io
 import os
 import socket
 import logging
 import sys
-import io
 import yaml
 
+
 __all__ = ['Host', 'Email', 'LogStderr']
+
 
 class LogStreamBuffer:
     def __init__(self):
@@ -135,16 +135,16 @@ class Email(core.Device):
             self.send_summary()
 
     def send_summary(self):
-        ''' Sends the summary email containing the final state of the test.
+        ''' Send the email containing the final state of the test.
         '''
-        from traceback import format_exc
-
         exc = sys.exc_info()
 
         if exc[0] is KeyboardInterrupt:
             return
 
         if exc != (None, None, None):
+            from traceback import format_exc
+
             if self.settings.failure_message is None:
                 return
             subject = self.settings.failure_message
@@ -171,13 +171,17 @@ class Email(core.Device):
 
 
 class Dumper(yaml.Dumper):
+    """ Maintain the key order when dumping a dictionary to YAML
+    """
     def represent_dict_preserve_order(self, data):
         return self.represent_dict(data.items())
 
 Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
 
 
-class Formatter(logging.Formatter):    
+class YAMLFormatter(logging.Formatter):
+    _last = []
+    
     def format(self, rec):
         """ Return a YAML string for each logger message
         """
@@ -186,12 +190,20 @@ class Formatter(logging.Formatter):
                    time=datetime.datetime.fromtimestamp(rec.created),                   
                    level=rec.levelname)
         
+        # conditional keys, to save space
         if hasattr(rec, 'device'):
             msg['device'] = rec.device
+            
         if rec.threadName != 'MainThread':
             msg['thread']=rec.threadName
-        
-        self._last = (rec,msg)
+            
+        etype, einst, exc_tb = sys.exc_info()
+        if etype is not None:
+            from traceback import format_exception_only, format_tb
+            msg['exception'] = format_exception_only(etype, einst)[0].rstrip()
+            msg['traceback'] = ''.join(format_tb(exc_tb)).splitlines()
+
+        self._last.append((rec,msg))
         
         return yaml.dump([msg], Dumper=Dumper,
                          indent=4, default_flow_style=False)
@@ -204,10 +216,10 @@ class Host(core.Device):
         ''' The host setup method tries to commit current changes to the tree
         '''
         
+        self._log_formatter = YAMLFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
-        self._formatter = Formatter()
-        sh.setFormatter(self._formatter)
+        sh.setFormatter(self._log_formatter)
         sh.setLevel(logging.DEBUG)
 
         # Add to the labbench logger handler        

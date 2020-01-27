@@ -48,8 +48,8 @@ flag_start = False
 class MockBase(lb.Device):
     _getter_counts = {}
 
-    # param = lb.Int(command='param', min=0, max=10)
-    # flag = lb.Bool(command='flag', remap=remap)
+    # param = lb.Int(key='param', min=0, max=10)
+    # flag = lb.Bool(key='flag', remap=remap)
 
     def open(self):
         self._getter_counts = {}
@@ -86,8 +86,8 @@ class MockDecorator(MockBase):
 
 
 class MockReturner(MockBase):
-    param = lb.Int(command='param', min=0, max=10)
-    flag = lb.Bool(command='flag', remap=remap)
+    param = lb.Int(key='param', min=0, max=10)
+    flag = lb.Bool(key='flag', remap=remap)
     
     @param
     def param(self, a, b,c):
@@ -95,8 +95,8 @@ class MockReturner(MockBase):
 
 
 class MockCommand(MockBase):
-    param = lb.Int(command='param', min=0, max=10)
-    flag = lb.Bool(command='flag', remap=remap)
+    param = lb.Int(key='param', min=0, max=10)
+    flag = lb.Bool(key='flag', remap=remap)
     
     def __command_get__(self, name, command):
         self.add_get_count(command)

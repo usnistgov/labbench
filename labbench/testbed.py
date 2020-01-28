@@ -24,16 +24,17 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['Testbed']
-
-from collections import OrderedDict
 from .util import sequentially,concurrently
-from .data import StateAggregator
+from .data import LogAggregator, RelationalTableLogger
 from .core import Device
 from .host import Host, Email
 
-class Testbed(object):
-    ''' A collection of Device instances, database managers, and methods that
+
+__all__ = ['Testbed']
+
+
+class Testbed:
+    """ A collection of Device instances, database managers, and methods that
         implement an automated experiment.
 
         Use a `with` block with the testbed instance to open everything
@@ -54,10 +55,11 @@ class Testbed(object):
         method to define the Device or database manager instances, and
         a custom `startup` method to implement custom code to set up the
         testbed after all Device instances are open.
-    '''
+    """
 
-    # Specify (in order) any context manager types to open before others
-    enter_first = Email, StateAggregator, Host
+    # Specify any context manager types to open before others
+    # and their order
+    enter_first = Email, LogAggregator, Host
 
     def __init__(self, config=None, concurrent=True):
         self.config = config
@@ -65,42 +67,63 @@ class Testbed(object):
         self.make()
 
         # Find the objects
-        new_attrs = set(dir(self)).difference(attrs_start)
-        objs = [(a,getattr(self, a)) for a in new_attrs]
-        objs = OrderedDict([(a,o) for a,o in objs if hasattr(o, '__enter__')])
-        self.__managed_contexts = OrderedDict(objs)
+        everything = dict(self.__class__.__dict__, **self.__dict__)
+        cms = dict([(a, o) for a, o in everything.items()\
+                        if not a.startswith('_') and hasattr(o, '__enter__')])
+
+        self.__managed_contexts = dict(cms)
 
         # Pull any objects of types listed by self.enter_first, in the
         # order of (1) the types listed in self.enter_first, then (2) the order
         # they appear in objs
-        first_contexts = OrderedDict()        
+        first_contexts = dict()
         for cls in self.enter_first:
-            for attr, obj in OrderedDict(objs).items():
+            for attr, obj in dict(cms).items():
                 if isinstance(obj, cls):
-                    first_contexts[attr] = objs.pop(attr)
+                    first_contexts[attr] = cms.pop(attr)
 
-        other_contexts = dict([(a,o) for a,o in objs.items()])
+        other_contexts = cms
 
         # Enforce the ordering set by self.enter_first
         if concurrent:
             # Any remaining context managers will be run concurrently if concurrent=True            
-            contexts = OrderedDict(first_contexts,
-                                         others=concurrently(name=f'',
-                                                             **other_contexts))
+            contexts = dict(first_contexts, others=concurrently(name=f'',
+                                                                **other_contexts))
         else:
             # Otherwise, run them sequentially
-            contexts = OrderedDict(first_contexts, **other_contexts)
+            contexts = dict(first_contexts, **other_contexts)
+
         self.__cm = sequentially(name=f'{repr(self)} connections',
                                  **contexts)
+
+        for obj in self.__managed_contexts.values():
+            if isinstance(obj, RelationalTableLogger):
+                devices = self._devices()
+                obj.observe_states(devices)
+                obj.observe_settings(devices)
+                break
+
+
+    def get_managed_contexts(self):
+        return dict(self.__managed_contexts)
+
+    def _devices(self, recursive=True):
+        owners = []
+
+        for name, obj in self.__managed_contexts.items():
+            if isinstance(obj, Device):
+                owners += [obj]
+            elif recursive and isinstance(obj, Testbed):
+                owners += obj._trait_owners(recursive=True)
+
+        return owners
+
 
     def __enter__(self):
         self.__cm.__enter__()
         self.startup()
         return self
     
-    def get_managed_contexts(self):
-        return OrderedDict(self.__managed_contexts)
-
     def __exit__(self, *args):
         try:
             self.cleanup()
@@ -120,28 +143,28 @@ class Testbed(object):
         return f'{self.__class__.__qualname__}()'
 
     def make(self):
-        ''' Implement this method in a subclass of Testbed. It should
+        """ Implement this method in a subclass of Testbed. It should
             set drivers as attributes of the Testbed instance, for example::
 
                 self.dev1 = MyDevice()
 
             This is called automatically when when the testbed class
             is instantiated.
-        '''
+        """
         pass
 
     def startup(self):
-        ''' This is called automatically after open if the testbed is
+        """ This is called automatically after open if the testbed is
             opened using the `with` statement block.
 
             Implement any custom code here in Testbed subclasses to
             implement startup of the testbed given open Device
             instances.
-        '''
+        """
         pass
 
     def cleanup(self):
-        ''' This is called automatically immediately before close if the
+        """ This is called automatically immediately before close if the
             testbed is opened using the `with` context block.
             
             This is called even if the `with` context is left as a result of
@@ -150,11 +173,11 @@ class Testbed(object):
             Implement any custom code here in Testbed subclasses to
             implement teardown of the testbed given open Device
             instances.
-        '''
+        """
         pass
     
     def after(self):
-        ''' This is called automatically after open, if no exceptions
+        """ This is called automatically after open, if no exceptions
             were raised.
-        '''
+        """
         pass

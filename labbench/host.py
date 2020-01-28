@@ -55,8 +55,8 @@ class LogStreamBuffer:
 
 
 class LogStderr(core.Device):
-    ''' This "Device" logs a copy of messages on sys.stderr while connected.
-    '''
+    """ This "Device" logs a copy of messages on sys.stderr while connected.
+    """
     log = ''
 
     def open(self):
@@ -81,11 +81,11 @@ class LogStderr(core.Device):
         
 
 class Email(core.Device):
-    ''' Sends a notification message on disconnection. If an exception
+    """ Sends a notification message on disconnection. If an exception
         was thrown, this is a failure subject line with traceback information
         in the main body. Otherwise, the message is a success message in the
         subject line. Stderr is also sent.
-    '''
+    """
 
     resource: core.Address\
         (default='smtp.nist.gov', help='smtp server to use')
@@ -135,8 +135,8 @@ class Email(core.Device):
             self.send_summary()
 
     def send_summary(self):
-        ''' Sends the summary email containing the final state of the test.
-        '''
+        """ Sends the summary email containing the final state of the test.
+        """
         from traceback import format_exc
 
         exc = sys.exc_info()
@@ -201,8 +201,8 @@ class Host(core.Device):
     time_format = '%Y-%m-%d %H:%M:%S'
     
     def open(self):
-        ''' The host setup method tries to commit current changes to the tree
-        '''
+        """ The host setup method tries to commit current changes to the tree
+        """
         
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
@@ -245,15 +245,15 @@ class Host(core.Device):
             pass
 
     def metadata(self):
-        ''' Generate the metadata associated with the host and python distribution
-        '''
+        """ Generate the metadata associated with the host and python distribution
+        """
         ret = super().metadata()
         ret['python_modules'] = self.__python_module_versions()
         return ret
 
     def __python_module_versions(self):
-        ''' Enumerate the versions of installed python modules
-        '''
+        """ Enumerate the versions of installed python modules
+        """
         import pandas as pd
 
         versions = dict([str(d).lower().split(' ')
@@ -264,22 +264,22 @@ class Host(core.Device):
    
     @core.Unicode()
     def time(self):
-        ''' Get a timestamp of the current time
-        '''
+        """ Get a timestamp of the current time
+        """
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
     @core.Unicode()
     def log(self):
-        ''' Get the current host log contents.
-        '''
+        """ Get the current host log contents.
+        """
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
     
     @core.Unicode(cache=True)
     def git_commit_id(self):
-        ''' Try to determine the current commit hash of the current git repo
-        '''
+        """ Try to determine the current commit hash of the current git repo
+        """
         try:
             commit = self.repo.commit()
             return commit.hexsha
@@ -288,8 +288,8 @@ class Host(core.Device):
 
     @core.Unicode(cache=True)
     def git_remote_url(self):
-        ''' Try to identify the remote URL of the repository of the current git repo
-        '''
+        """ Try to identify the remote URL of the repository of the current git repo
+        """
         try:
             return next(self.repo.remote().urls)
         except BaseException:
@@ -297,14 +297,14 @@ class Host(core.Device):
 
     @core.Unicode(cache=True)
     def hostname(self):
-        ''' Get the name of the current host
-        '''
+        """ Get the name of the current host
+        """
         return socket.gethostname()
 
     @core.Unicode(cache=True)
     def git_browse_url(self):
-        ''' URL for browsing the current git repository
-        '''
+        """ URL for browsing the current git repository
+        """
         return '{}/tree/{}'.\
                format(self.git_remote_url, self.git_commit_id)
 

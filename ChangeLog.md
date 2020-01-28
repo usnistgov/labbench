@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.19 - 2018-10-09]
 ### Added
 - `labbench.retry` calls a function exception up to a specified number of times
-- `labbench.StatesToSQLite.observe_settings` for capturing settings into the database
+- `labbench.SQLiteLogger.observe_settings` for capturing settings into the database
 - `labbench.Email` "device" notifies on disconnection, with info text that includes stderr and any exceptions
 - `labbench.sleep` emulates time.sleep, but includes goodies to raise exceptions to end threads at the request of the master thread
 - `labbench.until_timeout` (decorator) repeats a function call, suppressing a specified exception until the specified timeout period has expired
@@ -91,7 +91,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed a bug in VISADevice.list_devices
 
 ### Removed
-- StatesToCSV may be bitrotten; needs to be checked and possibly deprecated?
+- CSVLogger may be bitrotten; needs to be checked and possibly deprecated?
 - Device.cleanup (it is superceded by the new Device.disconnect behavior)
 - Device.setup (superceded by the new Device.connect behavior)
 - pythonnet is no longer a required dependency (though it is required if you use lb.DotNetDevice)
@@ -129,7 +129,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - support waiting for a specified number of queue entries in CommandLineWrapper.read_stdout
 - switch to copy instead of move when importing a file into the tree
 - debug messages on successful completion of Device setup method after connection
-- better detail for debug information in certain rare exceptions in StatesToSQLite
+- better detail for debug information in certain rare exceptions in SQLiteLogger
 - move imports to __init__ and the root of backends.py to improve threadsafety
 - CommandLineWrapper uses subprocess.run instead of subprocess.check_output now for win32 threadsafety
 - fixed tests/test_db.py to match current labbench
@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - call __exit__ last for Device instances for with blocks that use lb.concurrently
 - small bugfixes to database management
-- support for passing arbitrary metadata to StatesToSQLite by keyword argument
+- support for passing arbitrary metadata to SQLiteLogger by keyword argument
 - `concurrently` and `sequentially` now accept parameter inputs that are dictionaries, which are "passed through" through by updating to the result
 - minor concurrency updates
 - The base Device implementation now includes a concurrency_support state trait indicating whether the driver supports labbench concurrency
@@ -181,7 +181,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - the concurrently function now supports concurrently context managers entry for concurrent connection to Device instances
 - expanded the Device __repr__ to show the all parameters passed to __init__ 
-- StatesToSQLite now stores the master database in {base-folder}/master.db instead of {base-folder}.db to keep all folders together
+- SQLiteLogger now stores the master database in {base-folder}/master.db instead of {base-folder}.db to keep all folders together
 - Skipped to 0.14 because tag whoops
 
 ### Removed
@@ -272,7 +272,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - fixed Localhost.state.time encoding problem for python 3
 - fixed database introspection problem for python 3
 - fixed contextframe introspection problem for python 3
-- fixed argument bug in StateAggregator.observe
+- fixed argument bug in LogAggregator.observe
 
 ### Removed
 
@@ -288,7 +288,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - support database logging from device states that return lists or tuples
 
 ### Removed
-- managedata.py: StateAggregator.make_timestamp method (use LocalHost.state.time instead)
+- managedata.py: LogAggregator.make_timestamp method (use LocalHost.state.time instead)
 
 ## [0.6] and before - 2017
 "Distant pre-history"

@@ -81,7 +81,7 @@ class EmulatedInstrument(lb.EmulatedVISADevice):
 class TestDB(unittest.TestCase):
     def test_state_wrapper_type(self):
         with EmulatedInstrument() as m,\
-                lb.StatesToSQLite(path) as db:
+                lb.SQLiteLogger(path) as db:
             self.assertEqual(m.param, int_start)
             m.param = int_stop
             self.assertEqual(m.param, int_stop)
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     lb.show_messages('debug')
     
     with EmulatedInstrument() as inst,\
-         lb.StatesToSQLite(path, tar=False) as db:
+         lb.SQLiteLogger(path, tar=False) as db:
 
         db.observe_states(inst, changes=True, always='sweep_aperture')
         db.observe_settings(inst, changes=True)

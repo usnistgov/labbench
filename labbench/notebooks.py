@@ -54,12 +54,12 @@ __wrapped__ = dict(range=builtins.range,
                    linspace=np.linspace)
 
 def single(inst, inst_name):
-    ''' Generate a formatted html table widget which updates with the most recently observed states
+    """ Generate a formatted html table widget which updates with the most recently observed states
         in a device.
         :param inst: the device to monitor, an instance of :class:`labbench.Device` (or one of its subclasses)
         :param inst_name: the name to use to label the table
         :returns: :class:`ipywidgdets.HBox` instance containing a single :class:`ipywidgets.HTML` instance
-    '''
+    """
 
     _df = pd.DataFrame([], columns=['value'])
     table_styles = [{'selector': '.col_heading, .blank',
@@ -129,13 +129,13 @@ class TextareaLogHandler(logging.StreamHandler):
 
 
 class panel(object):
-    ''' Show tables summarizing device settings and states in jupyter notebook.
+    """ Show tables summarizing device settings and states in jupyter notebook.
     Only a single panel will be shown in a python kernel.
 
     :param source: Either an integer indicating how far up the calling tree to search\
     for Device instances, or a `labbench.Testbed` instance.
     :param ncols: Maximum number of devices to show on each row
-    '''
+    """
 
     widget = None
     ncols = 2
@@ -198,24 +198,24 @@ class panel(object):
 
 
 def range(*args, **kws):
-    ''' the same as python `range`, but with a progress bar representing progress
+    """ the same as python `range`, but with a progress bar representing progress
         iterating through the range
-    '''
+    """
     title = kws.pop('title', None)
     return log_progress(__wrapped__['range'](*args, **kws), title=title)
 
 
 def linspace(*args, **kws):
-    ''' the same as numpy.linspace, but with a progress bar representing progress
+    """ the same as numpy.linspace, but with a progress bar representing progress
         iterating through the range, and an optional title= keyword argument to
         set the title
-    '''
+    """
     title = kws.pop('title', None)
     return log_progress(__wrapped__['linspace'](*args, **kws), title=title)
 
 
 def log_progress(sequence, every=None, size=None, title=None):
-    '''
+    """
     Indicate slow progress through a long sequence.
 
     This code is adapted here from https://github.com/alexanderkuk/log-progress
@@ -226,7 +226,7 @@ def log_progress(sequence, every=None, size=None, title=None):
     :param size: number of elements in the sequence (required only for generators with no length estimate)
     :param title: title text
     :return: iterator that yields the elements of `sequence`
-    '''
+    """
 
     is_iterator = False
     if size is None:

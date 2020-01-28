@@ -306,7 +306,7 @@ class Trait:
 
         :param gettable: True if the trait supports reads
 
-        :param cache: if True, interact with the device only once, then return copies (state traits only)
+        :param cache: if True, interact with the device only once, then return copies (for state traits) or does not send notifications (for settings traits)
 
         :param only: a whitelist of valid values; setting others raise ValueError
 
@@ -435,7 +435,7 @@ class Trait:
         # Classify the owner
         if issubclass(owner_cls, HasSettings):
             self.kind = 'setting'
-            invalid = ('command', 'remap', 'cache')
+            invalid = ('command', 'remap')
 
         elif issubclass(owner_cls, HasStates):
             self.kind = 'state'
@@ -496,16 +496,17 @@ class Trait:
         else:
             owner.__command_set__(self.name, self.command, value)
 
-        owner.__notify__(self.name, value, 'set')
+        if not self.cache:
+            owner.__notify__(self.name, value, 'set')
 
     def __get__(self, owner, owner_cls=None):
-        ''' Called by the instance of the class that owns this attribute to
+        """ Called by the instance of the class that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's __command_get__ method to retrieve
         the result.
 
         :return: the retreived value
-        '''
+        """
 
         if owner is None:
             # this is the owner class looking for the trait instance itself
@@ -652,10 +653,10 @@ class Trait:
 
 
     def setter(self, func):
-        ''' this decorator applies `func` to implement property sets
+        """ this decorator applies `func` to implement property sets
 
         :param func: the function to decorate
-        '''
+        """
         if self.__setter__ is not None:
             raise AttributeError(f'{self.__objclass__.__qualname__}.{self.name} already has a setter!')
         self.__adopt__(func)
@@ -665,10 +666,10 @@ class Trait:
         return self
 
     def getter(self, func):
-        ''' this decorator applies `func` to implement property gets
+        """ this decorator applies `func` to implement property gets
 
         :param func: the function to decorate
-        '''
+        """
         if self.__getter__ is not None:
             raise AttributeError(f'{self.__objclass__.__qualname__}.{self.name} already has a getter!')        
         self.__adopt__(func)
@@ -841,8 +842,8 @@ def observe(obj, handler, names=None):
 
 
 def unobserve(obj, handler):
-    ''' Unregister a handler function from notifications in obj.
-    '''
+    """ Unregister a handler function from notifications in obj.
+    """
     if isinstance(obj, HasTraits):
         try:
             del obj.__notify_list__[handler]
@@ -1066,10 +1067,10 @@ class Device(HasStates):
     """
     settings = HasSettings
 
-    resource: Unicode(allow_none=True, help='device address or URI')
+    resource: Unicode(allow_none=True, cache=True, help='device address or URI')
 
-    concurrency: Bool(default=True, settable=False,
-                              help='`True` if this device supports threading')
+    concurrency: Bool(default=True, settable=False, cache=True,
+                      help='`True` if this device supports threading')
 
     """ Container for state traits in a Device. Getting or setting state traits
         triggers live updates: communication with the device to get or set the
@@ -1299,6 +1300,13 @@ class Device(HasStates):
             # Run into this sometimes on reloading a module or ipython shell:
             # the namespace is gone. we just assume disconnected
             return False
+
+    def __set_name__(self, owner_cls, name):
+        self.__name__ = name
+        self.__objclass__ = owner_cls
+
+    def __get__ (self, owner, owner_cls=None):
+        return self
 
     __str__ = __repr__
 

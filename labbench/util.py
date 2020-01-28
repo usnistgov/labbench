@@ -49,18 +49,18 @@ __all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
 
 
 class ConcurrentException(Exception):
-    ''' Raised on concurrency errors in `labbench.concurrently`
-    '''
+    """ Raised on concurrency errors in `labbench.concurrently`
+    """
 
 
 class MasterThreadException(ThreadError):
-    ''' Raised to encapsulate a thread raised by the master thread during calls to `labbench.concurrently`
-    '''
+    """ Raised to encapsulate a thread raised by the master thread during calls to `labbench.concurrently`
+    """
 
 
 class ThreadEndedByMaster(ThreadError):
-    ''' Raised in a thread to indicate the master thread requested termination
-    '''
+    """ Raised in a thread to indicate the master thread requested termination
+    """
 
 
 concurrency_count = 0
@@ -68,9 +68,9 @@ stop_request_event = Event()
 
 
 def sleep(seconds, tick=1.):
-    ''' Drop-in replacement for time.sleep that raises ConcurrentException
+    """ Drop-in replacement for time.sleep that raises ConcurrentException
         if another thread requests that all threads stop.
-    '''
+    """
     t0 = time.time()
     global stop_request_event
     remaining = 0
@@ -88,9 +88,9 @@ def sleep(seconds, tick=1.):
 
 
 def check_master():
-    ''' Raise ThreadEndedByMaster if the master thread as requested this
+    """ Raise ThreadEndedByMaster if the master thread as requested this
         thread to end.
-    '''
+    """
     sleep(0.)
 
 
@@ -217,10 +217,10 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
 
 @contextmanager
 def limit_exception_traceback(limit):
-    ''' Limit the tracebacks printed for uncaught
+    """ Limit the tracebacks printed for uncaught
         exceptions to the specified depth. Works for
         regular CPython and IPython interpreters.
-    '''
+    """
 
     def limit_hook(type, value, tb):
         traceback.print_exception(type, value, tb, limit=limit)
@@ -254,11 +254,11 @@ def limit_exception_traceback(limit):
 
 
 def show_messages(minimum_level):
-    ''' Configure screen debug message output for any messages as least as important as indicated by `level`.
+    """ Configure screen debug message output for any messages as least as important as indicated by `level`.
 
     :param minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
     :return: None
-    '''
+    """
 
     import logging
     import coloredlogs
@@ -292,7 +292,7 @@ def show_messages(minimum_level):
 
 
 def kill_by_name(*names):
-    ''' Kill one or more running processes by the name(s) of matching binaries.
+    """ Kill one or more running processes by the name(s) of matching binaries.
 
         :param names: list of names of processes to kill
         :type names: str
@@ -306,7 +306,7 @@ def kill_by_name(*names):
         psutil library. Though psutil is cross-platform, the naming convention
         returned by name() is platform-dependent. In windows, for example, name()
         usually ends in '.exe'.
-    '''
+    """
     for pid in psutil.pids():
         try:
             proc = psutil.Process(pid)
@@ -319,10 +319,10 @@ def kill_by_name(*names):
 
 
 def hash_caller(call_depth=1):
-    ''' Use introspection to return an SHA224 hex digest of the caller, which
+    """ Use introspection to return an SHA224 hex digest of the caller, which
         is almost certainly unique to the combination of the caller source code
         and the arguments passed it.
-    '''
+    """
     import inspect
     import hashlib
     import pickle
@@ -356,7 +356,7 @@ def hash_caller(call_depth=1):
 
 @contextmanager
 def stopwatch(desc=''):
-    ''' Time a block of code using a with statement like this:
+    """ Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
     >>>     time.sleep(2)
@@ -365,7 +365,7 @@ def stopwatch(desc=''):
     :param desc: text for display that describes the event being timed
     :type desc: str
     :return: context manager
-    '''   
+    """
     t0 = time.perf_counter()
 
     try:
@@ -376,11 +376,11 @@ def stopwatch(desc=''):
 
 
 class Call(object):
-    ''' Wrap a function to apply arguments for threaded calls to `concurrently`.
+    """ Wrap a function to apply arguments for threaded calls to `concurrently`.
         This can be passed in directly by a user in order to provide arguments;
         otherwise, it will automatically be wrapped inside `concurrently` to
         keep track of some call metadata during execution.
-    '''
+    """
 
     def __init__(self, func, *args, **kws):
         if not callable(func):
@@ -417,14 +417,14 @@ class Call(object):
             return self.result
 
     def set_queue(self, queue):
-        ''' Set the queue object used to communicate between threads
-        '''
+        """ Set the queue object used to communicate between threads
+        """
         self.queue = queue
 
     @classmethod
     def wrap_list_to_dict(cls, name_func_pairs):
-        ''' Adjust naming and wrap callables with Call
-        '''
+        """ Adjust naming and wrap callables with Call
+        """
         ret = OrderedDict()
         # First, generate the list of callables
         for name, func in name_func_pairs:
@@ -447,7 +447,7 @@ class Call(object):
 def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
                     params: dict,
                     objs: list):
-    ''' Handle opening multiple contexts in a single `with` block. This is
+    """ Handle opening multiple contexts in a single `with` block. This is
         a threadsafe implementation that accepts a handler function that may
         implement any desired any desired type of concurrency in entering
         each context.
@@ -467,7 +467,7 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
         :param objs: a list of contexts to be entered and dict-like objects to return
         
         :returns: context object for use in a `with` statement
-    '''
+    """
     t0 = time.perf_counter()
     exits = []
 
@@ -529,10 +529,10 @@ def isdictducktype(cls):
     return set(dir(cls)).issuperset(DIR_DICT)  
 
 def enter_or_call(flexible_caller, objs, kws):
-    ''' Extract settings from the keyword arguments flags, decide whether
+    """ Extract settings from the keyword arguments flags, decide whether
         `objs` and `kws` should be treated as context managers or callables,
         and then either enter the contexts or call the callables.
-    '''
+    """
 
     objs = list(objs)
 
@@ -545,9 +545,9 @@ def enter_or_call(flexible_caller, objs, kws):
                   name=None)
     
     def merge_inputs(dicts: list, candidates: list):
-        ''' Merge nested returns and check for return data key conflicts in
+        """ Merge nested returns and check for return data key conflicts in
             the callable
-        '''
+        """
         ret = {}
         for name,d in dicts:
             common = set(ret.keys()).difference(d.keys())
@@ -644,9 +644,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
     global concurrency_count
 
     def traceback_skip(exc_tuple, count):
-        ''' Skip the first `count` traceback entries in
+        """ Skip the first `count` traceback entries in
             an exception.
-        '''
+        """
         tb = exc_tuple[2]
         for i in range(count):
             if tb.tb_next is not None:
@@ -654,10 +654,10 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         return exc_tuple[:2] + (tb,)
 
     def check_thread_support(func_in):
-        ''' Setup threading (concurrent execution only), including
+        """ Setup threading (concurrent execution only), including
             checks for whether a Device instance indicates it supports
             concurrent execution or not.
-        '''
+        """
         func = func_in.func if isinstance(func_in, Call) else func_in
         if hasattr(func, '__self__') \
                 and isinstance(func.__self__, core.Device):
@@ -780,7 +780,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
 
 def concurrently(*objs, **kws):
-    r''' If `*objs` are callable (like functions), call each of
+    r""" If `*objs` are callable (like functions), call each of
          `*objs` in concurrent threads. If `*objs` are context
          managers (such as Device instances to be connected),
          enter each context in concurrent threads.
@@ -829,15 +829,15 @@ def concurrently(*objs, **kws):
         before execution. If this check returns `False`, this method
         raises a ConcurrentException.
 
-    '''
+    """
     
     return enter_or_call(concurrently_call, objs, kws)
 
 def sequentially_call(params: dict, name_func_pairs: list) -> dict:
-    ''' Emulate `concurrently_call`, with sequential execution. This is mostly
+    """ Emulate `concurrently_call`, with sequential execution. This is mostly
         only useful to guarantee compatibility with `concurrently_call`
         dictionary-style returns.
-    '''
+    """
     results = {}
 
     wrappers = Call.wrap_list_to_dict(name_func_pairs)
@@ -852,7 +852,7 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
 
 
 def sequentially(*objs, **kws):
-    r''' If `*objs` are callable (like functions), call each of
+    r""" If `*objs` are callable (like functions), call each of
          `*objs` in the given order. If `*objs` are context
          managers (such as Device instances to be connected),
          enter each context in the given order, and return a context manager
@@ -902,7 +902,7 @@ def sequentially(*objs, **kws):
         the Device object state.concurrency for compatibility
         before execution. If this check returns `False`, this method
         raises a ConcurrentException.
-        '''
+        """
 
     return enter_or_call(sequentially_call, objs, kws)
 
@@ -965,7 +965,7 @@ def message(sandbox, *msg):
 
 
 class ThreadSandbox(object):
-    ''' Execute all calls in the class in a separate background thread. This
+    """ Execute all calls in the class in a separate background thread. This
         is intended to work around challenges in threading wrapped win32com APIs.
 
         Use it as follows:
@@ -973,7 +973,7 @@ class ThreadSandbox(object):
             obj = ThreadSandbox(MyClass(myclassarg, myclasskw=myclassvalue))
 
         Then use `obj` as a normal MyClass instance.
-    '''
+    """
     __repr_root__ = 'uninitialized ThreadSandbox'
     __dir_root__ = []
     __thread = None
@@ -991,8 +991,8 @@ class ThreadSandbox(object):
             raise exc
 
     def __worker(self, factory, ready, sandbox_check_func):
-        ''' This is the only thread allowed to access the protected object.
-        '''
+        """ This is the only thread allowed to access the protected object.
+        """
 
         try:
             root = factory()
@@ -1101,7 +1101,7 @@ sandbox_keys = set(ThreadSandbox.__dict__.keys()
 
 
 class ConfigStore:
-    ''' Define dictionaries of configuration settings
+    """ Define dictionaries of configuration settings
         in subclasses of this object. Each dictionary should
         be an attribute of the subclass. The all() class method
         returns a flattened dictionary consisting of all values
@@ -1109,12 +1109,12 @@ class ConfigStore:
         '{attr_name}_{attr_key}', where {attr_name} is the
         name of the dictionary attribute and {attr_key} is the
         nested dictionary key.
-    '''
+    """
 
     @classmethod
     def all(cls):
-        ''' Return a dictionary of all attributes in the class
-        '''
+        """ Return a dictionary of all attributes in the class
+        """
         ret = {}
         for k, v in cls.__dict__.items():
             if isinstance(v, dict) and not k.startswith('_'):
@@ -1123,9 +1123,9 @@ class ConfigStore:
 
     @classmethod    
     def frame(cls):
-        ''' Return a pandas DataFrame containing all attributes
+        """ Return a pandas DataFrame containing all attributes
             in the class
-        '''
+        """
         import pandas as pd
 
         df = pd.DataFrame([cls.all()]).T

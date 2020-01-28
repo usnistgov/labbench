@@ -110,9 +110,9 @@ class CommandLineWrapper(core.Device):
     @property
     @contextlib.contextmanager
     def no_state_arguments(self):
-        ''' Use this context manager to disable automatic use of state traits
+        """ Use this context manager to disable automatic use of state traits
             in generating argument strings.
-        '''
+        """
         self.__contexts['use_state_arguments'] = False
         yield
         self.__contexts['use_state_arguments'] = True
@@ -120,8 +120,8 @@ class CommandLineWrapper(core.Device):
     @property
     @contextlib.contextmanager
     def respawn(self):
-        ''' Use this context manager to respawning background execution.
-        '''
+        """ Use this context manager to respawning background execution.
+        """
         self.__contexts['respawn'] = True
         yield
         self.__contexts['respawn'] = False
@@ -129,15 +129,15 @@ class CommandLineWrapper(core.Device):
     @property
     @contextlib.contextmanager
     def exception_on_stderr(self):
-        ''' Use this context manager to raise exceptions if a process outputs
+        """ Use this context manager to raise exceptions if a process outputs
             to standard error during background execution.
-        '''
+        """
         self.__contexts['exception_on_stderr'] = True
         yield
         self.__contexts['exception_on_stderr'] = False
 
     def foreground(self, *extra_arguments, **flags):
-        ''' Blocking execution of the binary at the file location
+        """ Blocking execution of the binary at the file location
             `self.settings.binary_path`.
 
             Normally, the command line arguments are determined by
@@ -153,7 +153,7 @@ class CommandLineWrapper(core.Device):
                     self.foreground(...)
 
             :returns: the return code of the process after its completion
-        '''
+        """
         cmdl = self.__make_commandline(*extra_arguments, **flags)
         try:
             path = os.path.relpath(cmdl[0])
@@ -178,7 +178,7 @@ class CommandLineWrapper(core.Device):
         return ret
 
     def background(self, *extra_arguments, **flags):
-        ''' Run the executable in the background (returning immediately while
+        """ Run the executable in the background (returning immediately while
             the executable continues running).
 
             Once the background process is running,
@@ -206,10 +206,10 @@ class CommandLineWrapper(core.Device):
                     self.background(...)
 
             :returns: None
-        '''
+        """
         def stdout_to_queue(fd, cmdl):
-            ''' Thread worker to funnel stdout into a queue
-            '''
+            """ Thread worker to funnel stdout into a queue
+            """
             def readline():
                 return fd.readline()
             pid = self.backend.pid
@@ -232,8 +232,8 @@ class CommandLineWrapper(core.Device):
                 self.logger.debug('stdout closed; execution done')
 
         def stderr_to_exception(fd, cmdl):
-            ''' Thread worker to raise exceptions on standard error output
-            '''
+            """ Thread worker to raise exceptions on standard error output
+            """
             for line in iter(fd.readline, ''):
                 if self.backend is None:
                     break
@@ -283,9 +283,9 @@ class CommandLineWrapper(core.Device):
         spawn(self.__make_commandline(*extra_arguments, **flags))
 
     def __make_commandline(self, *extra_arguments, **flags):
-        ''' Form a list of commandline argument strings for foreground
+        """ Form a list of commandline argument strings for foreground
             or background calls.
-        '''
+        """
         for k, v in flags.items():
             if not (isinstance(k, str) and isinstance(v, str)):
                 raise ValueError(
@@ -410,9 +410,9 @@ class CommandLineWrapper(core.Device):
 
     @staticmethod
     def _kill_proc_tree(pid, including_parent=True):
-        ''' Kill the process by pid, and any spawned child processes.
+        """ Kill the process by pid, and any spawned child processes.
             What a dark metaphor.
-        '''
+        """
         try:
             parent = psutil.Process(pid)
 
@@ -908,7 +908,7 @@ class VISADevice(core.Device):
 
     @core.Dict(command='*STB', settable=False)
     def status_byte(self):
-        ''' VISA status byte reported by the instrument '''
+        """ VISA status byte reported by the instrument """
         code = int(self.query('*STB?'))
         return {'error queue not empty': bool(code & 0b00000100),
                 'questionable state': bool(code & 0b00001000),
@@ -1132,19 +1132,19 @@ class EmulatedVISADevice(core.Device):
     # States
     @core.Unicode(command='*IDN', settable=False, cache=True)
     def identity(self):
-        ''' identity string reported by the instrument '''
+        """ identity string reported by the instrument """
         return self.__class__.__qualname__
 
     @core.Unicode(command='*OPT', settable=False, cache=True)
     def options(self):
-        ''' options reported by the instrument '''
+        """ options reported by the instrument """
         
         return ','.join(((f"{s.name}={repr(self.settings.__previous__[s.name])}"\
                           for s in self.settings)))
 
     @core.Dict(command='*STB', settable=False)
     def status_byte(self):
-        ''' VISA status byte reported by the instrument '''
+        """ VISA status byte reported by the instrument """
         return {'error queue not empty': False,
                 'questionable state': False,
                 'message available': False,

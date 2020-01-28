@@ -24,19 +24,19 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import time
-t0 = time.time()
-
 from . import core
+
 import datetime
+import io
 import os
 import socket
 import logging
 import sys
-import io
 import yaml
 
+
 __all__ = ['Host', 'Email', 'LogStderr']
+
 
 class LogStreamBuffer:
     def __init__(self):
@@ -55,8 +55,8 @@ class LogStreamBuffer:
 
 
 class LogStderr(core.Device):
-    """ This "Device" logs a copy of messages on sys.stderr while connected.
-    """
+    ''' This "Device" logs a copy of messages on sys.stderr while connected.
+    '''
     log = ''
 
     def open(self):
@@ -81,11 +81,11 @@ class LogStderr(core.Device):
         
 
 class Email(core.Device):
-    """ Sends a notification message on disconnection. If an exception
+    ''' Sends a notification message on disconnection. If an exception
         was thrown, this is a failure subject line with traceback information
         in the main body. Otherwise, the message is a success message in the
         subject line. Stderr is also sent.
-    """
+    '''
 
     resource: core.Address\
         (default='smtp.nist.gov', help='smtp server to use')
@@ -135,16 +135,16 @@ class Email(core.Device):
             self.send_summary()
 
     def send_summary(self):
-        """ Sends the summary email containing the final state of the test.
-        """
-        from traceback import format_exc
-
+        ''' Send the email containing the final state of the test.
+        '''
         exc = sys.exc_info()
 
         if exc[0] is KeyboardInterrupt:
             return
 
         if exc != (None, None, None):
+            from traceback import format_exc
+
             if self.settings.failure_message is None:
                 return
             subject = self.settings.failure_message
@@ -171,13 +171,17 @@ class Email(core.Device):
 
 
 class Dumper(yaml.Dumper):
+    """ Maintain the key order when dumping a dictionary to YAML
+    """
     def represent_dict_preserve_order(self, data):
         return self.represent_dict(data.items())
 
 Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
 
 
-class Formatter(logging.Formatter):    
+class YAMLFormatter(logging.Formatter):
+    _last = []
+    
     def format(self, rec):
         """ Return a YAML string for each logger message
         """
@@ -186,12 +190,20 @@ class Formatter(logging.Formatter):
                    time=datetime.datetime.fromtimestamp(rec.created),                   
                    level=rec.levelname)
         
+        # conditional keys, to save space
         if hasattr(rec, 'device'):
             msg['device'] = rec.device
+            
         if rec.threadName != 'MainThread':
             msg['thread']=rec.threadName
-        
-        self._last = (rec,msg)
+            
+        etype, einst, exc_tb = sys.exc_info()
+        if etype is not None:
+            from traceback import format_exception_only, format_tb
+            msg['exception'] = format_exception_only(etype, einst)[0].rstrip()
+            msg['traceback'] = ''.join(format_tb(exc_tb)).splitlines()
+
+        self._last.append((rec,msg))
         
         return yaml.dump([msg], Dumper=Dumper,
                          indent=4, default_flow_style=False)
@@ -201,13 +213,13 @@ class Host(core.Device):
     time_format = '%Y-%m-%d %H:%M:%S'
     
     def open(self):
-        """ The host setup method tries to commit current changes to the tree
-        """
+        ''' The host setup method tries to commit current changes to the tree
+        '''
         
+        self._log_formatter = YAMLFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
-        self._formatter = Formatter()
-        sh.setFormatter(self._formatter)
+        sh.setFormatter(self._log_formatter)
         sh.setLevel(logging.DEBUG)
 
         # Add to the labbench logger handler        
@@ -245,15 +257,15 @@ class Host(core.Device):
             pass
 
     def metadata(self):
-        """ Generate the metadata associated with the host and python distribution
-        """
+        ''' Generate the metadata associated with the host and python distribution
+        '''
         ret = super().metadata()
         ret['python_modules'] = self.__python_module_versions()
         return ret
 
     def __python_module_versions(self):
-        """ Enumerate the versions of installed python modules
-        """
+        ''' Enumerate the versions of installed python modules
+        '''
         import pandas as pd
 
         versions = dict([str(d).lower().split(' ')
@@ -264,22 +276,22 @@ class Host(core.Device):
    
     @core.Unicode()
     def time(self):
-        """ Get a timestamp of the current time
-        """
+        ''' Get a timestamp of the current time
+        '''
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
     @core.Unicode()
     def log(self):
-        """ Get the current host log contents.
-        """
+        ''' Get the current host log contents.
+        '''
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
     
     @core.Unicode(cache=True)
     def git_commit_id(self):
-        """ Try to determine the current commit hash of the current git repo
-        """
+        ''' Try to determine the current commit hash of the current git repo
+        '''
         try:
             commit = self.repo.commit()
             return commit.hexsha
@@ -288,8 +300,8 @@ class Host(core.Device):
 
     @core.Unicode(cache=True)
     def git_remote_url(self):
-        """ Try to identify the remote URL of the repository of the current git repo
-        """
+        ''' Try to identify the remote URL of the repository of the current git repo
+        '''
         try:
             return next(self.repo.remote().urls)
         except BaseException:
@@ -297,14 +309,14 @@ class Host(core.Device):
 
     @core.Unicode(cache=True)
     def hostname(self):
-        """ Get the name of the current host
-        """
+        ''' Get the name of the current host
+        '''
         return socket.gethostname()
 
     @core.Unicode(cache=True)
     def git_browse_url(self):
-        """ URL for browsing the current git repository
-        """
+        ''' URL for browsing the current git repository
+        '''
         return '{}/tree/{}'.\
                format(self.git_remote_url, self.git_commit_id)
 

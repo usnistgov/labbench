@@ -53,7 +53,7 @@ __all__ = ['DeviceException', 'DeviceNotReady', 'DeviceFatalError',
            'Trait', 'Int', 'Float', 'Unicode', 'Complex', 'Bytes',
            'Bool', 'List', 'Dict', 'Address', 'NonScalar',
 
-           'Device', 'list_devices', 'logger',
+           'Device', 'list_devices', 'logger', 'property', 'method',
            'observe', 'unobserve'
            ]
 
@@ -264,11 +264,14 @@ class HasTraitsMeta(type):
         """ Prepare copies of cls.__traits__, to ensure that any traits defined
             in the definition don't clobber parents' traits.
         """
+        ns = dict()
         if len(bases) >= 1:
-            ns = dict(((k, v.copy()) for k, v in bases[0].__traits__.items()))
-            ns['__traits__'] = dict(ns)
-            traits = ns['__traits__']
-            HasTraitsMeta.__pending__.append(ns['__traits__'])
+            if hasattr(bases, '__children__'):
+                ns['__children__'] = {}
+            traits = dict(((k, v.copy()) for k, v in bases[0].__traits__.items()))
+            ns.update(traits)
+            ns['__traits__'] = traits
+            HasTraitsMeta.__pending__.append(traits)
             return ns
         else:
             HasTraitsMeta.__pending__.append({})
@@ -289,14 +292,14 @@ class Trait:
         * A _state trait_ triggers set and get operations that are implemented by the
           owning class. Implement the get and set operations in the owning class;
           hook them to this trait by decorating with this trait, or through
-          __command_get__ and __command_set__ in the owning class.
+          __get_by_key__ and __set_by_key__ in the owning class.
 
         The trait behavior is determined by whether its owner is a Device or HasSettings
         instance.
 
         :param default: the default value of the trait (settings only)
 
-        :param command: some types of Device use of this key to automate interaction with the device (state traits only)
+        :param key: some types of Device use of this key to automate interaction with the device (state traits only)
 
         :param help: the Trait docstring
 
@@ -306,7 +309,7 @@ class Trait:
 
         :param gettable: True if the trait supports reads
 
-        :param cache: if True, interact with the device only once, then return copies (for state traits) or does not send notifications (for settings traits)
+        :param cache: if True, interact with the device only once, then return copies (state traits only)
 
         :param only: a whitelist of valid values; setting others raise ValueError
 
@@ -320,7 +323,7 @@ class Trait:
 
     # These annotations define the arguments to __init__ @dataclass above
     default: ThisType = None
-    command: None.__class__ = None
+    key: None.__class__ = None
     help: str = ''
     label: str = ''
     settable: bool = True
@@ -335,12 +338,18 @@ class Trait:
     __setter__ = None
     __getter__ = None
     __returner__ = None
+    __decorator_pending__ = []
+    __decorator_action__ = None
     
     def __init__(self, *args, **kws):
+        if callable(kws['default']):
+            msg = f"trait decorators need to be instantiated - "\
+                  f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
+            raise AttributeError(msg)
+
         # Apply the settings
         for k, v in kws.items():
             setattr(self, k, v)
-
         self.kws = kws
 
         # Now go back and type-check
@@ -376,6 +385,7 @@ class Trait:
             self.to_pythonic = remap_inbound.__getitem__
 
         self.metadata = {}
+        self.__decorator_pending__ = []
 
     @classmethod
     def __init_subclass__(cls, type=None):
@@ -427,15 +437,22 @@ class Trait:
         else:
             self.kind = None
 
-    def __fit_owner__(self, owner_cls):
-        """ Validate that the properties are compatible with the owner class.
-            This is here and not in __set_name__ because python does not
-            propagate exceptions raised in __set_name__
+    def __init_owner_subclass__(self, owner_cls):
+        """ At this point, definition in the owner subclass is complete, and its __init_subclass__
+            has been called. Now it is time to ensure properties are compatible with the owner class.
+            This is here --- not in __set_name__ --- because python
+            obfuscates exceptions raised in __set_name__.
+
+            This is also where we finalize selecting decorator behavior; is it a property or a method?
         """
-        # Classify the owner
+
+        # classify the owner
         if issubclass(owner_cls, HasSettings):
             self.kind = 'setting'
-            invalid = ('command', 'remap')
+            invalid = ('key', 'remap', 'cache')
+
+            if self.__decorator_action__ is not None or len(self.__decorator_pending__) > 0:
+                raise AttributeError(f"{self} is a settings trait -- it cannot be used as a decorator")
 
         elif issubclass(owner_cls, HasStates):
             self.kind = 'state'
@@ -447,7 +464,62 @@ class Trait:
         for k in invalid:
             if self.__defaults__[k] != getattr(self, k):
                 name = owner_cls.__qualname__
-                raise ValueError(f"'{name}' classes do not support traits with parameter '{k}'")
+                raise AttributeError(f"'{name}' classes do not support traits with parameter '{k}'")
+
+        # and now, finalize the behavior of decorated functions
+        if self.kind == 'state':
+            # were there any decorator requests?
+            if len(self.__decorator_pending__) == 0:
+                if self.__decorator_action__ is not None:
+                    raise AttributeError(f"requested a decorator action but decorated no functions!")
+                else:
+                    return
+
+            # otherwise, set to work
+            positional_argcounts = [f.__code__.co_argcount - len(f.__defaults__ or tuple()) \
+                                    for f in self.__decorator_pending__]
+
+            # if there have been no hints, try to guess at the intent of the decorated methods
+            if self.__decorator_action__ is None:
+                if len(positional_argcounts) == 1 and positional_argcounts[0] > 2:
+                    # long function signatures mean not a property
+                    self.__decorator_action__ = 'method'
+                elif set(positional_argcounts) in (set((1,)), set((1, 2))):
+                    self.__decorator_action__ = 'property'
+                else:
+                    raise AttributeError(f"the intended behavior of the method(s) decorated by {self} "\
+                                          "is ambiguous - specify with @labbench.property or @labbench.method")
+
+            if self.__decorator_action__ == 'property':
+                # adopt the properties!
+                if set(positional_argcounts) not in (set((1,)), set((2,)), set((1, 2))):
+                    raise AttributeError(f"to implement a {self} property, decorate a "\
+                                         f"1-argument getter and/or a 2-argument setter")
+                for func, argcount in zip(self.__decorator_pending__, positional_argcounts):
+                    if len(self.help.rstrip().strip()) == 0:
+                        # take func docstring as default self.help
+                        self.help = func.__doc__.rstrip().strip()
+
+                    if argcount == 1:
+                        self.__getter__ = func
+                    else:
+                        self.__setter__ = func
+
+            elif self.__decorator_action__ == 'method':
+                if len(self.__decorator_pending__) != 1:
+                    raise AttributeError(f"to implement method behavior with {self}, decorate exactly "\
+                                         f"one method")
+
+                func = self.__decorator_pending__[0]
+
+                if len(self.help.rstrip().strip()) == 0:
+                    # take func docstring as default self.help
+                    self.help = func.__doc__.rstrip().strip()
+
+                self.__returner__ = func
+            else:
+                raise AttributeError(f"{repr(self.__decorator_action__)} is an unrecognized kind of "\
+                                     f"trait decorator behavior in {self}")
 
     def __set__(self, owner, value):
         # First, validate the pythonic types
@@ -456,7 +528,7 @@ class Trait:
 
         # Validate the pythonic value
         if value is not None:
-            # Convert to the representation expected by owner.__command_set__
+            # Convert to the representation expected by owner.__set_by_key__
             try:
                 value = Trait.to_pythonic(self, value)
                 value = self.validate(value)
@@ -488,25 +560,26 @@ class Trait:
             # from the function decorated by this trait
             self.__setter__(owner, value)
             
-        elif self.command is None:
+        elif self.key is None:
             # from the command (with below)
             objname = owner.__class__.__qualname__ + '.' + self.name
             raise AttributeError(f"cannot set {objname}: no @{self.name} "\
                                  f"setter is defined, and command is None")
         else:
-            owner.__command_set__(self.name, self.command, value)
+            owner.__set_by_key__(self.name, self.key, value)
 
+        owner.__notify__(self.name, value, 'set')
         if not self.cache:
             owner.__notify__(self.name, value, 'set')
 
     def __get__(self, owner, owner_cls=None):
-        """ Called by the instance of the class that owns this attribute to
+        ''' Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
-        decorator function or the owner's __command_get__ method to retrieve
+        decorator function or the owner's __get_by_key__ method to retrieve
         the result.
 
-        :return: the retreived value
-        """
+        :return: retreived value
+        '''
 
         if owner is None:
             # this is the owner class looking for the trait instance itself
@@ -515,11 +588,11 @@ class Trait:
             
             # Inject the labbench Trait hooks into the return value
             @wraps(self.__returner__)
-            def returner(*args, **kws):
+            def method(*args, **kws):
                 value = self.__returner__(owner, *args, **kws)
                 return self.__cast_get__(owner, value)
 
-            return returner
+            return method
 
         elif not self.gettable:
             # stop now if this is not a gettable Trait
@@ -537,13 +610,13 @@ class Trait:
             value = self.__getter__(owner)
             
         else:
-            # otherwise, get with owner.__command_get__, if available
-            if self.command is None:
+            # otherwise, get with owner.__get_by_key__, if available
+            if self.key is None:
                 # otherwise, 'get' 
                 objname = owner.__class__.__qualname__ + '.' + self.name
                 raise AttributeError(f"cannot set {objname}: no @{self.name} "\
                                      f"getter is defined, and command is None")
-            value = owner.__command_get__(self.name, self.command)
+            value = owner.__get_by_key__(self.name, self.key)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -613,80 +686,53 @@ class Trait:
 
     ### Decorator methods
     def __call__(self, func):
-        """ This gets called when we use the Trait as a decorator.
+        """ use the Trait as a decorator, which ties this Trait instance to evaluate a property or method in the
+            owning class. you can specify
         """
-        
-        # We only decorate functions.
+        # only decorate functions.
         if not callable(func):
             raise Exception(f"object of type '{func.__class__.__qualname__}' must be callable")
 
+        # take any hints from func about the type of decorator action
+        if self.__decorator_action__ is None:
+            self.__decorator_action__ = getattr(func, '__decorator_action__', None)
+        elif hasattr(func, '__decorator_action__'):
+            if func.__decorator_action__ != self.__decorator_action__:
+                raise AttributeError(f"the given function {repr(func)} is decorated "\
+                                     f"to act as {func.__decorator_action__}, but "\
+                                     f"{repr(self)} is already decorated to act as {self.__decorator_action__}")
+            self.__decorator_action__ = func.__decorator_action__
+
+        self.__decorator_pending__.append(func)
+
         # Register in the list of decorators, in case we are overwritten by an
         # overloading function
+        if getattr(self, 'name', None) is None:
+            self.name = func.__name__
         if len(HasTraitsMeta.__pending__) > 0:
             HasTraitsMeta.__pending__[-1][func.__name__] = self
 
-        # Attempt to classify automatically
-        positional_argcount = func.__code__.co_argcount - len(func.__defaults__ or tuple())
-
-        if positional_argcount == 1:
-            return self.getter(func)
-            
-        elif positional_argcount == 2:
-            return self.setter(func)
-            
-        else:
-            return self.returner(func)
-            
-            #raise ValueError(f"@{self} must decorate a function with 1 argument (a getter) or 2 arguments (a setter)")
-
-    def __adopt__(self, func):
-        if not trim(self.help):
-            self.help = trim(func.__doc__)
-
-    def returner(self, func):
-        """ decorate a function to be invoked, rather than a property
-        """
-        if self.__setter__ or self.__getter__:
-            raise AttributeError(f'decorated a returner to implement {self}, but there are already getters or setters')
-        self.__returner__ = func
-        return self
-
-
-    def setter(self, func):
-        """ this decorator applies `func` to implement property sets
-
-        :param func: the function to decorate
-        """
-        if self.__setter__ is not None:
-            raise AttributeError(f'{self.__objclass__.__qualname__}.{self.name} already has a setter!')
-        self.__adopt__(func)
-        self.__setter__ = func
-        if func.__doc__:
-            self.help = trim(func.__doc__)
-        return self
-
-    def getter(self, func):
-        """ this decorator applies `func` to implement property gets
-
-        :param func: the function to decorate
-        """
-        if self.__getter__ is not None:
-            raise AttributeError(f'{self.__objclass__.__qualname__}.{self.name} already has a getter!')        
-        self.__adopt__(func)
-        self.__getter__ = func
-        if func.__doc__:
-            self.help = func.__doc__
+        # return self to ensure `self` is the value assigned in the class definition
         return self
 
     ### Object protocol boilerplate methods
     def __repr__(self, omit=[]):
-        pairs = []
-        for k, default in self.__defaults__.items():
-            v = getattr(self, k)
-            if v != default:
-                pairs.append(f'{k}={repr(v)}')
-        name = self.__class__.__qualname__
-        return f"{name}({','.join(pairs)})"
+        owner_cls = getattr(self, '__objclass__', None)
+
+        if owner_cls is None:
+            # revert to the class definition if the owning class
+            # hasn't claimed us yet
+            pairs = []
+            for k, default in self.__defaults__.items():
+                v = getattr(self, k)
+                if v != default:
+                    pairs.append(f'{k}={repr(v)}')
+            name = self.__class__.__qualname__
+            return f"{name}({','.join(pairs)})"
+
+        else:
+            # otherwise, this is more descriptive
+            return f"{owner_cls.__qualname__}.{self.name}"
 
     __str__ = __repr__
 
@@ -700,6 +746,57 @@ class Trait:
 
 
 Trait.__init_subclass__()
+
+
+def method(obj):
+    """ Add this decorator in addition to a trait decorator to specify that
+        the trait should behave as a callable method. For example:
+
+            ```python
+            import labbench as lb
+
+            class MyDevice(lb.Device)
+                @lb.method
+                @lb.Int(min=0, max=10)
+                def fetch_int(self):
+                    return 6
+
+            with MyDevice as m:
+                print(m.fetch_int())
+            ```
+
+        Decorate either before or after the trait decorator.
+    """
+    if not isinstance(obj, Trait) and not callable(obj):
+        raise ValueError('the method "method" decorator must be applied to a callable')
+    obj.__decorator_action__ = 'method'
+    return obj
+
+
+def property(obj):
+    """ Add this decorator in addition to a trait decorator to specify that
+        the trait should behave as a property (descriptor). This means
+        that it is not callable. For example:
+
+            ```python
+            import labbench as lb
+
+            class MyDevice(lb.Device)
+                @lb.property
+                @lb.Int(min=0, max=10)
+                def fetch_int(self):
+                    return 6
+
+            with MyDevice as m:
+                print(m.fetch_int)
+            ```
+
+        Decorate either before or after the trait decorator.
+    """
+    if not isinstance(obj, Trait) and not callable(obj):
+        raise ValueError('the method "method" decorator must be applied to a callable')
+    obj.__decorator_action__ = 'property'
+    return obj
 
 
 class HasTraits(metaclass=HasTraitsMeta):
@@ -717,7 +814,7 @@ class HasTraits(metaclass=HasTraitsMeta):
         for name, trait in dict(cls.__traits__).items():
             if not hasattr(trait, '__objclass__'):
                 trait.__set_name__(cls, name)
-            trait.__fit_owner__(cls)
+            trait.__init_owner_subclass__(cls)
  
     def __iter__(self):
         return iter(self.__traits__.values())
@@ -740,15 +837,15 @@ class HasTraits(metaclass=HasTraitsMeta):
 
         self.__previous__[name] = value
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         objname = self.__class__.__qualname__ + '.' + name
         raise AttributeError(f"cannot set {objname}: no @{name} "\
-                             f"setter is defined, and {name}.__command_set__ is not defined")
+                             f"setter is defined, and {name}.__set_by_key__ is not defined")
 
-    def __command_get__(self, name, command):
+    def __get_by_key__(self, name, command):
         objname = self.__class__.__qualname__ + '.' + name
         raise AttributeError(f"cannot get {objname}: no @{name} "\
-                             f"getter is defined, and {name}.__command_get__ is not defined")
+                             f"getter is defined, and {name}.__get_by_key__ is not defined")
 
 
 class HasSettings(HasTraits):
@@ -810,7 +907,7 @@ class Any(Trait):
         return value
 
 
-Trait.__annotations__['command'] = Any
+Trait.__annotations__['key'] = Any
 
 
 def observe(obj, handler, names=None):
@@ -842,8 +939,8 @@ def observe(obj, handler, names=None):
 
 
 def unobserve(obj, handler):
-    """ Unregister a handler function from notifications in obj.
-    """
+    ''' Unregister a handler function from notifications in obj.
+    '''
     if isinstance(obj, HasTraits):
         try:
             del obj.__notify_list__[handler]
@@ -885,6 +982,8 @@ class BoundedNumber(Trait):
 
 
 class NonScalar(Any):
+    title: str = '' # a name for the data
+
     """ generically non-scalar data, such as a list, array, but not including a string or bytes """
     def validate(self, value):
         if isinstance(value, (bytes,str)):
@@ -1067,9 +1166,9 @@ class Device(HasStates):
     """
     settings = HasSettings
 
-    resource: Unicode(allow_none=True, cache=True, help='device address or URI')
+    resource: Unicode(allow_none=True, help='device address or URI')
 
-    concurrency: Bool(default=True, settable=False, cache=True,
+    concurrency: Bool(default=True, settable=False,
                       help='`True` if this device supports threading')
 
     """ Container for state traits in a Device. Getting or setting state traits
@@ -1107,6 +1206,7 @@ class Device(HasStates):
 
     __warn_state_names__ = []
     __warn_settings_names__ = []
+    __children__ = {}
 
     @classmethod
     def __init_subclass__(cls):
@@ -1280,6 +1380,17 @@ class Device(HasStates):
             e.args = tuple(args)
             raise e
 
+    ### Descriptor implementation, for when this is a child class
+    def __set_name__(self, owner_cls, name):
+        if issubclass(owner_cls, Device):
+            owner_cls.__children__[name] = self
+        else:
+            self.logger.warning(f"{self} is a descriptor of a non-Device class")
+
+    def __get__(self, owner, owner_cls=None):
+        return self
+
+    ### Object boilerplate
     def __del__(self):
         self.close()
 
@@ -1291,6 +1402,7 @@ class Device(HasStates):
             # In case an exception has occurred before __init__
             return f'{name}()'
 
+    @property
     @Bool()
     def connected(self):
         """ are we connected? """
@@ -1301,14 +1413,21 @@ class Device(HasStates):
             # the namespace is gone. we just assume disconnected
             return False
 
-    def __set_name__(self, owner_cls, name):
-        self.__name__ = name
-        self.__objclass__ = owner_cls
-
-    def __get__ (self, owner, owner_cls=None):
-        return self
-
     __str__ = __repr__
 
+def device_contexts(objs, concurrent=True):
+    other_contexts = dict([(a,o) for a,o in objs.items()])
+
+    # Enforce the ordering set by self.enter_first
+    if concurrent:
+        # Any remaining context managers will be run concurrently if concurrent=True
+        contexts = OrderedDict(first_contexts,
+                                     others=concurrently(name=f'',
+                                                         **other_contexts))
+    else:
+        # Otherwise, run them sequentially
+        contexts = OrderedDict(first_contexts, **other_contexts)
+    self.__cm = sequentially(name=f'{repr(self)} connections',
+                             **contexts)
 
 Device.__init_subclass__()

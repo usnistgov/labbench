@@ -66,7 +66,7 @@ class CommandLineWrapper(core.Device):
     """
 
     binary_path: core.Unicode\
-        (default=core.Undefined, help='path to the file to run')
+        (default=None, allow_none=True, help='path to the file to run')
     timeout: core.Float\
         (default=1, min=0, label='s', help='wait time after close before killing the process')
     arguments: core.List\
@@ -328,12 +328,12 @@ class CommandLineWrapper(core.Device):
             for k, trait in self.settings.traits().items():
                 v = getattr(self.settings, k)
 
-                if trait.command and v is not None:
+                if trait.key and v is not None:
                     if isinstance(trait, core.Bool):
                         if v:
-                            cmd = cmd + (trait.command,)
+                            cmd = cmd + (trait.key,)
                     elif v is not None:
-                        cmd = cmd + (trait.command, str(v))
+                        cmd = cmd + (trait.key, str(v))
 
         return cmd
 
@@ -520,7 +520,7 @@ class LabviewSocketInterface(core.Device):
         This implementation uses a transmit and receive socket.
 
         State sets are implemented by simple ' command value' strings
-        and implemented with the 'command' keyword (like VISA strings).
+        and implemented with the 'key' keyword (like VISA strings).
         Subclasses can therefore implement support for commands in
         specific labview VI the same was as in VISA commands by
         assigning the commands implemented in the corresponding labview VI.
@@ -569,7 +569,7 @@ class LabviewSocketInterface(core.Device):
                                         self.settings.tx_port))
         util.sleep(self.settings.delay)
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         """ Send a formatted command string to implement state control.
         """
         self.write(f'{command} {value}')
@@ -839,7 +839,7 @@ class TelnetDevice(core.Device):
         or by setting them afterward in `settings`.
 
         Subclassed devices that need state descriptors will need
-        to implement __command_get__ and __command_set__ methods to implement
+        to implement __get_by_key__ and __set_by_key__ methods to implement
         the state set and get operations (as appropriate).
     """
 
@@ -899,14 +899,14 @@ class VISADevice(core.Device):
 
     # States
     identity = core.Unicode\
-        (command='*IDN', settable=False, cache=True,
+        (key='*IDN', settable=False, cache=True,
          help='identity string reported by the instrument')
 
     options = core.Unicode\
-        (command='*OPT', settable=False, cache=True,
+        (key='*OPT', settable=False, cache=True,
          help='options reported by the instrument')
 
-    @core.Dict(command='*STB', settable=False)
+    @core.Dict(key='*STB', settable=False)
     def status_byte(self):
         """ VISA status byte reported by the instrument """
         code = int(self.query('*STB?'))
@@ -1041,25 +1041,25 @@ class VISADevice(core.Device):
         self.logger.debug(f'      -> {msg_out}')
         return ret
 
-    def __command_get__(self, name, command):
+    def __get_by_key__(self, name, command):
         """ Send an SCPI command to get a state value from the
             device. This function
             adds a '?' to match SCPI convention. This is
             automatically called for `state` attributes that
             define a message.
 
-            :param str command: The SCPI command to send
+            :param str key: The SCPI command to send
             :param trait: The trait state corresponding with the command (ignored)
         """
         return self.query(command + '?').rstrip()
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         """ Send an SCPI command to set a state value on the
             device. This function adds a '?' to match SCPI convention. This is
             automatically called for `state` attributes that
             define a message.
 
-            :param str command: The SCPI command to send
+            :param str key: The SCPI command to send
             :param trait: The trait state corresponding with the command (ignored)
             :param str value: The value to assign to the parameter
         """
@@ -1130,19 +1130,19 @@ class EmulatedVISADevice(core.Device):
         (default='\n', help='end-of-transmit termination character')
 
     # States
-    @core.Unicode(command='*IDN', settable=False, cache=True)
+    @core.Unicode(key='*IDN', settable=False, cache=True)
     def identity(self):
         """ identity string reported by the instrument """
         return self.__class__.__qualname__
 
-    @core.Unicode(command='*OPT', settable=False, cache=True)
+    @core.Unicode(key='*OPT', settable=False, cache=True)
     def options(self):
         """ options reported by the instrument """
         
         return ','.join(((f"{s.name}={repr(self.settings.__previous__[s.name])}"\
                           for s in self.settings)))
 
-    @core.Dict(command='*STB', settable=False)
+    @core.Dict(key='*STB', settable=False)
     def status_byte(self):
         """ VISA status byte reported by the instrument """
         return {'error queue not empty': False,
@@ -1154,7 +1154,7 @@ class EmulatedVISADevice(core.Device):
                 'operating': True,
                 }
 
-    def __command_get__(self, name, command):
+    def __get_by_key__(self, name, command):
         import numpy as np
 
         trait = self[name]
@@ -1173,7 +1173,7 @@ class EmulatedVISADevice(core.Device):
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 
 
-    def __command_set__(self, name, command, value):
+    def __set_by_key__(self, name, command, value):
         pass
 
 

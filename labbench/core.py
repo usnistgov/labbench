@@ -31,6 +31,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from . import util
+from .testbed import Testbed
 
 from copy import copy, deepcopy
 from typing import Generic, T
@@ -1118,7 +1119,7 @@ class DisconnectedBackend(object):
         return 'DisconnectedBackend()' 
 
 
-class Device(HasStates):
+class Device(HasStates, Testbed._InTestbed):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
         driver.
@@ -1379,16 +1380,6 @@ class Device(HasStates):
             args[0] = '{}: {}'.format(repr(self), str(args[0]))
             e.args = tuple(args)
             raise e
-
-    ### Descriptor implementation, for when this is a child class
-    def __set_name__(self, owner_cls, name):
-        if issubclass(owner_cls, Device):
-            owner_cls.__children__[name] = self
-        else:
-            self.logger.warning(f"{self} is a descriptor of a non-Device class")
-
-    def __get__(self, owner, owner_cls=None):
-        return self
 
     ### Object boilerplate
     def __del__(self):

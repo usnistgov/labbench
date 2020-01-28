@@ -61,23 +61,15 @@ class Testbed:
     # and their order
     enter_first = Email, LogAggregator, Host
 
-    def __init__(self, config=None, concurrent=True):
-        self.config = config
-        attrs_start = dir(self)
-        self.make()
-
-        # Find the objects
-        everything = dict(self.__class__.__dict__, **self.__dict__)
-        cms = dict([(a, o) for a, o in everything.items()\
-                        if not a.startswith('_') and hasattr(o, '__enter__')])
-
-        self.__managed_contexts = dict(cms)
+    def __init_subclass__(cls, concurrent=True):
+        cls.__contexts__ = dict(cls.__contexts__)
+        cms = dict(cls.__contexts__)
 
         # Pull any objects of types listed by self.enter_first, in the
         # order of (1) the types listed in self.enter_first, then (2) the order
         # they appear in objs
         first_contexts = dict()
-        for cls in self.enter_first:
+        for cls in cls.enter_first:
             for attr, obj in dict(cms).items():
                 if isinstance(obj, cls):
                     first_contexts[attr] = cms.pop(attr)
@@ -86,38 +78,37 @@ class Testbed:
 
         # Enforce the ordering set by self.enter_first
         if concurrent:
-            # Any remaining context managers will be run concurrently if concurrent=True            
+            # Any remaining context managers will be run concurrently if concurrent=True
             contexts = dict(first_contexts, others=concurrently(name=f'',
                                                                 **other_contexts))
         else:
             # Otherwise, run them sequentially
             contexts = dict(first_contexts, **other_contexts)
 
-        self.__cm = sequentially(name=f'{repr(self)} connections',
+        cls.__cm = sequentially(name=f'{repr(self)} connections',
                                  **contexts)
 
-        for obj in self.__managed_contexts.values():
-            if isinstance(obj, RelationalTableLogger):
-                devices = self._devices()
-                obj.observe_states(devices)
-                obj.observe_settings(devices)
-                break
+    def __init__(self, config=None):
+        self.config = config
 
+        for name, context in self.__contexts__.items():
+            context.__init_owner__(self)
 
-    def get_managed_contexts(self):
-        return dict(self.__managed_contexts)
+        self.make()
+
+    def _contexts(self):
+        return dict(self.__contexts__)
 
     def _devices(self, recursive=True):
         owners = []
 
-        for name, obj in self.__managed_contexts.items():
+        for name, obj in self.__contexts__.items():
             if isinstance(obj, Device):
                 owners += [obj]
             elif recursive and isinstance(obj, Testbed):
                 owners += obj._trait_owners(recursive=True)
 
         return owners
-
 
     def __enter__(self):
         self.__cm.__enter__()
@@ -181,3 +172,19 @@ class Testbed:
             were raised.
         """
         pass
+
+    class _InTestbed:
+        """ Subclass this in objects that could be context managers in a Testbed
+
+        """
+        __owner__ = None
+
+        def __set_name__(self, owner_cls, name):
+            if issubclass(owner_cls, Testbed):
+                owner_cls.__contexts__[name] = self
+
+        def __get__(self):
+            return self
+
+        def __init_owner__(self, owner):
+            self.__owner__ = owner

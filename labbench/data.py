@@ -31,6 +31,7 @@ __all__ = ['LogAggregator', 'RelationalTableLogger',
 from contextlib import suppress, ExitStack
 from .core import Device, observe
 from .host import Host
+from .testbed import Testbed
 from . import util
 import copy
 import inspect
@@ -43,7 +44,7 @@ import textwrap
 import warnings
 
 
-class LogAggregator(object):
+class LogAggregator(Testbed._InTestbed):
     """ Aggregate state information from multiple devices. This can be the basis
         for automatic database logging.
     """
@@ -301,11 +302,6 @@ class LogAggregator(object):
         del f, frame
 
         raise Exception(f"failed to automatically label {repr(obj)}")
-
-    def __set_name__ (self, owner_cls, name):
-        for owner
-        self.observe_states(inst, changes=True, always='sweep_aperture')
-        self.observe_settings(inst, changes=True)
 
 
 class MungerBase(object):
@@ -910,6 +906,16 @@ class RelationalTableLogger(LogAggregator):
     def __enter__(self):
         if hasattr(self, '__stack'):
             return self
+
+        # If `self` lives in a Testbed, observe changes in its Device instances
+        if self.__owner__ is not None:
+            if not isinstance(self.__owner__, Testbed):
+                raise ValueError("expected owner to be a Testbed instance")
+
+            for obj in self.__owner__._devices().values():
+                if isinstance(obj, Device):
+                    self.observe_states(obj)
+                    self.observe_settings(obj)
 
         # Do some checks on the relative data directory before we consider overwriting
         # the master db.

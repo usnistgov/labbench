@@ -107,7 +107,7 @@ class MockCommand(MockBase):
         self.values[command] = value
 
 
-class TestStates(unittest.TestCase):            
+class TestStates(unittest.TestCase):
     def test_command_type(self):
         global m
         with MockCommand() as m:

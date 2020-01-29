@@ -26,11 +26,11 @@
 
 from .util import sequentially,concurrently
 from .data import LogAggregator, RelationalTableLogger
-from .core import Device
+from .core import Device, InTestbed
 from .host import Host, Email
 from functools import wraps
 
-__all__ = ['Testbed', 'Steps']
+__all__ = ['Testbed', 'Steps', 'InTestbed']
 
 
 class Testbed:
@@ -67,6 +67,9 @@ class Testbed:
         testbed after all Device instances are open.
     """
 
+    __contexts__ = {}
+    __cm = {}
+    
     # Specify context manager types to open before others
     # and their order
     enter_first = Email, LogAggregator, Host
@@ -89,13 +92,13 @@ class Testbed:
         # Enforce the ordering set by self.enter_first
         if concurrent:
             # Any remaining context managers will be run concurrently if concurrent=True
-            contexts = dict(first_contexts, others=concurrently(name=f'',
-                                                                **other_contexts))
+            others=concurrently(name=f'', **other_contexts)
+            contexts = dict(first_contexts, others=others)
         else:
             # Otherwise, run them sequentially
             contexts = dict(first_contexts, **other_contexts)
 
-        cls.__cm = sequentially(name=f'{repr(self)} connections',
+        cls.__cm = sequentially(name=f'{cls.__qualname__} connections',
                                  **contexts)
 
     def __init__(self, config=None):
@@ -183,24 +186,8 @@ class Testbed:
         """
         pass
 
-class _InTestbed:
-    """ Subclass this in objects that could be context managers in a Testbed
 
-    """
-    __owner__ = None
-
-    def __set_name__(self, owner_cls, name):
-        if issubclass(owner_cls, Testbed):
-            owner_cls.__contexts__[name] = self
-
-    def __get__(self):
-        return self
-
-    def __init_owner__(self, owner):
-        self.__owner__ = owner
-
-
-class Steps(Testbed._InTestbed):
+class Steps(InTestbed):
     """ Subclass this to define experimental procedures for groups of Devices in a Testbed.
     """
     __annotations__ = dict()
@@ -236,7 +223,7 @@ class Steps(Testbed._InTestbed):
 
         # If there are remaining unsupported devices, raise an exception
         if len(devices) > 0:
-            raise ValueError(f"{tuple(devices.keys()}} are invalid arguments")
+            raise ValueError(f"{tuple(devices.keys())} are invalid arguments")
 
     def __getattribute__(self, name):
         """ Add debug messages to class method calls

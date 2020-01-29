@@ -31,7 +31,6 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from . import util
-from .testbed import Testbed
 
 from copy import copy, deepcopy
 from typing import Generic, T
@@ -54,8 +53,8 @@ __all__ = ['DeviceException', 'DeviceNotReady', 'DeviceFatalError',
            'Trait', 'Int', 'Float', 'Unicode', 'Complex', 'Bytes',
            'Bool', 'List', 'Dict', 'Address', 'NonScalar',
 
-           'Device', 'list_devices', 'logger', 'property', 'method',
-           'observe', 'unobserve'
+           'Device', 'InTestbed', 'list_devices', 'logger',
+           'property', 'method', 'observe', 'unobserve'
            ]
 
 logger = logging.getLogger('labbench')
@@ -1119,7 +1118,29 @@ class DisconnectedBackend(object):
         return 'DisconnectedBackend()' 
 
 
-class Device(HasStates, Testbed._InTestbed):
+class InTestbed:
+    """ Subclass this in objects that could be context managers in a Testbed
+
+    """
+    __owner__ = None
+
+    def __set_name__(self, owner_cls, name):
+        try:
+            from .testbed import Testbed
+            if issubclass(owner_cls, Testbed):
+                owner_cls.__contexts__[name] = self
+        except BaseException as e:
+            print(e)
+            raise
+
+    def __get__(self):
+        return self
+
+    def __init_owner__(self, owner):
+        self.__owner__ = owner
+
+
+class Device(HasStates, InTestbed):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
         driver.
@@ -1405,6 +1426,7 @@ class Device(HasStates, Testbed._InTestbed):
             return False
 
     __str__ = __repr__
+    
 
 def device_contexts(objs, concurrent=True):
     other_contexts = dict([(a,o) for a,o in objs.items()])

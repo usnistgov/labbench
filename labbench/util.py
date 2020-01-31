@@ -30,6 +30,9 @@ __all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
            'retry', 'show_messages', 'sleep', 'stopwatch', 'ThreadSandbox',
            'ThreadEndedByMaster', 'until_timeout',
 
+           # wrapper helpers
+           '_wrap_attribute',
+
            # traceback scrubbing
            'hide_in_traceback', '_force_full_traceback']
 
@@ -37,16 +40,15 @@ from . import core
 
 from collections import OrderedDict
 from contextlib import contextmanager, _GeneratorContextManager
-import inspect
-from queue import Queue, Empty
-import sys
-from threading import Thread, ThreadError, Event
 from functools import wraps
-import psutil
-
+from queue import Queue, Empty
+from threading import Thread, ThreadError, Event
 from typing import Callable
 
-
+import builtins
+import inspect
+import psutil
+import sys
 import time
 import traceback
 
@@ -75,23 +77,33 @@ import types
 TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 
 def hide_in_traceback(func):
-    code = func.__code__
-    func.__code__ = types.CodeType(
-        code.co_argcount,
-        code.co_kwonlyargcount,
-        code.co_nlocals,
-        code.co_stacksize,
-        code.co_flags,
-        code.co_code,
-        code.co_consts + (TRACEBACK_HIDE_TAG,),
-        code.co_names,
-        code.co_varnames,
-        code.co_filename,
-        code.co_name,
-        code.co_firstlineno,
-        code.co_lnotab,
-        code.co_freevars,
-        code.co_cellvars)
+    def adjust(f):
+        code = f.__code__
+        f.__code__ = types.CodeType(
+            code.co_argcount,
+            code.co_kwonlyargcount,
+            code.co_nlocals,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts + (TRACEBACK_HIDE_TAG,),
+            code.co_names,
+            code.co_varnames,
+            code.co_filename,
+            code.co_name,
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            code.co_cellvars)
+
+    if not callable(func):
+        raise TypeError(f"{func} is not callable")
+
+    if hasattr(func, '__code__'):
+        adjust(func)
+    if hasattr(func.__call__, '__code__'):
+        adjust(func.__call__)
+
     return func
 
 
@@ -134,6 +146,69 @@ class _filtered_exc_info:
             raise
 
 
+def _wrap_attribute(cls,
+                   name: str,
+                   wrapper,
+                   fields: list,
+                   defaults: dict,
+                   positional: int = None,
+                   annotations: dict = {}):
+    """ Replace cls.__init__ with a wrapper function with an explicit
+        call signature, replacing the actual call signature that can be
+        dynamic __init__(self, *args, **kws) call signature.
+
+        :fields: iterable of names of each call signature argument
+        :
+    """
+    # Is the existing cls.__init__ already a __init__ wrapper?
+    wrapped = getattr(cls, name)
+    orig_doc = getattr(wrapped, '__origdoc__', cls.__init__.__doc__)
+    reuse = hasattr(wrapped, '__dynamic__')
+
+    defaults = tuple(defaults.items())
+
+    if positional is None:
+        positional = len(fields)
+
+    # Generate a code object with the adjusted signature
+    code = wrapper.__code__
+
+    code = types.CodeType(1 + positional,  # co_argcount
+                          len(fields) - positional,  # co_kwonlyargcount
+                          len(fields) + 1,  # co_nlocals
+                          code.co_stacksize,
+                          code.co_flags,
+                          code.co_code,
+                          code.co_consts,
+                          code.co_names,
+                          ('self',) + tuple(fields),
+                          code.co_filename,
+                          code.co_name,
+                          code.co_firstlineno,
+                          code.co_lnotab,
+                          code.co_freevars,
+                          code.co_cellvars)
+
+    # Generate the new wrapper function and its signature
+    __globals__ = getattr(wrapped, '__globals__', builtins.__dict__)
+    wrapper = types.FunctionType(code,
+                                 __globals__,
+                                 wrapped.__name__)
+
+    wrapper.__doc__ = wrapped.__doc__
+    wrapper.__qualname__ = wrapped.__qualname__
+    wrapper.__defaults__ = tuple((v for k, v in defaults[:positional]))
+    wrapper.__kwdefaults__ = dict(((k, v) for k, v in defaults[positional:]))
+    wrapper.__annotations__ = annotations
+    wrapper.__dynamic__ = True
+
+    if not reuse:
+        setattr(cls, name + '_wrapped', wrapped)
+    setattr(cls, name, wrapper)
+
+    wrapper.__doc__ = wrapper.__origdoc__ = orig_doc
+
+
 if not hasattr(sys.exc_info, 'lb_wrapped'):
     # monkeypatch sys.exc_info if it needs
     sys.exc_info, exc_info = _filtered_exc_info(sys.exc_info), sys.exc_info
@@ -165,7 +240,7 @@ def check_master():
     """
     sleep(0.)
 
-
+@hide_in_traceback
 def retry(exception_or_exceptions, tries=4, delay=0,
           backoff=0, exception_func=lambda: None):
     """ This decorator causes the function call to repeat, suppressing specified exception(s), until a
@@ -225,7 +300,7 @@ def retry(exception_or_exceptions, tries=4, delay=0,
 
     return decorator
 
-
+@hide_in_traceback
 def until_timeout(exception_or_exceptions, timeout, delay=0,
                   backoff=0, exception_func=lambda: None):
     """ This decorator causes the function call to repeat, suppressing specified exception(s), until the
@@ -285,44 +360,6 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
         return do_retry
 
     return decorator
-
-
-@contextmanager
-def limit_exception_traceback(limit):
-    """ Limit the tracebacks printed for uncaught
-        exceptions to the specified depth. Works for
-        regular CPython and IPython interpreters.
-    """
-
-    def limit_hook(type, value, tb):
-        traceback.print_exception(type, value, tb, limit=limit)
-
-    if 'ipykernel' in repr(sys.excepthook):
-        from ipykernel import kernelapp
-        import IPython
-
-        app = kernelapp.IPKernelApp.instance()
-        ipyhook = app.shell.excepthook
-
-        is_ipy = (sys.excepthook == ipyhook)
-    else:
-        is_ipy = False
-
-    if is_ipy:
-        def showtb(self, *args, **kws):
-            limit_hook(*sys.exc_info())
-
-        oldhook = ipyhook
-        IPython.core.interactiveshell.InteractiveShell.showtraceback = showtb
-    else:
-        oldhook, sys.excepthook = sys.excepthook, limit_hook
-
-    yield
-
-    if is_ipy:
-        app.showtraceback = oldhook
-    else:
-        sys.excepthook = oldhook
 
 
 def show_messages(minimum_level):
@@ -468,12 +505,12 @@ class Call(object):
         # if this is running in a separate thread
         
     def __repr__(self):
-        kws = ','.join([(repr(k)+'='+repr(v)) for k,v in self.kws.items()])
-        args = ','.join([repr(v) for v in self.args])
-        allargs = ','.join((args,kws))
+        args = ','.join([repr(v) for v in self.args] + \
+                        [(k+'='+repr(v)) for k,v in self.kws.items()])
         qualname = self.func.__module__ + '.' + self.func.__qualname__
-        return f'Call({qualname},{allargs})'
+        return f'Call({qualname},{args})'
 
+    @hide_in_traceback
     def __call__(self):
         try:
             self.result = self.func(*self.args, **self.kws)
@@ -515,7 +552,9 @@ class Call(object):
             
         return ret
 
+@hide_in_traceback
 @contextmanager
+@hide_in_traceback
 def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
                     params: dict,
                     objs: list):
@@ -600,6 +639,7 @@ DIR_DICT = set(dir(dict))
 def isdictducktype(cls):
     return set(dir(cls)).issuperset(DIR_DICT)  
 
+@hide_in_traceback
 def enter_or_call(flexible_caller, objs, kws):
     """ Extract settings from the keyword arguments flags, decide whether
         `objs` and `kws` should be treated as context managers or callables,
@@ -716,6 +756,7 @@ def enter_or_call(flexible_caller, objs, kws):
         ret.update(result)
         return ret
 
+@hide_in_traceback
 def concurrently_call(params: dict, name_func_pairs: list) -> dict:
     global concurrency_count
 
@@ -725,7 +766,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         """
         tb = exc_tuple[2]
         for i in range(count):
-            if tb.tb_next is not None:
+            if tb is not None and tb.tb_next is not None:
                 tb = tb.tb_next
         return exc_tuple[:2] + (tb,)
 
@@ -752,7 +793,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
     # Setup calls then funcs
     # Set up mappings between wrappers, threads, and the function to call
     wrappers = Call.wrap_list_to_dict(name_func_pairs)
-    threads = OrderedDict([(name, Thread(target=w))
+    threads = OrderedDict([(name, Thread(target=w, name=name))
                            for name, w in wrappers.items()])
 
     # Start threads with calls to each function
@@ -848,13 +889,12 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                     sys.stderr.write('\nthread error (fixme to print message)')
                     sys.stderr.write('\n')
 
-            with limit_exception_traceback(5):
-                raise ConcurrentException(
-                    f'{len(tracebacks)} call(s) raised exceptions')
+            raise ConcurrentException(
+                f'{len(tracebacks)} call(s) raised exceptions')
 
     return results
 
-
+@hide_in_traceback
 def concurrently(*objs, **kws):
     r""" If `*objs` are callable (like functions), call each of
          `*objs` in concurrent threads. If `*objs` are context
@@ -869,8 +909,8 @@ def concurrently(*objs, **kws):
         :param nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
         :param flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
         :param traceback_delay: if `False`, immediately show traceback information on a thread exception; if `True` (the default), wait until all threads finish
-        :return: the values returned by each function
-        :rtype: dictionary of keyed by function
+        :return: the values returned by each call
+        :rtype: dictionary keyed by function name
 
         Here are some examples:
 
@@ -909,6 +949,8 @@ def concurrently(*objs, **kws):
     
     return enter_or_call(concurrently_call, objs, kws)
 
+
+@hide_in_traceback
 def sequentially_call(params: dict, name_func_pairs: list) -> dict:
     """ Emulate `concurrently_call`, with sequential execution. This is mostly
         only useful to guarantee compatibility with `concurrently_call`
@@ -926,7 +968,7 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
 
     return results
 
-
+@hide_in_traceback
 def sequentially(*objs, **kws):
     r""" If `*objs` are callable (like functions), call each of
          `*objs` in the given order. If `*objs` are context
@@ -1001,6 +1043,7 @@ class ThreadDelegate(object):
         self._dir = dir_
         self._repr = repr_
 
+    @hide_in_traceback
     def __call__(self, *args, **kws):
         return message(self._sandbox, OP_CALL, self._obj, None, args, kws)
 
@@ -1026,7 +1069,7 @@ class ThreadDelegate(object):
 delegate_keys = set(ThreadDelegate.__dict__.keys()
                     ).difference(object.__dict__.keys())
 
-
+@hide_in_traceback
 def message(sandbox, *msg):
     req, rsp = sandbox._requestq, Queue(1)
 
@@ -1066,6 +1109,7 @@ class ThreadSandbox(object):
         if exc is not None:
             raise exc
 
+    @hide_in_traceback
     def __worker(self, factory, ready, sandbox_check_func):
         """ This is the only thread allowed to access the protected object.
         """
@@ -1131,12 +1175,14 @@ class ThreadSandbox(object):
 
         core.logger.write('ThreadSandbox worker thread finished')
 
+    @hide_in_traceback
     def __getattr__(self, name):
         if name in sandbox_keys:
             return object.__getattribute__(self, name)
         else:
             return message(self, OP_GET, None, name, None, None)
 
+    @hide_in_traceback
     def __setattr__(self, name, value):
         if name in sandbox_keys:
             return object.__setattr__(self, name, value)

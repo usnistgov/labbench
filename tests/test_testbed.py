@@ -42,12 +42,14 @@ class LaggyInstrument(lb.EmulatedVISADevice):
     demonstrate the process of setting
     up a measurement.
     """
+
+    # Connection and driver settings
     delay: lb.Float\
         (default=0, min=0, help='connection time')
     fetch_time: lb.Float\
         (default=0, min=0, help='fetch time')
     fail_disconnect: lb.Bool\
-        (default=False, help='whether to raise DivideByZero on disconnect')
+        (default=False, help='True to raise DivideByZero on disconnect')
 
     def open(self):        
         self.perf = {}
@@ -56,7 +58,8 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         lb.sleep(self.settings.delay)
         self.perf['open'] = time.perf_counter() - t0
         self.logger.info(f'{self} connected')
-        
+
+    @lb.method
     def fetch(self):
         """ Return the argument after a 1s delay
         """
@@ -85,7 +88,6 @@ class Task1(lb.Task):
     dev1: LaggyInstrument
     dev2: LaggyInstrument
 
-    @lb.hide_in_traceback
     def setup(self, param1):
         print(self.dev1.settings.resource)
         print(self.dev2.settings.resource)
@@ -99,19 +101,21 @@ class Task2(lb.Task):
     dev: LaggyInstrument
 
     def setup(self):
+        return 'task 2 - setup'
         pass
 
     def acquire(self, *, param1):
+        return 'task 3 - acquire'
         pass
 
-    def fetch(self, *, param2):
-        pass
+    def fetch(self, *, param2=7):
+        return {'data 1': 4, 'data 2': 5}
 
 
 class Task3(lb.Task):
     dev: LaggyInstrument
 
-    def acquire(self, *, param2, param3):
+    def acquire(self, *, param2=7, param3):
         pass
 
     def fetch(self, *, param4):
@@ -119,8 +123,8 @@ class Task3(lb.Task):
 
 
 class MyTestbed(lb.Testbed):
-    db = lb.SQLiteLogger \
-       ('data',                         # Path to new directory that will contain containing all files
+    db = lb.SQLiteLogger(
+        'data',                         # Path to new directory that will contain containing all files
         overwrite=False,                # `True` --- delete existing master database; `False` --- append
         text_relational_min=1024,       # Minimum text string length that triggers relational storage
         force_relational=['host_log'],  # Data in these columns will always be relational
@@ -128,37 +132,50 @@ class MyTestbed(lb.Testbed):
         nonscalar_file_type='csv',      # Default format of numerical data, when possible
         metadata_dirname='metadata',    # metadata will be stored in this subdirectory
         tar=False                       # `True` to embed relational data folders within `data.tar`
-        )
-
-    inst1 = LaggyInstrument\
-        (resource='a',
-         delay=.12)
-
-    inst2 = LaggyInstrument\
-        (resource='b',
-         delay=.06)
-
-    # Test procedures
-    task1 = Task1(dev1=inst1, dev2=inst2)
-    task2 = Task2(dev=inst1)
-    task3 = Task3(dev=inst2)
-
-    run = lb.Experiment(
-        step1=task1.setup & task2.setup,  # execute these concurrently
-        step2=task1.arm,
-        step3=(task2.acquire, task3.acquire),  # execute these sequentially
-        step4=task2.fetch & task3.fetch
     )
 
+    inst1 = LaggyInstrument(
+        resource='a',
+        delay=.12
+    )
+
+    inst2 = LaggyInstrument(
+        resource='b',
+        delay=.06
+    )
+
+    # Test procedures
+    task1 = Task1(
+        dev1=inst1,
+        dev2=inst2
+    )
+
+    task2 = Task2(
+        dev=inst1
+    )
+
+    task3 = Task3(
+        dev=inst2
+    )
+
+    run = lb.Multitask(
+        setup=(task1.setup & task2.setup),  # executes these 2 methods concurrently
+        arm=(task1.arm),
+        acquire=(task2.acquire, task3.acquire),  # executes these 2 sequentially
+        fetch=(task2.fetch & task3.fetch)
+    )
 
 if __name__ == '__main__':
     lb.show_messages('debug')
 
-    with lb.stopwatch():
+    with lb.stopwatch('test connection'):
         with MyTestbed() as testbed:
             testbed.inst2.settings.delay = .07
-            testbed.task1.setup()
-            testbed.db()
+            for i in range(3):
+                # Run the experiment
+                ret = testbed.run(param1=0, param3=0, param4=0)
+
+                testbed.db()
 
     df = lb.read(testbed.db.path+'/master.db')
     df.to_csv(testbed.db.path+'/master.csv')

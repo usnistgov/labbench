@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 - FilenameDict and ConcurrentRunner, which have been deprecated for a while
+- `limit_exception_depth`, which is redundant with `hide_in_traceback`
 
 ## [0.20 - 2019-10-09]
 ### Added

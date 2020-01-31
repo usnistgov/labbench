@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['Testbed', 'Task', 'Experiment']
+__all__ = ['Testbed', 'Task', 'Multitask']
 
 from . import core, util
 from .data import LogAggregator, RelationalTableLogger
@@ -221,6 +221,8 @@ class SequencedMethod:
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
         self.__doc__ = obj.__doc__
+        self.__name__ = name
+        self.__qualname__ = getattr(obj, '__qualname__', obj.__class__.__qualname__)
 
         self.__wrapped__ = obj
         self.__repr__ = obj.__repr__
@@ -248,6 +250,12 @@ class SequencedMethod:
     def __rand__(self, other):
         # python objects call this when the left side of '&' is already a tuple
         return other + (self,)
+
+    def __repr__(self):
+        return f"<sequenced {repr(self.__wrapped__)[1:-1]}>"
+
+    __str__ = __repr__
+
 
 class Task(core.InTestbed):
     """ Subclass this to define experimental procedures for groups of Devices in a Testbed.
@@ -335,8 +343,8 @@ def parse_sequence(sequence):
         sequence = list(sequence)
 
     elif isinstance(sequence, SequencedMethod):
-        invoke = sequence
-        sequence = []
+        invoke = util.sequentially
+        sequence = [sequence]
 
     else:
         typename = type(sequence).__qualname__
@@ -355,6 +363,117 @@ def parse_sequence(sequence):
     return invoke, sequence
 
 
-class Experiment:
-    def __init__(self, **sequences):
-        self.calls = dict(((name, parse_sequence(seq)) for name, seq in sequences.items()))
+def collect_defaults(tree):
+    """ collect a dictionary of parameter default values
+
+    :param tree: nested list of calls that contains the parsed call tree
+    :return: dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
+        default_value is `inspect._empty` if there is no default.
+    """
+
+    defaults = {}
+
+    # collect the defaults
+    for caller, args in tree:
+        if caller in (util.concurrently, util.sequentially):
+            funcs = args
+        else:
+            raise ValueError(f"first element with type '{repr(caller)}' must reference to lb.concurrently or lb.sequentially")
+
+        for func in funcs:
+            if isinstance(func, list):
+                defaults.update(collect_defaults(func))
+                continue
+            elif not callable(func):
+                raise ValueError(f"object of type '{type(func).__qualname__}' is not callable nor nested list of callables")
+
+            params = iter(inspect.signature(func).parameters.items())
+
+            if inspect.ismethod(func) or isinstance(func, SequencedMethod):
+                # skip 'self', if this is a method
+                next(params)
+            else:
+                print('interesting - ', func)
+
+            for _, param in params:
+                defaults.setdefault(param.name, []).append((func, param.default))
+
+    return defaults
+
+def call_sequence(spec, kwargs):
+    available = set(kwargs.keys())
+
+    def call(func):
+        # make a Call object with the subset of `kwargs`
+        sig = inspect.signature(func)
+        keys = available.intersection(sig.parameters)
+        params = dict(((k, kwargs[k]) for k in keys))
+        return util.Call(func, **params)
+
+    kws_out = {}
+    caller, sequence = spec
+
+    for item in sequence:
+        if callable(item):
+            name = item.owner.__class__.__qualname__ + '_' + item.__name__
+            kws_out[name] = call(item)
+        elif isinstance(item, list):
+            kws_out[name] = call_sequence(item, kwargs)
+        else:
+            msg = f"unsupported type '{type(item).__qualname__}' " \
+                  f"in call sequence specification"
+            raise ValueError(msg)
+
+    return caller, kws_out
+
+
+@util.hide_in_traceback
+def __call__():
+    # util._wrap_attribute will munge the call signature above for clean introspection in IDEs
+    items = dict(locals())
+    self = items.pop(next(iter(items.keys())))
+    return self.__call___wrapped(**items)
+
+
+class Multitask(core.InTestbed):
+    def __new__(cls, **sequences):
+        # Make a new subclass so that we can change its __call__ signature
+        cls = type('Experiment', (cls,), {})
+
+        sequences = dict(((name, parse_sequence(seq)) for name, seq in sequences.items()))
+
+        defaults = collect_defaults(sequences.values())
+
+        params = list(defaults.keys())
+
+        # prune any defaults that are inconsistent across all cases
+        for param, uses in tuple(defaults.items()):
+            # ensure that default values are
+            unique = tuple(set([default for user, default in uses]))
+            if len(unique) > 1 or unique == (inspect._empty,):
+                del defaults[param]
+            else:
+                defaults[param] = unique[0]
+
+        util._wrap_attribute(cls, '__call__', __call__, tuple(params), {}, 0)
+        cls.__call__.__kwdefaults__ = defaults
+
+        # populate our new object
+        obj = object.__new__(cls)
+        obj.sequences = sequences
+        obj.defaults = defaults
+        obj.params = params
+
+        return obj
+
+    def __call__(self, **kwargs):
+        ret = {}
+
+        for step, sequence in self.sequences.items():
+            caller, step_kws = call_sequence(sequence, kwargs)
+
+            core.logger.info(f"{self.__name__} {step} start")
+            with util.stopwatch(f"{self.__name__} {step}"):
+                ret.update(caller(**step_kws) or {})
+
+        return ret

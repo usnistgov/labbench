@@ -37,7 +37,6 @@ from typing import Generic, T
 from warnings import warn, simplefilter
 from functools import wraps
 
-import builtins
 import inspect
 import logging
 import numbers
@@ -186,6 +185,7 @@ def list_devices(depth=1):
 
     return ret
 
+
 @util.hide_in_traceback
 def __init__():
     """ Wrapper function to call __init__ with adjusted function signature
@@ -195,65 +195,7 @@ def __init__():
     # via locals() instead. We assume we're inside a __init__(self, ...) call.
     items = dict(locals())
     self = items.pop(next(iter(items.keys())))
-    self.__init_wrapped__(**items)
-
-
-def wrap_dynamic_init(cls, fields: list, defaults: dict, positional: int = None,
-                      annotations: dict = {}):
-    """ Replace cls.__init__ with a wrapper function with an explicit
-        call signature, replacing the actual call signature that can be
-        dynamic __init__(self, *args, **kws) call signature.
-
-        :fields: iterable of names of each call signature argument
-        :
-    """
-    # Is the existing cls.__init__ already a __init__ wrapper?
-    orig_doc = getattr(cls.__init__, '__origdoc__', cls.__init__.__doc__)
-    reuse = hasattr(cls.__init__, '__dynamic__')
-
-    defaults = tuple(defaults.items())
-
-    if positional is None:
-        positional = len(fields)
-
-    # Generate a code object with the adjusted signature
-    code = __init__.__code__
-
-    code = types.CodeType(1 + positional,  # co_argcount
-                          len(fields) - positional,  # co_kwonlyargcount
-                          len(fields) + 1,  # co_nlocals
-                          code.co_stacksize,
-                          code.co_flags,
-                          code.co_code,
-                          code.co_consts,
-                          code.co_names,
-                          ('self',) + tuple(fields),
-                          code.co_filename,
-                          code.co_name,
-                          code.co_firstlineno,
-                          code.co_lnotab,
-                          code.co_freevars,
-                          code.co_cellvars)
-
-    # Generate the new wrapper function and its signature
-    __globals__ = getattr(cls.__init__, '__globals__', builtins.__dict__)
-    wrapper = types.FunctionType(code,
-                                 __globals__,
-                                 cls.__init__.__name__)
-
-    wrapper.__doc__ = cls.__init__.__doc__
-    wrapper.__qualname__ = cls.__init__.__qualname__
-    wrapper.__defaults__ = tuple((v for k, v in defaults[:positional]))
-    wrapper.__kwdefaults__ = dict(((k, v) for k, v in defaults[positional:]))
-    wrapper.__annotations__ = annotations
-    wrapper.__dynamic__ = True
-
-    if reuse:
-        cls.__init__, cls.__init_wrapped__ = wrapper, cls.__init_wrapped__
-    else:
-        cls.__init__, cls.__init_wrapped__ = wrapper, cls.__init__
-
-    cls.__init__.__doc__ = cls.__init__.__origdoc__ = orig_doc
+    self.__init___wrapped(**items)
 
 
 class HasTraitsMeta(type):
@@ -406,7 +348,7 @@ class Trait:
         annots = dict(((k, cls.type) if v is ThisType else (k, v) \
                        for k, v in annots.items()))
         cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys())
-        wrap_dynamic_init(cls, tuple(annots.keys()), cls.__defaults__, 1, annots)
+        util._wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls.__defaults__, 1, annots)
         
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
         cls.__slots__ = [n for n in dir(cls) if not n.startswith('_')] + ['metadata', 'kind', 'name']
@@ -1152,8 +1094,9 @@ class InTestbed:
     def __set_name__(self, owner_cls, name):
         try:
             from .testbed import Testbed
-            if issubclass(owner_cls, Testbed):
+            if issubclass(owner_cls, Testbed) and hasattr(self, '__enter__'):
                 owner_cls._contexts[name] = self
+            self.__name__ = name
         except BaseException as e:
             print(e)
             raise
@@ -1307,7 +1250,7 @@ class Device(HasStates, InTestbed):
 
         defaults = dict(((k, v.default) for k, v in settings if v.gettable))
         types = dict(((k, v.type) for k, v in settings if v.gettable))
-        wrap_dynamic_init(cls, tuple(defaults.keys()), defaults, 1, types)
+        util._wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
 
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 

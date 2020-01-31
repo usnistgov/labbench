@@ -25,7 +25,7 @@
 # licenses.
 
 longdescription = \
-''' The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
+""" The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
 
 A device driver implemented with labbench is a light wrapper around another instrument control library.
 This library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level to access instrument.
@@ -45,7 +45,7 @@ provide consistent formatting for stored data.
 The result helps researchers to meet NIST's
 [open data](https://www.nist.gov/open) obligations, even for complicated, large,
 and heterogeneous datasets.
-'''
+"""
 
 if __name__ == '__main__':
     from distutils.core import setup, Extension

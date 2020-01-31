@@ -28,7 +28,7 @@ __all__ = ['LogAggregator', 'RelationalTableLogger',
            'CSVLogger', 'SQLiteLogger',
            'read', 'read_relational', 'to_feather']
 
-from contextlib import suppress, ExitStack
+from contextlib import suppress, ExitStack, contextmanager
 from .core import Device, InTestbed, observe
 from .host import Host
 from . import util
@@ -65,6 +65,18 @@ class LogAggregator(InTestbed):
         # #    coloredlogs.install(level='DEBUG', logger=logger)
         # log_handler.setFormatter(coloredlogs.ColoredFormatter(log_fmt))
         # self.logger.addHandler(log_handler)
+        
+    def __init_testbed__(self, testbed):
+        # If `self` lives in a Testbed, this is called.
+        # Observe changes in its Device instances
+        self.set_device_labels(**testbed._devices)
+        self.set_device_labels(**dict(((n+'_settings',d.settings)\
+                                       for n, d in testbed._devices.items())))
+
+        if testbed is not None:
+            for name, obj in testbed._devices.items():
+                self.observe_states(obj)
+                self.observe_settings(obj)
 
     def key(self, device_name, state_name):
         """ Generate a name for a trait based on the names of
@@ -89,7 +101,7 @@ class LogAggregator(InTestbed):
             :returns: None
         """
         for label, device in list(mapping.items()):
-            if not isinstance(device, Device):
+            if not isinstance(device, (Device, Device.settings)):
                 raise ValueError(f'{device} is not an instance of Device')
 
         self.name.update([(v, k) for k, v in list(mapping.items())])
@@ -118,9 +130,11 @@ class LogAggregator(InTestbed):
         """
         # parameter checks
         if isinstance(devices, Device):
-            devices = (devices,)
+            devices = {devices: None}
+        elif isinstance(devices, dict):
+            pass
         elif hasattr(devices, '__iter__'):
-            devices = tuple(devices)
+            devices = dict([(d, None) for d in devices])
         else:
             raise ValueError('devices argument must be a device or iterable of devices')
 
@@ -139,11 +153,13 @@ class LogAggregator(InTestbed):
             raise ValueError("argument 'never' must be a string, or iterable of strings")        
 
         # generate names for any new devices
-        for device in devices:
+        for device, name in devices.items():
             if not isinstance(device, Device):
                 raise ValueError(f'{device} is not an instance of Device')
             if device not in self.name:
-                if hasattr(device, '__name__'):
+                if name is not None:
+                    newname = name
+                elif hasattr(device, '__name__'):
                     newname = device.__name__
                 else:
                     newname = self.__whoisthis(device)
@@ -154,7 +170,7 @@ class LogAggregator(InTestbed):
                             'Set manually with the set_label method')
 
         # Register handlers
-        for device in devices:
+        for device in devices.keys():
             if changes:
                 observe(device, self.__on_set_callback)
             else:
@@ -180,7 +196,7 @@ class LogAggregator(InTestbed):
             the existing list of observed states for each
             device.
 
-            :param devices: Device instance or iterable of Device instances
+            :param devices: dictionary of names keyed on Device instances, a Device instance, or an iterable of Device instances
 
             :param bool changes: Whether to automatically log each time a state is set for the supplied device(s)
 
@@ -190,9 +206,11 @@ class LogAggregator(InTestbed):
         """
         # parameter checks
         if isinstance(devices, Device):
-            devices = (devices,)
+            devices = {devices: None}
+        elif isinstance(devices, dict):
+            pass
         elif hasattr(devices, '__iter__'):
-            devices = tuple(devices)
+            devices = dict([(d, None) for d in devices])
         else:
             raise ValueError('devices argument must be a device or iterable of devices')
 
@@ -214,11 +232,16 @@ class LogAggregator(InTestbed):
             if not isinstance(device, Device):
                 raise ValueError(f'{device} is not an instance of Device')
             if device.settings not in self.name:
-                newname = self.__whoisthis(device) + '_setting'
+                print('making name copy for ', device)
+                newname = self.__whoisthis(device) + '_settings'
                 self.name[device.settings] = newname
         if len(list(self.name.values())) != len(set(self.name.values())):
-            raise Exception("""Could not automatically determine unique names of device instances!
-                               Set manually with the set_label method """)
+            from collections import Counter
+            count = Counter(self.name.values())
+            values = (repr(v) for k,v in count.most_common() if v > 1)
+            print(self.name, )
+            raise Exception(f"Could not automatically determine unique names of device instances {','.join(values)}. "\
+                            f"Set manually with the set_label method ")
 
         for device in devices:
             if changes:
@@ -714,12 +737,21 @@ class RelationalTableLogger(LogAggregator):
         #. custom response to non-scalar data (such as relational databasing).
 
         :param str path: Base path to use for the master database
+
         :param bool overwrite: Whether to overwrite the master database if it exists (otherwise, append)
+
         :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+
         :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
+
         :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
+
         :param metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
+
         :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
+        
+        :param git_commit_in: perform a git commit on open() if the current
+            directory is inside a git repo with this branch name
     """
 
     index_label = 'id'
@@ -734,6 +766,7 @@ class RelationalTableLogger(LogAggregator):
                  nonscalar_file_type='csv',
                  metadata_dirname='metadata',
                  tar=False,
+                 git_commit_in=None,
                  **metadata):
 
         super(RelationalTableLogger, self).__init__()
@@ -742,16 +775,13 @@ class RelationalTableLogger(LogAggregator):
         self._overwrite = overwrite
         self.set_row_preprocessor(None)
 
-        # Need to assign in the namespace like this to detect its name can be
-        # detected
-        host = Host()
+        # assign in self like this to detect the name 'host'
+        host = Host(git_commit_in=git_commit_in)
         self.observe_states(host, always=['time', 'log'])
         self.host = host
 
-        if tar:
-            munge_cls = MungeToTar
-        else:
-            munge_cls = MungeToDirectory
+        # select the backend that dumps relational data
+        munge_cls = MungeToTar if tar else MungeToDirectory
 
         self.munge = munge_cls(path,
                                text_relational_min=text_relational_min,
@@ -760,6 +790,7 @@ class RelationalTableLogger(LogAggregator):
                                nonscalar_file_type=nonscalar_file_type,
                                metadata_dirname=metadata_dirname,
                                **metadata)
+
 
     def set_row_preprocessor(self, func):
         """ Define a function that is called to modify each pending data row
@@ -903,82 +934,60 @@ class RelationalTableLogger(LogAggregator):
         self.munge.dirname_fmt = format
 
     def __enter__(self):
-        if hasattr(self, '__stack'):
-            return self
+        
+        class MyContext:
+            def __enter__(mself):
+                # Do some checks on the relative data directory before we consider overwriting
+                # the master db.
 
-        # If `self` lives in a Testbed, observe changes in its Device instances
-        if self.__owner__ is not None:
-            if not isinstance(self.__owner__, Testbed):
-                raise ValueError("expected owner to be a Testbed instance")
+                if os.path.exists(self.path):
+                    if not os.path.isdir(self.path):
+                        txt = f"""
+                                  The base directory for relative data is
+                                  r"{os.path.abspath(self.path)}",
+                                  but it already exists and is not a directory.
+                                  Remove or move the file at this path, or change
+                                  the path to the master database.
+                               """
+                        raise IOError(textwrap.dedent(txt))
+        
+                    elif self._overwrite and len(os.listdir(self.path)) > 0:
+                        txt = f"""
+                                  The master database will be overwritten, but the relative data directory,
+                                  r"{os.path.abspath(self.path)}",
+                                  already contains data entries. These would become unindexed zombie data on
+                                  overwriting the master database. Remove or move the relative data directory
+                                  before running the test.
+                              """
+                        raise IOError(textwrap.dedent(txt))
+                        
+                self.open()
+                self.clear()
+        
+                if os.path.exists(self.path) and self._overwrite:
+                    os.remove(self.path)
+        
+                self.last_index = 0
+                
+                return self
+                        
+            def __exit__ (mself, *args):
+                try:
+                    self.write()
+                    if self.last_index > 0:
+                        self.munge.write_metadata(self.name, self.key)
+                finally:
+                    self.close()
 
-            for obj in self.__owner__._devices().values():
-                if isinstance(obj, Device):
-                    self.observe_states(obj)
-                    self.observe_settings(obj)
-
-        # Do some checks on the relative data directory before we consider overwriting
-        # the master db.
-        if os.path.exists(self.path):
-            if not os.path.isdir(self.path):
-                txt = f"""
-                          The base directory for relative data is
-                          r"{os.path.abspath(self.path)}",
-                          but it already exists and is not a directory.
-                          Remove or move the file at this path, or change
-                          the path to the master database.
-                       """
-                raise IOError(textwrap.dedent(txt))
-
-            elif self._overwrite and len(os.listdir(self.path)) > 0:
-                txt = f"""
-                          The master database will be overwritten, but the relative data directory,
-                          r"{os.path.abspath(self.path)}",
-                          already contains data entries. These would become unindexed zombie data on
-                          overwriting the master database. Remove or move the relative data directory
-                          before running the test.
-                      """
-                raise IOError(textwrap.dedent(txt))
-
-        self.open()
-        self.clear()
-
-        if os.path.exists(self.path) and self._overwrite:
-            os.remove(self.path)
-
-        self.last_index = 0
-
-        self.__stack = ExitStack()
-        self.__stack.__enter__()
-
-        try:
-            self.__stack.enter_context(self.munge)
-            self.__stack.enter_context(self.host)
-        except BaseException:
-            self.__stack.__exit__(None, None, None)
-            raise
-
+        self._cm = util.concurrently(host=self.host, logger=MyContext(),
+                                     munge=self.munge, name=repr(self))
+        self._cm.__enter__()
+        
         return self
 
     def __exit__(self, *args):
-        ret = None
-        try:
-            self.write()
-            if len(self.pending) > 0:
-                self.munge.write_metadata(self.name, self.key)
-        except BaseException as e:
-            ex = e
-        else:
-            ex = None
-        finally:
-            try:
-                self.close()
-            finally:
-                ret = self.__stack.__exit__(*args)
-                del self.__stack
-                if ex is not None:
-                    raise ex
-
-        return ret
+        if hasattr(self, '_cm'):
+            return self._cm.__exit__(*args)
 
     def setup(self):
         """ Open the file or database connection.

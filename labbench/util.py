@@ -24,6 +24,15 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
+__all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
+           'ConfigStore', 'hash_caller',
+           'kill_by_name', 'check_master',
+           'retry', 'show_messages', 'sleep', 'stopwatch', 'ThreadSandbox',
+           'ThreadEndedByMaster', 'until_timeout',
+
+           # traceback scrubbing
+           'hide_in_traceback', '_force_full_traceback']
+
 from . import core
 
 from collections import OrderedDict
@@ -40,13 +49,6 @@ from typing import Callable
 
 import time
 import traceback
-
-__all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
-           'ConfigStore', 'hash_caller',
-           'kill_by_name', 'check_master',
-           'retry', 'show_messages', 'sleep', 'stopwatch', 'ThreadSandbox',
-           'ThreadEndedByMaster', 'until_timeout']
-
 
 class ConcurrentException(Exception):
     """ Raised on concurrency errors in `labbench.concurrently`
@@ -65,6 +67,76 @@ class ThreadEndedByMaster(ThreadError):
 
 concurrency_count = 0
 stop_request_event = Event()
+
+sys._debug_tb = False
+
+import types
+
+TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
+
+def hide_in_traceback(func):
+    code = func.__code__
+    func.__code__ = types.CodeType(
+        code.co_argcount,
+        code.co_kwonlyargcount,
+        code.co_nlocals,
+        code.co_stacksize,
+        code.co_flags,
+        code.co_code,
+        code.co_consts + (TRACEBACK_HIDE_TAG,),
+        code.co_names,
+        code.co_varnames,
+        code.co_filename,
+        code.co_name,
+        code.co_firstlineno,
+        code.co_lnotab,
+        code.co_freevars,
+        code.co_cellvars)
+    return func
+
+
+def _force_full_traceback(force):
+    sys._debug_tb = force
+
+
+class _filtered_exc_info:
+    """ a monkeypatch for sys.exc_info that removes functions from tracebacks
+    that are tagged with TRACEBACK_HIDE_TAG
+    """
+    def __init__(self, wrapped):
+        self.lb_wrapped = wrapped
+
+    def __call__(self):
+        try:
+            etype, evalue, start_tb = self.lb_wrapped()
+
+            if sys._debug_tb:
+                return etype, evalue, start_tb
+
+            tb = prev_tb = start_tb
+
+            # step through the stack traces
+            while tb is not None:
+                if TRACEBACK_HIDE_TAG in tb.tb_frame.f_code.co_consts:
+                    # when the tag is present, change the previous tb_next to skip this tb
+                    if tb is start_tb:
+                        start_tb = start_tb.tb_next
+                    else:
+                        prev_tb.tb_next = tb.tb_next
+
+                # on to the next traceback
+                prev_tb, tb = tb, tb.tb_next
+
+            return etype, evalue, start_tb
+
+        except BaseException as e:
+            print(e)
+            raise
+
+
+if not hasattr(sys.exc_info, 'lb_wrapped'):
+    # monkeypatch sys.exc_info if it needs
+    sys.exc_info, exc_info = _filtered_exc_info(sys.exc_info), sys.exc_info
 
 
 def sleep(seconds, tick=1.):
@@ -579,7 +651,10 @@ def enter_or_call(flexible_caller, objs, kws):
 
     if params['name'] is None:
         stack = inspect.stack()
-        params['name'] = stack[2].code_context[0].strip()
+        if stack is None:
+            params['name'] = 'command'
+        else:
+            params['name'] = stack[2].code_context[0].strip()
     
     # Combine the position and keyword arguments, and assign labels
     allobjs = list(objs) + list(kws.values())
@@ -594,6 +669,7 @@ def enter_or_call(flexible_caller, objs, kws):
     # or (2) all callables. Decide what type of operation to proceed with.
     runner = None
     for i, (k, obj) in enumerate(candidates):
+        
         # pass through dictionary objects from nested calls
         if isdictducktype(obj.__class__):
             dicts.append(candidates.pop(i))
@@ -617,7 +693,7 @@ def enter_or_call(flexible_caller, objs, kws):
         else:
             if thisone not in (runner, 'both'):
                 raise TypeError(f'cannot run a mixture of context managers and callables')
-                
+
     # Enforce uniqueness in the callable or context manager objects
     candidate_objs = [c[1] for c in candidates]
     if len(set(candidate_objs)) != len(candidate_objs):

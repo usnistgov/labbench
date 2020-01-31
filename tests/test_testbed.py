@@ -37,11 +37,11 @@ lb = importlib.reload(lb)
 
 
 class LaggyInstrument(lb.EmulatedVISADevice):
-    ''' A mock "instrument"
+    """ A mock "instrument"
     with settings and states to
     demonstrate the process of setting
     up a measurement.
-    '''
+    """
     delay: lb.Float\
         (default=0, min=0, help='connection time')
     fetch_time: lb.Float\
@@ -58,8 +58,8 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         self.logger.info(f'{self} connected')
         
     def fetch(self):
-        ''' Return the argument after a 1s delay
-        '''
+        """ Return the argument after a 1s delay
+        """
         lb.logger.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.settings.fetch_time)
@@ -71,8 +71,8 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         return {self.settings.resource: self.settings.resource}
 
     def none(self):
-        ''' Return None
-        '''
+        """ Return None
+        """
         return None
 
     def close(self):
@@ -80,12 +80,45 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         if self.settings.fail_disconnect:
             1 / 0
 
-class MyTestbed(lb.Testbed):
-    def make(self):
-        self.inst1 = LaggyInstrument('a',delay=.18)
-        self.inst2 = LaggyInstrument('b',delay=.06)
 
-class MyTestbed2(lb.Testbed):
+class Task1(lb.Task):
+    dev1: LaggyInstrument
+    dev2: LaggyInstrument
+
+    @lb.hide_in_traceback
+    def setup(self, param1):
+        print(self.dev1.settings.resource)
+        print(self.dev2.settings.resource)
+        print(param1)
+
+    def arm(self):
+        pass
+
+
+class Task2(lb.Task):
+    dev: LaggyInstrument
+
+    def setup(self):
+        pass
+
+    def acquire(self, *, param1):
+        pass
+
+    def fetch(self, *, param2):
+        pass
+
+
+class Task3(lb.Task):
+    dev: LaggyInstrument
+
+    def acquire(self, *, param2, param3):
+        pass
+
+    def fetch(self, *, param4):
+        pass
+
+
+class MyTestbed(lb.Testbed):
     db = lb.SQLiteLogger \
        ('data',                         # Path to new directory that will contain containing all files
         overwrite=False,                # `True` --- delete existing master database; `False` --- append
@@ -97,18 +130,34 @@ class MyTestbed2(lb.Testbed):
         tar=False                       # `True` to embed relational data folders within `data.tar`
         )
 
-    inst1 = LaggyInstrument(resource='a',
-                            delay=.12)
+    inst1 = LaggyInstrument\
+        (resource='a',
+         delay=.12)
 
-    inst2 = LaggyInstrument(resource='b',
-                            delay=.06)
+    inst2 = LaggyInstrument\
+        (resource='b',
+         delay=.06)
 
-    db.observe_settings([inst1, inst2])
+    # Test procedures
+    task1 = Task1(dev1=inst1, dev2=inst2)
+    task2 = Task2(dev=inst1)
+    task3 = Task3(dev=inst2)
+
+    run = lb.Experiment(
+        step1=task1.setup & task2.setup,  # execute these concurrently
+        step2=task1.arm,
+        step3=(task2.acquire, task3.acquire),  # execute these sequentially
+        step4=task2.fetch & task3.fetch
+    )
+
 
 if __name__ == '__main__':
+    lb.show_messages('debug')
+
     with lb.stopwatch():
-        with MyTestbed2() as testbed:
+        with MyTestbed() as testbed:
             testbed.inst2.settings.delay = .07
+            testbed.task1.setup()
             testbed.db()
 
     df = lb.read(testbed.db.path+'/master.db')

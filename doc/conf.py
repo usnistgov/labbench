@@ -136,8 +136,8 @@ autodoc_default_flags = ['inherited-members']
 
 
 def maybe_skip_member(app, what, name, obj, skip, options):
-    ''' Skip extra cruft from Device.state objects
-    '''
+    """ Skip extra cruft from Device.state objects
+    """
     if skip:
         return True
     from traitlets import TraitType

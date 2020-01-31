@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import core
+from . import core, util
 
 import datetime
 import io
@@ -55,8 +55,8 @@ class LogStreamBuffer:
 
 
 class LogStderr(core.Device):
-    ''' This "Device" logs a copy of messages on sys.stderr while connected.
-    '''
+    """ This "Device" logs a copy of messages on sys.stderr while connected.
+    """
     log = ''
 
     def open(self):
@@ -81,11 +81,11 @@ class LogStderr(core.Device):
         
 
 class Email(core.Device):
-    ''' Sends a notification message on disconnection. If an exception
+    """ Sends a notification message on disconnection. If an exception
         was thrown, this is a failure subject line with traceback information
         in the main body. Otherwise, the message is a success message in the
         subject line. Stderr is also sent.
-    '''
+    """
 
     resource: core.Address\
         (default='smtp.nist.gov', help='smtp server to use')
@@ -135,8 +135,8 @@ class Email(core.Device):
             self.send_summary()
 
     def send_summary(self):
-        ''' Send the email containing the final state of the test.
-        '''
+        """ Send the email containing the final state of the test.
+        """
         exc = sys.exc_info()
 
         if exc[0] is KeyboardInterrupt:
@@ -210,35 +210,48 @@ class YAMLFormatter(logging.Formatter):
 
 
 class Host(core.Device):
+    # Settings
+    git_commit_in: core.Unicode\
+        (default=None, allow_none=True,
+         help='git commit on open() if run inside a git repo with this branch name')
+                
     time_format = '%Y-%m-%d %H:%M:%S'
-    
+
     def open(self):
-        ''' The host setup method tries to commit current changes to the tree
-        '''
-        
-        self._log_formatter = YAMLFormatter()
+        """ The host setup method tries to commit current changes to the tree
+        """
+        log_formatter = YAMLFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
-        sh.setFormatter(self._log_formatter)
+        sh.setFormatter(log_formatter)
         sh.setLevel(logging.DEBUG)
 
         # Add to the labbench logger handler        
         logger = logging.getLogger('labbench')
         logger.setLevel(logging.DEBUG)        
         logger.addHandler(sh)
-        
+
+        # git repository information
+        try:
+            repo = git.Repo('.', search_parent_directories=True)
+            self.logger.debug("running in git repository")
+            if repo.active_branch == self.settings.git_commit_in:
+                repo.index.commit('start of measurement')
+                self.logger.debug("git commit finished")
+        except git.NoSuchPathError:
+            repo = None
+            self.logger.info(f"not running in a git repository")
+
         self.backend = {'logger': logger,
                         'log_stream': stream,
-                        'log_handler': sh}
+                        'log_handler': sh,
+                        'log_formatter': log_formatter,
+                        'repo': repo}
 
-        try:
-            self.repo = git.Repo('.', search_parent_directories=True)
-        except git.NoSuchPathError:
-            self.repo = None
-            self.backend['logger'].warning(
-                f"no git commit because {os.path.abspath('.')} is not in a repository")
-        else:
-            self.repo.index.commit('start of measurement')
+        # Preload the git repo parameters, cuncurrently for speed
+        gits = [k for k in self.__traits__ if k.startswith('git')]
+        util.concurrently(**dict([(n,lambda: getattr(self, n)) for n in gits]))
+
 
     @classmethod
     def __imports__(self):
@@ -257,15 +270,15 @@ class Host(core.Device):
             pass
 
     def metadata(self):
-        ''' Generate the metadata associated with the host and python distribution
-        '''
+        """ Generate the metadata associated with the host and python distribution
+        """
         ret = super().metadata()
         ret['python_modules'] = self.__python_module_versions()
         return ret
 
     def __python_module_versions(self):
-        ''' Enumerate the versions of installed python modules
-        '''
+        """ Enumerate the versions of installed python modules
+        """
         import pandas as pd
 
         versions = dict([str(d).lower().split(' ')
@@ -276,49 +289,57 @@ class Host(core.Device):
    
     @core.Unicode()
     def time(self):
-        ''' Get a timestamp of the current time
-        '''
+        """ Get a timestamp of the current time
+        """
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
     @core.Unicode()
     def log(self):
-        ''' Get the current host log contents.
-        '''
+        """ Get the current host log contents.
+        """
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
     
     @core.Unicode(cache=True)
     def git_commit_id(self):
-        ''' Try to determine the current commit hash of the current git repo
-        '''
+        """ Try to determine the current commit hash of the current git repo
+        """
         try:
-            commit = self.repo.commit()
+            commit = self.backend['repo'].commit()
             return commit.hexsha
         except git.NoSuchPathError:
             return ''
 
     @core.Unicode(cache=True)
     def git_remote_url(self):
-        ''' Try to identify the remote URL of the repository of the current git repo
-        '''
+        """ Try to identify the remote URL of the repository of the current git repo
+        """
         try:
-            return next(self.repo.remote().urls)
+            return next(self.backend['repo'].remote().urls)
         except BaseException:
             return ''
 
     @core.Unicode(cache=True)
     def hostname(self):
-        ''' Get the name of the current host
-        '''
+        """ Get the name of the current host
+        """
         return socket.gethostname()
 
     @core.Unicode(cache=True)
     def git_browse_url(self):
-        ''' URL for browsing the current git repository
-        '''
+        """ URL for browsing the current git repository
+        """
         return '{}/tree/{}'.\
                format(self.git_remote_url, self.git_commit_id)
+
+    @core.Unicode(cache=True)
+    def git_pending_changes(self):
+        if self.backend['repo'] is not None:
+            diffs = self.backend['repo'].index.diff(None)
+            return str(tuple((diff.b_path for diff in diffs)))[1:-1]
+        else:
+            return ''
 
 if __name__ == '__main__':
     #    core.show_messages('DEBUG')

@@ -186,8 +186,8 @@ def list_devices(depth=1):
 
     return ret
 
-
-def dynamic_init():
+@util.hide_in_traceback
+def __init__():
     """ Wrapper function to call __init__ with adjusted function signature
     """
 
@@ -207,7 +207,7 @@ def wrap_dynamic_init(cls, fields: list, defaults: dict, positional: int = None,
         :fields: iterable of names of each call signature argument
         :
     """
-    # Is the existing cls.__init__ already a dynamic_init wrapper?
+    # Is the existing cls.__init__ already a __init__ wrapper?
     orig_doc = getattr(cls.__init__, '__origdoc__', cls.__init__.__doc__)
     reuse = hasattr(cls.__init__, '__dynamic__')
 
@@ -217,7 +217,7 @@ def wrap_dynamic_init(cls, fields: list, defaults: dict, positional: int = None,
         positional = len(fields)
 
     # Generate a code object with the adjusted signature
-    code = dynamic_init.__code__
+    code = __init__.__code__
 
     code = types.CodeType(1 + positional,  # co_argcount
                           len(fields) - positional,  # co_kwonlyargcount
@@ -498,7 +498,7 @@ class Trait:
                 for func, argcount in zip(self.__decorator_pending__, positional_argcounts):
                     if len(self.help.rstrip().strip()) == 0:
                         # take func docstring as default self.help
-                        self.help = func.__doc__.rstrip().strip()
+                        self.help = (func.__doc__ or '').rstrip().strip()
 
                     if argcount == 1:
                         self.__getter__ = func
@@ -521,6 +521,7 @@ class Trait:
                 raise AttributeError(f"{repr(self.__decorator_action__)} is an unrecognized kind of "\
                                      f"trait decorator behavior in {self}")
 
+    @util.hide_in_traceback
     def __set__(self, owner, value):
         # First, validate the pythonic types
         if not self.settable:
@@ -534,7 +535,7 @@ class Trait:
                 value = self.validate(value)
             except BaseException as e:
                 name = owner.__class__.__qualname__ + '.' + self.name
-                e.args = (e.args[0] + f" in attempt to set '{name}'",) + e.args[1:]
+                e.args = (f" in attempt to set '{name}', " + e.args[0],) + e.args[1:]
                 raise e
             
             if len(self.only) > 0 and not self.contains(self.only, value):
@@ -572,14 +573,15 @@ class Trait:
         if not self.cache:
             owner.__notify__(self.name, value, 'set')
 
+    @util.hide_in_traceback
     def __get__(self, owner, owner_cls=None):
-        ''' Called by the class instance that owns this attribute to
+        """ Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's __get_by_key__ method to retrieve
         the result.
 
         :return: retreived value
-        '''
+        """
 
         if owner is None:
             # this is the owner class looking for the trait instance itself
@@ -620,6 +622,7 @@ class Trait:
 
         return self.__cast_get__(owner, value, strict=False)
 
+    @util.hide_in_traceback
     def __cast_get__(self, owner, value, strict=False):
         """ Examine value and either return a valid pythonic value or raise an exception if it cannot be cast.
 
@@ -639,7 +642,7 @@ class Trait:
                 raise e
             
             # Once we have a python value, give warnings (not errors) if the device value fails further validation
-            if isinstance(owner, Device):
+            if isinstance(owner, Device) and hasattr(owner, 'logger'):
                 log = owner.logger.warning
             else:
                 log = warn
@@ -660,16 +663,19 @@ class Trait:
         owner.__notify__(self.name, value, 'get')
         return value
 
+    @util.hide_in_traceback
     def to_pythonic(self, value):
         """ Convert a value from an unknown type to self.type.
         """
         return self.type(value)
 
+    @util.hide_in_traceback
     def from_pythonic(self, value):
         """ convert from a python type representation to the format needed to communicate with the device
         """
         return value
 
+    @util.hide_in_traceback
     def validate(self, value):
         """ This is the default validator, which requires that trait values have the same type as self.type.
             A ValueError is raised for other types.
@@ -685,6 +691,7 @@ class Trait:
         return value in iterable
 
     ### Decorator methods
+    @util.hide_in_traceback
     def __call__(self, func):
         """ use the Trait as a decorator, which ties this Trait instance to evaluate a property or method in the
             owning class. you can specify
@@ -822,12 +829,14 @@ class HasTraits(metaclass=HasTraitsMeta):
     def __len__(self):
         return len(self.__traits__)
 
+    @util.hide_in_traceback
     def __getitem__(self, name):
         """ Get the instance of the Trait named class (as opposed to
             __getattr__, which fetches its value).
         """
         return self.__traits__[name]
 
+    @util.hide_in_traceback
     def __notify__(self, name, value, type):
         old = self.__previous__.setdefault(name, Undefined)
         msg = dict(new=value, old=old, owner=self, name=name, type=type)
@@ -859,6 +868,7 @@ class HasSettings(HasTraits):
     def __dir__(self):
         return iter(self.__traits__.keys())
 
+    @util.hide_in_traceback
     def __get_value__ (self, name):
         """ Get value of a trait for this settings instance
 
@@ -867,6 +877,7 @@ class HasSettings(HasTraits):
         """
         return self.__previous__[name]
 
+    @util.hide_in_traceback
     def __set_value__ (self, name, value):
         """ Set value of a trait for this settings instance
 
@@ -879,6 +890,8 @@ class HasSettings(HasTraits):
 
 
 class HasStates(HasTraits):
+    __previous__ = {}
+
     @classmethod
     def __init_subclass__(cls):
         """ Complete any 2-part method decorators by identifying methods that
@@ -900,9 +913,11 @@ class HasStates(HasTraits):
 class Any(Trait):
     """ allows any value """
 
+    @util.hide_in_traceback
     def validate(self, value):
         return value
 
+    @util.hide_in_traceback
     def to_pythonic(self, value):
         return value
 
@@ -939,8 +954,8 @@ def observe(obj, handler, names=None):
 
 
 def unobserve(obj, handler):
-    ''' Unregister a handler function from notifications in obj.
-    '''
+    """ Unregister a handler function from notifications in obj.
+    """
     if isinstance(obj, HasTraits):
         try:
             del obj.__notify_list__[handler]
@@ -957,6 +972,7 @@ def unobserve(obj, handler):
 class Undefined(Trait):
     """ rejects any value """
 
+    @util.hide_in_traceback
     def validate(self, value):
         raise ValueError('undefined trait does not allow any value')
 
@@ -970,6 +986,7 @@ class BoundedNumber(Trait):
     min: ThisType = None
     max: ThisType = None
 
+    @util.hide_in_traceback
     def validate(self, value):
         if not isinstance(value, (bytes, str, bool, numbers.Number)):
             raise ValueError(f"a '{type(self).__qualname__}' trait value must be a numerical, str, or bytes instance")
@@ -985,6 +1002,8 @@ class NonScalar(Any):
     title: str = '' # a name for the data
 
     """ generically non-scalar data, such as a list, array, but not including a string or bytes """
+
+    @util.hide_in_traceback
     def validate(self, value):
         if isinstance(value, (bytes,str)):
             raise ValueError(f"given text data but expected a non-scalar data")
@@ -1000,6 +1019,7 @@ class Float(BoundedNumber, type=float):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
     step: ThisType = None
 
+    @util.hide_in_traceback
     def validate(self, value):
         value = super().validate(value)
         if self.step is not None:
@@ -1017,6 +1037,7 @@ class Complex(Trait, type=complex):
 class Bool(Trait, type=bool):
     """ accepts boolean or numeric values, or a case-insensitive match to one of ('true',b'true','false',b'false') """
 
+    @util.hide_in_traceback
     def validate(self, value):
         if isinstance(value, (bool, numbers.Number)):
             return value
@@ -1034,6 +1055,7 @@ class String(Trait):
     """ base class for string types, which adds support for case sensitivity arguments """
     case: bool = True
 
+    @util.hide_in_traceback
     def contains(self, iterable, value):
         if not self.case:
             iterable = [v.lower() for v in iterable]
@@ -1045,6 +1067,7 @@ class Unicode(String, type=str):
     """ accepts strings or numeric values only; convert others explicitly before assignment """
     default: ThisType = ''
 
+    @util.hide_in_traceback
     def validate(self, value):
         if not isinstance(value, (str, numbers.Number)):
             raise ValueError(f"'{type(self).__qualname__}' traits accept values of str or numerical type")
@@ -1058,6 +1081,7 @@ class Bytes(String, type=bytes):
 class Iterable(Trait):
     """ accepts any iterable """
 
+    @util.hide_in_traceback
     def validate(self, value):
         if not hasattr(value, '__iter__'):
             raise ValueError(f"'{type(self).__qualname__}' traits accept only iterable values")
@@ -1080,6 +1104,7 @@ class Tuple(Iterable, type=tuple):
 class Address(Unicode):
     """ accepts IDN-compatible network address, such as an IP address or DNS hostname """
 
+    @util.hide_in_traceback
     def validate(self, value):
         """Rough IDN compatible domain validator"""
 
@@ -1102,6 +1127,7 @@ class DisconnectedBackend(object):
         """
         self.__dev__ = dev
 
+    @util.hide_in_traceback
     def __getattribute__(self, key):
         try:
             return object.__getattribute__(self, key)
@@ -1117,7 +1143,6 @@ class DisconnectedBackend(object):
     def __repr__(self):
         return 'DisconnectedBackend()' 
 
-
 class InTestbed:
     """ Subclass this in objects that could be context managers in a Testbed
 
@@ -1128,16 +1153,18 @@ class InTestbed:
         try:
             from .testbed import Testbed
             if issubclass(owner_cls, Testbed):
-                owner_cls.__contexts__[name] = self
+                owner_cls._contexts[name] = self
         except BaseException as e:
             print(e)
             raise
 
-    def __get__(self):
+    def __get__(self, owner, owner_cls=None):
         return self
 
-    def __init_owner__(self, owner):
-        self.__owner__ = owner
+    def __init_testbed__(self, testbed):
+        """ Called when the Testbed makes new instances.
+        """
+        pass
 
 
 class Device(HasStates, InTestbed):
@@ -1314,6 +1341,7 @@ class Device(HasStates, InTestbed):
         self.__warn_state_names__ = tuple(self.__traits__.keys())
         self.__warn_settings_names__ = tuple(self.settings.__traits__.keys())
 
+    @util.hide_in_traceback
     def __setattr__(self, name, value):
         """ Throw warnings if we suspect a typo on an attempt to assign to a state
             or settings trait
@@ -1327,6 +1355,7 @@ class Device(HasStates, InTestbed):
                 warn(msg)
         super().__setattr__(name, value)
 
+    @util.hide_in_traceback
     @wraps(open)
     def __open_wrapper__(self):
         """ A wrapper for the connect() method. It steps through the
@@ -1345,6 +1374,7 @@ class Device(HasStates, InTestbed):
         # Force an update to self.connected
         self.connected
 
+    @util.hide_in_traceback
     @wraps(close)
     def __close_wrapper__(self):
         """ A wrapper for the close() method that runs
@@ -1382,6 +1412,7 @@ class Device(HasStates, InTestbed):
     def __imports__(self):
         pass
 
+    @util.hide_in_traceback
     def __enter__(self):
         try:
             self.open()
@@ -1393,6 +1424,7 @@ class Device(HasStates, InTestbed):
                 e.args = tuple(args)
             raise e
 
+    @util.hide_in_traceback
     def __exit__(self, type_, value, traceback):
         try:
             self.close()

@@ -24,53 +24,52 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import unittest
-import pandas as pd
-import numpy as np
-import labbench as lb
-import importlib
 
 import sys
 if '..' not in sys.path:
     sys.path.insert(0, '..')
+import labbench as lb
 
+import unittest
+import pandas as pd
+import numpy as np
+import importlib
 
 lb = importlib.reload(lb)
-
 
 int_start = 3
 int_stop = 10
    
 
 class EmulatedInstrument(lb.EmulatedVISADevice):
-    ''' This "instrument" makes mock data and instrument states to
+    """ This "instrument" makes mock data and instrument states to
         demonstrate we can show the process of setting
         up a measurement.
-    '''
+    """
     
     # Settings
     whatever: lb.Int(default=5)
 
     # States
-    initiate_continuous = lb.Bool(command='INIT:CONT')
-    output_trigger = lb.Bool(command='OUTP:TRIG')
+    initiate_continuous = lb.Bool(key='INIT:CONT')
+    output_trigger = lb.Bool(key='OUTP:TRIG')
     sweep_aperture = lb.Float(
-        command='SWE:APER', min=20e-6, max=200e-3, help='time (in s)')
-    frequency = lb.Float(command='SENS:FREQ', min=10e6,
+        key='SWE:APER', min=20e-6, max=200e-3, help='time (in s)')
+    frequency = lb.Float(key='SENS:FREQ', min=10e6,
                          max=18e9, help='center frequency (in Hz)')
-    atten = lb.Float(command='POW', min=0, max=100, step=0.5)
+    atten = lb.Float(key='POW', min=0, max=100, step=0.5)
 
     def trigger(self):
-        ''' This would tell the instrument to start a measurement
-        '''
+        """ This would tell the instrument to start a measurement
+        """
         pass
     
     def method(self):
         print('method!')
 
     def fetch_trace(self, N=1001):
-        ''' Generate N points of junk data as a pandas series.
-        '''
+        """ Generate N points of junk data as a pandas series.
+        """
         values = np.random.uniform(-1, 1, N)
         index = np.linspace(0, self.sweep_aperture, N)
         series = pd.Series(values, index=index, name='Voltage (V)')
@@ -91,9 +90,10 @@ if __name__ == '__main__':
     path = 'test'
 
     lb.show_messages('debug')
+       
     
     with EmulatedInstrument() as inst,\
-         lb.SQLiteLogger(path, tar=False) as db:
+          lb.SQLiteLogger(path, tar=False) as db:
 
         db.observe_states(inst, changes=True, always='sweep_aperture')
         db.observe_settings(inst, changes=True)
@@ -105,12 +105,15 @@ if __name__ == '__main__':
             inst.logger.debug('debug message!')
             lb.logger.debug('general debug message')
             trace = inst.fetch_trace()
-            db.append(power_GW='1.21', trace=trace, potato=7)
+            db(power_GW='1.21', trace=trace, potato=7)
 #        db.write()
 
 #    #%%
     df = lb.read(path+'/master.db')
     df.to_csv(path+'/master.csv')
+    
+    
+    
 # df = pd.read_csv(path)
 #    print(df.tail(11))
 #

@@ -37,11 +37,11 @@ lb = importlib.reload(lb)
 
 
 class LaggyInstrument(lb.EmulatedVISADevice):
-    ''' A mock "instrument"
+    """ A mock "instrument"
     with settings and states to
     demonstrate the process of setting
     up a measurement.
-    '''
+    """
     delay: lb.Float\
         (default=0, min=0, help='connection time')
     fetch_time: lb.Float\
@@ -58,8 +58,8 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         self.logger.info(f'{self} connected')
         
     def fetch(self):
-        ''' Return the argument after a 1s delay
-        '''
+        """ Return the argument after a 1s delay
+        """
         lb.logger.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.settings.fetch_time)
@@ -71,8 +71,8 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         return {self.settings.resource: self.settings.resource}
 
     def none(self):
-        ''' Return None
-        '''
+        """ Return None
+        """
         return None
 
     def close(self):
@@ -95,7 +95,7 @@ class TestConcurrency(unittest.TestCase):
 
     @contextmanager
     def assert_delay(self, expected_delay):
-        ''' Time a block of code using a with statement like this:
+        """ Time a block of code using a with statement like this:
     
         >>> with stopwatch('sleep statement'):
         >>>     time.sleep(2)
@@ -104,7 +104,7 @@ class TestConcurrency(unittest.TestCase):
         :param desc: text for display that describes the event being timed
         :type desc: str
         :return: context manager
-        '''   
+        """
         t0 = time.perf_counter()
         try:
             yield
@@ -298,7 +298,7 @@ class TestConcurrency(unittest.TestCase):
         
     def test_testbed_instantiation(self):        
         with self.assert_delay(0):
-            testbed = MyTestbed(concurrent=True)
+            testbed = MyTestbed()
         
 
         expected_delay = max(testbed.inst1.settings.delay,

@@ -24,14 +24,34 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from .util import sequentially,concurrently
+__all__ = ['Testbed', 'Task', 'Experiment']
+
+from . import core, util
 from .data import LogAggregator, RelationalTableLogger
-from .core import Device, InTestbed
 from .host import Host, Email
-from functools import wraps
+from functools import wraps, update_wrapper
+from weakref import proxy
+import inspect
 
-__all__ = ['Testbed', 'Steps', 'InTestbed']
 
+def find_devices(testbed):
+    devices = {}
+
+    for name, obj in testbed._contexts.items():
+        if isinstance(obj, core.Device):
+            if name in devices and devices[name] is not obj:
+                raise AttributeError(f"name conflict between {repr(obj)} and {repr(devices[name])}")
+            devices[name] = obj
+        elif isinstance(obj, Testbed):
+            new = obj._devices
+
+            conflicts = set(devices.keys()).intersection(new.keys())
+            if len(conflicts) > 0:
+                raise AttributeError(f"name conflict(s) {tuple(conflicts)} in child testbed {obj}")
+
+            devices.update(new)
+
+    return devices
 
 class Testbed:
     """ A Testbed is a container for devices, data managers, and test steps.
@@ -67,22 +87,34 @@ class Testbed:
         testbed after all Device instances are open.
     """
 
-    __contexts__ = {}
-    __cm = {}
+    _contexts = {}
+    __cm = None
     
     # Specify context manager types to open before others
     # and their order
     enter_first = Email, LogAggregator, Host
 
     def __init_subclass__(cls, concurrent=True):
-        cls.__contexts__ = dict(cls.__contexts__)
-        cms = dict(cls.__contexts__)
+        cls._contexts = dict(cls._contexts)
+        cls._devices = find_devices(cls)
+        cls._concurrent = concurrent
+
+    def __init__(self, config=None):
+        self.config = config
+
+        for name, context in self._contexts.items():
+            context.__init_testbed__(self)
+
+        self.make()
+
+    def __enter__(self):
+        cms = dict(self._contexts)
 
         # Pull any objects of types listed by self.enter_first, in the
         # order of (1) the types listed in self.enter_first, then (2) the order
         # they appear in objs
         first_contexts = dict()
-        for cls in cls.enter_first:
+        for cls in self.enter_first:
             for attr, obj in dict(cms).items():
                 if isinstance(obj, cls):
                     first_contexts[attr] = cms.pop(attr)
@@ -90,40 +122,16 @@ class Testbed:
         other_contexts = cms
 
         # Enforce the ordering set by self.enter_first
-        if concurrent:
+        if self._concurrent:
             # Any remaining context managers will be run concurrently if concurrent=True
-            others=concurrently(name=f'', **other_contexts)
+            others = util.concurrently(name=f'', **other_contexts)
             contexts = dict(first_contexts, others=others)
         else:
             # Otherwise, run them sequentially
             contexts = dict(first_contexts, **other_contexts)
 
-        cls.__cm = sequentially(name=f'{cls.__qualname__} connections',
-                                 **contexts)
+        self.__cm = util.sequentially(name=f'{self.__class__.__qualname__} connections', **contexts)
 
-    def __init__(self, config=None):
-        self.config = config
-
-        for name, context in self.__contexts__.items():
-            context.__init_owner__(self)
-
-        self.make()
-
-    def _contexts(self):
-        return dict(self.__contexts__)
-
-    def _devices(self, recursive=True):
-        owners = []
-
-        for name, obj in self.__contexts__.items():
-            if isinstance(obj, Device):
-                owners += [obj]
-            elif recursive and isinstance(obj, Testbed):
-                owners += obj._trait_owners(recursive=True)
-
-        return owners
-
-    def __enter__(self):
         self.__cm.__enter__()
         self.startup()
         return self
@@ -187,21 +195,77 @@ class Testbed:
         pass
 
 
-class Steps(InTestbed):
+class StepMethod:
+    def __init__(self, owner_cls, obj, name, dependencies):
+        self.__wrapped__ = obj
+        self.label = owner_cls.__name__ + '.' + name
+        self.dependencies = dependencies
+
+        update_wrapper(self.__call__, self.__wrapped__,)
+
+
+class SequencedMethod:
+    def __init__(self, owner, name):
+        cls = owner.__class__
+        obj = getattr(cls, name)
+
+        # introspect to identify device dependencies in each step method
+        sig = inspect.signature(obj)
+        source = inspect.getsource(obj)
+        selfname = next(iter(sig.parameters.keys()))  # the name given to the 'self' method
+        deps = tuple((name for name in cls.__annotations__ if selfname + '.' + name in source))
+
+        self.owner = owner
+        self.label = cls.__name__ + '.' + name
+        self.dependencies = deps
+        # self.__call__.__name__  = self.__name__ = obj.__name__
+        # self.__qualname__ = obj.__qualname__
+        self.__doc__ = obj.__doc__
+
+        self.__wrapped__ = obj
+        self.__repr__ = obj.__repr__
+
+    @util.hide_in_traceback
+    def __call__(self, *args, **kws):
+        # ensure that required devices are connected
+        closed = [n for n in self.dependencies \
+                  if not getattr(self.owner, n).connected]
+        if len(closed) > 0:
+            closed = ','.join(closed)
+            raise ConnectionError(f"devices {closed} must be connected to invoke {self.label}")
+
+        # invoke the wrapped function
+        core.logger.debug(f"{self.label} start")
+        with util.stopwatch(f"{self.label}"):
+            ret = self.__wrapped__(self.owner, *args, **kws)
+            return {} if ret is None else ret
+
+    # methods that implement the "&" operator for test sequence definitions
+    def __and__(self, other):
+        # python objects call this when the left side of '&' is not a tuple
+        return 'concurrent', self, other
+
+    def __rand__(self, other):
+        # python objects call this when the left side of '&' is already a tuple
+        return other + (self,)
+
+class Task(core.InTestbed):
     """ Subclass this to define experimental procedures for groups of Devices in a Testbed.
     """
-    __annotations__ = dict()
     __steps__ = dict()
+    __wrappers__ = dict()
 
     def __init_subclass__(cls):
         # By introspection, identify the methods that define test steps
-        cls.__steps__ = dict(((k,v) for k,v in cls.__dict__ if callable(v) and k not in Steps.__dict__))
+        cls.__steps__ = dict(((k, v) for k, v in cls.__dict__.items()\
+                              if callable(v) and k not in Task.__dict__))
 
-        # Include annotations from parent classes
-        cls.__annotations__ = dict(super().__annotations__, **cls.__annotations__)
+        # include annotations from parent classes
+        cls.__annotations__ = dict(getattr(super(), '__annotations__', {}),
+                                   **getattr(cls, '__annotations__', {}))
         cls.__init__.__annotations__ = cls.__annotations__
 
-        # Sentinel values for annotations not in this class
+        # sentinel values for annotations outside this class
         for name in cls.__annotations__:
             if name not in cls.__dict__:
                 setattr(cls, name, None)
@@ -210,37 +274,31 @@ class Steps(InTestbed):
         # a fresh mapping to modify without changing the parent
         devices = dict(devices)
 
-        # Set attributes in self
-        for name, devtype in self.__annotations__:
+        # set attributes in self
+        for name, devtype in self.__annotations__.items():
             try:
                 dev = devices.pop(name)
             except KeyError:
-                raise KeyError(f"{self.__class__.__qualname__} is missing required argument")
+                raise KeyError(f"{self.__class__.__qualname__} is missing required argument '{name}'")
             if not isinstance(dev, devtype):
                 msg = f"argument '{name}' must be an instance of '{devtype.__qualname__}'"
                 raise AttributeError(msg)
             setattr(self, name, dev)
 
-        # If there are remaining unsupported devices, raise an exception
+        # if there are remaining unsupported devices, raise an exception
         if len(devices) > 0:
             raise ValueError(f"{tuple(devices.keys())} are invalid arguments")
 
-    def __getattribute__(self, name):
-        """ Add debug messages to class method calls
-        """
-        obj = object.__getattribute__(cls, name)
+        # instantiate the wrappers for self.__steps__, and update self
+        self.__wrappers__ = {}
+        for k in list(self.__steps__.keys()):
+            self.__wrappers__[k] = self.__steps__[k] = SequencedMethod(self, k)
 
-        if name in object.__getattribute__(cls, '__steps__'):
-            # TODO: Ensure required devices are connected before executing
-            @wraps(obj)
-            def wrapped(*args, **kws):
-                name = self.__name__ + '.' + obj.__name__
-                lb.logger.debug(f"starting step {name}")
-                with lb.stopwatch(f"step {name}"):
-                    return obj(*args, **kws)
-            return wrapped
+    def __getattribute__(self, item):
+        if item != '__wrappers__' and item in self.__wrappers__:
+            return self.__wrappers__[item]
         else:
-            return obj
+            return object.__getattribute__(self, item)
 
     def __getitem__(self, item):
         return self.__steps__[item]
@@ -259,3 +317,44 @@ class Steps(InTestbed):
 
     def keys(self):
         return self.__steps__.keys()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
+def parse_sequence(sequence):
+    if isinstance(sequence, (list, tuple)):
+        if sequence[0] == 'concurrent':
+            invoke = util.concurrently
+            sequence = sequence[1:]
+        else:
+            invoke = util.sequentially
+        sequence = list(sequence)
+
+    elif isinstance(sequence, SequencedMethod):
+        invoke = sequence
+        sequence = []
+
+    else:
+        typename = type(sequence).__qualname__
+        raise TypeError(f"object of type '{typename}' is neither a Task method nor a nested tuple/list")
+
+    # step through, if this is a sequence
+    for i in range(len(sequence)):
+        # validate replace each entry in the sequence with a parsed item
+        if isinstance(sequence[i], (list, tuple)):
+            sequence[i] = parse_sequence(sequence[i])
+        elif not isinstance(sequence[i], SequencedMethod):
+            typename = type(sequence).__qualname__
+            raise TypeError(f"object of type '{typename}' is neither a "\
+                            f"Task method nor a nested tuple/list")
+
+    return invoke, sequence
+
+
+class Experiment:
+    def __init__(self, **sequences):
+        self.calls = dict(((name, parse_sequence(seq)) for name, seq in sequences.items()))

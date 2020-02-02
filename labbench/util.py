@@ -40,6 +40,9 @@ __all__ = [
 
            # traceback scrubbing
            'hide_in_traceback', '_force_full_traceback',
+
+           # helper objects
+           'InTestbed',
            ]
 
 from . import core
@@ -57,6 +60,30 @@ import psutil
 import sys
 import time
 import traceback
+
+class InTestbed:
+    """ Subclass this to act as a descriptor in a Testbed
+
+    """
+    __owner__ = None
+
+    def __set_name__(self, owner_cls, name):
+        try:
+            from .testbed import Testbed
+            if issubclass(owner_cls, Testbed) and hasattr(self, '__enter__'):
+                owner_cls._contexts[name] = self
+            self.__name__ = name
+        except BaseException as e:
+            print(e)
+            raise
+
+    def __get__(self, owner, owner_cls=None):
+        return self
+
+    def __init_testbed__(self, testbed):
+        """ Called when the Testbed makes new instances.
+        """
+        pass
 
 class ConcurrentException(Exception):
     """ Raised on concurrency errors in `labbench.concurrently`

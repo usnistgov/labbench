@@ -27,15 +27,18 @@
 """
 
 from .core import *
-from .data import *
-from .host import *
+from .data import CSVLogger, SQLiteLogger
+from .host import Email
 from .version import __version__
 from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout
 from .backends import *
 from .testbed import *
 
-import util
+from . import data
+from . import util
+from . import host
+
+# clean up namespace where we've already imported everything of note
+del host, core, version, backends, testbed
 
 util.show_messages('info')
-
-name = 'labbench'

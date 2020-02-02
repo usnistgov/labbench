@@ -32,27 +32,20 @@ the objects in an interpreter instead of reverse-engineering this code.
 
 from . import util
 
-from copy import copy, deepcopy
 from typing import Generic, T
 from warnings import warn, simplefilter
 from functools import wraps
 
-import inspect
 import logging
 import numbers
 import re
 import sys
 import traceback
-import types
 
-__all__ = ['DeviceException', 'DeviceNotReady', 'DeviceFatalError',
-           'DeviceConnectionLost', 'Undefined', 'DeviceStateError',
-           'TraitNotImplementedError', 'CommandNotImplementedError',
-
-           'Trait', 'Int', 'Float', 'Unicode', 'Complex', 'Bytes',
+__all__ = ['Trait', 'Undefined', 'Any', 'Int', 'Float', 'Unicode', 'Complex', 'Bytes',
            'Bool', 'List', 'Dict', 'Address', 'NonScalar',
 
-           'Device', 'InTestbed', 'list_devices', 'logger',
+           'Device', 'list_devices', 'logger',
            'property', 'method', 'observe', 'unobserve'
            ]
 
@@ -71,41 +64,6 @@ Undefined = type(None)
 class ThisType(Generic[T]):
     pass
 
-
-class DeviceStateError(IOError):
-    """ Failure to get or set a state in `Device`
-    """
-
-
-class TraitNotImplementedError(DeviceStateError):
-    """ No state defined for the trait
-    """
-
-
-class DeviceNotReady(Exception):
-    """ Failure to communicate with the Device because it was not ready for communication
-    """
-
-
-class DeviceException(Exception):
-    """ Generic Device exception
-    """
-
-
-class DeviceFatalError(Exception):
-    """ A fatal error in the device
-    """
-
-
-class DeviceConnectionLost(Exception):
-    """ Connection state has been lost unexpectedly
-    """
-
-
-class CommandNotImplementedError(NotImplementedError):
-    """ A command that has been defined but not implemented
-    """
-    pass
 
 def trace_methods(cls, name, until_cls=None):
     """ Look for a method called `name` in cls and all of its parent classes.
@@ -1067,50 +1025,20 @@ class DisconnectedBackend(object):
     def __init__(self, dev):
         """ dev may be a class or an object for error feedback
         """
-        self.__dev__ = dev
+        self.name = dev.__class__.__qualname__
 
     @util.hide_in_traceback
-    def __getattribute__(self, key):
-        try:
-            return object.__getattribute__(self, key)
-        except AttributeError:
-            if inspect.isclass(self.__dev__):
-                name = self.__dev__.__qualname__
-            else:
-                name = self.__dev__.__class__.__qualname__
-            raise ConnectionError(
-                'call open() first to access backend.{key} in {clsname} instance (resource={resource})'
-                    .format(key=key, clsname=name, resource=self.__dev__.settings.resource))
+    def __getattr__(self, key):
+        msg = f"{self.name} must be connected to access {self.name}.backend"
+        raise ConnectionError(msg)
 
     def __repr__(self):
         return 'DisconnectedBackend()' 
-
-class InTestbed:
-    """ Subclass this in objects that could be context managers in a Testbed
-
-    """
-    __owner__ = None
-
-    def __set_name__(self, owner_cls, name):
-        try:
-            from .testbed import Testbed
-            if issubclass(owner_cls, Testbed) and hasattr(self, '__enter__'):
-                owner_cls._contexts[name] = self
-            self.__name__ = name
-        except BaseException as e:
-            print(e)
-            raise
-
-    def __get__(self, owner, owner_cls=None):
-        return self
-
-    def __init_testbed__(self, testbed):
-        """ Called when the Testbed makes new instances.
-        """
-        pass
+    
+    str = __repr__
 
 
-class Device(HasStates, InTestbed):
+class Device(HasStates, util.InTestbed):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
         driver.

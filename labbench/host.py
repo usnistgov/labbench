@@ -35,7 +35,7 @@ import sys
 import yaml
 
 
-__all__ = ['Host', 'Email', 'LogStderr']
+__all__ = ['Host', 'Email']
 
 
 class LogStreamBuffer:

@@ -257,7 +257,7 @@ class SequencedMethod:
     __str__ = __repr__
 
 
-class Task(core.InTestbed):
+class Task(util.InTestbed):
     """ Subclass this to define experimental procedures for groups of Devices in a Testbed.
     """
     __steps__ = dict()
@@ -400,6 +400,7 @@ def collect_defaults(tree):
 
     return defaults
 
+
 def call_sequence(spec, kwargs):
     available = set(kwargs.keys())
 
@@ -435,7 +436,7 @@ def __call__():
     return self.__call___wrapped(**items)
 
 
-class Multitask(core.InTestbed):
+class Multitask(util.InTestbed):
     def __new__(cls, **sequences):
         # Make a new subclass so that we can change its __call__ signature
         cls = type('Experiment', (cls,), {})

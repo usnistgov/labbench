@@ -29,7 +29,7 @@ __all__ = ['LogAggregator', 'RelationalTableLogger',
            'read', 'read_relational', 'to_feather']
 
 from contextlib import suppress, ExitStack, contextmanager
-from .core import Device, InTestbed, observe
+from .core import Device, observe
 from .host import Host
 from . import util
 import copy
@@ -43,7 +43,7 @@ import textwrap
 import warnings
 
 
-class LogAggregator(InTestbed):
+class LogAggregator(util.InTestbed):
     """ Aggregate state information from multiple devices. This can be the basis
         for automatic database logging.
     """

@@ -30,10 +30,12 @@ from .core import *
 from .data import *
 from .host import *
 from .version import __version__
-from .util import *
+from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout
 from .backends import *
 from .testbed import *
 
-show_messages('info')
+import util
+
+util.show_messages('info')
 
 name = 'labbench'

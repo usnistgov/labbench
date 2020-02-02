@@ -24,17 +24,23 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['concurrently', 'sequentially', 'Call', 'ConcurrentException',
-           'ConfigStore', 'hash_caller',
-           'kill_by_name', 'check_master',
-           'retry', 'show_messages', 'sleep', 'stopwatch', 'ThreadSandbox',
-           'ThreadEndedByMaster', 'until_timeout',
+__all__ = [
+           # "misc"
+           'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages', 
+
+           # concurrency and sequencing
+           'concurrently', 'sequentially', 'Call', 'ConcurrentException',
+           'check_master', 'ThreadSandbox', 'ThreadEndedByMaster', 
+
+           # timing and flow management
+           'retry', 'until_timeout', 'sleep', 'stopwatch',
 
            # wrapper helpers
            '_wrap_attribute',
 
            # traceback scrubbing
-           'hide_in_traceback', '_force_full_traceback']
+           'hide_in_traceback', '_force_full_traceback',
+           ]
 
 from . import core
 
@@ -1256,32 +1262,37 @@ class ConfigStore:
         return df
 
 
-if __name__ == '__main__':
-    def do_something_1():
-        print('start 1')
-        sleep(1)
-        print('end 1')
-        return 1
+import ast
+import textwrap
 
-    def do_something_2():
-        print('start 2')
-        sleep(2)
-        print('end 2')
-        return 2
+def accessed_attributes(method):
+    """ enumerate the attributes of the parent class accessed by `method`
+    
+    :method: callable that is a method or defined in a class
+    :returns: tuple of attribute names
+    """
 
-    def do_something_3(a, b, c):
-        print('start 2')
-        sleep(2.5)
-        print('end 2')
-        return a, b, c
+    # really won't work unless method is a callable defined inside a class
+    if not inspect.isroutine(method):
+        raise ValueError(f"{method} is not a method")
+    elif not inspect.ismethod(method) and '.' not in method.__qualname__:
+        raise ValueError(f"{method} is not defined in a class")
 
-    def do_something_4():
-        print('start 1')
-        sleep(3)
-        raise ValueError('I had an error')
-        print('end 1')
-        return 1
+    # parse into a code tree
+    source = inspect.getsource(method)
+    parsed = ast.parse(textwrap.dedent(source))
+    if len(parsed.body) > 1:
+        # this should not be possible
+        raise Exception("ast parsing gave unexpected extra nodes")
 
-    results = concurrently(do_something_1, do_something_2, do_something_3)
+    # pull out the function node and the name for the class instance
+    func = parsed.body[0]
+    if not isinstance(func, ast.FunctionDef):
+        raise SyntaxError("this object doesn't look like a method")
 
-    print('results were', results)
+    self_name = func.args.args[0].arg
+
+    def isselfattr(node):
+        return isinstance(node, ast.Attribute) and node.value.id == self_name
+        
+    return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})

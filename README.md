@@ -88,7 +88,7 @@ very short:
 ```python
 with MyTestbed() as test: # instruments stay connected while in this block
     for freq in (915e6, 2.4e9, 5.3e9):
-        test.run(center_frequency=1e9, duration=5) # passes args to the Task methods
+        test.run(center_frequency=center_frequency, duration=5) # passes args to the Task methods
 ```
 
 ### Devices

@@ -3,7 +3,7 @@ This is a set of python tools for writing laboratory automation scripts that are
 clear, concise, and explainable.
 Code that achieves these goals should read like a pseudocode expression of the experimental
 procedure. Objects for control over equipment (or other software) should only expose
-a clear set of automation capabilities to make scripting more enjoyable and straightforward.
+a clear set of automation capabilities to make laboratory automation more robust and less frustrating.
 
 The labbench module provides tools that support toward this goal through an object protocol and
 support functions. These separate repetitive and error-prone boilerplate code, 

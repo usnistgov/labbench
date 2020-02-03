@@ -195,29 +195,20 @@ class Testbed:
         pass
 
 
-class StepMethod:
-    def __init__(self, owner_cls, obj, name, dependencies):
-        self.__wrapped__ = obj
-        self.label = owner_cls.__name__ + '.' + name
-        self.dependencies = dependencies
-
-        update_wrapper(self.__call__, self.__wrapped__,)
-
-
-class SequencedMethod:
+class Step:
+    """
+    Wrapper function that Task applies to its methods, permitting to permit '&' notation for Multitask definitions
+    """
     def __init__(self, owner, name):
         cls = owner.__class__
         obj = getattr(cls, name)
-
-        # introspect to identify device dependencies in each step method
-        sig = inspect.signature(obj)
-        source = inspect.getsource(obj)
-        selfname = next(iter(sig.parameters.keys()))  # the name given to the 'self' method
-        deps = tuple((name for name in cls.__annotations__ if selfname + '.' + name in source))
-
         self.owner = owner
         self.label = cls.__name__ + '.' + name
-        self.dependencies = deps
+
+        # note the devices needed to execute this function
+        available = {getattr(self.owner, name) for name in self.owner.__annotations__}
+        self.dependencies = available.intersection(util.accessed_attributes(obj))
+
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
         self.__doc__ = obj.__doc__
@@ -230,8 +221,8 @@ class SequencedMethod:
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # ensure that required devices are connected
-        closed = [n for n in self.dependencies \
-                  if not getattr(self.owner, n).connected]
+        closed = [name for name in self.dependencies
+                  if not getattr(self.owner, name).connected]
         if len(closed) > 0:
             closed = ','.join(closed)
             raise ConnectionError(f"devices {closed} must be connected to invoke {self.label}")
@@ -242,7 +233,7 @@ class SequencedMethod:
             ret = self.__wrapped__(self.owner, *args, **kws)
             return {} if ret is None else ret
 
-    # methods that implement the "&" operator for test sequence definitions
+    # implement the "&" operator to define concurrent steps for Multitask
     def __and__(self, other):
         # python objects call this when the left side of '&' is not a tuple
         return 'concurrent', self, other
@@ -252,7 +243,7 @@ class SequencedMethod:
         return other + (self,)
 
     def __repr__(self):
-        return f"<sequenced {repr(self.__wrapped__)[1:-1]}>"
+        return f"<method {repr(self.__wrapped__)[1:-1]}>"
 
     __str__ = __repr__
 
@@ -261,7 +252,6 @@ class Task(util.InTestbed):
     """ Subclass this to define experimental procedures for groups of Devices in a Testbed.
     """
     __steps__ = dict()
-    __wrappers__ = dict()
 
     def __init_subclass__(cls):
         # By introspection, identify the methods that define test steps
@@ -282,14 +272,14 @@ class Task(util.InTestbed):
         # a fresh mapping to modify without changing the parent
         devices = dict(devices)
 
-        # set attributes in self
+        # set devices in self
         for name, devtype in self.__annotations__.items():
             try:
                 dev = devices.pop(name)
             except KeyError:
                 raise KeyError(f"{self.__class__.__qualname__} is missing required argument '{name}'")
             if not isinstance(dev, devtype):
-                msg = f"argument '{name}' must be an instance of '{devtype.__qualname__}'"
+                msg = f"argument '{name}' is not an instance of '{devtype.__qualname__}'"
                 raise AttributeError(msg)
             setattr(self, name, dev)
 
@@ -297,16 +287,14 @@ class Task(util.InTestbed):
         if len(devices) > 0:
             raise ValueError(f"{tuple(devices.keys())} are invalid arguments")
 
-        # instantiate the wrappers for self.__steps__, and update self
-        self.__wrappers__ = {}
-        for k in list(self.__steps__.keys()):
-            self.__wrappers__[k] = self.__steps__[k] = SequencedMethod(self, k)
+        # replace self.__steps__ with new mapping of wrappers
+        self.__steps__ = dict(((k, Step(self, k)) for k in self.__steps__))
 
     def __getattribute__(self, item):
-        if item != '__wrappers__' and item in self.__wrappers__:
-            return self.__wrappers__[item]
+        if item != '__steps__' and item in self.__steps__:
+            return self.__steps__[item]
         else:
-            return object.__getattribute__(self, item)
+            return super().__getattribute__(item)
 
     def __getitem__(self, item):
         return self.__steps__[item]
@@ -315,16 +303,7 @@ class Task(util.InTestbed):
         return len(self.__steps__)
 
     def __iter__(self):
-        return iter(self.__steps__)
-
-    def items(self):
-        return self.__steps__.items()
-
-    def values(self):
-        return self.__steps__.values()
-
-    def keys(self):
-        return self.__steps__.keys()
+        return (getattr(self, k) for k in self.__steps__)
 
     def __enter__(self):
         return self
@@ -342,7 +321,7 @@ def parse_sequence(sequence):
             invoke = util.sequentially
         sequence = list(sequence)
 
-    elif isinstance(sequence, SequencedMethod):
+    elif isinstance(sequence, Step):
         invoke = util.sequentially
         sequence = [sequence]
 
@@ -355,7 +334,7 @@ def parse_sequence(sequence):
         # validate replace each entry in the sequence with a parsed item
         if isinstance(sequence[i], (list, tuple)):
             sequence[i] = parse_sequence(sequence[i])
-        elif not isinstance(sequence[i], SequencedMethod):
+        elif not isinstance(sequence[i], Step):
             typename = type(sequence).__qualname__
             raise TypeError(f"object of type '{typename}' is neither a "\
                             f"Task method nor a nested tuple/list")
@@ -389,7 +368,7 @@ def collect_defaults(tree):
 
             params = iter(inspect.signature(func).parameters.items())
 
-            if inspect.ismethod(func) or isinstance(func, SequencedMethod):
+            if inspect.ismethod(func) or isinstance(func, Step):
                 # skip 'self', if this is a method
                 next(params)
             else:
@@ -401,7 +380,7 @@ def collect_defaults(tree):
     return defaults
 
 
-def call_sequence(spec, kwargs):
+def call_step(spec, kwargs):
     available = set(kwargs.keys())
 
     def call(func):
@@ -419,7 +398,7 @@ def call_sequence(spec, kwargs):
             name = item.owner.__class__.__qualname__ + '_' + item.__name__
             kws_out[name] = call(item)
         elif isinstance(item, list):
-            kws_out[name] = call_sequence(item, kwargs)
+            kws_out[name] = call_step(item, kwargs)
         else:
             msg = f"unsupported type '{type(item).__qualname__}' " \
                   f"in call sequence specification"
@@ -471,7 +450,7 @@ class Multitask(util.InTestbed):
         ret = {}
 
         for step, sequence in self.sequences.items():
-            caller, step_kws = call_sequence(sequence, kwargs)
+            caller, step_kws = call_step(sequence, kwargs)
 
             core.logger.info(f"{self.__name__} {step} start")
             with util.stopwatch(f"{self.__name__} {step}"):

@@ -32,16 +32,16 @@ class Synthesize(lb.Task):
     inst: MySignalGenerator
 
     def setup(self, * center_frequency):
-        self.sg.preset()
-        self.sg.set_mode('cw')
-        self.sg.center_frequency = center_frequency
-        self.sg.bandwidth = 2e6
+        self.inst.preset()
+        self.inst.set_mode('cw')
+        self.inst.center_frequency = center_frequency
+        self.inst.bandwidth = 2e6
 
     def arm(self):
-        self.sg.rf_output_enable = True
+        self.inst.rf_output_enable = True
 
     def finish(self):
-        self.sg.stop()
+        self.inst.stop()
 
 
 class Analyze(lb.Task):

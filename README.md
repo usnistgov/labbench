@@ -2,38 +2,93 @@
 This is a set of python tools for writing laboratory automation scripts that are
 clear, concise, and explainable.
 Code that achieves these goals should read like a pseudocode expression of the experimental
-procedure.
-The labbench module works toward this goal by introducing an object protocol and
-support functions. These implement repetitive and error-prone boilerplate code needed
-to manage data, coerce values between pythonic and over-the-wire and pythonic data types,
-validate value constraints, manage threads for concurrent I/O, provide hooks for user
-interfaces, and coordinate connections between multiple devices.
-These capabilities also provide consistency in data output between data
-collected in experiments.
+procedure. Objects for control over equipment (or other software) should only expose
+a clear set of automation capabilities to make scripting more enjoyable and straightforward.
 
+The labbench module provides tools that support toward this goal through an object protocol and
+support functions. These separate repetitive and error-prone boilerplate code, 
+Use of these capabilities among multiple experimental runs also helps to produced data sets with
+consistent structure.
 
-### Coordinating between devices
-Organize experiments clearly by defining `Task`s that implement the role of a small
-number of `Device` instances. A `Testbed` class collects `Task` objects with the
-`Device` instances needed to fulfill a role, manages the connection of these devices.
-A more complete experimental procedure can be expressed by defining a sequence
-of concurrent and sequential task execution with `lb.multitask`. The `Testbed` also
- makes the data collected by `Device` and `Task` available to database managers, which 
-capture the `Device` states and data fetched during the experiment. 
+### Devices
+A `Device` object exposes automation control over a piece of lab equipment, or software as a virtual "device." Organizing access into the `Device` class immediately provides transparent capability to
+
+* log data from the device
+* define consistent coercion between pythonic and over-the-wire data types
+* apply value constraints on instrument parameters
+* support threaded operation concurrent I/O
+* hook the Device state to user interface display
+* ensure device disconnection on python exceptions
+
+Typical `Device` driver development work flow focuses communicating with the instrument. The drivers are made up of descriptors and methods, thanks to a small, targeted set of convenience tools focused on data types and communication backends. The following `VISADevice` backend illustrates a complete example on a complete power sensor:
 
 ```python
 import labbench as lb
+import pandas as pd
 
-# my library of labbench Device drivers  
-from myinstruments import MySpectrumAnalyzer, MySignalGenerator
+class PowerSensor(lb.VISADevice):
+    initiate_continuous = lb.Bool(key='INIT:CONT')
+    output_trigger = lb.Bool(key='OUTP:TRIG')
+    trigger_source = lb.Unicode(key='TRIG:SOUR', only=('IMM', 'INT', 'EXT', 'BUS', 'INT1'), case=False)
+    trigger_count = lb.Int(key='TRIG:COUN', min=1, max=200)
+    measurement_rate = lb.Unicode(key='SENS:MRAT', only=('NORM', 'DOUB', 'FAST'), case=False)
+    sweep_aperture = lb.Float(key='SWE:APER', min=20e-6, max=200e-3, help='time (s)')
+    frequency = lb.Float(key='SENS:FREQ', min=10e6, max=18e9, step=1e-3,
+                         help='input signal center frequency (in Hz)')
 
+    def preset(self):
+        self.write('SYST:PRES')
+
+    def fetch(self):
+        """ return a single power reading (if self.trigger_count == 1) or pandas Series containing the power trace """
+        response = self.query('FETC?').split(',')
+        if len(response) == 1:
+            return float(response[0])
+        else:
+            return pd.to_numeric(pd.Series(response))
+```
+
+The `VISADevice` backend here builds interactive _traits_ (python [descriptors](https://docs.python.org/3/howto/descriptor.html)) from the [SCPI commands](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments) given in each `key`. This is a functioning instrument automation driver that works on an actual commercial instrument:
+
+```python
+with PowerSensor('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as sensor:
+    # configure from scratch
+    sensor.preset()
+
+    # the following set parameters on the power sensor
+    sensor.frequency = 1e9
+    sensor.measurement_rate = 'FAST'
+    sensor.trigger_count = 200
+    sensor.sweep_aperture = 20e-6
+    sensor.trigger_source = 'IMM'
+    sensor.initiate_continuous = True
+
+    power = sensor.fetch()
+```
+
+The usage here is simple because the methods and traits for automation can be discovered easily through tab completion in most IDEs. They can be used on connection with a simple `with` block.
+
+### Scaling to testbeds
+Experiments with very many `Devices` can use `Task` objects to implement the procedures for a small
+number of `Device` instances. A `Testbed` class collects `Task` objects with the
+`Device` instances needed to fulfill a role. It manages the connection of these devices together,
+and ensures graceful disconnection of all `Device` instances in case of an unhandled exception.
+A more complete experiment can be expressed by defining the joint concurrent and sequential execution
+of multiple tasks `lb.multitask`. The `Testbed` also exposes device state and fetched data for 
+database managers to save to disk.
+
+Here is an example based on two hypothetical instruments:
+```python
+import labbench as lb
+
+from myinstruments import MySpectrumAnalyzer, MySignalGenerator # custom library of Device drivers
 
 class Synthesize(lb.Task):
     inst: MySignalGenerator
 
     def setup(self, * center_frequency):
         self.inst.preset()
-        self.inst.set_mode('cw')
+        self.inst.set_mode('carrier')
         self.inst.center_frequency = center_frequency
         self.inst.bandwidth = 2e6
 
@@ -41,7 +96,7 @@ class Synthesize(lb.Task):
         self.inst.rf_output_enable = True
 
     def finish(self):
-        self.inst.stop()
+        self.inst.rf_output_enable = False
 
 
 class Analyze(lb.Task):
@@ -90,17 +145,6 @@ with MyTestbed() as test: # instruments stay connected while in this block
     for freq in (915e6, 2.4e9, 5.3e9):
         test.run(center_frequency=center_frequency, duration=5) # passes args to the Task methods
 ```
-
-### Devices
-A device driver implemented with labbench is a light wrapper around another instrument control library.
-This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level routines. The labbench
-abstraction provides several benefits:
-
-Driver control over scalar instrument settings follows the [descriptor](https://docs.python.org/3/howto/descriptor.html)
-(also known as [decorator](https://en.wikipedia.org/wiki/Decorator_pattern)) design pattern.
-The descriptors are implemented by annotations.
-
-(...add more useful description etc. like above...)
 
 ## Installation
 Start in an installation of your favorite python>=3.7 distribution.

@@ -78,7 +78,7 @@ class MyTestbed(lb.Testbed):
     run = lb.multitask(
         (generate.setup & detect.setup),  # setup: executes the long setups concurrently
         (generate.arm, detect.acquire), # acquire: arms the generator, and starts acquisition
-        (generate.acquire & detect.finish),  # fetch: these can also be concurrent
+        (generate.finish & detect.fetch),  # fetch: these can also be concurrent
     )
 ```
 

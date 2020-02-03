@@ -1,44 +1,109 @@
 # labbench
-The `labbench` python library provides tools for instrument automation and data management in scripted lab experiments.
+This is a set of python tools for writing laboratory automation scripts that are
+clear, concise, and explainable.
+Code that achieves these goals should read like a pseudocode expression of the experimental
+procedure.
+The labbench module works toward this goal by introducing an object protocol and
+support functions. These implement repetitive and error-prone boilerplate code needed
+to manage data, coerce values between pythonic and over-the-wire and pythonic data types,
+validate value constraints, manage threads for concurrent I/O, provide hooks for user
+interfaces, and coordinate connections between multiple devices.
+These capabilities also provide consistency in data output between data
+collected in experiments.
 
+
+### Coordinating between devices
+Organize experiments clearly by defining `Task`s that implement the role of a small
+number of `Device` instances. A `Testbed` class collects `Task` objects with the
+`Device` instances needed to fulfill a role, manages the connection of these devices.
+A more complete experimental procedure can be expressed by defining a sequence
+of concurrent and sequential task execution with `lb.multitask`. The `Testbed` also
+ makes the data collected by `Device` and `Task` available to database managers, which 
+capture the `Device` states and data fetched during the experiment. 
+
+```python
+import labbench as lb
+
+# my library of labbench Device drivers  
+from myinstruments import MySpectrumAnalyzer, MySignalGenerator
+
+
+class Synthesize(lb.Task):
+    inst: MySignalGenerator
+
+    def setup(self, * center_frequency):
+        self.sg.preset()
+        self.sg.set_mode('cw')
+        self.sg.center_frequency = center_frequency
+        self.sg.bandwidth = 2e6
+
+    def arm(self):
+        self.sg.rf_output_enable = True
+
+    def finish(self):
+        self.sg.stop()
+
+
+class Analyze(lb.Task):
+    inst: MySpectrumAnalyzer
+
+    def setup(self, *, center_frequency):
+        self.inst.load_state('savename')
+        self.inst.center_frequency = center_frequency
+
+    def acquire(self, *, duration):
+        self.inst.trigger()
+        lb.sleep(duration)
+        self.inst.stop()
+
+    def fetch(self):
+        self.inst.fetch_spectrogram() # this data logs automatically
+
+
+class MyTestbed(lb.Testbed):
+    db = lb.SQLiteLogger(
+        'data',                         # path to a new directory to contain data
+        dirname_fmt='{id} {host_time}', # format string for relational data
+        nonscalar_file_type='csv',      # numerical data format
+        tar=False                       # True to embed relational data in `data.tar`
+    )
+
+    sa = MySpectrumAnalyzer(resource='a')
+    sg = MySignalGenerator(resource='b')
+
+    # tasks just need to know the required devices
+    generate = Synthesize(inst=sg)
+    detect = Analyze(inst=sa)
+
+    run = lb.multitask(
+        (generate.setup & detect.setup),  # setup: executes the long setups concurrently
+        (generate.arm, detect.acquire), # acquire: arms the generator, and starts acquisition
+        (generate.acquire & detect.finish),  # fetch: these can also be concurrent
+    )
+```
+
+The `Testbed` includes most of the required implementation, so execution scripts can be
+very short:
+
+```python
+with MyTestbed() as test: # instruments stay connected while in this block
+    for freq in (915e6, 2.4e9, 5.3e9):
+        test.run(center_frequency=1e9, duration=5) # passes args to the Task methods
+```
+
+### Devices
 A device driver implemented with labbench is a light wrapper around another instrument control library.
 This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level routines. The labbench
 abstraction provides several benefits:
 
-* automatic acquisition logging into an SQLite database,
-* automatically-generated jupyter notebook monitoring widgets,
-* interact with settings and data on remote devices with native python data types (instead of strings),
-* python exceptions on invalid device state settings (instead of silent failure),
-* drivers provide consistent style and API conventions for easy scripting (hello, tab completion!),
-* ensure devices disconnect properly when acquisition completes (even on exceptions), and
-* conversion of vector or tabular data to [pandas](pandas.pydata.org) Series or DataFrame objects for rapid exploration of data.
-
-Together, these features help to minimize the amount of "copy-and-paste" code that can make your lab automation scripts error-prone and difficult to maintain.
-The python code that results can be clear, concise, reusable and maintainable, and
-provide consistent formatting for stored data.
-The result helps researchers to meet NIST's
-[open data](https://www.nist.gov/open) obligations, even for complicated, large,
-and heterogeneous datasets.
-
-Additional goodies include 
-* [simplified threading for parallel execution](http://pages.nist.gov/labbench/labbench.html#labbench.util.concurrently)
-* [convenience objects to manage testbeds made of multiple devices](http://pages.nist.gov/labbench/labbench.html#labbench.util.Testbed)
-* [real-time heads-up displays for jupyter notebooks](http://pages.nist.gov/labbench/labbench.html#module-labbench.notebooks)
-* [convenience functions for reading relational table data from multiple rows](http://pages.nist.gov/labbench/labbench.html#labbench.data.read_relational)
-
-Information here is mostly about writing your own drivers. Specific drivers written in labbench are implemented in other libraries.
-
-### Design
 Driver control over scalar instrument settings follows the [descriptor](https://docs.python.org/3/howto/descriptor.html)
 (also known as [decorator](https://en.wikipedia.org/wiki/Decorator_pattern)) design pattern.
-The implementation of these descriptors is an extension of [traitlets](https://github.com/ipython/traitlets),
-enabling optional integration into [jupyter notebook](http://jupyter.org/) widgets
-for real-time state readouts.
-Other libraries (pyvisa, pyserial, pythonnet, etc.) provide backends;
-labbench Driver subclasses standardize an object protocol for backend wrappers that include context management and decriptors.
+The descriptors are implemented by annotations.
+
+(...add more useful description etc. like above...)
 
 ## Installation
-Make sure tha tyou have installed your favorite distribution of python with interpreter version 3.7 or newer.
+Start in an installation of your favorite python>=3.7 distribution.
 
 * To install the current version, open a command prompt and type
   ```pip install labbench```

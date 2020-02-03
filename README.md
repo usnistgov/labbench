@@ -69,15 +69,9 @@ with PowerSensor('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as sensor:
 The usage here is simple because the methods and traits for automation can be discovered easily through tab completion in most IDEs. They can be used on connection with a simple `with` block.
 
 ### Scaling to testbeds
-Experiments with very many `Devices` can use `Task` objects to implement the procedures for a small
-number of `Device` instances. A `Testbed` class collects `Task` objects with the
-`Device` instances needed to fulfill a role. It manages the connection of these devices together,
-and ensures graceful disconnection of all `Device` instances in case of an unhandled exception.
-A more complete experiment can be expressed by defining the joint concurrent and sequential execution
-of multiple tasks `lb.multitask`. The `Testbed` also exposes device state and fetched data for 
-database managers to save to disk.
-
-Here is an example based on two hypothetical instruments:
+Large test setups can neatly organize procedures that require a few Device instances into `Task` objects. A `Testbed` class collects the set of `Task` instances needed to perform the experiment, manages connection of these devices together,
+ensuring graceful disconnection of all `Device` on unhandled exceptions.
+A `multitask` definition defines a more complete experiment in the `Testbed` as a concurrent and sequential steps from multiple `Task` objects, using `multitask`. The `Testbed` also optionally exposes device state and fetched data for database management and user interface. The following ties all these together:
 ```python
 import labbench as lb
 
@@ -131,9 +125,9 @@ class MyTestbed(lb.Testbed):
     detect = Analyze(inst=sa)
 
     run = lb.multitask(
-        (generate.setup & detect.setup),  # setup: executes the long setups concurrently
-        (generate.arm, detect.acquire), # acquire: arms the generator, and starts acquisition
-        (generate.finish & detect.fetch),  # fetch: these can also be concurrent
+        (generate.setup & detect.setup),  # setup: concurrently execute the long setups
+        (generate.arm, detect.acquire), # acquire: first arm the generator, then and start acquisition
+        (generate.finish & detect.fetch),  # fetch: concurrently clean up the test state
     )
 ```
 
@@ -145,6 +139,8 @@ with MyTestbed() as test: # instruments stay connected while in this block
     for freq in (915e6, 2.4e9, 5.3e9):
         test.run(center_frequency=center_frequency, duration=5) # passes args to the Task methods
 ```
+
+The results of this simple test are saved in an SQLite database, 'data/master.db', and subfolders that contain the results of each call to `fetch_spectrogram`.
 
 ## Installation
 Start in an installation of your favorite python>=3.7 distribution.

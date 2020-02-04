@@ -24,7 +24,8 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import core, util
+from . import _core as core
+from . import util as util
 
 import datetime
 import io

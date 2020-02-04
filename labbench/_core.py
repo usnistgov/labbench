@@ -30,7 +30,7 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-from . import util
+from . import util as util
 
 from typing import Generic, T
 from warnings import warn, simplefilter

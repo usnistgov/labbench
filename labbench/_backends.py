@@ -24,7 +24,8 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import core, util
+from . import _core as core
+from . import util as util
 from collections import OrderedDict
 import contextlib
 import inspect
@@ -497,7 +498,7 @@ class DotNetDevice(core.Device):
 #            relpath = module.__name__.replace('.', os.path.sep)
             self.dll_name = os.path.join(
                 self.library.__path__[0], self.dll_name)
-            contents = self.library.__loader__.get_data(self.dll_name)
+            contents = self.library.__loader__.getdata(self.dll_name)
         else:
             path = os.path.join(self.library.__path__[0], self.dll_name)
             with open(path, 'rb') as f:

@@ -153,10 +153,10 @@ class MyTestbed(lb.Testbed):
     )
 
     run = lb.Multitask(
-        setup=(task1.setup & task2.setup),  # executes these 2 methods concurrently
-        arm=(task1.arm),
-        acquire=(task2.acquire, task3.acquire),  # executes these 2 sequentially
-        fetch=(task2.fetch & task3.fetch)
+        (task1.setup & task2.setup),  # executes these 2 methods concurrently
+        (task1.arm),
+        (task2.acquire, task3.acquire),  # executes these 2 sequentially
+        (task2.fetch & task3.fetch)
     )
 
 

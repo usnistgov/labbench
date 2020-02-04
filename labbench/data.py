@@ -29,9 +29,9 @@ __all__ = ['LogAggregator', 'RelationalTableLogger',
            'read', 'read_relational', 'to_feather']
 
 from contextlib import suppress, ExitStack, contextmanager
-from .core import Device, observe
-from .host import Host
-from . import util
+from ._core import Device, observe
+from ._host import Host
+from . import util as util
 import copy
 import inspect
 import io
@@ -65,6 +65,9 @@ class LogAggregator(util.InTestbed):
         # #    coloredlogs.install(level='DEBUG', logger=logger)
         # log_handler.setFormatter(coloredlogs.ColoredFormatter(log_fmt))
         # self.logger.addHandler(log_handler)
+
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}()"
         
     def __init_testbed__(self, testbed):
         # If `self` lives in a Testbed, this is called.
@@ -157,13 +160,12 @@ class LogAggregator(util.InTestbed):
             if not isinstance(device, Device):
                 raise ValueError(f'{device} is not an instance of Device')
             if device not in self.name:
-                if name is not None:
-                    newname = name
-                elif hasattr(device, '__name__'):
-                    newname = device.__name__
-                else:
-                    newname = self.__whoisthis(device)
-                self.name[device] = newname
+                if name is None:
+                    if hasattr(device, '__name__'):
+                        name = device.__name__
+                    else:
+                        name = self.__whoisthis(device)
+                self.name[device] = name
 
         if len(list(self.name.values())) != len(set(self.name.values())):
             raise Exception('Could not automatically determine unique names of device instances! '\
@@ -790,6 +792,10 @@ class RelationalTableLogger(LogAggregator):
                                nonscalar_file_type=nonscalar_file_type,
                                metadata_dirname=metadata_dirname,
                                **metadata)
+
+
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}({repr(self.path)})"
 
 
     def set_row_preprocessor(self, func):

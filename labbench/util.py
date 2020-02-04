@@ -45,7 +45,7 @@ __all__ = [
            'InTestbed',
            ]
 
-from . import core
+from . import _core as core
 
 from collections import OrderedDict
 from contextlib import contextmanager, _GeneratorContextManager
@@ -65,14 +65,16 @@ class InTestbed:
     """ Subclass this to act as a descriptor in a Testbed
 
     """
-    __owner__ = None
+    __objclass__ = None
 
     def __set_name__(self, owner_cls, name):
         try:
-            from .testbed import Testbed
+            from ._testbed import Testbed
             if issubclass(owner_cls, Testbed) and hasattr(self, '__enter__'):
                 owner_cls._contexts[name] = self
+            self.__objclass__ = owner_cls
             self.__name__ = name
+
         except BaseException as e:
             print(e)
             raise
@@ -84,6 +86,12 @@ class InTestbed:
         """ Called when the Testbed makes new instances.
         """
         pass
+
+    def __str__(self):
+        if self.__name__ is None:
+            return self.__repr__()
+        else:
+            return self.__objclass__.__qualname__ + '.' + self.__name__
 
 class ConcurrentException(Exception):
     """ Raised on concurrency errors in `labbench.concurrently`

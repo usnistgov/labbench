@@ -26,16 +26,21 @@
 .. licenses.
 """
 
-from .core import *
+from ._core import *
 from .data import CSVLogger, SQLiteLogger, read
-from .host import Email
-from .version import __version__
+from ._host import Email
+from ._version import __version__
 from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep
-from .backends import *
-from .testbed import *
+from ._backends import *
+from ._testbed import *
 
 from . import data
 from . import util
-from . import host
+
+# adjusting __module__ for the globals makes cleaner repr() and docs
+for _obj in dict(locals()).values():
+    if getattr(_obj, '__module__', '').startswith('labbench.'):
+        _obj.__module__ = 'labbench'
+del _obj
 
 show_messages('info')

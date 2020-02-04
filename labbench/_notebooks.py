@@ -24,11 +24,12 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import core
-from .backends import VISADevice
-from .host import Host
+from . import _core as core
+
+from ._backends import VISADevice
+from ._host import Host
 from .util import show_messages
-from .testbed import Testbed
+from ._testbed import Testbed
 
 import logging
 import time

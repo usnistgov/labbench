@@ -67,7 +67,7 @@ if __name__ == '__main__':
           author_email='daniel.kuester@nist.gov',
           url='https://github.com/usnistgov/labbench',
           packages=setuptools.find_packages(),
-          package_data={'labbench': ['*.pyi']},
+          packagedata={'labbench': ['*.pyi']},
           license='NIST',
           install_requires=['pandas(>=0.20)',
                             'pyserial(>=3.0)',

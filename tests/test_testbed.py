@@ -53,11 +53,9 @@ class LaggyInstrument(lb.EmulatedVISADevice):
 
     def open(self):        
         self.perf = {}
-        self.logger.info(f'{self} connect start')
         t0 = time.perf_counter()
         lb.sleep(self.settings.delay)
         self.perf['open'] = time.perf_counter() - t0
-        self.logger.info(f'{self} connected')
 
     @lb.method
     def fetch(self):
@@ -66,7 +64,6 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         lb.logger.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.settings.fetch_time)
-        lb.logger.info(f'{self}.fetch done')
         self.perf['fetch'] = time.perf_counter() - t0
         return self.settings.fetch_time
     
@@ -79,7 +76,6 @@ class LaggyInstrument(lb.EmulatedVISADevice):
         return None
 
     def close(self):
-        self.logger.info(f'{self} disconnected')
         if self.settings.fail_disconnect:
             1 / 0
 
@@ -89,9 +85,7 @@ class Task1(lb.Task):
     dev2: LaggyInstrument
 
     def setup(self, param1):
-        print(self.dev1.settings.resource)
-        print(self.dev2.settings.resource)
-        print(param1)
+        pass
 
     def arm(self):
         pass

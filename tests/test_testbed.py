@@ -165,6 +165,7 @@ class MyTestbed(lb.Testbed):
         fetch=(task2.fetch & task3.fetch)
     )
 
+
 if __name__ == '__main__':
     lb.show_messages('debug')
 

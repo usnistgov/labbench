@@ -27,10 +27,10 @@
 """
 
 from .core import *
-from .data import CSVLogger, SQLiteLogger
+from .data import CSVLogger, SQLiteLogger, read
 from .host import Email
 from .version import __version__
-from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout
+from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep
 from .backends import *
 from .testbed import *
 
@@ -38,7 +38,4 @@ from . import data
 from . import util
 from . import host
 
-# clean up namespace where we've already imported everything of note
-del host, core, version, backends, testbed
-
-util.show_messages('info')
+show_messages('info')

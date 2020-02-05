@@ -137,7 +137,14 @@ very short:
 ```python
 with MyTestbed() as test: # instruments stay connected while in this block
     for freq in (915e6, 2.4e9, 5.3e9):
-        test.run(center_frequency=center_frequency, duration=5) # passes args to the Task methods
+        # each {task}_{argname} passes {argname} to the corresponding {task}
+        test.run(
+            detect_center_frequency=freq,
+            synthesis_center_frequency=freq,
+            detect_duration=5
+        )
+
+        test.db() # mark the end of a row
 ```
 
 The results of this simple test are saved in an SQLite database, 'data/master.db', and subfolders that contain the results of each call to `fetch_spectrogram`.

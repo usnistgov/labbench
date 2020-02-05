@@ -120,7 +120,7 @@ class MyTestbed(lb.Testbed):
     sa = MySpectrumAnalyzer(resource='a')
     sg = MySignalGenerator(resource='b')
 
-    # tasks just need to know the required devices
+    # tasks use the devices
     generate = Synthesize(inst=sg)
     detect = Analyze(inst=sa)
 

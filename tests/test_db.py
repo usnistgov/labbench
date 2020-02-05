@@ -34,14 +34,14 @@ import unittest
 import pandas as pd
 import numpy as np
 import importlib
-
 lb = importlib.reload(lb)
+from emulate import EmulatedVISADevice
 
 int_start = 3
 int_stop = 10
    
 
-class EmulatedInstrument(lb.EmulatedVISADevice):
+class EmulatedInstrument(EmulatedVISADevice):
     """ This "instrument" makes mock data and instrument states to
         demonstrate we can show the process of setting
         up a measurement.

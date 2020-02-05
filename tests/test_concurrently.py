@@ -34,9 +34,9 @@ if '..' not in sys.path:
 import labbench as lb
 import numpy as np
 lb = importlib.reload(lb)
+from emulate import EmulatedVISADevice
 
-
-class LaggyInstrument(lb.EmulatedVISADevice):
+class LaggyInstrument(EmulatedVISADevice):
     """ A mock "instrument"
     with settings and states to
     demonstrate the process of setting

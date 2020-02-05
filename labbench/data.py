@@ -24,9 +24,6 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['LogAggregator', 'RelationalTableLogger',
-           'CSVLogger', 'SQLiteLogger',
-           'read', 'read_relational', 'to_feather']
 
 from contextlib import suppress, ExitStack, contextmanager
 from ._core import Device, observe
@@ -42,6 +39,10 @@ import shutil
 import textwrap
 import warnings
 
+
+__all__ = ['LogAggregator', 'RelationalTableLogger',
+           'CSVLogger', 'SQLiteLogger',
+           'read', 'read_relational', 'to_feather']
 
 class LogAggregator(util.InTestbed):
     """ Aggregate state information from multiple devices. This can be the basis

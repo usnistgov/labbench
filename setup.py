@@ -53,7 +53,7 @@ if __name__ == '__main__':
     import sys
     from glob import glob
     sys.path.insert(0, './labbench')
-    from version import __version__
+    from _version import __version__
 
     py_version_req = (3, 7)
     if sys.version_info < py_version_req:
@@ -73,7 +73,6 @@ if __name__ == '__main__':
                             'pyserial(>=3.0)',
                             'pyvisa(>=1.8)',
                             'coloredlogs(>=7.0)',
-                            'future',
                             'numpy(>=1.0)',
                             'scipy(>=0.9)',
                             'sortedcontainers(>=1.4)',

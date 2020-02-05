@@ -306,7 +306,7 @@ class Trait:
         annots = dict(((k, cls.type) if v is ThisType else (k, v) \
                        for k, v in annots.items()))
         cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys())
-        util._wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls.__defaults__, 1, annots)
+        util.wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls.__defaults__, 1, annots)
         
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
         cls.__slots__ = [n for n in dir(cls) if not n.startswith('_')] + ['metadata', 'kind', 'name']
@@ -349,7 +349,7 @@ class Trait:
         # classify the owner
         if issubclass(owner_cls, HasSettings):
             self.kind = 'setting'
-            invalid = ('key', 'remap', 'cache')
+            invalid = ('key', 'remap')
 
             if self.__decorator_action__ is not None or len(self.__decorator_pending__) > 0:
                 raise AttributeError(f"{self} is a settings trait -- it cannot be used as a decorator")
@@ -1038,6 +1038,14 @@ class DisconnectedBackend(object):
     str = __repr__
 
 
+import typing
+if typing.TYPE_CHECKING:
+    from dataclasses import dataclass as init_ide_hints
+else:
+    init_ide_hints = lambda x: x
+
+
+@init_ide_hints
 class Device(HasStates, util.InTestbed):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
@@ -1158,7 +1166,8 @@ class Device(HasStates, util.InTestbed):
         cls.settings = settings
 
         if annotations:
-            del cls.__annotations__
+            cls.__annotations__ = dict(getattr(cls.__base__, '__annotations__', {}),
+                                       **annotations)
 
         # Update __doc__ with settings
         if cls.__doc__:
@@ -1178,7 +1187,7 @@ class Device(HasStates, util.InTestbed):
 
         defaults = dict(((k, v.default) for k, v in settings if v.gettable))
         types = dict(((k, v.type) for k, v in settings if v.gettable))
-        util._wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
+        util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
 
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 

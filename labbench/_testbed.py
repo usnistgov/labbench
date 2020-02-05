@@ -33,6 +33,7 @@ from ._host import Host, Email
 from functools import wraps, update_wrapper
 from weakref import proxy
 import inspect
+import time
 
 
 def find_devices(testbed):
@@ -96,9 +97,13 @@ class Testbed:
     enter_first = Email, LogAggregator, Host
 
     def __init_subclass__(cls, concurrent=True):
-        cls._contexts = dict(cls._contexts)
-        cls._devices = find_devices(cls)
         cls._concurrent = concurrent
+        cls._devices = find_devices(cls)
+        for name, c in dict(cls._contexts).items():
+            c = c.__init_testbed_class__(cls)
+            cls._contexts[name] = c
+            setattr(cls, name, c)
+
 
     def __init__(self, config=None):
         self.config = config
@@ -204,11 +209,12 @@ class Step:
         cls = owner.__class__
         obj = getattr(cls, name)
         self.owner = owner
-        self.label = cls.__qualname__ + '.' + name
 
         # note the devices needed to execute this function
-        available = {getattr(self.owner, name) for name in self.owner.__annotations__}
+        available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
         self.dependencies = available.intersection(util.accessed_attributes(obj))
+        self.args = list(inspect.signature(obj).parameters)[1:]
+        self.parameters = list(inspect.signature(obj).parameters.values())[1:]
 
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
@@ -219,6 +225,18 @@ class Step:
         self.__wrapped__ = obj
         self.__repr__ = obj.__repr__
 
+    def extended_defaults(self):
+        return dict([(k, v.default) for k, v in zip(self.extended_args(), self.parameters)])
+
+    def extended_args(self):
+        return [(self.owner.__name__ + '_' + name) for name in self.args]
+
+    def extended_call(self, *args, **kws):
+        i = len(self.owner.__name__)+1
+        # remove the leading f"{self.owner.__name__}"
+        kws = dict(((k[i:], v) for k, v in kws.items()))
+        return self.__call__(*args, **kws)
+
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # ensure that required devices are connected
@@ -226,13 +244,16 @@ class Step:
                   if not getattr(self.owner, name).connected]
         if len(closed) > 0:
             closed = ','.join(closed)
+            label = self.__class__.__qualname__ + '.' + self.__name__
             raise ConnectionError(f"devices {closed} must be connected to invoke {self.label}")
 
         # invoke the wrapped function
         owner_name = str(self.owner)
-        core.logger.debug(f"{owner_name} start")
+        t0 = time.perf_counter()
         ret = self.__wrapped__(self.owner, *args, **kws)
-        core.logger.debug(f"{owner_name} end")
+        elapsed = time.perf_counter()-t0
+        if elapsed > 0.1:
+            core.logger.debug(f"{owner_name} completed in {elapsed:0.2f}s")
         return {} if ret is None else ret
 
     # implement the "&" operator to define concurrent steps for Multitask
@@ -307,12 +328,6 @@ class Task(util.InTestbed):
     def __iter__(self):
         return (getattr(self, k) for k in self.__steps__)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
     def __repr__(self):
         return repr(self.__wrapped__)
 
@@ -335,6 +350,10 @@ def parse_sequence(sequence):
     elif isinstance(sequence, Step):
         invoke = util.sequentially
         sequence = [sequence]
+
+    elif isinstance(sequence, util.InTestbed) and callable(sequence):
+        invoke = util.sequentially
+        sequence = [Step(sequence, '__call__')]
 
     else:
         typename = type(sequence).__qualname__
@@ -362,7 +381,6 @@ def collect_defaults(tree):
     """
 
     defaults = {}
-    print(tree)
 
     # collect the defaults
     for caller, args in tree:
@@ -378,16 +396,11 @@ def collect_defaults(tree):
             elif not callable(func):
                 raise ValueError(f"object of type '{type(func).__qualname__}' is neither a callable nor a nested list of callables")
 
-            params = iter(inspect.signature(func).parameters.items())
-
-            if inspect.ismethod(func) or isinstance(func, Step):
-                # skip 'self', if this is a method
-                next(params)
-            else:
-                print('interesting - ', func)
-
-            for _, param in params:
-                defaults.setdefault(param.name, []).append((func, param.default))
+            for argname, def_ in func.extended_defaults().items():
+                if def_ is inspect._empty:
+                    defaults[argname] = inspect._empty
+                elif defaults.get(argname,None) is not inspect._empty:
+                    defaults[argname] = def_
 
     return defaults
 
@@ -397,10 +410,9 @@ def call_step(spec, kwargs):
 
     def call(func):
         # make a Call object with the subset of `kwargs`
-        sig = inspect.signature(func)
-        keys = available.intersection(sig.parameters)
+        keys = available.intersection(func.extended_args())
         params = dict(((k, kwargs[k]) for k in keys))
-        return util.Call(func, **params)
+        return util.Call(func.extended_call, **params)
 
     kws_out = {}
     caller, sequence = spec
@@ -419,44 +431,9 @@ def call_step(spec, kwargs):
     return caller, kws_out
 
 
-@util.hide_in_traceback
-def __call__():
-    # util._wrap_attribute will munge the call signature above for clean introspection in IDEs
-    items = dict(locals())
-    self = items.pop(next(iter(items.keys())))
-    return self.__call___wrapped(**items)
-
-
-class Multitask(util.InTestbed):
-    def __new__(cls, *sequence):
-        # Make a new subclass so that we can change its __call__ signature
-        cls = type('Experiment', (cls,), {})
-
-        sequence = [parse_sequence(seq) for seq in sequence]
-
-        defaults = collect_defaults(sequence)
-
-        params = list(defaults.keys())
-
-        # prune any defaults that are inconsistent across all cases
-        for param, uses in tuple(defaults.items()):
-            # ensure that default values are
-            unique = tuple(set([default for user, default in uses]))
-            if len(unique) > 1 or unique == (inspect._empty,):
-                del defaults[param]
-            else:
-                defaults[param] = unique[0]
-
-        util._wrap_attribute(cls, '__call__', __call__, tuple(params), {}, 0)
-        cls.__call__.__kwdefaults__ = defaults
-
-        # populate our new object
-        obj = object.__new__(cls)
-        obj.sequence = sequence
-        obj.defaults = defaults
-        obj.params = params
-
-        return obj
+class TestbedMethod(util.InTestbed):
+    def __init__(self):
+        self.to_template()
 
     def __call__(self, **kwargs):
         ret = {}
@@ -464,8 +441,69 @@ class Multitask(util.InTestbed):
         for i, sequence in enumerate(self.sequence):
             caller, step_kws = call_step(sequence, kwargs)
 
-            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__}: start {i+1}/{len(self.sequence)}")
+            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__}: start step {i+1}/{len(self.sequence)}")
             ret.update(caller(**step_kws) or {})
-            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__}: end {i+1}/{len(self.sequence)}")
+
+        core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
 
         return ret
+
+    @classmethod
+    def to_template(cls, path=None):
+        if path is None:
+            path = f"{cls.__objclass__.__qualname__}.{cls.__name__} template.csv"
+        print('write to ', path)
+        import pandas as pd
+        df = pd.DataFrame(columns=cls.params)
+        df.index.name = 'Condition name'
+        df.to_csv(path)
+
+    def from_csv(self, path, after=None):
+        import pandas as pd
+        table = pd.read_csv(path, index_col=0)
+        for row in table.index:
+            core.logger.info(f"Condition {row}")
+            self(**table.loc[row].to_dict())
+            if after is not None:
+                after()
+
+    def __repr__(self):
+        return f"<function {self.__name__}>"
+
+
+@util.hide_in_traceback
+def __call__():
+    # util.wrap_attribute will munge the call signature above for clean introspection in IDEs
+    items = dict(locals())
+    self = items.pop(next(iter(items.keys())))
+    return self.__call___wrapped(**items)
+
+
+class Multitask(util.InTestbed):
+    def __init__(self, *sequence):
+        self.sequence = [parse_sequence(seq) for seq in sequence]
+
+    def __init_testbed_class__(self, testbed_cls):
+        # determine the call signature for this new Multitask procedure
+        # needed to wait until now, because the signature depends on __name__ of each task
+        defaults = collect_defaults(self.sequence)
+        params = tuple(defaults.keys())  # *all* of the parameters, before pruning non-default params
+        defaults = dict([(arg, def_) for arg, def_ in defaults.items() if def_ is not inspect._empty])
+
+        # make a new callable object based on the aggregate. subclassing into a new class tricks some
+        # IDEs into showing the call signature.
+        cls = type(self.__name__, (TestbedMethod,),
+                   dict(sequence=self.sequence,
+                        params=params,
+                        defaults=defaults,
+                        __name__=self.__name__,
+                        __qualname__=testbed_cls.__name__+'.'+self.__name__,
+                        __objclass__=self.__objclass__))
+
+        util.wrap_attribute(cls, '__call__', __call__, fields=params, defaults=defaults,
+                            positional=0)
+
+        # The testbed takes this TestbedMethod instance in place of self
+        obj = object.__new__(cls)
+        obj.__init__()
+        return obj

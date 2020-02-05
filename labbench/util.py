@@ -26,7 +26,7 @@
 
 __all__ = [
            # "misc"
-           'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages', 
+           'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages', 'init_ide_hints',
 
            # concurrency and sequencing
            'concurrently', 'sequentially', 'Call', 'ConcurrentException',
@@ -36,7 +36,7 @@ __all__ = [
            'retry', 'until_timeout', 'sleep', 'stopwatch',
 
            # wrapper helpers
-           '_wrap_attribute',
+           'wrap_attribute',
 
            # traceback scrubbing
            'hide_in_traceback', '_force_full_traceback',
@@ -61,6 +61,13 @@ import sys
 import time
 import traceback
 
+import typing
+if typing.TYPE_CHECKING:
+    from dataclasses import dataclass as init_ide_hints
+else:
+    init_ide_hints = lambda x: x
+
+
 class InTestbed:
     """ Subclass this to act as a descriptor in a Testbed
 
@@ -83,15 +90,28 @@ class InTestbed:
         return self
 
     def __init_testbed__(self, testbed):
-        """ Called when the Testbed makes new instances.
+        """ Called when the Testbed is instantiated
         """
         pass
+
+    def __init_testbed_class__(self, testbed_cls):
+        """ Called after the Testbed class is instantiated; returns an object to be used in the Testbed namespace
+        """
+        return self
 
     def __str__(self):
         if self.__name__ is None:
             return self.__repr__()
         else:
             return self.__objclass__.__qualname__ + '.' + self.__name__
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
 
 class ConcurrentException(Exception):
     """ Raised on concurrency errors in `labbench.concurrently`
@@ -187,7 +207,7 @@ class _filtered_exc_info:
             raise
 
 
-def _wrap_attribute(cls,
+def wrap_attribute(cls,
                    name: str,
                    wrapper,
                    fields: list,
@@ -1328,6 +1348,6 @@ def accessed_attributes(method):
     self_name = func.args.args[0].arg
 
     def isselfattr(node):
-        return isinstance(node, ast.Attribute) and node.value.id == self_name
+        return isinstance(node, ast.Attribute) and getattr(node.value, 'id', None) == self_name
         
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})

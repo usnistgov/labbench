@@ -249,10 +249,10 @@ class Host(core.Device):
                         'log_formatter': log_formatter,
                         'repo': repo}
 
-        # Preload the git repo parameters, cuncurrently for speed
-        gits = [k for k in self.__traits__ if k.startswith('git')]
-        util.concurrently(**dict([(n,lambda: getattr(self, n)) for n in gits]))
-
+        # Preload the git repo parameters
+        for name in self.__traits__:
+            if name.startswith('git'):
+                getattr(self, name)
 
     @classmethod
     def __imports__(self):

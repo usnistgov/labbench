@@ -28,6 +28,7 @@ import unittest
 import importlib
 import sys
 import time
+from emulate import EmulatedVISADevice
 from contextlib import contextmanager
 if '..' not in sys.path:
     sys.path.insert(0, '..')
@@ -35,8 +36,14 @@ import labbench as lb
 import numpy as np
 lb = importlib.reload(lb)
 
+import typing
+if typing.TYPE_CHECKING:
+    from dataclasses import dataclass
+else:
+    dataclass = lambda x: x
 
-class LaggyInstrument(lb.EmulatedVISADevice):
+
+class LaggyInstrument(EmulatedVISADevice):
     """ A mock "instrument"
     with settings and states to
     demonstrate the process of setting
@@ -108,12 +115,16 @@ class Task2(lb.Task):
 
 class Task3(lb.Task):
     dev: LaggyInstrument
+    db: lb.SQLiteLogger
 
     def acquire(self, *, param2=7, param3):
         pass
 
     def fetch(self, *, param4):
         pass
+
+    def finish(self):
+        self.db()
 
 
 class MyTestbed(lb.Testbed):
@@ -149,14 +160,16 @@ class MyTestbed(lb.Testbed):
     )
 
     task3 = Task3(
-        dev=inst2
+        dev=inst2,
+        db=db
     )
 
     run = lb.Multitask(
         (task1.setup & task2.setup),  # executes these 2 methods concurrently
         (task1.arm),
         (task2.acquire, task3.acquire),  # executes these 2 sequentially
-        (task2.fetch & task3.fetch)
+        (task2.fetch & task3.fetch),
+        task3.finish,  # last, call db() to mark the end of a database row
     )
 
 
@@ -165,12 +178,15 @@ if __name__ == '__main__':
 
     with lb.stopwatch('test connection'):
         with MyTestbed() as testbed:
-            testbed.inst2.settings.delay = .07
-            for i in range(3):
-                # Run the experiment
-                ret = testbed.run(param1=0, param3=0, param4=0)
-
-                testbed.db()
+            testbed.inst2.settings.delay = 0.07
+            testbed.inst1.settings.delay = 0.12
+            testbed.run.from_csv('run.csv')
+            # for i in range(3):
+            #     # Run the experiment
+            #     ret = testbed.run(task1_param1=1, task2_param1=2, task3_param2=3,
+            #                       task3_param3=4, task2_param2=5, task3_param4=6)
+            #
+            #     testbed.db()
 
     df = lb.read(testbed.db.path+'/master.db')
     df.to_csv(testbed.db.path+'/master.csv')

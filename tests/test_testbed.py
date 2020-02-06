@@ -103,14 +103,13 @@ class Task2(lb.Task):
 
     def setup(self):
         return 'task 2 - setup'
-        pass
+        return self.dev.dict()
 
     def acquire(self, *, param1):
         return 'task 3 - acquire'
-        pass
 
     def fetch(self, *, param2=7):
-        return {'data 1': 4, 'data 2': 5}
+        return self.dev.fetch()
 
 
 class Task3(lb.Task):
@@ -121,7 +120,7 @@ class Task3(lb.Task):
         pass
 
     def fetch(self, *, param4):
-        pass
+        self.dev.fetch()
 
     def finish(self):
         self.db()
@@ -165,11 +164,11 @@ class MyTestbed(lb.Testbed):
     )
 
     run = lb.Multitask(
-        (task1.setup & task2.setup),  # executes these 2 methods concurrently
-        (task1.arm),
-        (task2.acquire, task3.acquire),  # executes these 2 sequentially
-        (task2.fetch & task3.fetch),
-        task3.finish,  # last, call db() to mark the end of a database row
+        setup=(task1.setup & task2.setup),  # executes these 2 methods concurrently
+        arm=(task1.arm),
+        acquire=(task2.acquire, task3.acquire),  # executes these 2 sequentially
+        fetch=(task2.fetch & task3.fetch),
+        finish=task3.finish,  # last, call db() to mark the end of a database row
     )
 
 

@@ -30,10 +30,14 @@ from . import _core as core
 from . import util as util
 from .data import LogAggregator, RelationalTableLogger
 from ._host import Host, Email
+from pathlib import Path
 from functools import wraps, update_wrapper
 from weakref import proxy
 import inspect
 import time
+
+
+EMPTY = inspect._empty
 
 
 def find_devices(testbed):
@@ -208,11 +212,13 @@ class Step:
     def __init__(self, owner, name):
         cls = owner.__class__
         obj = getattr(cls, name)
+        self.__wrapped__ = obj
         self.owner = owner
 
         # note the devices needed to execute this function
         available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
-        self.dependencies = available.intersection(util.accessed_attributes(obj))
+        accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)}
+        self.dependencies = available.intersection(accessed)
         self.args = list(inspect.signature(obj).parameters)[1:]
         self.parameters = list(inspect.signature(obj).parameters.values())[1:]
 
@@ -222,11 +228,19 @@ class Step:
         self.__name__ = name
         self.__qualname__ = getattr(obj, '__qualname__', obj.__class__.__qualname__)
 
-        self.__wrapped__ = obj
         self.__repr__ = obj.__repr__
 
-    def extended_defaults(self):
-        return dict([(k, v.default) for k, v in zip(self.extended_args(), self.parameters)])
+    def extended_signature(self):
+        """ return a mapping keyed on call parameter name that gives a list [default value, annotation value].
+            EMPTY is a sentinel value for "does not exist"
+        """
+        ext_args = self.extended_args()
+        signature = dict([(k, [v.default, EMPTY]) for k, v in zip(ext_args, self.parameters)])
+
+        for k, v in getattr(self.__wrapped__, '__annotations__', {}).items():
+            signature[k][1] = v
+
+        return signature
 
     def extended_args(self):
         return [(self.owner.__name__ + '_' + name) for name in self.args]
@@ -338,99 +352,6 @@ class Task(util.InTestbed):
             return repr(self)
 
 
-def parse_sequence(sequence):
-    if isinstance(sequence, (list, tuple)):
-        if sequence[0] == 'concurrent':
-            invoke = util.concurrently
-            sequence = sequence[1:]
-        else:
-            invoke = util.sequentially
-        sequence = list(sequence)
-
-    elif isinstance(sequence, Step):
-        invoke = util.sequentially
-        sequence = [sequence]
-
-    elif isinstance(sequence, util.InTestbed) and callable(sequence):
-        invoke = util.sequentially
-        sequence = [Step(sequence, '__call__')]
-
-    else:
-        typename = type(sequence).__qualname__
-        raise TypeError(f"object of type '{typename}' is neither a Task method nor a nested tuple/list")
-
-    # step through, if this is a sequence
-    for i in range(len(sequence)):
-        # validate replace each entry in the sequence with a parsed item
-        if isinstance(sequence[i], (list, tuple)):
-            sequence[i] = parse_sequence(sequence[i])
-        elif not isinstance(sequence[i], Step):
-            typename = type(sequence).__qualname__
-            raise TypeError(f"object of type '{typename}' is neither a "\
-                            f"Task method nor a nested tuple/list")
-
-    return invoke, sequence
-
-
-def collect_defaults(tree):
-    """ collect a dictionary of parameter default values
-
-    :param tree: nested list of calls that contains the parsed call tree
-    :return: dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
-        default_value is `inspect._empty` if there is no default.
-    """
-
-    defaults = {}
-
-    # collect the defaults
-    for caller, args in tree:
-        if caller in (util.concurrently, util.sequentially):
-            funcs = args
-        else:
-            raise ValueError(f"first element with type '{repr(caller)}' does not indicate lb.concurrently or lb.sequentially")
-
-        for func in funcs:
-            if isinstance(func, list):
-                defaults.update(collect_defaults(func))
-                continue
-            elif not callable(func):
-                raise ValueError(f"object of type '{type(func).__qualname__}' is neither a callable nor a nested list of callables")
-
-            for argname, def_ in func.extended_defaults().items():
-                if def_ is inspect._empty:
-                    defaults[argname] = inspect._empty
-                elif defaults.get(argname,None) is not inspect._empty:
-                    defaults[argname] = def_
-
-    return defaults
-
-
-def call_step(spec, kwargs):
-    available = set(kwargs.keys())
-
-    def call(func):
-        # make a Call object with the subset of `kwargs`
-        keys = available.intersection(func.extended_args())
-        params = dict(((k, kwargs[k]) for k in keys))
-        return util.Call(func.extended_call, **params)
-
-    kws_out = {}
-    caller, sequence = spec
-
-    for item in sequence:
-        if callable(item):
-            name = item.owner.__class__.__qualname__ + '_' + item.__name__
-            kws_out[name] = call(item)
-        elif isinstance(item, list):
-            kws_out[name] = call_step(item, kwargs)
-        else:
-            msg = f"unsupported type '{type(item).__qualname__}' " \
-                  f"in call sequence specification"
-            raise ValueError(msg)
-
-    return caller, kws_out
-
-
 class TestbedMethod(util.InTestbed):
     def __init__(self):
         self.to_template()
@@ -438,10 +359,10 @@ class TestbedMethod(util.InTestbed):
     def __call__(self, **kwargs):
         ret = {}
 
-        for i, sequence in enumerate(self.sequence):
-            caller, step_kws = call_step(sequence, kwargs)
+        for i, (name, sequence) in enumerate(self.sequence.items()):
+            caller, step_kws = self._call_step(sequence, kwargs)
 
-            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__}: start step {i+1}/{len(self.sequence)}")
+            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} '{name}' (step {i+1}/{len(self.sequence)})")
             ret.update(caller(**step_kws) or {})
 
         core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
@@ -452,7 +373,7 @@ class TestbedMethod(util.InTestbed):
     def to_template(cls, path=None):
         if path is None:
             path = f"{cls.__objclass__.__qualname__}.{cls.__name__} template.csv"
-        print('write to ', path)
+        core.logger.debug(f"writing csv template to {repr(path)}")
         import pandas as pd
         df = pd.DataFrame(columns=cls.params)
         df.index.name = 'Condition name'
@@ -461,11 +382,37 @@ class TestbedMethod(util.InTestbed):
     def from_csv(self, path, after=None):
         import pandas as pd
         table = pd.read_csv(path, index_col=0)
-        for row in table.index:
-            core.logger.info(f"Condition {row}")
+        for i, row in enumerate(table.index):
+            core.logger.info(f"{self.__objclass__.__qualname__}.{self.__name__} - begin '{row}' " \
+                             f"({i+1}/{len(table.index)}) from '{str(path)}'")
             self(**table.loc[row].to_dict())
             if after is not None:
                 after()
+
+    def _call_step(self, spec, kwargs):
+        available = set(kwargs.keys())
+
+        def call(func):
+            # make a Call object with the subset of `kwargs`
+            keys = available.intersection(func.extended_args())
+            params = dict(((k, kwargs[k]) for k in keys))
+            return util.Call(func.extended_call, **params)
+
+        kws_out = {}
+        caller, sequence = spec
+
+        for item in sequence:
+            if callable(item):
+                name = item.owner.__class__.__qualname__ + '_' + item.__name__
+                kws_out[name] = call(item)
+            elif isinstance(item, list):
+                kws_out[name] = self._call_step(item, kwargs)
+            else:
+                msg = f"unsupported type '{type(item).__qualname__}' " \
+                      f"in call sequence specification"
+                raise ValueError(msg)
+
+        return caller, kws_out
 
     def __repr__(self):
         return f"<function {self.__name__}>"
@@ -480,30 +427,155 @@ def __call__():
 
 
 class Multitask(util.InTestbed):
-    def __init__(self, *sequence):
-        self.sequence = [parse_sequence(seq) for seq in sequence]
+    def __init__(self, **sequence):
+        self.sequence = dict(((k, self._parse_sequence(seq)) for k, seq in sequence.items()))
 
     def __init_testbed_class__(self, testbed_cls):
         # determine the call signature for this new Multitask procedure
         # needed to wait until now, because the signature depends on __name__ of each task
-        defaults = collect_defaults(self.sequence)
-        params = tuple(defaults.keys())  # *all* of the parameters, before pruning non-default params
-        defaults = dict([(arg, def_) for arg, def_ in defaults.items() if def_ is not inspect._empty])
+        signatures = self._collect_signatures(tuple(self.sequence.values()))
+        params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default params
+        defaults = dict([(arg, sig[0]) for arg, sig in signatures.items() if sig[0] is not EMPTY])
+        annots = dict([(arg, sig[1]) for arg, sig in signatures.items() if sig[1] is not EMPTY])
 
-        # make a new callable object based on the aggregate. subclassing into a new class tricks some
-        # IDEs into showing the call signature.
+        # this builds the callable object with a newly-defined subclass.
+        # this tricks some IDEs into showing the call signature.
         cls = type(self.__name__, (TestbedMethod,),
                    dict(sequence=self.sequence,
                         params=params,
                         defaults=defaults,
+                        annotations=annots,
+                        dependency_tree=self._dependency_tree(),
                         __name__=self.__name__,
                         __qualname__=testbed_cls.__name__+'.'+self.__name__,
                         __objclass__=self.__objclass__))
 
         util.wrap_attribute(cls, '__call__', __call__, fields=params, defaults=defaults,
+                            annotations=annots,
                             positional=0)
 
         # The testbed takes this TestbedMethod instance in place of self
         obj = object.__new__(cls)
         obj.__init__()
         return obj
+
+    def _parse_sequence(self, sequence):
+        if isinstance(sequence, (list, tuple)):
+            if sequence[0] == 'concurrent':
+                invoke = util.concurrently
+                sequence = sequence[1:]
+            else:
+                invoke = util.sequentially
+            sequence = list(sequence)
+
+        elif isinstance(sequence, Step):
+            invoke = util.sequentially
+            sequence = [sequence]
+
+        elif isinstance(sequence, util.InTestbed) and callable(sequence):
+            invoke = util.sequentially
+            sequence = [Step(sequence, '__call__')]
+
+        else:
+            typename = type(sequence).__qualname__
+            raise TypeError(f"object of type '{typename}' is neither a Task method nor a nested tuple/list")
+
+        # step through, if this is a sequence
+        for i in range(len(sequence)):
+            # validate replace each entry in the sequence with a parsed item
+            if isinstance(sequence[i], (list, tuple)):
+                sequence[i] = self._parse_sequence(sequence[i])
+            elif not isinstance(sequence[i], Step):
+                typename = type(sequence).__qualname__
+                raise TypeError(f"object of type '{typename}' is neither a "
+                                f"Task method nor a nested tuple/list")
+
+        return invoke, sequence
+
+    def _dependency_tree(self, concurrent_parent=None, call_tree=None, dependency_tree={}):
+        """ generate a list of Device dependencies in each call
+        """
+
+        if call_tree is None:
+            call_tree = tuple(self.sequence.values())
+
+        for caller, args in call_tree:
+            # dependencies are keyed on the arguments of the parent call to util.concurrently.
+            if concurrent_parent:
+                next_parent = concurrent_parent
+            elif caller is util.sequentially:
+                next_parent = None
+            elif caller is util.concurrently:
+                next_parent = tuple(args)
+            else:
+                raise ValueError(f"unhandled caller '{repr(caller)}'")
+
+            print(caller, args, concurrent_parent, next_parent)
+
+            # if caller is not util.concurrently and not concurrent_parent:
+            #     # no risk of concurrency here
+            #     continue
+            # now caller is util.sequentially or concurrent_parent is False
+            
+            for arg in args:
+                if isinstance(arg, list):
+                    self._group_dependencies(concurrent_parent=next_parent,
+                                             call_tree=arg,
+                                             dependency_tree=dependency_tree)
+
+                elif isinstance(arg, Step):
+                    print('step')
+                    for child_dep in arg.dependencies:
+                        print('...', arg, child_dep)
+                        dependency_tree[next_parent].setdefault(child_dep, []).append(arg)
+
+                else:
+                    raise TypeError(f"parsed tree should not include arguments of type '{type(arg).__qualname__}'")
+
+        return dependency_tree
+
+    def _collect_signatures(self, tree=None):
+        """ collect a dictionary of parameter default values
+
+        :param tree: nested list of calls that contains the parsed call tree
+        :return: dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
+            default_value is `EMPTY` if there is no default.
+        """
+
+        if tree is None:
+            tree = self.sequence
+
+        signatures = {}
+
+        # collect the defaults
+        for caller, args in tree:
+            if caller in (util.concurrently, util.sequentially):
+                funcs = args
+            else:
+                raise ValueError(f"first element with type '{repr(caller)}' does not indicate lb.concurrently or lb.sequentially")
+
+            for func in funcs:
+                if isinstance(func, list):
+                    signatures.update(self._collect_signatures(func))
+                    continue
+                elif not callable(func):
+                    raise ValueError(f"object of type '{type(func).__qualname__}' is neither a callable nor a nested list of callables")
+
+                # pull in a dictionary of signature values (default, annotation) with EMPTY as a null sentinel value
+                for argname, (def_, annot) in func.extended_signature().items():
+                    prev_def_, prev_annot = signatures.setdefault(argname, [EMPTY, EMPTY])
+
+                    if prev_annot is not EMPTY and annot is not EMPTY and prev_annot != annot:
+                        msg = f"conflicting type annotations {repr(prev_annot)}, {repr(annot)} for argument '{argname}'"
+                        raise ValueError(msg)
+                    else:
+                        signatures[argname][1] = annot
+
+                    if def_ is EMPTY:
+                        signatures[argname][0] = EMPTY
+                    elif prev_def_ is not EMPTY and def_ != prev_def:
+                        signatures[argname][0] = EMPTY
+                    elif prev_def_ is not EMPTY:
+                        signatures[argname][0] = def_
+
+        return signatures

@@ -44,7 +44,7 @@ __all__ = ['LogAggregator', 'RelationalTableLogger',
            'CSVLogger', 'SQLiteLogger',
            'read', 'read_relational', 'to_feather']
 
-class LogAggregator(util.InTestbed):
+class LogAggregator(util.Ownable):
     """ Aggregate state information from multiple devices. This can be the basis
         for automatic database logging.
     """
@@ -70,7 +70,7 @@ class LogAggregator(util.InTestbed):
     def __repr__(self):
         return f"{self.__class__.__qualname__}()"
         
-    def __init_testbed__(self, testbed):
+    def __owner_init__(self, testbed):
         # If `self` lives in a Testbed, this is called.
         # Observe changes in its Device instances
         self.set_device_labels(**testbed._devices)
@@ -105,7 +105,9 @@ class LogAggregator(util.InTestbed):
             :returns: None
         """
         for label, device in list(mapping.items()):
-            if not isinstance(device, (Device, Device.settings)):
+            if isinstance(device, LogAggregator):
+                pass
+            elif not isinstance(device, (Device, Device.settings)):
                 raise ValueError(f'{device} is not an instance of Device')
 
         self.name.update([(v, k) for k, v in list(mapping.items())])

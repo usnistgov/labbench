@@ -1046,7 +1046,7 @@ else:
 
 
 @init_ide_hints
-class Device(HasStates, util.InTestbed):
+class Device(HasStates, util.Ownable):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
         driver.

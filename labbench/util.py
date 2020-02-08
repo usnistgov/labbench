@@ -42,7 +42,7 @@ __all__ = [
            'hide_in_traceback', '_force_full_traceback',
 
            # helper objects
-           'InTestbed',
+           'Ownable',
            ]
 
 from . import _core as core
@@ -68,33 +68,25 @@ else:
     init_ide_hints = lambda x: x
 
 
-class InTestbed:
-    """ Subclass this to act as a descriptor in a Testbed
+class Ownable:
+    """ Subclass to pull in name from an owning class
 
     """
     __objclass__ = None
 
     def __set_name__(self, owner_cls, name):
-        try:
-            from ._testbed import Testbed
-            if issubclass(owner_cls, Testbed) and hasattr(self, '__enter__'):
-                owner_cls._contexts[name] = self
-            self.__objclass__ = owner_cls
-            self.__name__ = name
-
-        except BaseException as e:
-            print(e)
-            raise
+        self.__objclass__ = owner_cls
+        self.__name__ = name
 
     def __get__(self, owner, owner_cls=None):
         return self
 
-    def __init_testbed__(self, testbed):
+    def __owner_init__(self, testbed):
         """ Called when the Testbed is instantiated
         """
         pass
 
-    def __init_testbed_class__(self, testbed_cls):
+    def __owner_subclass__(self, testbed_cls):
         """ Called after the Testbed class is instantiated; returns an object to be used in the Testbed namespace
         """
         return self
@@ -104,12 +96,6 @@ class InTestbed:
             return self.__repr__()
         else:
             return self.__objclass__.__qualname__ + '.' + self.__name__
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
 
 
 

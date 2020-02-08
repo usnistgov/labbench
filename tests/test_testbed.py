@@ -36,12 +36,6 @@ import labbench as lb
 import numpy as np
 lb = importlib.reload(lb)
 
-import typing
-if typing.TYPE_CHECKING:
-    from dataclasses import dataclass
-else:
-    dataclass = lambda x: x
-
 
 class LaggyInstrument(EmulatedVISADevice):
     """ A mock "instrument"

@@ -35,174 +35,84 @@ from functools import wraps, update_wrapper
 from weakref import proxy
 import inspect
 import time
+import traceback
 
 
 EMPTY = inspect._empty
 
 
-def find_devices(testbed):
-    devices = {}
+# def find_devices(testbed):
+#     devices = {}
+#
+#     for name, obj in testbed._contexts.items():
+#         if isinstance(obj, core.Device):
+#             if name in devices and devices[name] is not obj:
+#                 raise AttributeError(f"name conflict between {repr(obj)} and {repr(devices[name])}")
+#             devices[name] = obj
+#         elif isinstance(obj, Testbed):
+#             new = obj._devices
+#
+#             conflicts = set(devices.keys()).intersection(new.keys())
+#             if len(conflicts) > 0:
+#                 raise AttributeError(f"name conflict(s) {tuple(conflicts)} in child testbed {obj}")
+#
+#             devices.update(new)
+#
+#     return devices
 
-    for name, obj in testbed._contexts.items():
-        if isinstance(obj, core.Device):
-            if name in devices and devices[name] is not obj:
-                raise AttributeError(f"name conflict between {repr(obj)} and {repr(devices[name])}")
-            devices[name] = obj
-        elif isinstance(obj, Testbed):
-            new = obj._devices
 
-            conflicts = set(devices.keys()).intersection(new.keys())
-            if len(conflicts) > 0:
-                raise AttributeError(f"name conflict(s) {tuple(conflicts)} in child testbed {obj}")
-
-            devices.update(new)
-
-    return devices
-
-class Testbed:
-    """ A Testbed is a container for devices, data managers, and test steps.
-
-        The Testbed object provides connection management for
-        all devices and data managers for `with` block::
-
-            with Testbed() as testbed:
-                # use the testbed here
-                pass
-
-        For functional validation, it is also possible to open only a subset
-        of devices like this::
-
-            testbed = Testbed()
-            with testbed.dev1, testbed.dev2:
-                # use the testbed.dev1 and testbed.dev2 here
-                pass
-
-        The following syntax creates a new Testbed class for an
-        experiment:
-
-            import labbench as lb
-
-            class MyTestbed(lb.Testbed):
-                db = lb.SQLiteManager()
-                sa = MySpectrumAnalyzer()
-
-                spectrogram = Spectrogram(db=db, sa=sa)
-
-        method to define the Device or database manager instances, and
-        a custom `startup` method to implement custom code to set up the
-        testbed after all Device instances are open.
+class Connections:
     """
-
-    _contexts = {}
-    __cm = None
-    
-    # Specify context manager types to open before others
-    # and their order
+    Add context management to an owner to support entry and exit from multiple connections
+    """
     enter_first = Email, LogAggregator, Host
 
-    def __init_subclass__(cls, concurrent=True):
-        cls._concurrent = concurrent
-        cls._devices = find_devices(cls)
-        for name, c in dict(cls._contexts).items():
-            c = c.__init_testbed_class__(cls)
-            cls._contexts[name] = c
-            setattr(cls, name, c)
+    def __init__(self, owner,
+                 *,
+                 concurrent: bool = True,
+                 enter_first: tuple = enter_first,
+                 ):
+        self.concurrent = concurrent
+        self.contexts = dict(owner._devices, **owner._loggers)
+        self.manager = None
+        self.enter_first = enter_first
 
-
-    def __init__(self, config=None):
-        self.config = config
-
-        for name, context in self._contexts.items():
-            context.__init_testbed__(self)
-
-        self.make()
+        self.owner = owner
+        owner.__enter__ = self.__enter__
+        owner.__exit__ = self.__exit__
 
     def __enter__(self):
-        cms = dict(self._contexts)
-
         # Pull any objects of types listed by self.enter_first, in the
         # order of (1) the types listed in self.enter_first, then (2) the order
         # they appear in objs
         first_contexts = dict()
+        other_contexts = dict(self.contexts)
         for cls in self.enter_first:
-            for attr, obj in dict(cms).items():
+            for attr, obj in self.contexts.items():
                 if isinstance(obj, cls):
-                    first_contexts[attr] = cms.pop(attr)
+                    first_contexts[attr] = other_contexts.pop(attr)
 
-        other_contexts = cms
-
-        # Enforce the ordering set by self.enter_first
-        if self._concurrent:
-            # Any remaining context managers will be run concurrently if concurrent=True
+        # enforce the ordering given by self.enter_first
+        if self.concurrent:
+            # any remaining context managers will be run concurrently if concurrent=True
             others = util.concurrently(name=f'', **other_contexts)
             contexts = dict(first_contexts, others=others)
         else:
-            # Otherwise, run them sequentially
+            # otherwise, run them sequentially
             contexts = dict(first_contexts, **other_contexts)
 
-        self.__cm = util.sequentially(name=f'{self.__class__.__qualname__} connections', **contexts)
+        self.manager = util.sequentially(name=f'{self.__class__.__qualname__} connection', **contexts)
 
-        self.__cm.__enter__()
-        self.startup()
-        return self
-    
+        self.manager.__enter__()
+
+        return self.owner
+
     def __exit__(self, *args):
         try:
-            self.cleanup()
-        except BaseException as e:
-            ex = e
-        else:
-            ex = None
+            self.owner.cleanup(self.owner)
         finally:
-            ret = self.__cm.__exit__(*args)
-            if ex is None:
-                self.after()
-            else:
-                raise ex
-            return ret
-        
-    def __repr__(self):
-        return f'{self.__class__.__qualname__}()'
-
-    def make(self):
-        """ Implement this method in a subclass of Testbed. It should
-            set drivers as attributes of the Testbed instance, for example::
-
-                self.dev1 = MyDevice()
-
-            This is called automatically when when the testbed class
-            is instantiated.
-        """
-        pass
-
-    def startup(self):
-        """ This is called automatically after open if the testbed is
-            opened using the `with` statement block.
-
-            Implement any custom code here in Testbed subclasses to
-            implement startup of the testbed given open Device
-            instances.
-        """
-        pass
-
-    def cleanup(self):
-        """ This is called automatically immediately before close if the
-            testbed is opened using the `with` context block.
-            
-            This is called even if the `with` context is left as a result of
-            an exception.
-
-            Implement any custom code here in Testbed subclasses to
-            implement teardown of the testbed given open Device
-            instances.
-        """
-        pass
-    
-    def after(self):
-        """ This is called automatically after open, if no exceptions
-            were raised.
-        """
-        pass
+            ret = self.manager.__exit__(*args)
+        return ret
 
 
 class Step:
@@ -265,7 +175,7 @@ class Step:
         if len(closed) > 0:
             closed = ','.join(closed)
             label = self.__class__.__qualname__ + '.' + self.__name__
-            raise ConnectionError(f"devices {closed} must be connected to invoke {self.label}")
+            raise ConnectionsError(f"devices {closed} must be connected to invoke {self.label}")
 
         # invoke the wrapped function
         owner_name = str(self.owner)
@@ -291,36 +201,78 @@ class Step:
     __str__ = __repr__
 
 
-class Task(util.InTestbed):
-    """ Subclass this to define experimental procedures for groups of Devices in a Testbed.
-    """
-    __steps__ = dict()
+class Owner:
+    def __init_subclass__(cls, concurrent: bool = True):
+        super().__init_subclass__()
 
-    def __init_subclass__(cls):
-        # By introspection, identify the methods that define test steps
-        cls.__steps__ = dict(((k, v) for k, v in cls.__dict__.items()\
-                              if callable(v) and k not in Task.__dict__))
+        cls._devices = {}
+        cls._loggers = {}
+        cls._tasks = {}
+
+        # prepare and register owned attributes
+        for name, obj in dict(cls.__dict__).items():
+            if not isinstance(obj, util.Ownable):
+                continue
+
+            obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
+            obj = obj.__owner_subclass__(cls)
+            if isinstance(obj, core.Device):
+                cls._devices[name] = obj
+            elif isinstance(obj, (LogAggregator, RelationalTableLogger)):
+                cls._loggers[name] = obj
+            elif isinstance(obj, Task):
+                cls._tasks[name] = obj
+
+            setattr(cls, name, obj)
+
+        # register the class as a context handler for the devices and loggers
+        Connections(cls, concurrent=concurrent)
+
+    def __init__(self):
+        for lookup in self._devices, self._tasks, self._loggers:
+            for name, obj in lookup.items():
+                obj.__owner_init__(self)
+
+
+class Task(Owner, util.Ownable):
+    """ Base class for experimental procedures for groups of Devices in a Testbed.
+    """
+
+    def __init_subclass__(cls, concurrent=True):
+        super().__init_subclass__(concurrent=concurrent)
+
+        # register public methods as test steps
+        cls._steps = dict(((k, v) for k, v in cls.__dict__.items()
+                           if callable(v) and not k.startswith('_')))
 
         # include annotations from parent classes
         cls.__annotations__ = dict(getattr(super(), '__annotations__', {}),
                                    **getattr(cls, '__annotations__', {}))
         cls.__init__.__annotations__ = cls.__annotations__
 
-        # sentinel values for annotations outside this class
-        for name in cls.__annotations__:
-            if name not in cls.__dict__:
-                setattr(cls, name, None)
+        # sentinel values for each annotations (largely to support IDE introspection)
+        for name, annot_cls in cls.__annotations__.items():
+            if name in cls._steps:
+                clsname = cls.__qualname__
+                raise AttributeError(f"'{clsname}' device annotation and method conflict for attribute '{name}'")
+            else:
+                setattr(cls, name, annot_cls())
 
     def __init__(self, **devices):
         # a fresh mapping to modify without changing the parent
-        devices = dict(devices)
+        super().__init__()
 
-        # set devices in self
+        # update context management with the given devices
+        self._devices = devices
+        Connections(self)
+
+        # match the given devices to annotations
+        devices = dict(devices)
         for name, devtype in self.__annotations__.items():
             try:
                 dev = devices.pop(name)
             except KeyError:
-                raise KeyError(f"{self.__class__.__qualname__} is missing required argument '{name}'")
+                raise NameError(f"{self.__class__.__qualname__} is missing required argument '{name}'")
             if not isinstance(dev, devtype):
                 msg = f"argument '{name}' is not an instance of '{devtype.__qualname__}'"
                 raise AttributeError(msg)
@@ -330,23 +282,23 @@ class Task(util.InTestbed):
         if len(devices) > 0:
             raise ValueError(f"{tuple(devices.keys())} are invalid arguments")
 
-        # replace self.__steps__ with new mapping of wrappers
-        self.__steps__ = dict(((k, Step(self, k)) for k in self.__steps__))
+        # replace self._steps with new mapping of wrappers
+        self._steps = dict(((k, Step(self, k)) for k in self._steps))
 
     def __getattribute__(self, item):
-        if item != '__steps__' and item in self.__steps__:
-            return self.__steps__[item]
+        if item != '_steps' and item in self._steps:
+            return self._steps[item]
         else:
             return super().__getattribute__(item)
 
     def __getitem__(self, item):
-        return self.__steps__[item]
+        return self._steps[item]
 
     def __len__(self):
-        return len(self.__steps__)
+        return len(self._steps)
 
     def __iter__(self):
-        return (getattr(self, k) for k in self.__steps__)
+        return (getattr(self, k) for k in self._steps)
 
     def __repr__(self):
         return repr(self.__wrapped__)
@@ -357,8 +309,13 @@ class Task(util.InTestbed):
         else:
             return repr(self)
 
+    def cleanup(self):
+        """ This is called on disconnect by the context management in self or in an owning testbed
+        """
+        pass
 
-class TestbedMethod(util.InTestbed):
+
+class TestbedMethod(util.Ownable):
     def __init__(self):
         self.to_template()
 
@@ -432,13 +389,15 @@ def __call__():
     return self.__call___wrapped(**items)
 
 
-class Multitask(util.InTestbed):
+class Multitask(util.Ownable):
     def __init__(self, **sequence):
         self.sequence = dict(((k, self._parse_sequence(seq)) for k, seq in sequence.items()))
 
-    def __init_testbed_class__(self, testbed_cls):
+    def __owner_subclass__(self, testbed_cls):
+        # initialization on the parent class definition
+        # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
+
         # determine the call signature for this new Multitask procedure
-        # needed to wait until now, because the signature depends on __name__ of each task
         signatures = self._collect_signatures(tuple(self.sequence.values()))
         params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default params
         defaults = dict([(arg, sig[0]) for arg, sig in signatures.items() if sig[0] is not EMPTY])
@@ -478,7 +437,7 @@ class Multitask(util.InTestbed):
             invoke = util.sequentially
             sequence = [sequence]
 
-        elif isinstance(sequence, util.InTestbed) and callable(sequence):
+        elif isinstance(sequence, util.Ownable) and callable(sequence):
             invoke = util.sequentially
             sequence = [Step(sequence, '__call__')]
 
@@ -581,3 +540,101 @@ class Multitask(util.InTestbed):
                         signatures[argname][0] = def_
 
         return signatures
+
+
+class Testbed(Owner):
+    """ A Testbed is a container for devices, data managers, and test steps.
+
+        The Testbed object provides connection management for
+        all devices and data managers for `with` block::
+
+            with Testbed() as testbed:
+                # use the testbed here
+                pass
+
+        For functional validation, it is also possible to open only a subset
+        of devices like this::
+
+            testbed = Testbed()
+            with testbed.dev1, testbed.dev2:
+                # use the testbed.dev1 and testbed.dev2 here
+                pass
+
+        The following syntax creates a new Testbed class for an
+        experiment:
+
+            import labbench as lb
+
+            class MyTestbed(lb.Testbed):
+                db = lb.SQLiteManager()
+                sa = MySpectrumAnalyzer()
+
+                spectrogram = Spectrogram(db=db, sa=sa)
+
+        method to define the Device or database manager instances, and
+        a custom `startup` method to implement custom code to set up the
+        testbed after all Device instances are open.
+    """
+
+    # Specify context manager types to open before others
+    # and their order
+    def __init_subclass__(cls, concurrent: bool = True):
+        super().__init_subclass__()
+
+    # def __new__(cls, from_module=None):
+    #     if from_module is None:
+    #         return cls
+    #     if not inspect.ismodule(from_module):
+    #         raise TypeError(f"object of type '{type(from_module)}' is not a module")
+    #
+    #     # pull in only dictionaries (for config) and instances of Device, Task, etc
+    #     namespace = dict(((attr, obj) for attr, obj in from_module.__dict__.items()
+    #                       if isinstance(obj, (util.Ownable, dict)) and not attr.startswith('_')))
+    #
+    #     # block attribute overrides
+    #     name_conflicts = set(namespace).intersection(cls.__dict__)
+    #     if len(name_conflicts) > 0:
+    #         raise NameError(f"names {name_conflicts} in module '{from_module.__name__}' "
+    #                         f"conflict with attributes of '{cls.__qualname__}'")
+    #
+    #     # subclass into a new Testbed
+    #     newcls = type(cls.__name__, (cls,), dict(cls.__dict__, **namespace))
+    #     return object.__new__(newcls)
+
+    def __repr__(self):
+        return f'{self.__class__.__qualname__}()'
+
+    @classmethod
+    def _from_module(cls, path_or_module):
+        """
+        Return a new Testbed subclass composed of any instances of Device, Task, data loggers, or dicts contained
+        in a python module namespace.
+
+        :param path_or_module: a string containing the module to import, or a module object that is already imported
+        :return: class that is a subclass of Testbed
+        """
+        if isinstance(path_or_module, str):
+            import importlib
+            path_or_module = importlib.import_module(path_or_module)
+        elif not inspect.ismodule(path_or_module):
+            raise TypeError(f"object of type '{type(path_or_module)}' is not a module")
+
+        # pull in only dictionaries (for config) and instances of Device, Task, etc
+        namespace = dict(((attr, obj) for attr, obj in path_or_module.__dict__.items()
+                          if isinstance(obj, (util.Ownable, dict)) and not attr.startswith('_')))
+
+        # block attribute overrides
+        name_conflicts = set(namespace).intersection(cls.__dict__)
+        if len(name_conflicts) > 0:
+            raise NameError(f"names {name_conflicts} in module '{path_or_module.__name__}' "
+                            f"conflict with attributes of '{cls.__qualname__}'")
+
+        # subclass into a new Testbed
+        return type(cls.__name__, (cls,), dict(cls.__dict__, **namespace))
+
+    def cleanup(self):
+        for task in self._tasks.values():
+            try:
+                task.cleanup()
+            except BaseException as e:
+                traceback.print_exc()

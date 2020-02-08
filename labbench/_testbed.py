@@ -207,7 +207,9 @@ class Testbed:
 
 class Step:
     """
-    Wrapper function that Task applies to its methods, permitting to permit '&' notation for Multitask definitions
+    Task uses this wrapper to pre-load introspection on its objects, support '&' notation for
+    Multitask definitions. It is an internal implementation detail that is not meant to be used outside
+    of here, so it is not exported in __all__.
     """
     def __init__(self, owner, name):
         cls = owner.__class__
@@ -215,7 +217,7 @@ class Step:
         self.__wrapped__ = obj
         self.owner = owner
 
-        # note the devices needed to execute this function
+        # note the call signature and device dependencies needed to execute this function
         available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
         accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)}
         self.dependencies = available.intersection(accessed)
@@ -224,10 +226,10 @@ class Step:
 
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
+        # impersonate obj
         self.__doc__ = obj.__doc__
         self.__name__ = name
         self.__qualname__ = getattr(obj, '__qualname__', obj.__class__.__qualname__)
-
         self.__repr__ = obj.__repr__
 
     def extended_signature(self):

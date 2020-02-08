@@ -37,7 +37,7 @@ from ._testbed import *
 from . import data
 from . import util
 
-# adjusting __module__ for the globals makes cleaner repr() and docs
+# scrub __module__ for cleaner repr() calls and documentation
 for _obj in dict(locals()).values():
     if getattr(_obj, '__module__', '').startswith('labbench.'):
         _obj.__module__ = 'labbench'

@@ -216,11 +216,18 @@ class Step:
         self.owner = owner
 
         # note the devices needed to execute this function
-        available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
-        accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)}
-        self.dependencies = available.intersection(accessed)
+        if isinstance(owner, Task):
+            available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
+            accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)}
+            self.dependencies = available.intersection(accessed)
+        else:
+            self.dependencies = set()
         self.args = list(inspect.signature(obj).parameters)[1:]
-        self.parameters = list(inspect.signature(obj).parameters.values())[1:]
+
+        # Ignore *args and **kwargs parameters
+        skip_kinds = inspect._ParameterKind.VAR_KEYWORD, inspect._ParameterKind.VAR_POSITIONAL
+        all_parameters = inspect.signature(obj).parameters.values()
+        self.parameters = list((p for p in all_parameters if p.kind not in skip_kinds))[1:]
 
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
@@ -254,8 +261,7 @@ class Step:
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # ensure that required devices are connected
-        closed = [name for name in self.dependencies
-                  if not getattr(self.owner, name).connected]
+        closed = [dev for dev in self.dependencies if not dev.connected]
         if len(closed) > 0:
             closed = ','.join(closed)
             label = self.__class__.__qualname__ + '.' + self.__name__
@@ -362,7 +368,7 @@ class TestbedMethod(util.InTestbed):
         for i, (name, sequence) in enumerate(self.sequence.items()):
             caller, step_kws = self._call_step(sequence, kwargs)
 
-            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} '{name}' (step {i+1}/{len(self.sequence)})")
+            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
             ret.update(caller(**step_kws) or {})
 
         core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
@@ -383,8 +389,8 @@ class TestbedMethod(util.InTestbed):
         import pandas as pd
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            core.logger.info(f"{self.__objclass__.__qualname__}.{self.__name__} - begin '{row}' " \
-                             f"({i+1}/{len(table.index)}) from '{str(path)}'")
+            core.logger.info(f"{self.__objclass__.__qualname__}.{self.__name__} from '{str(path)}' "
+                             f"- '{row}' ({i+1}/{len(table.index)})")
             self(**table.loc[row].to_dict())
             if after is not None:
                 after()
@@ -510,8 +516,6 @@ class Multitask(util.InTestbed):
             else:
                 raise ValueError(f"unhandled caller '{repr(caller)}'")
 
-            print(caller, args, concurrent_parent, next_parent)
-
             # if caller is not util.concurrently and not concurrent_parent:
             #     # no risk of concurrency here
             #     continue
@@ -524,10 +528,8 @@ class Multitask(util.InTestbed):
                                              dependency_tree=dependency_tree)
 
                 elif isinstance(arg, Step):
-                    print('step')
                     for child_dep in arg.dependencies:
-                        print('...', arg, child_dep)
-                        dependency_tree[next_parent].setdefault(child_dep, []).append(arg)
+                        dependency_tree.setdefault(next_parent,{}).setdefault(child_dep, []).append(arg)
 
                 else:
                     raise TypeError(f"parsed tree should not include arguments of type '{type(arg).__qualname__}'")

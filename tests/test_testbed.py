@@ -114,16 +114,12 @@ class Task2(lb.Task):
 
 class Task3(lb.Task):
     dev: LaggyInstrument
-    db: lb.SQLiteLogger
 
     def acquire(self, *, param2=7, param3):
         pass
 
     def fetch(self, *, param4):
         self.dev.fetch()
-
-    def finish(self):
-        self.db()
 
 
 class MyTestbed(lb.Testbed):
@@ -138,37 +134,21 @@ class MyTestbed(lb.Testbed):
         tar=False                       # `True` to embed relational data folders within `data.tar`
     )
 
-    inst1 = LaggyInstrument(
-        resource='a',
-        delay=.12
-    )
-
-    inst2 = LaggyInstrument(
-        resource='b',
-        delay=.06
-    )
+    # Devices
+    inst1 = LaggyInstrument(resource='a', delay=.12)
+    inst2 = LaggyInstrument(resource='b', delay=.06)
 
     # Test procedures
-    task1 = Task1(
-        dev1=inst1,
-        dev2=inst2
-    )
-
-    task2 = Task2(
-        dev=inst1
-    )
-
-    task3 = Task3(
-        dev=inst2,
-        db=db
-    )
+    task1 = Task1(dev1=inst1, dev2=inst2)
+    task2 = Task2(dev=inst1)
+    task3 = Task3(dev=inst2)
 
     run = lb.Multitask(
         setup=(task1.setup & task2.setup),  # executes these 2 methods concurrently
         arm=(task1.arm),
         acquire=(task2.acquire, task3.acquire),  # executes these 2 sequentially
         fetch=(task2.fetch & task3.fetch),
-        finish=task3.finish,  # last, call db() to mark the end of a database row
+        finish=db,  # db() marks the end of a database row
     )
 
 

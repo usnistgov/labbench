@@ -81,7 +81,7 @@ class LaggyInstrument(EmulatedVISADevice):
             1 / 0
 
 
-class Task1(lb.Task):
+class Bench1(lb.Bench):
     dev1: LaggyInstrument
     dev2: LaggyInstrument
 
@@ -92,21 +92,21 @@ class Task1(lb.Task):
         pass
 
 
-class Task2(lb.Task):
+class Bench2(lb.Bench):
     dev: LaggyInstrument
 
     def setup(self):
-        return 'task 2 - setup'
+        return 'bench 2 - setup'
         return self.dev.dict()
 
     def acquire(self, *, param1):
-        return 'task 3 - acquire'
+        return 'bench 3 - acquire'
 
     def fetch(self, *, param2=7):
         return self.dev.fetch()
 
 
-class Task3(lb.Task):
+class Bench3(lb.Bench):
     dev: LaggyInstrument
 
     def acquire(self, *, param2=7, param3):
@@ -116,8 +116,8 @@ class Task3(lb.Task):
         self.dev.fetch()
 
 
-class MyTestbed(lb.Testbed):
-    db = lb.SQLiteLogger(
+class MyBench(lb.Bench):
+    db: lb.data.LogAggregator = lb.SQLiteLogger(
         'data',                         # Path to new directory that will contain containing all files
         overwrite=False,                # `True` --- delete existing master database; `False` --- append
         text_relational_min=1024,       # Minimum text string length that triggers relational storage
@@ -129,19 +129,19 @@ class MyTestbed(lb.Testbed):
     )
 
     # Devices
-    inst1 = LaggyInstrument(resource='a', delay=.12)
-    inst2 = LaggyInstrument(resource='b', delay=.06)
+    inst1: LaggyInstrument = LaggyInstrument(resource='a', delay=.12)
+    inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=.06)
 
     # Test procedures
-    task1 = Task1(dev1=inst1, dev2=inst2)
-    task2 = Task2(dev=inst1)
-    task3 = Task3(dev=inst2)
+    bench1 = Bench1(dev1=inst1, dev2=inst2)
+    bench2 = Bench2(dev=inst1)
+    bench3 = Bench3(dev=inst2)
 
     run = lb.Multitask(
-        setup=(task1.setup & task2.setup),  # executes these 2 methods concurrently
-        arm=(task1.arm),
-        acquire=(task2.acquire, task3.acquire),  # executes these 2 sequentially
-        fetch=(task2.fetch & task3.fetch),
+        setup=(bench1.setup & bench2.setup),  # executes these 2 methods concurrently
+        arm=(bench1.arm),
+        acquire=(bench2.acquire, bench3.acquire),  # executes these 2 sequentially
+        fetch=(bench2.fetch & bench3.fetch),
         finish=db,  # db() marks the end of a database row
     )
 
@@ -150,14 +150,15 @@ if __name__ == '__main__':
     lb.show_messages('debug')
 
     with lb.stopwatch('test connection'):
-        with MyTestbed() as testbed:
+        # NewBench = lb.Bench._from_module('module_as_testbed')
+        with MyBench() as testbed:
             testbed.inst2.settings.delay = 0.07
             testbed.inst1.settings.delay = 0.12
             testbed.run.from_csv('run.csv')
             # for i in range(3):
             #     # Run the experiment
-            #     ret = testbed.run(task1_param1=1, task2_param1=2, task3_param2=3,
-            #                       task3_param3=4, task2_param2=5, task3_param4=6)
+            #     ret = testbed.run(bench1_param1=1, bench2_param1=2, bench3_param2=3,
+            #                       bench3_param3=4, bench2_param2=5, bench3_param4=6)
             #
             #     testbed.db()
 

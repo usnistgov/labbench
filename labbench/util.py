@@ -70,7 +70,6 @@ else:
 
 class Ownable:
     """ Subclass to pull in name from an owning class
-
     """
     __objclass__ = None
 
@@ -82,12 +81,12 @@ class Ownable:
         return self
 
     def __owner_init__(self, testbed):
-        """ Called when the Testbed is instantiated
+        """ Called when the Bench is instantiated
         """
         pass
 
     def __owner_subclass__(self, testbed_cls):
-        """ Called after the Testbed class is instantiated; returns an object to be used in the Testbed namespace
+        """ Called after the Bench class is instantiated; returns an object to be used in the Bench namespace
         """
         return self
 
@@ -96,7 +95,6 @@ class Ownable:
             return self.__repr__()
         else:
             return self.__objclass__.__qualname__ + '.' + self.__name__
-
 
 
 class ConcurrentException(Exception):

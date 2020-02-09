@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['Testbed', 'Task', 'Multitask']
+__all__ = ['Bench', 'Multitask']
 
 from . import _core as core
 from . import util as util
@@ -49,7 +49,7 @@ EMPTY = inspect._empty
 #             if name in devices and devices[name] is not obj:
 #                 raise AttributeError(f"name conflict between {repr(obj)} and {repr(devices[name])}")
 #             devices[name] = obj
-#         elif isinstance(obj, Testbed):
+#         elif isinstance(obj, Bench):
 #             new = obj._devices
 #
 #             conflicts = set(devices.keys()).intersection(new.keys())
@@ -109,7 +109,7 @@ class Connections:
 
     def __exit__(self, *args):
         try:
-            self.owner.cleanup(self.owner)
+            self.owner._cleanup(self.owner)
         finally:
             ret = self.manager.__exit__(*args)
         return ret
@@ -117,7 +117,7 @@ class Connections:
 
 class Step:
     """
-    Wrapper function that Task applies to its methods, permitting to permit '&' notation for Multitask definitions
+    Wrapper function that Bench applies to its methods, permitting to permit '&' notation for Multitask definitions
     """
     def __init__(self, owner, name):
         cls = owner.__class__
@@ -126,7 +126,7 @@ class Step:
         self.owner = owner
 
         # note the devices needed to execute this function
-        if isinstance(owner, Task):
+        if isinstance(owner, Bench):
             available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
             accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)}
             self.dependencies = available.intersection(accessed)
@@ -175,7 +175,7 @@ class Step:
         if len(closed) > 0:
             closed = ','.join(closed)
             label = self.__class__.__qualname__ + '.' + self.__name__
-            raise ConnectionsError(f"devices {closed} must be connected to invoke {self.label}")
+            raise ConnectionError(f"devices {closed} must be connected to invoke {self.label}")
 
         # invoke the wrapped function
         owner_name = str(self.owner)
@@ -201,121 +201,7 @@ class Step:
     __str__ = __repr__
 
 
-class Owner:
-    def __init_subclass__(cls, concurrent: bool = True):
-        super().__init_subclass__()
-
-        cls._devices = {}
-        cls._loggers = {}
-        cls._tasks = {}
-
-        # prepare and register owned attributes
-        for name, obj in dict(cls.__dict__).items():
-            if not isinstance(obj, util.Ownable):
-                continue
-
-            obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
-            obj = obj.__owner_subclass__(cls)
-            if isinstance(obj, core.Device):
-                cls._devices[name] = obj
-            elif isinstance(obj, (LogAggregator, RelationalTableLogger)):
-                cls._loggers[name] = obj
-            elif isinstance(obj, Task):
-                cls._tasks[name] = obj
-
-            setattr(cls, name, obj)
-
-        # register the class as a context handler for the devices and loggers
-        Connections(cls, concurrent=concurrent)
-
-    def __init__(self):
-        for lookup in self._devices, self._tasks, self._loggers:
-            for name, obj in lookup.items():
-                obj.__owner_init__(self)
-
-
-class Task(Owner, util.Ownable):
-    """ Base class for experimental procedures for groups of Devices in a Testbed.
-    """
-
-    def __init_subclass__(cls, concurrent=True):
-        super().__init_subclass__(concurrent=concurrent)
-
-        # register public methods as test steps
-        cls._steps = dict(((k, v) for k, v in cls.__dict__.items()
-                           if callable(v) and not k.startswith('_')))
-
-        # include annotations from parent classes
-        cls.__annotations__ = dict(getattr(super(), '__annotations__', {}),
-                                   **getattr(cls, '__annotations__', {}))
-        cls.__init__.__annotations__ = cls.__annotations__
-
-        # sentinel values for each annotations (largely to support IDE introspection)
-        for name, annot_cls in cls.__annotations__.items():
-            if name in cls._steps:
-                clsname = cls.__qualname__
-                raise AttributeError(f"'{clsname}' device annotation and method conflict for attribute '{name}'")
-            else:
-                setattr(cls, name, annot_cls())
-
-    def __init__(self, **devices):
-        # a fresh mapping to modify without changing the parent
-        super().__init__()
-
-        # update context management with the given devices
-        self._devices = devices
-        Connections(self)
-
-        # match the given devices to annotations
-        devices = dict(devices)
-        for name, devtype in self.__annotations__.items():
-            try:
-                dev = devices.pop(name)
-            except KeyError:
-                raise NameError(f"{self.__class__.__qualname__} is missing required argument '{name}'")
-            if not isinstance(dev, devtype):
-                msg = f"argument '{name}' is not an instance of '{devtype.__qualname__}'"
-                raise AttributeError(msg)
-            setattr(self, name, dev)
-
-        # if there are remaining unsupported devices, raise an exception
-        if len(devices) > 0:
-            raise ValueError(f"{tuple(devices.keys())} are invalid arguments")
-
-        # replace self._steps with new mapping of wrappers
-        self._steps = dict(((k, Step(self, k)) for k in self._steps))
-
-    def __getattribute__(self, item):
-        if item != '_steps' and item in self._steps:
-            return self._steps[item]
-        else:
-            return super().__getattribute__(item)
-
-    def __getitem__(self, item):
-        return self._steps[item]
-
-    def __len__(self):
-        return len(self._steps)
-
-    def __iter__(self):
-        return (getattr(self, k) for k in self._steps)
-
-    def __repr__(self):
-        return repr(self.__wrapped__)
-
-    def __str__(self):
-        if hasattr(self, '__name__'):
-            return self.__objclass__.__qualname__ + '.' + self.__name__
-        else:
-            return repr(self)
-
-    def cleanup(self):
-        """ This is called on disconnect by the context management in self or in an owning testbed
-        """
-        pass
-
-
-class TestbedMethod(util.Ownable):
+class BenchMethod(util.Ownable):
     def __init__(self):
         self.to_template()
 
@@ -381,6 +267,37 @@ class TestbedMethod(util.Ownable):
         return f"<function {self.__name__}>"
 
 
+class Owner:
+    def __init_subclass__(cls, concurrent: bool = True):
+        super().__init_subclass__()
+
+        cls._devices = {}
+        cls._loggers = {}
+        cls._steps = {}
+
+        # prepare and register owned attributes
+        for name, obj in dict(cls.__dict__).items():
+            if isinstance(obj, util.Ownable):
+                obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
+                obj = obj.__owner_subclass__(cls)
+
+            if isinstance(obj, core.Device):
+                cls._devices[name] = obj
+            elif isinstance(obj, (LogAggregator, RelationalTableLogger)):
+                cls._loggers[name] = obj
+            elif callable(obj) and not name.startswith('_') and not isinstance(obj, BenchMethod):
+                cls._steps[name] = obj
+            setattr(cls, name, obj)
+
+        # register the class as a context handler for the devices and loggers
+        Connections(cls, concurrent=concurrent)
+
+    def __init__(self):
+        for lookup in self._devices, self._benches, self._loggers:
+            for name, obj in lookup.items():
+                obj.__owner_init__(self)
+
+
 @util.hide_in_traceback
 def __call__():
     # util.wrap_attribute will munge the call signature above for clean introspection in IDEs
@@ -405,7 +322,7 @@ class Multitask(util.Ownable):
 
         # this builds the callable object with a newly-defined subclass.
         # this tricks some IDEs into showing the call signature.
-        cls = type(self.__name__, (TestbedMethod,),
+        cls = type(self.__name__, (BenchMethod,),
                    dict(sequence=self.sequence,
                         params=params,
                         defaults=defaults,
@@ -419,7 +336,7 @@ class Multitask(util.Ownable):
                             annotations=annots,
                             positional=0)
 
-        # The testbed takes this TestbedMethod instance in place of self
+        # The testbed takes this BenchMethod instance in place of self
         obj = object.__new__(cls)
         obj.__init__()
         return obj
@@ -443,7 +360,7 @@ class Multitask(util.Ownable):
 
         else:
             typename = type(sequence).__qualname__
-            raise TypeError(f"object of type '{typename}' is neither a Task method nor a nested tuple/list")
+            raise TypeError(f"object of type '{typename}' is neither a Bench method nor a nested tuple/list")
 
         # step through, if this is a sequence
         for i in range(len(sequence)):
@@ -453,7 +370,7 @@ class Multitask(util.Ownable):
             elif not isinstance(sequence[i], Step):
                 typename = type(sequence).__qualname__
                 raise TypeError(f"object of type '{typename}' is neither a "
-                                f"Task method nor a nested tuple/list")
+                                f"Bench method nor a nested tuple/list")
 
         return invoke, sequence
 
@@ -542,99 +459,151 @@ class Multitask(util.Ownable):
         return signatures
 
 
-class Testbed(Owner):
-    """ A Testbed is a container for devices, data managers, and test steps.
+class Bench(Owner, util.Ownable):
+    """ A Bench is a container for devices, data managers, and method functions that define test steps.
 
-        The Testbed object provides connection management for
+        The Bench object provides connection management for
         all devices and data managers for `with` block::
 
-            with Testbed() as testbed:
+            with Bench() as testbed:
                 # use the testbed here
                 pass
 
         For functional validation, it is also possible to open only a subset
         of devices like this::
 
-            testbed = Testbed()
+            testbed = Bench()
             with testbed.dev1, testbed.dev2:
                 # use the testbed.dev1 and testbed.dev2 here
                 pass
 
-        The following syntax creates a new Testbed class for an
+        The following syntax creates a new Bench class for an
         experiment:
 
             import labbench as lb
 
-            class MyTestbed(lb.Testbed):
+            class MyBench(lb.Bench):
                 db = lb.SQLiteManager()
                 sa = MySpectrumAnalyzer()
 
                 spectrogram = Spectrogram(db=db, sa=sa)
 
-        method to define the Device or database manager instances, and
-        a custom `startup` method to implement custom code to set up the
-        testbed after all Device instances are open.
     """
 
-    # Specify context manager types to open before others
-    # and their order
-    def __init_subclass__(cls, concurrent: bool = True):
-        super().__init_subclass__()
+    def __init_subclass__(cls, concurrent=True):
+        super().__init_subclass__(concurrent=concurrent)
 
-    # def __new__(cls, from_module=None):
-    #     if from_module is None:
-    #         return cls
-    #     if not inspect.ismodule(from_module):
-    #         raise TypeError(f"object of type '{type(from_module)}' is not a module")
-    #
-    #     # pull in only dictionaries (for config) and instances of Device, Task, etc
-    #     namespace = dict(((attr, obj) for attr, obj in from_module.__dict__.items()
-    #                       if isinstance(obj, (util.Ownable, dict)) and not attr.startswith('_')))
-    #
-    #     # block attribute overrides
-    #     name_conflicts = set(namespace).intersection(cls.__dict__)
-    #     if len(name_conflicts) > 0:
-    #         raise NameError(f"names {name_conflicts} in module '{from_module.__name__}' "
-    #                         f"conflict with attributes of '{cls.__qualname__}'")
-    #
-    #     # subclass into a new Testbed
-    #     newcls = type(cls.__name__, (cls,), dict(cls.__dict__, **namespace))
-    #     return object.__new__(newcls)
+        cls._benches = dict(((k, v) for k, v in cls.__dict__.items() if isinstance(v, Bench)))
+
+        # include annotations from parent classes
+        cls.__annotations__ = dict(getattr(super(), '__annotations__', {}),
+                                   **getattr(cls, '__annotations__', {}))
+        cls.__init__.__annotations__ = cls.__annotations__
+
+        # # sentinel values for each annotations (largely to support IDE introspection)
+        # for name, annot_cls in cls.__annotations__.items():
+        #     if name in cls._steps:
+        #         clsname = cls.__qualname__
+        #         raise AttributeError(f"'{clsname}' device annotation and method conflict for attribute '{name}'")
+        #     else:
+        #         setattr(cls, name, annot_cls())
+
+    def __init__(self, **devices):
+        super().__init__()
+
+        # update context management with the given devices
+        self._devices.update(devices)
+        Connections(self)
+
+        # match the device arguments to annotations
+        devices = dict(devices)
+        annotations = dict(self.__annotations__)
+        for name, dev in devices.items():#self.__annotations__.items():
+            try:
+                dev_type = annotations.pop(name)
+            except KeyError:
+                raise NameError(f"{self.__class__.__qualname__}.__init__ was given invalid keyword argument '{name}'")
+            if not isinstance(dev, dev_type):
+                msg = f"argument '{name}' is not an instance of '{dev_type.__qualname__}'"
+                raise AttributeError(msg)
+            setattr(self, name, dev)
+
+        # check for the is a valid instance in the class for each remaining attribute
+        for name, dev_type in dict(annotations).items():
+            if isinstance(getattr(self, name, EMPTY), dev_type):
+                del annotations[name]
+
+        # any remaining items in annotations are missing arguments
+        if len(annotations) > 0:
+            kwargs = [f"{repr(k)}: {repr(v)}" for k, v in annotations.items()]
+            raise AttributeError(f"missing keyword arguments '{', '.join(kwargs)}'")
+
+        # replace self._steps with new mapping of wrappers
+        self._steps = dict(((k, Step(self, k)) for k in self._steps))
+
+    def __getattribute__(self, item):
+        if item != '_steps' and item in self._steps:
+            return self._steps[item]
+        else:
+            return super().__getattribute__(item)
+
+    def __getitem__(self, item):
+        return self._steps[item]
+
+    def __len__(self):
+        return len(self._steps)
+
+    def __iter__(self):
+        return (getattr(self, k) for k in self._steps)
+
+    def __repr__(self):
+        return repr(self.__wrapped__)
+
+    def __str__(self):
+        if hasattr(self, '__name__'):
+            return self.__objclass__.__qualname__ + '.' + self.__name__
+        else:
+            return repr(self)
+
+    def _cleanup(self):
+        """ This is called on disconnect by the context management in self or in an owning testbed
+        """
+        pass
 
     def __repr__(self):
         return f'{self.__class__.__qualname__}()'
 
     @classmethod
-    def _from_module(cls, path_or_module):
+    def _from_module(cls, name_or_module):
         """
-        Return a new Testbed subclass composed of any instances of Device, Task, data loggers, or dicts contained
+        Return a new Bench subclass composed of any instances of Device, Bench, data loggers, or dicts contained
         in a python module namespace.
 
-        :param path_or_module: a string containing the module to import, or a module object that is already imported
-        :return: class that is a subclass of Testbed
+        :param name_or_module: a string containing the module to import, or a module object that is already imported
+        :return: class that is a subclass of Bench
         """
-        if isinstance(path_or_module, str):
+        if isinstance(name_or_module, str):
             import importlib
-            path_or_module = importlib.import_module(path_or_module)
-        elif not inspect.ismodule(path_or_module):
-            raise TypeError(f"object of type '{type(path_or_module)}' is not a module")
+            name_or_module = importlib.import_module(name_or_module)
+        elif not inspect.ismodule(name_or_module):
+            raise TypeError(f"object of type '{type(name_or_module)}' is not a module")
 
-        # pull in only dictionaries (for config) and instances of Device, Task, etc
-        namespace = dict(((attr, obj) for attr, obj in path_or_module.__dict__.items()
+        # pull in only dictionaries (for config) and instances of Device, Bench, etc
+        namespace = dict(((attr, obj) for attr, obj in name_or_module.__dict__.items()
                           if isinstance(obj, (util.Ownable, dict)) and not attr.startswith('_')))
 
         # block attribute overrides
         name_conflicts = set(namespace).intersection(cls.__dict__)
         if len(name_conflicts) > 0:
-            raise NameError(f"names {name_conflicts} in module '{path_or_module.__name__}' "
+            raise NameError(f"names {name_conflicts} in module '{name_or_module.__name__}' "
                             f"conflict with attributes of '{cls.__qualname__}'")
 
-        # subclass into a new Testbed
+        # subclass into a new Bench
         return type(cls.__name__, (cls,), dict(cls.__dict__, **namespace))
 
-    def cleanup(self):
-        for task in self._tasks.values():
+    def _cleanup(self):
+        for bench in self._benches.values():
             try:
-                task.cleanup()
+                bench._cleanup()
             except BaseException as e:
                 traceback.print_exc()

@@ -56,7 +56,7 @@ class LaggyInstrument(EmulatedVISADevice):
             1 / 0
 
 
-class Task1(lb.Task):
+class Bench1(lb.Bench):
     dev1: LaggyInstrument
     dev2: LaggyInstrument
 
@@ -67,21 +67,21 @@ class Task1(lb.Task):
         pass
 
 
-class Task2(lb.Task):
+class Bench2(lb.Bench):
     dev: LaggyInstrument
 
     def setup(self):
-        return 'task 2 - setup'
+        return 'bench 2 - setup'
         return self.dev.dict()
 
     def acquire(self, *, param1):
-        return 'task 3 - acquire'
+        return 'bench 3 - acquire'
 
     def fetch(self, *, param2=7):
         return self.dev.fetch()
 
 
-class Task3(lb.Task):
+class Bench3(lb.Bench):
     dev: LaggyInstrument
 
     def acquire(self, *, param2=7, param3):
@@ -107,14 +107,14 @@ inst1 = LaggyInstrument(resource='a', delay=.12)
 inst2 = LaggyInstrument(resource='b', delay=.06)
 
 # Test procedures
-task1 = Task1(dev1=inst1, dev2=inst2)
-task2 = Task2(dev=inst1)
-task3 = Task3(dev=inst2)
+bench1 = Bench1(dev1=inst1, dev2=inst2)
+bench2 = Bench2(dev=inst1)
+bench3 = Bench3(dev=inst2)
 
 run = lb.Multitask(
-    setup=(task1.setup & task2.setup),  # executes these concurrently
-    arm=(task1.arm),
-    acquire=(task2.acquire, task3.acquire),  # executes these sequentially
-    fetch=(task2.fetch & task3.fetch),
+    setup=(bench1.setup & bench2.setup),  # executes these concurrently
+    arm=(bench1.arm),
+    acquire=(bench2.acquire, bench3.acquire),  # executes these sequentially
+    fetch=(bench2.fetch & bench3.fetch),
     finish=db,  # db() marks the end of a database row
 )

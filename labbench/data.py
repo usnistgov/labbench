@@ -71,7 +71,7 @@ class LogAggregator(util.Ownable):
         return f"{self.__class__.__qualname__}()"
         
     def __owner_init__(self, testbed):
-        # If `self` lives in a Testbed, this is called.
+        # If `self` lives in a Bench, this is called.
         # Observe changes in its Device instances
         self.set_device_labels(**testbed._devices)
         self.set_device_labels(**dict(((n+'_settings',d.settings)\

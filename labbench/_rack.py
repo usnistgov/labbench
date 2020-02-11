@@ -44,7 +44,7 @@ def null_context(owner):
 
 class Step:
     """
-    Rack applies wraps its methods with Step to support use with Coordinate
+    Wraps class methods to support use with Coordinate
     """
     def __init__(self, owner, name):
         cls = owner.__class__
@@ -233,15 +233,14 @@ class Owner:
 
         self._owners = dict(self._owners)
         self._devices = dict(self._devices, **devices)
-        self.__context_manager = self.__new_manager()
 
         super().__init__()
         
     def __setattr__(self, key, obj):
         # keep util.Ownable instance naming up to date, as well as self._devices and self._owners
         if isinstance(obj, util.Ownable):
-            if not hasattr(obj, '__objclass__') or obj.__objclass__ is not self.__class__:
-                obj.__set_name__(self.__class__, key)
+            if getattr(obj, '__objclass__', None) is not type(self):
+                obj.__set_name__(type(self), key)
                 obj.__owner_init__(self)
 
         if isinstance(obj, core.Device):
@@ -261,11 +260,13 @@ class Owner:
         :param ordered_entry:
         """
 
+        log = getattr(self, 'logger', util.logger)
         contexts, ordered_entry = self._recursive_devices()
 
         # ensure a unique ordering without changing the order of the first entry
         ordered_entry = tuple(dict(((entry, None) for entry in ordered_entry)).keys())
-        self.__effective_ordered_entry = [e.__qualname__ for e in ordered_entry]
+        order_desc = ' -> '.join([e.__qualname__ for e in ordered_entry])
+        log.debug(f"ordered_entry before other devices: {order_desc}")
 
         # owner.__enter__ = self.__enter__
         # owner.__exit__ = self.__exit__
@@ -281,17 +282,19 @@ class Owner:
                     first_contexts[attr] = other_contexts.pop(attr)
 
         # enforce ordering given by self.ordered_entry
-        self.__context_description = ', '.join([repr(c) for c in first_contexts.values()])
+        firsts_desc = ', '.join([repr(c) for c in first_contexts.values()])
         if self._concurrent:
             # any remaining context managers will be run concurrently if concurrent=True
             others = util.concurrently(name='', **other_contexts)
             contexts = dict(first_contexts, others=others)
-            self.__context_description += f", ({' & '.join([repr(c) for c in other_contexts.values()])})"
+            others_desc = f"({' & '.join([repr(c) for c in other_contexts.values()])})"
         else:
             # otherwise, run them sequentially
             contexts = dict(first_contexts, **other_contexts)
-            self.__context_description += f", {', '.join([repr(c) for c in other_contexts.values()])}"
-
+            others_desc = ', '.join([repr(c) for c in other_contexts.values()])
+        if len(firsts_desc)>0:
+            others_desc = firsts_desc + ', ' + others_desc
+        log.debug(f"device open sequencing is {others_desc}")
         name = self.__class__.__qualname__
         return util.sequentially(name=f'{name} connection', **contexts) or null_context(self)
 
@@ -321,9 +324,7 @@ class Owner:
         pass
 
     def __enter__(self):
-        log = getattr(self, 'logger', util.logger)
-        log.debug(f"requested first entry order, in aggregate, was {self.__effective_ordered_entry}")
-        log.debug(f"device open sequence will be {self.__context_description}")
+        self.__context_manager = self.__new_manager()
 
         self.__context_manager.__enter__()
         for child in self._owners.values():
@@ -395,6 +396,7 @@ class Coordinate(util.Ownable):
 
     def _parse_sequence(self, sequence):
         if isinstance(sequence, (list, tuple)):
+            # specification for a concurrent and/or sequential calls to Step methods
             if sequence[0] == 'concurrent':
                 invoke = util.concurrently
                 sequence = sequence[1:]
@@ -403,15 +405,19 @@ class Coordinate(util.Ownable):
             sequence = list(sequence)
 
         elif isinstance(sequence, Step):
+            # definitely a Step method that is meant to be used this way
             invoke = util.sequentially
             sequence = [sequence]
 
-        elif isinstance(sequence, util.Ownable) and callable(sequence):
+        elif isinstance(getattr(sequence, '__self__', sequence), util.Ownable) and \
+                callable(sequence):
+            # some other kind of callable function that seems reasonable to take as a Step method
             invoke = util.sequentially
             sequence = [Step(sequence, '__call__')]
 
         else:
             typename = type(sequence).__qualname__
+            print(sequence)
             raise TypeError(f"object of type '{typename}' is neither a Rack method nor a nested tuple/list")
 
         # step through, if this is a sequence
@@ -623,11 +629,6 @@ class Rack(Owner, util.Ownable):
             return self.__objclass__.__qualname__ + '.' + self.__name__
         else:
             return repr(self)
-
-    def _cleanup(self):
-        """ This is called on disconnect by the context management in self or in an owning testbed
-        """
-        pass
 
     def __repr__(self):
         return f'{self.__class__.__qualname__}()'

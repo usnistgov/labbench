@@ -470,9 +470,7 @@ class Trait:
         else:
             owner.__set_by_key__(self.name, self.key, value)
 
-        owner.__notify__(self.name, value, 'set')
-        if not self.cache:
-            owner.__notify__(self.name, value, 'set')
+        owner.__notify__(self.name, value, 'set', cache=self.cache)
 
     @util.hide_in_traceback
     def __get__(self, owner, owner_cls=None):
@@ -561,7 +559,8 @@ class Trait:
                 log(f"'{self.name}' {self.kind} received {repr(value)}, which" \
                     f"is not in the valid value list {repr(self.only)}")
 
-        owner.__notify__(self.name, value, 'get')
+        owner.__notify__(self.name, value, 'get', cache=self.cache or (self.kind == 'setting'))
+
         return value
 
     @util.hide_in_traceback
@@ -738,9 +737,10 @@ class HasTraits(metaclass=HasTraitsMeta):
         return self.__traits__[name]
 
     @util.hide_in_traceback
-    def __notify__(self, name, value, type):
+    def __notify__(self, name, value, type, cache):
         old = self.__previous__.setdefault(name, Undefined)
-        msg = dict(new=value, old=old, owner=self, name=name, type=type)
+
+        msg = dict(new=value, old=old, owner=self, name=name, type=type, cache=cache)
 
         for handler in self.__notify_list__.values():
             handler(dict(msg))

@@ -72,15 +72,16 @@ The usage here is simple because the methods and traits for automation can be di
 Large test setups can neatly organize procedures that require a few Device instances into `Task` objects. A `Testbed` class collects the set of `Task` instances needed to perform the experiment, manages connection of these devices together,
 ensuring graceful disconnection of all `Device` on unhandled exceptions.
 A `multitask` definition defines a more complete experiment in the `Testbed` as a concurrent and sequential steps from multiple `Task` objects, using `multitask`. The `Testbed` also optionally exposes device state and fetched data for database management and user interface. The following ties all these together:
-```python
-import labbench as lb
 
+```python
+# testbed.py
+import labbench as lb
 from myinstruments import MySpectrumAnalyzer, MySignalGenerator # custom library of Device drivers
 
-class Synthesize(lb.Task):
+class Synthesize(lb.Rack):
     inst: MySignalGenerator
 
-    def setup(self, * center_frequency):
+    def setup(self, *, center_frequency):
         self.inst.preset()
         self.inst.set_mode('carrier')
         self.inst.center_frequency = center_frequency
@@ -93,7 +94,7 @@ class Synthesize(lb.Task):
         self.inst.rf_output_enable = False
 
 
-class Analyze(lb.Task):
+class Analyze(lb.Rack):
     inst: MySpectrumAnalyzer
 
     def setup(self, *, center_frequency):
@@ -108,46 +109,61 @@ class Analyze(lb.Task):
     def fetch(self):
         self.inst.fetch_spectrogram() # this data logs automatically
 
+db = lb.SQLiteLogger(
+    'data',                         # path to a new directory to contain data
+    dirname_fmt='{id} {host_time}', # format string for relational data
+    nonscalar_file_type='csv',      # numerical data format
+    tar=False                       # True to embed relational data in `data.tar`
+)
 
-class MyTestbed(lb.Testbed):
-    db = lb.SQLiteLogger(
-        'data',                         # path to a new directory to contain data
-        dirname_fmt='{id} {host_time}', # format string for relational data
-        nonscalar_file_type='csv',      # numerical data format
-        tar=False                       # True to embed relational data in `data.tar`
-    )
+sa = MySpectrumAnalyzer(resource='a')
+sg = MySignalGenerator(resource='b')
 
-    sa = MySpectrumAnalyzer(resource='a')
-    sg = MySignalGenerator(resource='b')
+# tasks use the devices
+generator = Synthesize(inst=sg)
+detector = Analyze(inst=sa)
 
-    # tasks use the devices
-    generate = Synthesize(inst=sg)
-    detect = Analyze(inst=sa)
-
-    run = lb.multitask(
-        (generate.setup & detect.setup),  # setup: concurrently execute the long setups
-        (generate.arm, detect.acquire), # acquire: first arm the generator, then and start acquisition
-        (generate.finish & detect.fetch),  # fetch: concurrently clean up the test state
-    )
+procedure = lb.Coordinate(
+    setup=(generator.setup & detector.setup),  # concurrently execute the long setups
+    acquire=(generator.arm, detector.acquire), # first arm the generator, then and start acquisition
+    fetch=(generator.finish & detector.fetch), # concurrently clean up the test state
+    finish=(db.new_row, db.write),          # start the next row in the database
+)
 ```
 
 The `Testbed` includes most of the required implementation, so execution scripts can be
 very short:
 
 ```python
+# run.py
 with MyTestbed() as test: # instruments stay connected while in this block
     for freq in (915e6, 2.4e9, 5.3e9):
         # each {task}_{argname} passes {argname} to the corresponding {task}
-        test.run(
-            detect_center_frequency=freq,
-            synthesis_center_frequency=freq,
-            detect_duration=5
+        test.procedure(
+            detector_center_frequency=freq,
+            generator_center_frequency=freq,
+            detector_duration=5
         )
 
         test.db() # mark the end of a row
 ```
 
 The results of this simple test are saved in an SQLite database, 'data/master.db', and subfolders that contain the results of each call to `fetch_spectrogram`.
+
+Tables of input conditions are also supported. An example input, `freq_sweep.csv`,
+could look like this:
+
+| Step        | detector_center_frequency | generator_center_frequency | detector_duration | 
+|-------------|---------------------------|----------------------------|-------------------| 
+| Condition 1 | 915e6                     | 915e6                      | 5                 | 
+| Condition 2 | 2.4e9                     | 915e6                      | 5                 | 
+| Condition 3 | 5.3e9                     | 915e6                      | 5                 | 
+
+A command line call takes this table input and runs the same experiment as `run.py`:
+```shell script
+labbench testbed.py procedure freq_sweep.csv
+```
+
 
 ## Installation
 Start in an installation of your favorite python>=3.7 distribution.

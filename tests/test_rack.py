@@ -113,7 +113,7 @@ class Rack3(lb.Rack):
         pass
 
     def fetch(self, *, param4):
-        self.dev.fetch()
+        return self.dev.fetch()
 
 
 class MyRack(lb.Rack):
@@ -125,7 +125,7 @@ class MyRack(lb.Rack):
         dirname_fmt='{id} {host_time}', # Format string that generates relational data (keyed on data column)
         nonscalar_file_type='csv',      # Default format of numerical data, when possible
         metadata_dirname='metadata',    # metadata will be stored in this subdirectory
-        tar=True                       # `True` to embed relational data folders within `data.tar`
+        tar=False                       # `True` to embed relational data folders within `data.tar`
     )
 
     # Devices
@@ -145,13 +145,12 @@ class MyRack(lb.Rack):
         finish=db.new_row,
     )
 
-
 if __name__ == '__main__':
     lb.show_messages('debug')
     lb.util._force_full_traceback(True)
 
     with lb.stopwatch('test connection'):
-        # NewRack = lb.Rack._from_module('module_as_testbed')
+        # with lb.Rack._from_module('module_as_testbed')() as testbed:
         with MyRack() as testbed:
             testbed.inst2.settings.delay = 0.07
             testbed.inst1.settings.delay = 0.12
@@ -166,3 +165,5 @@ if __name__ == '__main__':
 
     df = lb.read(testbed.db.path+'/master.db')
     df.to_csv(testbed.db.path+'/master.csv')
+
+    print(testbed.db._metadata)

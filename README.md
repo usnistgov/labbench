@@ -107,7 +107,9 @@ class Analyze(lb.Rack):
         self.inst.stop()
 
     def fetch(self):
-        self.inst.fetch_spectrogram() # this data logs automatically
+        # testbed data will have a column called 'spectrogram', which
+        # point to subdirectory containing a file called 'spectrogram.csv'
+        return dict(spectrogram=self.inst.fetch_spectrogram())
 
 db = lb.SQLiteLogger(
     'data',                         # path to a new directory to contain data
@@ -130,15 +132,13 @@ procedure = lb.Coordinate(
     finish=(db.new_row, db.write),          # start the next row in the database
 )
 ```
-
-The `Testbed` includes most of the required implementation, so execution scripts can be
-very short:
-
+`testbed.py` here exposes the general capabilities of an experimental setup. An
+experiment run can be a scripted by sweeping input conditions to `procedure`: 
 ```python
 # run.py
 with MyTestbed() as test: # instruments stay connected while in this block
     for freq in (915e6, 2.4e9, 5.3e9):
-        # each {task}_{argname} passes {argname} to the corresponding {task}
+        # each {task}_{argname} applies to all uses of {argname} in {task}
         test.procedure(
             detector_center_frequency=freq,
             generator_center_frequency=freq,
@@ -147,23 +147,28 @@ with MyTestbed() as test: # instruments stay connected while in this block
 
         test.db() # mark the end of a row
 ```
+This script is a clear representation of the experimental procedure, because it
+can focus exclusively on the high-level experimental parameters.
+The test results are saved in an SQLite database,
+'data/master.db'. Each row in the database points to spectrogram data in subdirectories that are formatted
+as 'data/{id} {host_time}/spectrogram.csv'. 
 
-The results of this simple test are saved in an SQLite database, 'data/master.db', and subfolders that contain the results of each call to `fetch_spectrogram`.
-
-Tables of input conditions are also supported. An example input, `freq_sweep.csv`,
-could look like this:
+Sometimes it is inconvenient to define the input conditions through code, and 
+input tables are more convenient. Labbench supports this. An example input,
+`freq_sweep.csv`, could look like this:
 
 | Step        | detector_center_frequency | generator_center_frequency | detector_duration | 
 |-------------|---------------------------|----------------------------|-------------------| 
 | Condition 1 | 915e6                     | 915e6                      | 5                 | 
-| Condition 2 | 2.4e9                     | 915e6                      | 5                 | 
-| Condition 3 | 5.3e9                     | 915e6                      | 5                 | 
+| Condition 2 | 2.4e9                     | 2.4e9                      | 5                 | 
+| Condition 3 | 5.3e9                     | 5.3e9                      | 5                 | 
 
 A command line call takes this table input and runs the same experiment as `run.py`:
 ```shell script
 labbench testbed.py procedure freq_sweep.csv
 ```
-
+This creates a testbed object from `testbed.py`, and steps through the parameter
+ values on each row of `freq_sweep.csv`.
 
 ## Installation
 Start in an installation of your favorite python>=3.7 distribution.

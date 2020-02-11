@@ -45,11 +45,12 @@ import traceback
 __all__ = ['Trait', 'Undefined', 'Any', 'Int', 'Float', 'Unicode', 'Complex', 'Bytes',
            'Bool', 'List', 'Dict', 'Address', 'NonScalar',
 
-           'Device', 'list_devices', 'logger',
+           'Device', 'list_devices',
            'property', 'method', 'observe', 'unobserve'
            ]
 
-logger = logging.getLogger('labbench')
+
+logger = util.logger
 
 
 class LabbenchDeprecationWarning(DeprecationWarning):
@@ -1038,14 +1039,6 @@ class DisconnectedBackend(object):
     str = __repr__
 
 
-import typing
-if typing.TYPE_CHECKING:
-    from dataclasses import dataclass as init_ide_hints
-else:
-    init_ide_hints = lambda x: x
-
-
-@init_ide_hints
 class Device(HasStates, util.Ownable):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
@@ -1182,7 +1175,7 @@ class Device(HasStates, util.Ownable):
 
         # Update cls.__doc__
         settings = list(cls.settings.__traits__.items())
-        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in settings))        
+        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in settings))
         cls.__doc__ += '\n\n' + txt
 
         defaults = dict(((k, v.default) for k, v in settings if v.gettable))
@@ -1204,13 +1197,11 @@ class Device(HasStates, util.Ownable):
             if init_value != self.settings.__traits__[name].default:
                 setattr(self.settings, name, init_value)
 
-        self.__wrapped__ = {}
-        self.__inst_name__ = None
-
         self.__imports__()
 
         self.backend = DisconnectedBackend(self)
-        self.logger = logging.LoggerAdapter(logger, {'device': repr(self)})
+        self.logger = logger.logger.getChild(repr(self))
+        self.logger = logging.LoggerAdapter(self.logger, dict(device=repr(self), origin=f" - "+repr(self)))
 
         # Instantiate state now. It needs to be here, after settings are fully
         # instantiated, in case state implementation depends on settings
@@ -1346,13 +1337,13 @@ def device_contexts(objs, concurrent=True):
     # Enforce the ordering set by self.enter_first
     if concurrent:
         # Any remaining context managers will be run concurrently if concurrent=True
-        contexts = OrderedDict(first_contexts,
-                                     others=concurrently(name=f'',
+        contexts = dict(first_contexts,
+                                     others=util.concurrently(name=f'',
                                                          **other_contexts))
     else:
         # Otherwise, run them sequentially
-        contexts = OrderedDict(first_contexts, **other_contexts)
-    self.__cm = sequentially(name=f'{repr(self)} connections',
+        contexts = dict(first_contexts, **other_contexts)
+    self.__cm = util.sequentially(name=f'{repr(self)} connections',
                              **contexts)
 
 Device.__init_subclass__()

@@ -29,7 +29,7 @@ from . import _core as core
 from ._backends import VISADevice
 from ._host import Host
 from .util import show_messages
-from ._testbed import Bench
+from ._rack import Rack
 
 import logging
 import time
@@ -134,7 +134,7 @@ class panel(object):
     Only a single panel will be shown in a python kernel.
 
     :param source: Either an integer indicating how far up the calling tree to search\
-    for Device instances, or a `labbench.Bench` instance.
+    for Device instances, or a `labbench.Rack` instance.
     :param ncols: Maximum number of devices to show on each row
     """
 
@@ -146,7 +146,7 @@ class panel(object):
     def __new__(cls, source=2, ncols=2):
         cls.ncols = ncols
 
-        if isinstance(source, Bench):
+        if isinstance(source, Rack):
             cls.devices = dict([(k,v) for k,v in source.get_managed_contexts().items()\
                                 if isinstance(v,core.Device)])
         elif isinstance(source, numbers.Number):
@@ -154,7 +154,7 @@ class panel(object):
             cls.devices = core.list_devices(source)
         else:
             raise ValueError(
-                f'source must be a Bench instance or int, but got {repr(source)}')
+                f'source must be a Rack instance or int, but got {repr(source)}')
 
         children = [single(cls.devices[k], k) for k in sorted(cls.devices.keys())
                     if isinstance(cls.devices[k], core.Device)]

@@ -24,11 +24,11 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['Bench', 'Multitask']
+__all__ = ['Rack', 'Coordinate', 'Owner', 'multiple_contexts']
 
 from . import _core as core
 from . import util as util
-from .data import LogAggregator, RelationalTableLogger
+# from .data import LogAggregator, RelationalTableLogger
 from ._host import Host, Email
 from pathlib import Path
 from functools import wraps, update_wrapper
@@ -41,83 +41,15 @@ import traceback
 EMPTY = inspect._empty
 
 
-# def find_devices(testbed):
-#     devices = {}
-#
-#     for name, obj in testbed._contexts.items():
-#         if isinstance(obj, core.Device):
-#             if name in devices and devices[name] is not obj:
-#                 raise AttributeError(f"name conflict between {repr(obj)} and {repr(devices[name])}")
-#             devices[name] = obj
-#         elif isinstance(obj, Bench):
-#             new = obj._devices
-#
-#             conflicts = set(devices.keys()).intersection(new.keys())
-#             if len(conflicts) > 0:
-#                 raise AttributeError(f"name conflict(s) {tuple(conflicts)} in child testbed {obj}")
-#
-#             devices.update(new)
-#
-#     return devices
-
-
-class Connections:
-    """
-    Add context management to an owner to support entry and exit from multiple connections
-    """
-    enter_first = Email, LogAggregator, Host
-
-    def __init__(self, owner,
-                 *,
-                 concurrent: bool = True,
-                 enter_first: tuple = enter_first,
-                 ):
-        self.concurrent = concurrent
-        self.contexts = dict(owner._devices, **owner._loggers)
-        self.manager = None
-        self.enter_first = enter_first
-
-        self.owner = owner
-        owner.__enter__ = self.__enter__
-        owner.__exit__ = self.__exit__
-
-    def __enter__(self):
-        # Pull any objects of types listed by self.enter_first, in the
-        # order of (1) the types listed in self.enter_first, then (2) the order
-        # they appear in objs
-        first_contexts = dict()
-        other_contexts = dict(self.contexts)
-        for cls in self.enter_first:
-            for attr, obj in self.contexts.items():
-                if isinstance(obj, cls):
-                    first_contexts[attr] = other_contexts.pop(attr)
-
-        # enforce the ordering given by self.enter_first
-        if self.concurrent:
-            # any remaining context managers will be run concurrently if concurrent=True
-            others = util.concurrently(name=f'', **other_contexts)
-            contexts = dict(first_contexts, others=others)
-        else:
-            # otherwise, run them sequentially
-            contexts = dict(first_contexts, **other_contexts)
-
-        self.manager = util.sequentially(name=f'{self.__class__.__qualname__} connection', **contexts)
-
-        self.manager.__enter__()
-
-        return self.owner
-
-    def __exit__(self, *args):
-        try:
-            self.owner._cleanup(self.owner)
-        finally:
-            ret = self.manager.__exit__(*args)
-        return ret
+import contextlib
+@contextlib.contextmanager
+def nullcontext():
+    yield None
 
 
 class Step:
     """
-    Wrapper function that Bench applies to its methods, permitting to permit '&' notation for Multitask definitions
+    Rack applies wraps its methods with Step to support use with Coordinate
     """
     def __init__(self, owner, name):
         cls = owner.__class__
@@ -126,7 +58,7 @@ class Step:
         self.owner = owner
 
         # note the devices needed to execute this function
-        if isinstance(owner, Bench):
+        if isinstance(owner, Rack):
             available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
             accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)}
             self.dependencies = available.intersection(accessed)
@@ -171,11 +103,11 @@ class Step:
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # ensure that required devices are connected
-        closed = [dev for dev in self.dependencies if not dev.connected]
+        closed = [repr(dev) for dev in self.dependencies if not dev.connected]
         if len(closed) > 0:
-            closed = ','.join(closed)
+            closed = ', '.join(closed)
             label = self.__class__.__qualname__ + '.' + self.__name__
-            raise ConnectionError(f"devices {closed} must be connected to invoke {self.label}")
+            raise ConnectionError(f"devices {closed} must be connected to invoke {self.__qualname__}")
 
         # invoke the wrapped function
         owner_name = str(self.owner)
@@ -186,7 +118,7 @@ class Step:
             core.logger.debug(f"{owner_name} completed in {elapsed:0.2f}s")
         return {} if ret is None else ret
 
-    # implement the "&" operator to define concurrent steps for Multitask
+    # implement the "&" operator to define concurrent steps for Coordinate
     def __and__(self, other):
         # python objects call this when the left side of '&' is not a tuple
         return 'concurrent', self, other
@@ -201,7 +133,7 @@ class Step:
     __str__ = __repr__
 
 
-class BenchMethod(util.Ownable):
+class RackMethod(util.Ownable):
     def __init__(self):
         self.to_template()
 
@@ -268,12 +200,23 @@ class BenchMethod(util.Ownable):
 
 
 class Owner:
-    def __init_subclass__(cls, concurrent: bool = True):
-        super().__init_subclass__()
+    """ own context-managed instances of Device, with setup and cleanup calls to owned instances of Owner
+    """
+    _ordered_entry = []
+    _concurrent = True
+    
+    def __init_subclass__(cls, concurrent: bool = _concurrent, ordered_entry: list = None):
+        # registries that will be context managed
+        cls._devices = {} # each of cls._devices.values() these will be context managed
+        cls._owners = {} # each of these will get courtesy calls to _setup and _cleanup between _device entry and exit
 
-        cls._devices = {}
-        cls._loggers = {}
-        cls._steps = {}
+        #
+        if ordered_entry is not None:
+            for e in ordered_entry:
+                if not issubclass(e, core.Device):
+                    raise TypeError(f"ordered_entry item {e} is not a Device subclass")
+            cls._ordered_entry = ordered_entry
+        cls._concurrent = concurrent
 
         # prepare and register owned attributes
         for name, obj in dict(cls.__dict__).items():
@@ -283,20 +226,129 @@ class Owner:
 
             if isinstance(obj, core.Device):
                 cls._devices[name] = obj
-            elif isinstance(obj, (LogAggregator, RelationalTableLogger)):
-                cls._loggers[name] = obj
-            elif callable(obj) and not name.startswith('_') and not isinstance(obj, BenchMethod):
-                cls._steps[name] = obj
+            elif isinstance(obj, Owner):
+                cls._owners[name] = obj
             setattr(cls, name, obj)
 
-        # register the class as a context handler for the devices and loggers
-        Connections(cls, concurrent=concurrent)
-
-    def __init__(self):
-        for lookup in self._devices, self._benches, self._loggers:
+    def __init__(self, **devices):
+        # initialize everything before we cull the dictionary to limit context management scope
+        for lookup in self._devices, self._owners:
             for name, obj in lookup.items():
                 obj.__owner_init__(self)
 
+        self._owners = dict(self._owners)
+        self._devices = dict(self._devices, **devices)
+        self.__context_manager = self.__new_manager()
+
+        super().__init__()
+        
+    def __setattr__(self, key, obj):
+        # keep util.Ownable instance naming up to date, as well as self._devices and self._owners
+        if isinstance(obj, util.Ownable):
+            if not hasattr(obj, '__objclass__') or obj.__objclass__ is not self.__class__:
+                obj.__set_name__(self.__class__, key)
+                obj.__owner_init__(self)
+
+        if isinstance(obj, core.Device):
+            self._devices[key] = obj
+
+        elif isinstance(obj, Owner):
+            self._owners[key] = obj
+
+        object.__setattr__(self, key, obj)
+
+    def __new_manager(self):
+        """
+        Add context management to an owner to support entry and exit from multiple connections
+
+        :param owner: the sublass or instance that owns the connections to manage
+        :param concurrent:
+        :param ordered_entry:
+        """
+
+        contexts, ordered_entry = self._recursive_devices()
+
+        # ensure a unique ordering without changing the order of the first entry
+        ordered_entry = tuple(dict(((entry, None) for entry in ordered_entry)).keys())
+        self.__effective_ordered_entry = [e.__qualname__ for e in ordered_entry]
+
+        # owner.__enter__ = self.__enter__
+        # owner.__exit__ = self.__exit__
+
+        # Pull any objects of types listed by self.ordered_entry, in the
+        # order of (1) the types listed in self.ordered_entry, then (2) the order
+        # they appear in objs
+        first_contexts = dict()
+        other_contexts = dict(contexts)
+        for cls in ordered_entry:
+            for attr, obj in contexts.items():
+                if isinstance(obj, cls):
+                    first_contexts[attr] = other_contexts.pop(attr)
+
+        # enforce ordering given by self.ordered_entry
+        self.__context_description = ', '.join([repr(c) for c in first_contexts.values()])
+        if self._concurrent:
+            # any remaining context managers will be run concurrently if concurrent=True
+            others = util.concurrently(name='', **other_contexts)
+            contexts = dict(first_contexts, others=others)
+            self.__context_description += f", ({' & '.join([repr(c) for c in other_contexts.values()])})"
+        else:
+            # otherwise, run them sequentially
+            contexts = dict(first_contexts, **other_contexts)
+            self.__context_description += f", {', '.join([repr(c) for c in other_contexts.values()])}"
+
+        name = self.__class__.__qualname__
+        return util.sequentially(name=f'{name} connection', **contexts) or nullcontext()
+
+    def _recursive_devices(self):
+        ordered_entry = list(self._ordered_entry)
+        devices = dict(self._devices)
+        name_prefix = getattr(self, '__name__', '')
+        if len(name_prefix) > 0:
+            name_prefix = name_prefix + '.'
+
+        for owner in self._owners.values():
+            children, o_ordered_entry = owner._recursive_devices()
+
+            # this might be faster by reversing key and value order in devices (and thus children)?
+            for name, child in children.items():
+                if child not in devices.values():
+                    devices[name_prefix+name] = child
+
+            ordered_entry.extend(o_ordered_entry)
+
+        return devices, ordered_entry
+
+    def _cleanup(self):
+        pass
+
+    def _setup(self):
+        pass
+
+    def __enter__(self):
+        log = getattr(self, 'logger', util.logger)
+        log.debug(f"requested first entry order, in aggregate, was {self.__effective_ordered_entry}")
+        log.debug(f"device open sequence will be {self.__context_description}")
+
+        self.__context_manager.__enter__()
+        for child in self._owners.values():
+            child._setup()
+        self._setup()
+        return self
+
+    def __exit__(self, *exc_info):
+        try:
+            self._cleanup()
+        except BaseException as e:
+            traceback.print_exc()
+
+        for child in self._owners.values():
+            try:
+                child._cleanup()
+            except BaseException as e:
+                traceback.print_exc()
+
+        return self.__context_manager.__exit__(*exc_info)
 
 @util.hide_in_traceback
 def __call__():
@@ -306,7 +358,7 @@ def __call__():
     return self.__call___wrapped(**items)
 
 
-class Multitask(util.Ownable):
+class Coordinate(util.Ownable):
     def __init__(self, **sequence):
         self.sequence = dict(((k, self._parse_sequence(seq)) for k, seq in sequence.items()))
 
@@ -314,7 +366,7 @@ class Multitask(util.Ownable):
         # initialization on the parent class definition
         # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
 
-        # determine the call signature for this new Multitask procedure
+        # determine the call signature for this new Coordinate procedure
         signatures = self._collect_signatures(tuple(self.sequence.values()))
         params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default params
         defaults = dict([(arg, sig[0]) for arg, sig in signatures.items() if sig[0] is not EMPTY])
@@ -322,7 +374,7 @@ class Multitask(util.Ownable):
 
         # this builds the callable object with a newly-defined subclass.
         # this tricks some IDEs into showing the call signature.
-        cls = type(self.__name__, (BenchMethod,),
+        cls = type(self.__name__, (RackMethod,),
                    dict(sequence=self.sequence,
                         params=params,
                         defaults=defaults,
@@ -336,7 +388,7 @@ class Multitask(util.Ownable):
                             annotations=annots,
                             positional=0)
 
-        # The testbed takes this BenchMethod instance in place of self
+        # The testbed takes this RackMethod instance in place of self
         obj = object.__new__(cls)
         obj.__init__()
         return obj
@@ -360,7 +412,7 @@ class Multitask(util.Ownable):
 
         else:
             typename = type(sequence).__qualname__
-            raise TypeError(f"object of type '{typename}' is neither a Bench method nor a nested tuple/list")
+            raise TypeError(f"object of type '{typename}' is neither a Rack method nor a nested tuple/list")
 
         # step through, if this is a sequence
         for i in range(len(sequence)):
@@ -370,7 +422,7 @@ class Multitask(util.Ownable):
             elif not isinstance(sequence[i], Step):
                 typename = type(sequence).__qualname__
                 raise TypeError(f"object of type '{typename}' is neither a "
-                                f"Bench method nor a nested tuple/list")
+                                f"Rack method nor a nested tuple/list")
 
         return invoke, sequence
 
@@ -459,30 +511,30 @@ class Multitask(util.Ownable):
         return signatures
 
 
-class Bench(Owner, util.Ownable):
-    """ A Bench is a container for devices, data managers, and method functions that define test steps.
+class Rack(Owner, util.Ownable):
+    """ A Rack is a container for devices, data managers, and method functions that define test steps.
 
-        The Bench object provides connection management for
+        The Rack object provides connection management for
         all devices and data managers for `with` block::
 
-            with Bench() as testbed:
+            with Rack() as testbed:
                 # use the testbed here
                 pass
 
         For functional validation, it is also possible to open only a subset
         of devices like this::
 
-            testbed = Bench()
+            testbed = Rack()
             with testbed.dev1, testbed.dev2:
                 # use the testbed.dev1 and testbed.dev2 here
                 pass
 
-        The following syntax creates a new Bench class for an
+        The following syntax creates a new Rack class for an
         experiment:
 
             import labbench as lb
 
-            class MyBench(lb.Bench):
+            class MyRack(lb.Rack):
                 db = lb.SQLiteManager()
                 sa = MySpectrumAnalyzer()
 
@@ -490,15 +542,23 @@ class Bench(Owner, util.Ownable):
 
     """
 
-    def __init_subclass__(cls, concurrent=True):
-        super().__init_subclass__(concurrent=concurrent)
+    def __init_subclass__(cls, ordered_entry=[], concurrent=True):
+        # cls._racks = dict(((k, v) for k, v in cls.__dict__.items() if isinstance(v, Rack)))
 
-        cls._benches = dict(((k, v) for k, v in cls.__dict__.items() if isinstance(v, Bench)))
+        # register step methods
+        cls._steps = {}
+        for name, obj in cls.__dict__.items():
+            if isinstance(obj, (core.Device, Owner)):
+                continue
+            if not name.startswith('_') and callable(obj):
+                cls._steps[name] = obj
 
         # include annotations from parent classes
         cls.__annotations__ = dict(getattr(super(), '__annotations__', {}),
                                    **getattr(cls, '__annotations__', {}))
         cls.__init__.__annotations__ = cls.__annotations__
+
+        super().__init_subclass__(concurrent=concurrent, ordered_entry=ordered_entry)
 
         # # sentinel values for each annotations (largely to support IDE introspection)
         # for name, annot_cls in cls.__annotations__.items():
@@ -508,12 +568,10 @@ class Bench(Owner, util.Ownable):
         #     else:
         #         setattr(cls, name, annot_cls())
 
-    def __init__(self, **devices):
-        super().__init__()
+    def __init__(self, config={}, **devices):
+        super().__init__(**devices)
 
-        # update context management with the given devices
-        self._devices.update(devices)
-        Connections(self)
+        self._config = config
 
         # match the device arguments to annotations
         devices = dict(devices)
@@ -539,7 +597,8 @@ class Bench(Owner, util.Ownable):
             raise AttributeError(f"missing keyword arguments '{', '.join(kwargs)}'")
 
         # replace self._steps with new mapping of wrappers
-        self._steps = dict(((k, Step(self, k)) for k in self._steps))
+        self._steps = dict(((k, obj) if isinstance(obj, RackMethod) else (k, Step(self, k))
+                            for k, obj in self._steps.items()))
 
     def __getattribute__(self, item):
         if item != '_steps' and item in self._steps:
@@ -576,11 +635,11 @@ class Bench(Owner, util.Ownable):
     @classmethod
     def _from_module(cls, name_or_module):
         """
-        Return a new Bench subclass composed of any instances of Device, Bench, data loggers, or dicts contained
+        Return a new Rack subclass composed of any instances of Device, Rack, data loggers, or dicts contained
         in a python module namespace.
 
         :param name_or_module: a string containing the module to import, or a module object that is already imported
-        :return: class that is a subclass of Bench
+        :return: class that is a subclass of Rack
         """
         if isinstance(name_or_module, str):
             import importlib
@@ -588,7 +647,7 @@ class Bench(Owner, util.Ownable):
         elif not inspect.ismodule(name_or_module):
             raise TypeError(f"object of type '{type(name_or_module)}' is not a module")
 
-        # pull in only dictionaries (for config) and instances of Device, Bench, etc
+        # pull in only dictionaries (for config) and instances of Device, Rack, etc
         namespace = dict(((attr, obj) for attr, obj in name_or_module.__dict__.items()
                           if isinstance(obj, (util.Ownable, dict)) and not attr.startswith('_')))
 
@@ -598,12 +657,5 @@ class Bench(Owner, util.Ownable):
             raise NameError(f"names {name_conflicts} in module '{name_or_module.__name__}' "
                             f"conflict with attributes of '{cls.__qualname__}'")
 
-        # subclass into a new Bench
+        # subclass into a new Rack
         return type(cls.__name__, (cls,), dict(cls.__dict__, **namespace))
-
-    def _cleanup(self):
-        for bench in self._benches.values():
-            try:
-                bench._cleanup()
-            except BaseException as e:
-                traceback.print_exc()

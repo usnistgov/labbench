@@ -80,12 +80,12 @@ class LaggyInstrument(EmulatedVISADevice):
         if self.settings.fail_disconnect:
             1 / 0
 
-class MyBench(lb.Bench):
+class MyRack(lb.Rack):
     def make(self):
         self.inst1 = LaggyInstrument('a',delay=.18)
         self.inst2 = LaggyInstrument('b',delay=.06)
 
-class MyBench2(lb.Bench):
+class MyRack2(lb.Rack):
     inst1 = LaggyInstrument('a', delay=.12)
     inst2 = LaggyInstrument('b', delay=.06)
     
@@ -298,7 +298,7 @@ class TestConcurrency(unittest.TestCase):
         
     def test_testbed_instantiation(self):        
         with self.assert_delay(0):
-            testbed = MyBench()
+            testbed = MyRack()
         
 
         expected_delay = max(testbed.inst1.settings.delay,

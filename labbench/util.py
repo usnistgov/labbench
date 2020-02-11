@@ -24,9 +24,10 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = [
-           # "misc"
-           'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages', 'init_ide_hints',
+__all__ = [# "misc"
+           'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages',
+           'logger',
+
 
            # concurrency and sequencing
            'concurrently', 'sequentially', 'Call', 'ConcurrentException',
@@ -45,7 +46,6 @@ __all__ = [
            'Ownable',
            ]
 
-from . import _core as core
 
 from collections import OrderedDict
 from contextlib import contextmanager, _GeneratorContextManager
@@ -56,16 +56,17 @@ from typing import Callable
 
 import builtins
 import inspect
+import logging
 import psutil
 import sys
 import time
 import traceback
 
-import typing
-if typing.TYPE_CHECKING:
-    from dataclasses import dataclass as init_ide_hints
-else:
-    init_ide_hints = lambda x: x
+
+logger = logging.LoggerAdapter(
+    logging.getLogger('labbench'),
+    dict(origin='') # description of origin within labbench (for screen logs only)
+)
 
 
 class Ownable:
@@ -81,12 +82,12 @@ class Ownable:
         return self
 
     def __owner_init__(self, testbed):
-        """ Called when the Bench is instantiated
+        """ Called when the owner is instantiated
         """
         pass
 
     def __owner_subclass__(self, testbed_cls):
-        """ Called after the Bench class is instantiated; returns an object to be used in the Bench namespace
+        """ Called after the owner class is instantiated; returns an object to be used in the Rack namespace
         """
         return self
 
@@ -328,8 +329,8 @@ def retry(exception_or_exceptions, tries=4, delay=0,
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
                     ex = e
-                    core.logger.warning(str(e))
-                    core.logger.warning(
+                    logger.warning(str(e))
+                    logger.warning(
                         f'{f.__name__} retry (attempt {retry+1}/{tries})')
                     exception_func()
                     sleep(active_delay)
@@ -389,8 +390,8 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
                 except exception_or_exceptions as e:
                     progress = time.time() - t0
                     ex = e
-                    core.logger.warning(str(e))
-                    core.logger.warning(
+                    logger.warning(str(e))
+                    logger.warning(
                         f'{f.__name__} retry ({progress}s/{timeout}s elapsed)')
                     exception_func()
                     sleep(active_delay)
@@ -428,21 +429,21 @@ def show_messages(minimum_level):
             f'message level must be one of {list(err_map.keys())}')
     level = err_map[minimum_level.lower()]
 
-    core.logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
 
     # Clear out any stale handlers
-    if hasattr(core.logger, '_screen_handler'):
-        core.logger.removeHandler(core.logger._screen_handler)
+    if hasattr(logger, '_screen_handler'):
+        logger.logger.removeHandler(logger._screen_handler)
 
     if level is not None:
-        core.logger._screen_handler = logging.StreamHandler()
-        core.logger._screen_handler.setLevel(level)
+        logger._screen_handler = logging.StreamHandler()
+        logger._screen_handler.setLevel(level)
         # - %(pathname)s:%(lineno)d'
-        log_fmt = '%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s'
+        log_fmt = '%(asctime)s.%(msecs)03d - %(levelname)s%(origin)s - %(message)s'
         #    coloredlogs.install(level='DEBUG', logger=logger)
-        core.logger._screen_handler.setFormatter(
+        logger._screen_handler.setFormatter(
             coloredlogs.ColoredFormatter(log_fmt))
-        core.logger.addHandler(core.logger._screen_handler)
+        logger.logger.addHandler(logger._screen_handler)
 
 
 def kill_by_name(*names):
@@ -466,7 +467,7 @@ def kill_by_name(*names):
             proc = psutil.Process(pid)
             for target in names:
                 if proc.name().lower() == target.lower():
-                    core.logger.info(f'killing process {proc.name()}')
+                    logger.info(f'killing process {proc.name()}')
                     proc.kill()
         except psutil.NoSuchProcess:
             continue
@@ -526,7 +527,7 @@ def stopwatch(desc=''):
         yield
     finally:
         T = time.perf_counter() - t0
-        core.logger.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
+        logger.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
 
 
 class Call(object):
@@ -645,13 +646,15 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
 
         elapsed = time.perf_counter()-t0
         if elapsed > 0.1 and params['name']:
-            core.logger.debug(f'{params["name"]} - entry took {elapsed:0.2f}s')
+            logger.debug(f'{params["name"]} - entry took {elapsed:0.2f}s')
         yield
 
     except BaseException:
         exc = sys.exc_info()
     else:
         exc = (None, None, None)
+
+    print('finished yield; ', exc)
 
     t0 = time.perf_counter()
     while exits:
@@ -663,14 +666,15 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
 
     elapsed = time.perf_counter()-t0
     if elapsed > 0.1 and params['name']:
-        core.logger.debug(f'{params["name"]} - exit took {elapsed:0.2f}s')
+        logger.debug(f'exit {params["name"]} took {elapsed:0.2f}s')
 
     if exc != (None, None, None):
         # sys.exc_info() may have been
         # changed by one of the exit methods
         # so provide explicit exception info
-        for h in core.logger.handlers:
+        for h in logger.logger.handlers:
             h.flush()
+
         raise exc[1]
 
 
@@ -681,8 +685,10 @@ RUNNERS = {(False, False): None,
 
 DIR_DICT = set(dir(dict))
 
+
 def isdictducktype(cls):
     return set(dir(cls)).issuperset(DIR_DICT)  
+
 
 @hide_in_traceback
 def enter_or_call(flexible_caller, objs, kws):
@@ -821,9 +827,10 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             concurrent execution or not.
         """
         func = func_in.func if isinstance(func_in, Call) else func_in
-        if hasattr(func, '__self__') \
-                and isinstance(func.__self__, core.Device):
-            if not func.__self__.settings.concurrency:
+        if hasattr(func, '__self__') and \
+           hasattr(func.__self__, 'settings'):
+            if not getattr(func.__self__.settings, 'concurrency', True):
+                # is this a Device that does not support concurrency?
                 raise ConcurrentException(
                     f'{func.__self__} does not support concurrency')
         return func_in
@@ -860,7 +867,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         except Empty:
             if time.clock() - t0 > 60*15:
                 names = ','.join(list(threads.keys()))
-                core.logger.debug(f'{names} threads are still running')
+                logger.debug(f'{names} threads are still running')
                 t0 = time.clock()
             continue
         except BaseException as e:
@@ -874,7 +881,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         # Below only happens when called is not none
         if master_exception is not None:
             names = ', '.join(list(threads.keys()))
-            core.logger.error(
+            logger.error(
                 f'raising {master_exception.__class__.__name__} in main thread after child threads {names} return')
 
         # if there was an exception that wasn't us ending the thread,
@@ -909,7 +916,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
     # Raise exceptions as necessary
     if master_exception is not None:        
-        for h in core.logger.handlers:
+        for h in logger.logger.handlers:
             h.flush()
 
         for tb in tracebacks:
@@ -922,7 +929,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         raise master_exception
 
     elif len(tracebacks) > 0 and not catch:
-        for h in core.logger.handlers:
+        for h in logger.logger.handlers:
             h.flush()
         if len(tracebacks) == 1:
             raise last_exception
@@ -1218,7 +1225,7 @@ class ThreadSandbox(object):
 
             rsp.put((ret, exc), True)
 
-        core.logger.write('ThreadSandbox worker thread finished')
+        logger.write('ThreadSandbox worker thread finished')
 
     @hide_in_traceback
     def __getattr__(self, name):

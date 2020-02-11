@@ -27,7 +27,9 @@
 
 from contextlib import suppress, ExitStack, contextmanager
 from ._core import Device, observe
-from ._host import Host
+from ._rack import Owner
+from . import _host
+from . import _core as core
 from . import util as util
 import copy
 import inspect
@@ -37,19 +39,411 @@ import os
 import pickle
 import shutil
 import textwrap
+import tarfile
 import warnings
 
+logger = util.logger
 
 __all__ = ['LogAggregator', 'RelationalTableLogger',
            'CSVLogger', 'SQLiteLogger',
            'read', 'read_relational', 'to_feather']
 
-class LogAggregator(util.Ownable):
+
+class MungerBase(core.Device):
+    """ This is where ugly but necessary sausage making organizes
+        in a file output with a key in the master database.
+
+        The following conversions to relational files are attempted in order to
+        convert each value in the row dictionary:
+
+        1. Text containing a valid file or directory *outside* of the root data
+           directory is made relational by moving the file or directory into
+           the current row. The text is replaced with the updated relative path;
+        2. Text longer than `text_relational_min` is dumped into a relational
+           text file;
+        3. 1- or 2-D data is converted to a pandas Series or DataFrame, and
+           dumped into a relational file defined by the extension set by
+           `nonscalar_file_type`
+
+    """
+
+    resource: core.Unicode(
+        '', help='base directory for all data')
+
+    text_relational_min: core.Int(
+        1024, min=0, help='minimum size threshold that triggers storing text in a relational file')
+
+    force_relational: core.List(
+        ['host_log'], help='list of column names to always save as relational data')
+
+    dirname_fmt: core.Unicode(
+        '{id} {host_time}', help='directory name format for the relational data of each row (keyed on column)')
+
+    nonscalar_file_type: core.Unicode(
+        'csv', help='file format for non-scalar numerical data')
+
+    metadata_dirname: core.Unicode(
+        'metadata', help='subdirectory name for metadata')
+
+    def __call__(self, index, row):
+        """
+        Break special cases of row items that need to be stored in
+        relational files. The row valueis replaced in-place with the relative
+        path to the data saved on disk.
+
+        :param row: dictionary of {'entry_name': "entry_value"} pairs
+        :return: the row dictionary, replacing special entries with the relative path to the saved data file
+        """
+        def is_path(v):
+            if not isinstance(v, str):
+                return False
+            try:
+                return os.path.exists(v)
+            except ValueError:
+                return False
+
+        for name, value in row.items():
+            # A path outside the relational database tree
+            if is_path(value):
+                # A file or directory that should be moved in
+                row[name] = self._from_external_file(name, value, index, row)
+
+            # A long string that should be written to a text file
+            elif isinstance(value, (str, bytes)):
+                if len(value) > self.settings.text_relational_min\
+                   or name in self.settings.force_relational:
+                    row[name] = self._from_text(name, value, index, row)
+            elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
+                # vector, table, matrix, etc.
+                row[name] = self._from_nonscalar(name, value, index, row)
+        return row
+
+    def write_metadata(self, name, key):
+        import pandas as pd
+
+        if os.path.exists(os.path.join(self.settings.resource, self.settings.metadata_dirname)):
+            return
+
+        summary = {}
+        for dev, devname in name.items():
+            for trait in dev:
+                name = key(devname, trait.name)
+                value = getattr(dev, trait.name)
+                if isinstance(value, (str, bytes)):
+                    if len(value) > self.settings.text_relational_min:
+                        self._from_text(name, value)
+                    else:
+                        summary[name] = value
+                elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
+                    if not hasattr(value, '__len__') or len(value) > 0:
+                        self._from_nonscalar(name, value)
+                    else:
+                        summary[name] = ''
+                else:
+                    summary[name] = value
+
+        metadata = dict(#self.metadata,
+                        summary=pd.DataFrame([summary], index=['Value']).T)
+
+        for k, v in metadata.items():
+            df = pd.DataFrame(v)
+            if df.shape[0] == 1:
+                df = df.T
+            stream = self._open_metadata(k + '.txt')
+            if hasattr(stream, 'overwrite'):
+                stream.overwrite = True
+
+            # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
+            try:
+                df.to_csv(stream)
+            except TypeError:
+                with io.TextIOWrapper(stream, newline='\n') as buf:
+                    df.to_csv(buf)
+
+    def _from_nonscalar(self, name, value, index=0, row=None):
+        """ Write nonscalar (potentially array-like, or a python object) data
+        to a file, and return a path to the file
+
+        :param name: name of the entry to write, used as the filename
+        :param value: the object containing array-like data
+        :param row: row dictionary, or None (the default) to write to the metadata folder
+        :return: the path to the file, relative to the directory that contains the master database
+        """
+
+        import pandas as pd
+
+        def write(stream, ext, value):
+            if ext == 'csv':
+                value.to_csv(stream)
+            elif ext == 'json':
+                value.to_json(stream)
+            elif ext in ('p', 'pickle'):
+                pickle.dump(value, stream, 2)
+            elif ext == 'feather':
+                to_feather(value, stream)
+            elif ext == 'db':
+                raise Exception('sqlite not implemented for relational files')
+            else:
+                raise Exception(
+                    f"extension {ext} doesn't match a known format")
+
+        if hasattr(value, '__len__') and len(value) == 0:
+            return ''
+
+        if row is None:
+            ext = 'csv'
+        else:
+            ext = self.settings.nonscalar_file_type
+
+        try:
+            value = pd.DataFrame(value)
+            if value.shape[0] == 0:
+                value = pd.DataFrame([value])
+        except BaseException:
+            # We couldn't make a DataFrame
+            self.logger.error(
+                f"Failed to form DataFrame from {repr(name)}; pickling object instead")
+            ext = 'pickle'
+        finally:
+            if row is None:
+                stream = self._open_metadata(name + '.' + ext)
+            else:
+                stream = self._open_relational(name + '.' + ext, index, row)
+
+            # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
+            try:
+                write(stream, ext, value)
+            except TypeError:
+                with io.TextIOWrapper(stream, newline='\n') as buf:
+                    write(buf, ext, value)
+            return self._get_key(stream)
+
+    def _from_external_file(self, name, old_path,
+                            index=0, row=None, ntries=10):
+        basename = os.path.basename(old_path)
+        with self._open_relational(basename, index, row) as buf:
+            new_path = buf.name
+
+        self._import_from_file(old_path, new_path)
+
+        return self._get_key(new_path)
+
+    def _from_text(self, name, value, index=0, row=None, ext='.txt'):
+        """ Write a string data to a file
+
+        :param name: name of the parameter (helps to determine file path)
+        :param value: the string to write to file
+        :param row: the row to infer timestamp, or None to write to metadata
+        :param ext: file extension
+        :return: the path to the file, relative to the directory that contains the master database
+        """
+        with self._open_relational(name + ext, index, row) as f:
+            f.write(bytes(value, encoding='utf-8'))
+        return self._get_key(f)
+
+    # The following methods need to be implemented in subclasses.
+    def _get_key(self, buf):
+        """ Key to use for the relative data in the master database?
+
+        :param stream: stream for writing to the relational data file
+        :return: the key
+        """
+        raise NotImplementedError
+
+    def _open_relational(self, name, index, row):
+        """ Open a stream / IO buffer for writing relational data, given
+            the master database column, index, and the row dictionary.
+
+            :param name: the column name of the relational data in the master db
+            :param index: the index name of of the data in the master db
+            :param row: the dictionary containing the row of data at `index`
+
+            :returns: an open buffer object for writing data
+        """
+        raise NotImplementedError
+
+    def _open_metadata(self, name):
+        """ Open a stream / IO buffer for writing metadata, given
+            the name of the metadata.
+
+            :returns: an open buffer object for writing metadata to the file
+        """
+
+        raise NotImplementedError
+
+    def _import_from_file(self, old_path, dest):
+        raise NotImplementedError
+
+
+class MungeToDirectory(MungerBase):
+    """ Implement data munging into subdirectories. This is fast but can produce
+        an unweildy number of subdirectories if there are many runs.
+    """
+
+    def _open_relational(self, name, index, row):
+        if 'host_time' not in row:
+            self.logger.error(
+                "no timestamp yet from host yet; this shouldn't happen :(")
+
+        relpath = self._make_path_heirarchy(index, row)
+        if not os.path.exists(relpath):
+            os.makedirs(relpath)
+
+        return open(os.path.join(relpath, name), 'wb+')
+
+    def _open_metadata(self, name):
+        dirpath = os.path.join(self.settings.resource, self.settings.metadata_dirname)
+        with suppress(FileExistsError):
+            os.makedirs(dirpath)
+        return open(os.path.join(dirpath, name), 'wb+')
+
+    def _get_key(self, stream):
+        """ Key to use for the relative data in the master database?
+
+        :param stream: stream for writing to the relational data file
+        :return: the key
+        """
+        return os.path.relpath(stream.name, self.settings.resource)
+
+    def _import_from_file(self, old_path, dest):
+        # Retry moves for several seconds in case the file is in the process
+        # of being closed
+        @util.until_timeout(PermissionError, 5, delay=0.5)
+        def move():
+            os.rename(old_path, dest)
+
+        try:
+            move()
+            self.logger.debug(f'moved {repr(old_path)} to {repr(dest)}')
+        except PermissionError:
+            self.logger.warning(
+                'relational file was still open in another program; fallback to copy instead of rename')
+            import shutil
+            shutil.copyfile(old_path, dest)
+
+    def _make_path_heirarchy(self, index, row):
+        relpath = self.settings.dirname_fmt.format(id=index, **row)
+
+        # TODO: Find a more generic way to force valid path name
+        relpath = relpath.replace(':', '')
+        relpath = os.path.join(self.settings.resource, relpath)
+        return relpath
+
+
+class TarFileIO(io.BytesIO):
+    """ For appending data into new files in a tarfile
+    """
+
+    def __init__(self, open_tarfile, relname, mode='w', overwrite=False):
+        #        self.tarbase = tarbase
+        #        self.tarname = tarname
+        self.tarfile = open_tarfile
+        self.overwrite = False
+        self.name = relname
+        self.mode = mode
+        super(TarFileIO, self).__init__()
+
+    def __del__(self):
+        logger.warning('tarfile __del__')
+        try:
+            super(TarFileIO, self).close()
+        except ValueError:
+            pass
+
+        super(TarFileIO, self).__del__()
+
+#    def write(self, data, encoding='ascii'):
+#        if isinstance(data, str):
+#            data = bytes(data, encoding=encoding)
+#        super(TarFileIO,self).write(data)
+#
+    def close(self):
+        # First: dump the data into the tar file
+        #        tarpath = os.path.join(self.tarbase, self.tarname)
+        #        f = tarfile.open(tarpath, 'a')
+
+        try:
+            if not self.overwrite and self.name in self.tarfile.getnames():
+                raise IOError(f'{self.name} already exists in {self.tarfile.name}')
+
+            tarinfo = tarfile.TarInfo(self.name)
+            tarinfo.size = self.tell()
+
+            self.seek(0)
+
+            self.tarfile.addfile(tarinfo, self)
+
+        # Then make sure to close everything
+        finally:
+            super(TarFileIO, self).close()
+
+
+class MungeToTar(MungerBase):
+    """ Implement data munging into a tar file. This is slower than
+        MungeToDirectory but is tidier on the filesystem.
+    """
+
+    tarname = 'data.tar'
+
+    def _open_relational(self, name, index, row):
+        if 'host_time' not in row:
+            self.logger.error(
+                "no timestamp yet from host yet; this shouldn't happen :(")
+
+        relpath = os.path.join(self.settings.dirname_fmt.format(id=index, **row), name)
+
+        return TarFileIO(self.tarfile, relpath)
+
+    def _open_metadata(self, name):
+        dirpath = os.path.join(self.settings.metadata_dirname, name)
+        return TarFileIO(self.tarfile, dirpath)
+
+    def open(self):
+        if not os.path.exists(self.settings.resource):
+            with suppress(FileExistsError):
+                os.makedirs(self.settings.resource)
+        self.tarfile = tarfile.open(os.path.join(self.settings.resource, self.tarname), 'a')
+
+    def close(self):
+        logger.warning('MungeToTar cleanup()')
+        self.tarfile.close()
+
+    def _get_key(self, buf):
+        """ Where is the file relative to the master database?
+
+        :param path: path of the file
+        :return: path to the file relative to the master database
+        """
+        return buf.name
+
+    def _import_from_file(self, old_path, dest):
+        info = self.tar.gettarinfo(old_path)
+        info.name = dest
+        self.tar.addfile(old_path, info)
+
+        @util.until_timeout(PermissionError, 5, delay=0.5)
+        def remove():
+            try:
+                shutil.rmtree(old_path)
+            except NotADirectoryError:
+                os.remove(old_path)
+
+        try:
+            remove()
+            self.logger.debug(f'moved {old_path} to into tar file as {dest}')
+        except PermissionError:
+            self.logger.warning(
+                f'could not remove old file or directory {old_path}')
+
+
+class LogAggregator(Owner, util.Ownable):
     """ Aggregate state information from multiple devices. This can be the basis
         for automatic database logging.
     """
 
     def __init__(self):
+        super().__init__()
+
         # Map the state instance of a device (key) to a name (value)
         self.name = {}
 
@@ -58,27 +452,23 @@ class LogAggregator(util.Ownable):
         self.__never = {}
         self.__auto = {}
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        # log_handler = logging.bufHandler()
-        # log_handler.setLevel(logging.DEBUG)
-        # log_fmt = '%(asctime)s.%(msecs)03d - {name} - %(levelname)s - %(message)s - %(pathname)s:%(lineno)d'\
-        #           .format(self.__class__.__name__)
-        # #    coloredlogs.install(level='DEBUG', logger=logger)
-        # log_handler.setFormatter(coloredlogs.ColoredFormatter(log_fmt))
-        # self.logger.addHandler(log_handler)
+        self.logger = logger.logger.getChild(self.__class__.__qualname__)
+        self.logger = logging.LoggerAdapter(self.logger, dict(origin=f" - {self.__class__.__qualname__}"))
+
+        super().__init__()
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}()"
         
-    def __owner_init__(self, testbed):
-        # If `self` lives in a Bench, this is called.
+    def __owner_init__(self, rack):
+        # If `self` lives in a Rack, this is called.
         # Observe changes in its Device instances
-        self.set_device_labels(**testbed._devices)
+        self.set_device_labels(**rack._devices)
         self.set_device_labels(**dict(((n+'_settings',d.settings)\
-                                       for n, d in testbed._devices.items())))
+                                       for n, d in rack._devices.items())))
 
-        if testbed is not None:
-            for name, obj in testbed._devices.items():
+        if rack is not None:
+            for name, obj in rack._devices.items():
                 self.observe_states(obj)
                 self.observe_settings(obj)
 
@@ -252,8 +642,7 @@ class LogAggregator(util.Ownable):
             if changes:
                 observe(device.settings, self.__on_set_callback)
             else:
-                raise NotImplementedError('Implement me on changes=False')
-                device.settings.unobserve(self.__on_set_callback)
+                core.unobserve(device.settings, self.__on_set_callback)
             if always:
                 self.__always[device.settings] = always
             if never:
@@ -296,7 +685,7 @@ class LogAggregator(util.Ownable):
         return copy.copy(self.__auto)
 
     def __whoisthis(self, target, from_depth=2):
-        """ Introspect into the caller to find the name of an object .
+        """ Introspect into the caller to name an object .
 
         :param target: device instance
         :param from_depth: number of callers outside of the current frame
@@ -331,409 +720,8 @@ class LogAggregator(util.Ownable):
         raise Exception(f"failed to automatically label {repr(obj)}")
 
 
-class MungerBase(object):
-    """ This is where ugly but necessary sausagemaking happens to organize
-        in a relational form according to the master database.
-
-        The following conversions to relational files are attempted in order to
-        convert each value in the row dictionary:
-
-        1. Text containing a valid file or directory *outside* of the root data
-           directory is made relational by moving the file or directory into
-           the current row. The text is replaced with the updated relative path;
-        2. Text longer than `text_relational_min` is dumped into a relational
-           text file;
-        3. 1- or 2-D data is converted to a pandas Series or DataFrame, and
-           dumped into a relational file defined by the extension set by
-           `nonscalar_file_type`
-
-    """
-
-    def __init__(self, path,
-                 text_relational_min=1024,
-                 force_relational=['host_log'],
-                 dirname_fmt='{id} {host_time}',
-                 nonscalar_file_type='csv',
-                 metadata_dirname='metadata',
-                 **metadata):
-
-        self.path = path
-        self.text_relational_min = text_relational_min
-        self.force_relational = force_relational
-        self.dirname_fmt = dirname_fmt
-        self.nonscalar_file_type = nonscalar_file_type
-        self.metadata_dirname = metadata_dirname
-        self.metadata = metadata
-        self.logger = logging.getLogger(self.__class__.__name__)
-
-    def setup(self):
-        """ Overload this to add some setup logic
-        """
-        pass
-
-    def cleanup(self):
-        """ Overload this for teardown logic
-        """
-        pass
-
-    def __enter__(self):
-        self.setup()
-        return self
-
-    def __exit__(self, *args):
-        self.cleanup()
-
-    def __call__(self, index, row):
-        """
-        Break special cases of row items that need to be broken out into
-        relational files. The row valueis replaced in-place with the relative
-        path to the data saved on disk.
-
-        :param row: dictionary of {'entry_name': "entry_value"} pairs
-        :return: the row dictionary, replacing special entries with the relative path to the saved data file
-        """
-        def is_path(value):
-            if not isinstance(value, str):
-                return False
-            try:
-                return os.path.exists(value)
-            except ValueError:
-                return False
-
-        for name, value in row.items():
-            # A path outside the relational database tree
-            if is_path(value):
-                # A file or directory that should be moved in
-                row[name] = self._from_external_file(name, value, index, row)
-
-            # A long string that should be written to a text file
-            elif isinstance(value, (str, bytes)):
-                if len(value) > self.text_relational_min\
-                   or name in self.force_relational:
-                    row[name] = self._from_text(name, value, index, row)
-            elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
-                # vector, table, matrix, etc.
-                row[name] = self._from_nonscalar(name, value, index, row)
-        return row
-
-    def write_metadata(self, name, key):
-        import pandas as pd
-
-        if os.path.exists(os.path.join(self.path, self.metadata_dirname)):
-            return
-
-        summary = {}
-        for dev, devname in name.items():
-            for trait in dev:
-                name = key(devname, trait.name)
-                value = getattr(dev, trait.name)
-                if isinstance(value, (str, bytes)):
-                    if len(value) > self.text_relational_min:
-                        self._from_text(name, value)
-                    else:
-                        summary[name] = value
-                elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
-                    if not hasattr(value, '__len__') or len(value) > 0:
-                        self._from_nonscalar(name, value)
-                    else:
-                        summary[name] = ''
-                else:
-                    summary[name] = value
-
-        metadata = dict(self.metadata,
-                        summary=pd.DataFrame([summary], index=['Value']).T)
-
-        for k, v in metadata.items():
-            df = pd.DataFrame(v)
-            if df.shape[0] == 1:
-                df = df.T
-            stream = self._open_metadata(k + '.txt')
-            if hasattr(stream, 'overwrite'):
-                stream.overwrite = True
-
-            # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
-            try:
-                df.to_csv(stream)
-            except TypeError:
-                with io.TextIOWrapper(stream, newline='\n') as buf:
-                    df.to_csv(buf)
-
-    def _from_nonscalar(self, name, value, index=0, row=None):
-        """ Write nonscalar (potentially array-like, or a python object) data
-        to a file, and return a path to the file
-
-        :param name: name of the entry to write, used as the filename
-        :param value: the object containing array-like data
-        :param row: row dictionary, or None (the default) to write to the metadata folder
-        :return: the path to the file, relative to the directory that contains the master database
-        """
-
-        import pandas as pd
-
-        def write(stream, ext, value):
-            if ext == 'csv':
-                value.to_csv(stream)
-            elif ext == 'json':
-                value.to_json(stream)
-            elif ext in ('p', 'pickle'):
-                pickle.dump(value, stream, 2)
-            elif ext == 'feather':
-                to_feather(value, stream)
-            elif ext == 'db':
-                raise Exception('sqlite not implemented for relational files')
-            else:
-                raise Exception(
-                    f"extension {ext} doesn't match a known format")
-
-        if hasattr(value, '__len__') and len(value) == 0:
-            return ''
-
-        if row is None:
-            ext = 'csv'
-        else:
-            ext = self.nonscalar_file_type
-
-        try:
-            value = pd.DataFrame(value)
-            if value.shape[0] == 0:
-                value = pd.DataFrame([value])
-        except BaseException:
-            # We couldn't make a DataFrame
-            self.logger.error(
-                f"Failed to form DataFrame from {repr(name)}; pickling object instead")
-            ext = 'pickle'
-        finally:
-            if row is None:
-                stream = self._open_metadata(name + '.' + ext)
-            else:
-                stream = self._open_relational(name + '.' + ext, index, row)
-
-            # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
-            try:
-                write(stream, ext, value)
-            except TypeError:
-                with io.TextIOWrapper(stream, newline='\n') as buf:
-                    write(buf, ext, value)
-            return self._get_key(stream)
-
-    def _from_external_file(self, name, old_path,
-                            index=0, row=None, ntries=10):
-        basename = os.path.basename(old_path)
-        with self._open_relational(basename, index, row) as buf:
-            new_path = buf.name
-
-        self._import_from_file(old_path, new_path)
-
-        return self._get_key(new_path)
-
-    def _from_text(self, name, value, index=0, row=None, ext='.txt'):
-        """ Write a string data to a file
-
-        :param name: name of the parameter (helps to determine file path)
-        :param value: the string to write to file
-        :param row: the row to infer timestamp, or None to write to metadata
-        :param ext: file extension
-        :return: the path to the file, relative to the directory that contains the master database
-        """
-        with self._open_relational(name + ext, index, row) as f:
-            f.write(bytes(value, encoding='utf-8'))
-        return self._get_key(f)
-
-    # The following methods need to be implemented in subclasses.
-    def _get_key(self, buf):
-        """ Key to use for the relative data in the master database?
-
-        :param stream: stream for writing to the relational data file
-        :return: the key
-        """
-        raise NotImplementedError
-
-    def _open_relational(self, name, index, row):
-        """ Open a stream / IO buffer for writing relational data, given
-            the master database column, index, and the row dictionary.
-
-            :param name: the column name of the relational data in the master db
-            :param index: the index name of of the data in the master db
-            :param row: the dictionary containing the row of data at `index`
-
-            :returns: an open buffer object for writing data
-        """
-        raise NotImplementedError
-
-    def _open_metadata(self, name):
-        """ Open a stream / IO buffer for writing metadata, given
-            the name of the metadata.
-
-            :returns: an open buffer object for writing metadata to the file
-        """
-
-        raise NotImplementedError
-
-    def _import_from_file(self, old_path, dest):
-        raise NotImplementedError
-
-
-class MungeToDirectory(MungerBase):
-    """ Implement data munging into subdirectories. This is fast but can produce
-        an unweildy number of subdirectories if there are many runs.
-    """
-
-    def _open_relational(self, name, index, row):
-        if 'host_time' not in row:
-            self.logger.error(
-                "no timestamp yet from host yet; this shouldn't happen :(")
-
-        relpath = self._make_path_heirarchy(index, row)
-        if not os.path.exists(relpath):
-            os.makedirs(relpath)
-
-        return open(os.path.join(relpath, name), 'wb+')
-
-    def _open_metadata(self, name):
-        dirpath = os.path.join(self.path, self.metadata_dirname)
-        with suppress(FileExistsError):
-            os.makedirs(dirpath)
-        return open(os.path.join(dirpath, name), 'wb+')
-
-    def _get_key(self, stream):
-        """ Key to use for the relative data in the master database?
-
-        :param stream: stream for writing to the relational data file
-        :return: the key
-        """
-        return os.path.relpath(stream.name, self.path)
-
-    def _import_from_file(self, old_path, dest):
-        # Retry moves for several seconds in case the file is in the process
-        # of being closed
-        @util.until_timeout(PermissionError, 5, delay=0.5)
-        def move():
-            os.rename(old_path, dest)
-
-        try:
-            move()
-            self.logger.debug(f'moved {repr(old_path)} to {repr(dest)}')
-        except PermissionError:
-            self.logger.warning(
-                'relational file was still open in another program; fallback to copy instead of rename')
-            import shutil
-            shutil.copyfile(old_path, dest)
-
-    def _make_path_heirarchy(self, index, row):
-        relpath = self.dirname_fmt.format(id=index, **row)
-
-        # TODO: Find a more generic way to force valid path name
-        relpath = relpath.replace(':', '')
-        relpath = os.path.join(self.path, relpath)
-        return relpath
-
-
-class TarFileIO(io.BytesIO):
-    """ For appending data into new files in a tarfile
-    """
-
-    def __init__(self, open_tarfile, relname, mode='w', overwrite=False):
-        #        self.tarbase = tarbase
-        #        self.tarname = tarname
-        self.tarfile = open_tarfile
-        self.overwrite = False
-        self.name = relname
-        self.mode = mode
-        super(TarFileIO, self).__init__()
-
-    def __del__(self):
-        try:
-            super(TarFileIO, self).close()
-        except ValueError:
-            pass
-
-        super(TarFileIO, self).__del__()
-
-#    def write(self, data, encoding='ascii'):
-#        if isinstance(data, str):
-#            data = bytes(data, encoding=encoding)
-#        super(TarFileIO,self).write(data)
-#
-    def close(self):
-        # First: dump the data into the tar file
-        #        tarpath = os.path.join(self.tarbase, self.tarname)
-        #        f = tarfile.open(tarpath, 'a')
-
-        try:
-            if not self.overwrite and self.name in self.tarfile.getnames():
-                raise IOError(
-                    f'{self.name} already exists in {self.tarfile.name}')
-
-            tarinfo = tarfile.TarInfo(self.name)
-            tarinfo.size = self.tell()
-
-            self.seek(0)
-
-            self.tarfile.addfile(tarinfo, self)
-
-        # Then make sure to close everything
-        finally:
-            super(TarFileIO, self).close()
-
-
-class MungeToTar(MungerBase):
-    """ Implement data munging into a tar file. This is slower than
-        MungeToDirectory but is tidier on the filesystem.
-    """
-
-    tarname = 'data.tar'
-
-    def _open_relational(self, name, index, row):
-        if 'host_time' not in row:
-            self.logger.error(
-                "no timestamp yet from host yet; this shouldn't happen :(")
-
-        relpath = os.path.join(self.dirname_fmt.format(id=index, **row), name)
-
-        return TarFileIO(self.tarfile, relpath)
-
-    def _open_metadata(self, name):
-        dirpath = os.path.join(self.metadata_dirname, name)
-        return TarFileIO(self.tarfile, dirpath)
-
-    def setup(self):
-        if not os.path.exists(self.path):
-            with suppress(FileExistsError):
-                os.makedirs(self.path)
-        self.tarfile = tarfile.open(os.path.join(self.path, self.tarname), 'a')
-
-    def cleanup(self):
-        self.tarfile.close()
-
-    def _get_key(self, buf):
-        """ Where is the file relative to the master database?
-
-        :param path: path of the file
-        :return: path to the file relative to the master database
-        """
-        return buf.name
-
-    def _import_from_file(self, old_path, dest):
-        info = self.tar.gettarinfo(old_path)
-        info.name = dest
-        self.tar.addfile(old_path, info)
-
-        @util.until_timeout(PermissionError, 5, delay=0.5)
-        def remove():
-            try:
-                shutil.rmtree(old_path)
-            except NotADirectoryError:
-                os.remove(old_path)
-
-        try:
-            remove()
-            self.logger.debug(f'moved {old_path} to into tar file as {dest}')
-        except PermissionError:
-            self.logger.warning(
-                f'could not remove old file or directory {old_path}')
-
-
-class RelationalTableLogger(LogAggregator):
+class RelationalTableLogger(LogAggregator,
+                            ordered_entry=(_host.Email, MungerBase, _host.Host)):
     """ Abstract base class for loggers that queue dictionaries of data before writing
         to disk. This extends :class:`LogAggregator` to support
 
@@ -774,32 +762,38 @@ class RelationalTableLogger(LogAggregator):
                  git_commit_in=None,
                  **metadata):
 
-        super(RelationalTableLogger, self).__init__()
+        super().__init__()
+
+        # log host introspection
+        # TODO: smarter
+        self.host = _host.Host(git_commit_in=git_commit_in)
+        self.observe_states(self.host, always=['time', 'log'])
+
+        # select the backend that dumps relational data
+        munge_cls = MungeToTar if tar else MungeToDirectory
+
+        self.munge = munge_cls(
+            path,
+            text_relational_min=text_relational_min,
+            force_relational=force_relational,
+            dirname_fmt=dirname_fmt,
+            nonscalar_file_type=nonscalar_file_type,
+            metadata_dirname=metadata_dirname,
+            # **metadata
+        )
+        self.observe_settings(self.munge, never=self.munge.settings.__traits__)
+
         self.pending = []
         self.path = path
         self._overwrite = overwrite
         self.set_row_preprocessor(None)
 
-        # assign in self like this to detect the name 'host'
-        host = Host(git_commit_in=git_commit_in)
-        self.observe_states(host, always=['time', 'log'])
-        self.host = host
-
-        # select the backend that dumps relational data
-        munge_cls = MungeToTar if tar else MungeToDirectory
-
-        self.munge = munge_cls(path,
-                               text_relational_min=text_relational_min,
-                               force_relational=force_relational,
-                               dirname_fmt=dirname_fmt,
-                               nonscalar_file_type=nonscalar_file_type,
-                               metadata_dirname=metadata_dirname,
-                               **metadata)
-
-
     def __repr__(self):
-        return f"{self.__class__.__qualname__}({repr(self.path)})"
-
+        if hasattr(self, 'path'):
+            path = repr(self.path)
+        else:
+            path = '<unset path>'
+        return f"{self.__class__.__qualname__}({path})"
 
     def set_row_preprocessor(self, func):
         """ Define a function that is called to modify each pending data row
@@ -942,68 +936,74 @@ class RelationalTableLogger(LogAggregator):
 
         self.munge.dirname_fmt = format
 
-    def __enter__(self):
-        
-        class MyContext:
-            def __enter__(mself):
-                # Do some checks on the relative data directory before we consider overwriting
-                # the master db.
+    # def _setup(self):
 
-                if os.path.exists(self.path):
-                    if not os.path.isdir(self.path):
-                        txt = f"""
-                                  The base directory for relative data is
-                                  r"{os.path.abspath(self.path)}",
-                                  but it already exists and is not a directory.
-                                  Remove or move the file at this path, or change
-                                  the path to the master database.
-                               """
-                        raise IOError(textwrap.dedent(txt))
-        
-                    elif self._overwrite and len(os.listdir(self.path)) > 0:
-                        txt = f"""
-                                  The master database will be overwritten, but the relative data directory,
-                                  r"{os.path.abspath(self.path)}",
-                                  already contains data entries. These would become unindexed zombie data on
-                                  overwriting the master database. Remove or move the relative data directory
-                                  before running the test.
-                              """
-                        raise IOError(textwrap.dedent(txt))
-                        
-                self.open()
-                self.clear()
-        
-                if os.path.exists(self.path) and self._overwrite:
-                    os.remove(self.path)
-        
-                self.last_index = 0
-                
-                return self
-                        
-            def __exit__ (mself, *args):
-                try:
-                    self.write()
-                    if self.last_index > 0:
-                        self.munge.write_metadata(self.name, self.key)
-                finally:
-                    self.close()
+    # def __enter__(self):
+    #     class MyContext:
+    #
+    #         def __exit__ (mself, *args):
+    #
+    #     self._cm = util.concurrently(host=self.host, logger=MyContext(),
+    #                                  munge=self.munge, name=repr(self))
+    #     self._cm.__enter__()
+    #
+    #     return self
+    #
+    # def __exit__(self, *args):
+    #     if hasattr(self, '_cm'):
+    #         return self._cm.__exit__(*args)
 
-        self._cm = util.concurrently(host=self.host, logger=MyContext(),
-                                     munge=self.munge, name=repr(self))
-        self._cm.__enter__()
-        
-        return self
-
-    def __exit__(self, *args):
-        if hasattr(self, '_cm'):
-            return self._cm.__exit__(*args)
-
-    def setup(self):
+    def _setup(self):
         """ Open the file or database connection.
             This is an abstract base method (to be overridden by inheriting classes)
 
             :return: None
         """
+        
+        self.logger.debug(f'{self} setup')
+
+        # Do some checks on the relative data directory before we consider overwriting
+        # the master db.
+
+        if os.path.exists(self.path):
+            if not os.path.isdir(self.path):
+                txt = f"""
+                          The base directory for relative data is
+                          r"{os.path.abspath(self.path)}",
+                          but it already exists and is not a directory.
+                          Remove or move the file at this path, or change
+                          the path to the master database.
+                       """
+                raise IOError(textwrap.dedent(txt))
+
+            elif self._overwrite and len(os.listdir(self.path)) > 0:
+                txt = f"""
+                          The master database will be overwritten, but the relative data directory,
+                          r"{os.path.abspath(self.path)}",
+                          already contains data entries. These would become unindexed zombie data on
+                          overwriting the master database. Remove or move the relative data directory
+                          before running the test.
+                      """
+                raise IOError(textwrap.dedent(txt))
+
+        self.open()
+        self.clear()
+
+        if os.path.exists(self.path) and self._overwrite:
+            os.remove(self.path)
+
+        self.last_index = 0
+
+        return self
+
+    def _cleanup(self):
+        self.logger.debug(f'{self} cleanup')
+        try:
+            self.write()
+            if self.last_index > 0:
+                self.munge.write_metadata(self.name, self.key)
+        finally:
+            self.close()
 
     def open(self, path=None):
         """ This must be implemented by a subclass to open the data storage resource.
@@ -1130,6 +1130,7 @@ class SQLiteLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
+        self.logger.warning(f"opening for SQLite logging at {self.path}")
         import pandas as pd
 
         #        if not self.path.lower().endswith('.db'):

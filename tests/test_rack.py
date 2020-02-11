@@ -78,10 +78,10 @@ class LaggyInstrument(EmulatedVISADevice):
 
     def close(self):
         if self.settings.fail_disconnect:
-            1 / 0
+            1 // 0
 
 
-class Bench1(lb.Bench):
+class Rack1(lb.Rack):
     dev1: LaggyInstrument
     dev2: LaggyInstrument
 
@@ -92,21 +92,21 @@ class Bench1(lb.Bench):
         pass
 
 
-class Bench2(lb.Bench):
+class Rack2(lb.Rack):
     dev: LaggyInstrument
 
     def setup(self):
-        return 'bench 2 - setup'
+        return 'rack 2 - setup'
         return self.dev.dict()
 
     def acquire(self, *, param1):
-        return 'bench 3 - acquire'
+        return 'rack 3 - acquire'
 
     def fetch(self, *, param2=7):
         return self.dev.fetch()
 
 
-class Bench3(lb.Bench):
+class Rack3(lb.Rack):
     dev: LaggyInstrument
 
     def acquire(self, *, param2=7, param3):
@@ -116,7 +116,7 @@ class Bench3(lb.Bench):
         self.dev.fetch()
 
 
-class MyBench(lb.Bench):
+class MyRack(lb.Rack):
     db: lb.data.LogAggregator = lb.SQLiteLogger(
         'data',                         # Path to new directory that will contain containing all files
         overwrite=False,                # `True` --- delete existing master database; `False` --- append
@@ -125,7 +125,7 @@ class MyBench(lb.Bench):
         dirname_fmt='{id} {host_time}', # Format string that generates relational data (keyed on data column)
         nonscalar_file_type='csv',      # Default format of numerical data, when possible
         metadata_dirname='metadata',    # metadata will be stored in this subdirectory
-        tar=False                       # `True` to embed relational data folders within `data.tar`
+        tar=True                       # `True` to embed relational data folders within `data.tar`
     )
 
     # Devices
@@ -133,32 +133,34 @@ class MyBench(lb.Bench):
     inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=.06)
 
     # Test procedures
-    bench1 = Bench1(dev1=inst1, dev2=inst2)
-    bench2 = Bench2(dev=inst1)
-    bench3 = Bench3(dev=inst2)
+    rack1 = Rack1(dev1=inst1, dev2=inst2)
+    rack2 = Rack2(dev=inst1)
+    rack3 = Rack3(dev=inst2)
 
-    run = lb.Multitask(
-        setup=(bench1.setup & bench2.setup),  # executes these 2 methods concurrently
-        arm=(bench1.arm),
-        acquire=(bench2.acquire, bench3.acquire),  # executes these 2 sequentially
-        fetch=(bench2.fetch & bench3.fetch),
+    run = lb.Coordinate(
+        setup=(rack1.setup & rack2.setup),  # executes these 2 methods concurrently
+        arm=(rack1.arm),
+        acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
+        fetch=(rack2.fetch & rack3.fetch),
         finish=db,  # db() marks the end of a database row
     )
 
 
 if __name__ == '__main__':
     lb.show_messages('debug')
+    lb.util._force_full_traceback(True)
 
     with lb.stopwatch('test connection'):
-        # NewBench = lb.Bench._from_module('module_as_testbed')
-        with MyBench() as testbed:
+        # NewRack = lb.Rack._from_module('module_as_testbed')
+        with MyRack() as testbed:
             testbed.inst2.settings.delay = 0.07
             testbed.inst1.settings.delay = 0.12
+
             testbed.run.from_csv('run.csv')
             # for i in range(3):
             #     # Run the experiment
-            #     ret = testbed.run(bench1_param1=1, bench2_param1=2, bench3_param2=3,
-            #                       bench3_param3=4, bench2_param2=5, bench3_param4=6)
+            #     ret = testbed.run(rack1_param1=1, rack2_param1=2, rack3_param2=3,
+            #                       rack3_param3=4, rack2_param2=5, rack3_param4=6)
             #
             #     testbed.db()
 

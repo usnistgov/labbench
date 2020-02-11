@@ -144,13 +144,11 @@ with Testbed() as test:
     # On Exception, devices and the database disconnect cleanly.
 
     for freq in (915e6, 2.4e9, 5.3e9):
-
-        # each {task}_{argname} applies to all uses of {argname} in {task}
         test.procedure(
             detector_center_frequency=freq,
             generator_center_frequency=freq,
             detector_duration=5
-        )
+        ) # each {task}_{argname} applies to all methods in {task} that accept {argname}
 ```
 This script focuses on expressing high-level experimental parameters,
 leaving us with a clear pseudocode representation of the experimental procedure.
@@ -159,8 +157,7 @@ The test results are saved in an SQLite database,
 as 'data/{id} {host_time}/spectrogram.csv'. 
 
 Sometimes it is inconvenient to define the input conditions through code. For these cases,
- labbench includes support for tabular input conditions.
- An example input, `freq_sweep.csv`, could look like this:
+ labbench includes support for tabular sweeps. An example, `freq_sweep.csv`, could look like this:
 
 | Step        | detector_center_frequency | generator_center_frequency | detector_duration | 
 |-------------|---------------------------|----------------------------|-------------------| 

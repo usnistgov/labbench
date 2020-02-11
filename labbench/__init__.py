@@ -32,7 +32,7 @@ from ._host import Email
 from ._version import __version__
 from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, logger
 from ._backends import *
-from ._rack import Rack, Coordinate
+from ._rack import *
 
 from . import data
 from . import util

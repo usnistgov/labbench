@@ -142,7 +142,7 @@ class MyRack(lb.Rack):
         arm=(rack1.arm),
         acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
         fetch=(rack2.fetch & rack3.fetch),
-        finish=db,  # db() marks the end of a database row
+        finish=db.new_row,
     )
 
 

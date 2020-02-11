@@ -344,7 +344,6 @@ class TarFileIO(io.BytesIO):
         super(TarFileIO, self).__init__()
 
     def __del__(self):
-        logger.warning('tarfile __del__')
         try:
             super(TarFileIO, self).close()
         except ValueError:
@@ -813,7 +812,7 @@ class RelationalTableLogger(LogAggregator,
         warnings.warn(f"{self.__class__.__qualname__}.append() is deprecated - use {self.__class__.__qualname__}()")
         self(*args, **kwargs)
 
-    def __call__(self, *args, **kwargs):
+    def new_row(self, *args, **kwargs):
         """ Add a new row of data to the list of data that awaits write
             to disk.
 

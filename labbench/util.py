@@ -188,7 +188,6 @@ class _filtered_exc_info:
             return etype, evalue, start_tb
 
         except BaseException as e:
-            print(e)
             raise
 
 
@@ -653,8 +652,6 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
         exc = sys.exc_info()
     else:
         exc = (None, None, None)
-
-    print('finished yield; ', exc)
 
     t0 = time.perf_counter()
     while exits:

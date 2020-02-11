@@ -24,15 +24,11 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['Rack', 'Coordinate', 'Owner', 'multiple_contexts']
+__all__ = ['Rack', 'Owner', 'Coordinate']
 
 from . import _core as core
 from . import util as util
-# from .data import LogAggregator, RelationalTableLogger
-from ._host import Host, Email
-from pathlib import Path
-from functools import wraps, update_wrapper
-from weakref import proxy
+import contextlib
 import inspect
 import time
 import traceback
@@ -41,10 +37,9 @@ import traceback
 EMPTY = inspect._empty
 
 
-import contextlib
 @contextlib.contextmanager
-def nullcontext():
-    yield None
+def null_context(owner):
+    yield owner
 
 
 class Step:
@@ -298,7 +293,7 @@ class Owner:
             self.__context_description += f", {', '.join([repr(c) for c in other_contexts.values()])}"
 
         name = self.__class__.__qualname__
-        return util.sequentially(name=f'{name} connection', **contexts) or nullcontext()
+        return util.sequentially(name=f'{name} connection', **contexts) or null_context(self)
 
     def _recursive_devices(self):
         ordered_entry = list(self._ordered_entry)
@@ -359,14 +354,19 @@ def __call__():
 
 
 class Coordinate(util.Ownable):
-    def __init__(self, **sequence):
-        self.sequence = dict(((k, self._parse_sequence(seq)) for k, seq in sequence.items()))
+    """ Define an experiment built from steps in Rack instances. The input is a specification for sequencing these
+    steps, including support for threading. The output is a callable function that can be assigned as a method
+    to a top-level "master" Rack.
+    """
+
+    def __init__(self, **spec):
+        self.sequence = dict(((k, self._parse_sequence(seq)) for k, seq in spec.items()))
 
     def __owner_subclass__(self, testbed_cls):
         # initialization on the parent class definition
         # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
 
-        # determine the call signature for this new Coordinate procedure
+        # determine the call signature for the new Coordinate procedure
         signatures = self._collect_signatures(tuple(self.sequence.values()))
         params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default params
         defaults = dict([(arg, sig[0]) for arg, sig in signatures.items() if sig[0] is not EMPTY])

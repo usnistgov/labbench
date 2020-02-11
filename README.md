@@ -140,8 +140,9 @@ experiment can be defined and run in a python script by sweeping inputs to `proc
 Testbed = lb.Rack._from_module('testbed')
 
 with Testbed() as test:
-    # flow only continues in this `with` block while all devices are connected 
-    # (on an Exception, they all disconnect cleanly)
+    # flow inside this `with` block only continues when no exception is raised. 
+    # On Exception, devices and the database disconnect cleanly.
+
     for freq in (915e6, 2.4e9, 5.3e9):
 
         # each {task}_{argname} applies to all uses of {argname} in {task}
@@ -150,18 +151,16 @@ with Testbed() as test:
             generator_center_frequency=freq,
             detector_duration=5
         )
-
-        test.db() # mark the end of a row
 ```
 This script is a clear representation of the experimental procedure, because it
-can focus exclusively on the high-level experimental parameters.
+can focus exclusively on high-level experimental parameters.
 The test results are saved in an SQLite database,
 'data/master.db'. Each row in the database points to spectrogram data in subdirectories that are formatted
 as 'data/{id} {host_time}/spectrogram.csv'. 
 
-Sometimes it is inconvenient to define the input conditions through code, and 
-input tables are more convenient. Labbench supports this. An example input,
-`freq_sweep.csv`, could look like this:
+Sometimes it is inconvenient to define the input conditions through code. For these cases,
+ labbench includes support for tabular input conditions.
+ An example input, `freq_sweep.csv`, could look like this:
 
 | Step        | detector_center_frequency | generator_center_frequency | detector_duration | 
 |-------------|---------------------------|----------------------------|-------------------| 

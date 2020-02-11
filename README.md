@@ -152,8 +152,8 @@ with Testbed() as test:
             detector_duration=5
         )
 ```
-This script is a clear representation of the experimental procedure, because it
-can focus exclusively on high-level experimental parameters.
+This script focuses on expressing high-level experimental parameters,
+leaving us with a clear pseudocode representation of the experimental procedure.
 The test results are saved in an SQLite database,
 'data/master.db'. Each row in the database points to spectrogram data in subdirectories that are formatted
 as 'data/{id} {host_time}/spectrogram.csv'. 

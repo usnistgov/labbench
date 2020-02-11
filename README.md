@@ -133,11 +133,17 @@ procedure = lb.Coordinate(
 )
 ```
 `testbed.py` here exposes the general capabilities of an experimental setup. An
-experiment run can be a scripted by sweeping input conditions to `procedure`: 
+experiment can be defined and run in a python script by sweeping inputs to `procedure`: 
 ```python
 # run.py
-with MyTestbed() as test: # instruments stay connected while in this block
+
+Testbed = lb.Rack._from_module('testbed')
+
+with Testbed() as test:
+    # flow only continues in this `with` block while all devices are connected 
+    # (on an Exception, they all disconnect cleanly)
     for freq in (915e6, 2.4e9, 5.3e9):
+
         # each {task}_{argname} applies to all uses of {argname} in {task}
         test.procedure(
             detector_center_frequency=freq,

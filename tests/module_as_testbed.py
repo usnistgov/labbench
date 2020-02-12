@@ -86,7 +86,7 @@ class Rack3(lb.Rack):
         self.dev.fetch()
 
 
-db: lb.data.LogAggregator = lb.SQLiteLogger(
+db: lb.data.Aggregator = lb.SQLiteLogger(
     'data',  # Path to new directory that will contain containing all files
     overwrite=False,  # `True` --- delete existing master database; `False` --- append
     text_relational_min=1024,  # Minimum text string length that triggers relational storage

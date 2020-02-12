@@ -30,6 +30,7 @@ from . import _core as core
 from . import util as util
 import contextlib
 import inspect
+import logging
 import time
 import traceback
 
@@ -47,6 +48,8 @@ class Step:
     Wraps class methods to support use with Coordinate
     """
     def __init__(self, owner, name):
+        def ownable(obj, name):
+            return isinstance(getattr(self.owner, name), util.Ownable)
         cls = owner.__class__
         obj = getattr(cls, name)
         self.__wrapped__ = obj
@@ -54,8 +57,11 @@ class Step:
 
         # note the devices needed to execute this function
         if isinstance(owner, Rack):
-            available = {getattr(self.owner, name) for name in getattr(self.owner, '__annotations__', {})}
-            accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)}
+            annotations = getattr(self.owner, '__annotations__', {})
+            available = {getattr(self.owner, name) for name in annotations}
+
+            accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)
+                        if name in annotations}
             self.dependencies = available.intersection(accessed)
         else:
             self.dependencies = set()
@@ -108,7 +114,7 @@ class Step:
         name_prefix = str(self.owner).replace('.', '_') + '_'
         if len(kws) > 0:
             notify_params = dict(((name_prefix + k, v) for k, v in kws.items()))
-            self.owner._notify_call_parameters(notify_params)
+            Rack._notify.call_event(notify_params)
 
         # invoke the wrapped function
         owner_name = str(self.owner)
@@ -121,7 +127,7 @@ class Step:
         # notify owner of return value
         if ret is not None:
             notify = ret if isinstance(ret, dict) else {name_prefix + self.__name__: ret}
-            self.owner._notify_return(notify)
+            Rack._notify.return_event(notify)
 
         return {} if ret is None else ret
 
@@ -237,15 +243,15 @@ class Owner:
 
     def __init__(self, **devices):
         # initialize everything before we cull the dictionary to limit context management scope
-        for lookup in self._devices, self._owners:
-            for name, obj in lookup.items():
-                obj.__owner_init__(self)
-
         self._owners = dict(self._owners)
         self._devices = dict(self._devices, **devices)
 
         super().__init__()
-        
+
+        for lookup in self._devices, self._owners:
+            for name, obj in lookup.items():
+                obj.__owner_init__(self)
+
     def __setattr__(self, key, obj):
         # keep util.Ownable instance naming up to date, as well as self._devices and self._owners
         if isinstance(obj, util.Ownable):
@@ -333,6 +339,7 @@ class Owner:
         pass
 
     def __enter__(self):
+        # Rack._notify.clear()
         self.__context_manager = self.__new_manager()
 
         self.__context_manager.__enter__()
@@ -353,7 +360,9 @@ class Owner:
             except BaseException as e:
                 traceback.print_exc()
 
-        return self.__context_manager.__exit__(*exc_info)
+        ret = self.__context_manager.__exit__(*exc_info)
+        # Rack._notify.clear()
+        return ret
 
 @util.hide_in_traceback
 def __call__():
@@ -531,6 +540,40 @@ class Coordinate(util.Ownable):
         return signatures
 
 
+class notify:
+    _handlers = dict(returns=set(), calls=set())
+
+    @classmethod
+    def clear(cls):
+        cls._handlers = dict(returns=set(), calls=set())
+
+    @classmethod
+    def return_event(cls, returned: dict):
+        if not isinstance(returned, dict):
+            raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
+        for handler in cls._handlers['returns']:
+            handler(returned)
+
+    @classmethod
+    def call_event(cls, parameters: dict):
+        if not isinstance(parameters, dict):
+            raise TypeError(f"parameters data was {repr(parameters)}, which is not a dict")
+        for handler in cls._handlers['calls']:
+            handler(parameters)
+
+    @classmethod
+    def observe_returns(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['returns'].add(handler)
+
+    @classmethod
+    def observe_calls(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['calls'].add(handler)
+
+
 class Rack(Owner, util.Ownable):
     """ A Rack is a container for devices, data managers, and method functions that define test steps.
 
@@ -562,6 +605,8 @@ class Rack(Owner, util.Ownable):
 
     """
 
+    _notify = notify
+
     def __init_subclass__(cls, ordered_entry=[], concurrent=True):
         # cls._racks = dict(((k, v) for k, v in cls.__dict__.items() if isinstance(v, Rack)))
 
@@ -589,8 +634,8 @@ class Rack(Owner, util.Ownable):
         #         setattr(cls, name, annot_cls())
 
     def __init__(self, **devices):
-        self.__return_handlers__ = set()
-        self.__call_parameter_handlers__ = set()
+        self._logger = util.logger.logger.getChild(str(self))
+        self._logger = logging.LoggerAdapter(self._logger, dict(rack=repr(self), origin=f" - " + str(self)))
 
         super().__init__(**devices)
 
@@ -614,46 +659,23 @@ class Rack(Owner, util.Ownable):
 
         # any remaining items in annotations are missing arguments
         if len(annotations) > 0:
-            kwargs = [f"{repr(k)}: {repr(v)}" for k, v in annotations.items()]
-            raise AttributeError(f"missing keyword arguments '{', '.join(kwargs)}'")
+            kwargs = [f"{repr(k)}: {v}" for k, v in annotations.items()]
+            raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
 
         # replace self._steps with new mapping of wrappers
         self._steps = dict(((k, obj) if isinstance(obj, RackMethod) else (k, Step(self, k))
                             for k, obj in self._steps.items()))
 
-        # propagate return values from children
-        for owner in self._owners.values():
-            if isinstance(owner, Rack):
-                owner._observe_returns(self._notify_return)
-                owner._observe_call_parameters(self._notify_call_parameters)
+    def __owner_init__(self, owner):
+        super().__owner_init__(owner)
+        self._logger = util.logger.logger.getChild(str(self))
+        self._logger = logging.LoggerAdapter(self._logger, dict(rack=repr(self), origin=f" - "+str(self)))
 
     def __getattribute__(self, item):
         if item != '_steps' and item in self._steps:
             return self._steps[item]
         else:
             return super().__getattribute__(item)
-
-    def _notify_return(self, returned: dict):
-        if not isinstance(returned, dict):
-            raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
-        for handler in self.__return_handlers__:
-            handler(returned)
-
-    def _notify_call_parameters(self, parameters: dict):
-        if not isinstance(parameters, dict):
-            raise TypeError(f"parameters data was {repr(parameters)}, which is not a dict")
-        for handler in self.__call_parameter_handlers__:
-            handler(parameters)
-
-    def _observe_returns(self, handler):
-        if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        self.__return_handlers__.add(handler)
-
-    def _observe_call_parameters(self, handler):
-        if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        self.__call_parameter_handlers__.add(handler)
 
     def __getitem__(self, item):
         return self._steps[item]

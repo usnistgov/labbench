@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 # This software was developed by employees of the National Institute of
 # Standards and Technology (NIST), an agency of the Federal Government.
 # Pursuant to title 17 United States Code Section 105, works of NIST employees
@@ -119,9 +121,9 @@ class Rack3(lb.Rack):
 
 
 class MyRack(lb.Rack):
-    db: lb.data.LogAggregator = lb.SQLiteLogger(
+    db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
         'data',                         # Path to new directory that will contain containing all files
-        overwrite=False,                # `True` --- delete existing master database; `False` --- append
+        append=True,                    # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,       # Minimum text string length that triggers relational storage
         force_relational=['host_log'],  # Data in these columns will always be relational
         dirname_fmt='{id} {host_time}', # Format string that generates relational data (keyed on data column)
@@ -166,5 +168,5 @@ if __name__ == '__main__':
             #
             #     testbed.db()
 
-    df = lb.read(testbed.db.path+'/master.db')
-    df.to_csv(testbed.db.path+'/master.csv')
+    df = lb.read(testbed.db.path/'master.db')
+    df.to_csv(testbed.db.path/'master.csv')

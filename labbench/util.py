@@ -81,21 +81,25 @@ class Ownable:
     def __get__(self, owner, owner_cls=None):
         return self
 
-    def __owner_init__(self, testbed):
+    def __owner_init__(self, owner):
         """ Called when the owner is instantiated
         """
-        pass
+        self.__owner_instname__ = lambda: (str(owner) if hasattr(owner, '__name__') else '')
 
-    def __owner_subclass__(self, testbed_cls):
+    def __owner_subclass__(self, owner_cls):
         """ Called after the owner class is instantiated; returns an object to be used in the Rack namespace
         """
         return self
 
     def __str__(self):
-        if self.__name__ is None:
-            return self.__repr__()
+        if hasattr(self, '__name__'):
+            name = self.__name__
+            owner_name = self.__owner_instname__()
+            if owner_name:
+                name = owner_name + '.' + name
+            return name
         else:
-            return self.__objclass__.__qualname__ + '.' + self.__name__
+            return repr(self)
 
 
 class ConcurrentException(Exception):

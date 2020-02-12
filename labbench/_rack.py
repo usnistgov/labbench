@@ -104,6 +104,12 @@ class Step:
             label = self.__class__.__qualname__ + '.' + self.__name__
             raise ConnectionError(f"devices {closed} must be connected to invoke {self.__qualname__}")
 
+        # notify owner about the parameters passed
+        name_prefix = str(self.owner).replace('.', '_') + '_'
+        if len(kws) > 0:
+            notify_params = dict(((name_prefix + k, v) for k, v in kws.items()))
+            self.owner._notify_call_parameters(notify_params)
+
         # invoke the wrapped function
         owner_name = str(self.owner)
         t0 = time.perf_counter()
@@ -111,6 +117,12 @@ class Step:
         elapsed = time.perf_counter()-t0
         if elapsed > 0.1:
             core.logger.debug(f"{owner_name} completed in {elapsed:0.2f}s")
+
+        # notify owner of return value
+        if ret is not None:
+            notify = ret if isinstance(ret, dict) else {name_prefix + self.__name__: ret}
+            self.owner._notify_return(notify)
+
         return {} if ret is None else ret
 
     # implement the "&" operator to define concurrent steps for Coordinate
@@ -155,15 +167,13 @@ class RackMethod(util.Ownable):
         df.index.name = 'Condition name'
         df.to_csv(path)
 
-    def from_csv(self, path, after=None):
+    def from_csv(self, path):
         import pandas as pd
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
             core.logger.info(f"{self.__objclass__.__qualname__}.{self.__name__} from '{str(path)}' "
                              f"- '{row}' ({i+1}/{len(table.index)})")
-            self(**table.loc[row].to_dict())
-            if after is not None:
-                after()
+            self.results = self(**table.loc[row].to_dict())
 
     def _call_step(self, spec, kwargs):
         available = set(kwargs.keys())
@@ -294,9 +304,8 @@ class Owner:
             others_desc = ', '.join([repr(c) for c in other_contexts.values()])
         if len(firsts_desc)>0:
             others_desc = firsts_desc + ', ' + others_desc
-        log.debug(f"device open sequencing is {others_desc}")
-        name = self.__class__.__qualname__
-        return util.sequentially(name=f'{name} connection', **contexts) or null_context(self)
+        log.debug(f"device open sequence: {others_desc}")
+        return util.sequentially(name=f'{repr(self)}', **contexts) or null_context(self)
 
     def _recursive_devices(self):
         ordered_entry = list(self._ordered_entry)
@@ -417,7 +426,6 @@ class Coordinate(util.Ownable):
 
         else:
             typename = type(sequence).__qualname__
-            print(sequence)
             raise TypeError(f"object of type '{typename}' is neither a Rack method nor a nested tuple/list")
 
         # step through, if this is a sequence
@@ -425,7 +433,13 @@ class Coordinate(util.Ownable):
             # validate replace each entry in the sequence with a parsed item
             if isinstance(sequence[i], (list, tuple)):
                 sequence[i] = self._parse_sequence(sequence[i])
-            elif not isinstance(sequence[i], Step):
+            elif isinstance(sequence[i], Step):
+                continue
+            elif isinstance(getattr(sequence[i], '__self__', sequence[i]), util.Ownable) and \
+                    callable(sequence[i]):
+                # some other kind of callable function that seems reasonable to take as a Step method
+                sequence[i] = Step(sequence[i], '__call__')
+            else:
                 typename = type(sequence).__qualname__
                 raise TypeError(f"object of type '{typename}' is neither a "
                                 f"Rack method nor a nested tuple/list")
@@ -574,10 +588,11 @@ class Rack(Owner, util.Ownable):
         #     else:
         #         setattr(cls, name, annot_cls())
 
-    def __init__(self, config={}, **devices):
-        super().__init__(**devices)
+    def __init__(self, **devices):
+        self.__return_handlers__ = set()
+        self.__call_parameter_handlers__ = set()
 
-        self._config = config
+        super().__init__(**devices)
 
         # match the device arguments to annotations
         devices = dict(devices)
@@ -606,11 +621,39 @@ class Rack(Owner, util.Ownable):
         self._steps = dict(((k, obj) if isinstance(obj, RackMethod) else (k, Step(self, k))
                             for k, obj in self._steps.items()))
 
+        # propagate return values from children
+        for owner in self._owners.values():
+            if isinstance(owner, Rack):
+                owner._observe_returns(self._notify_return)
+                owner._observe_call_parameters(self._notify_call_parameters)
+
     def __getattribute__(self, item):
         if item != '_steps' and item in self._steps:
             return self._steps[item]
         else:
             return super().__getattribute__(item)
+
+    def _notify_return(self, returned: dict):
+        if not isinstance(returned, dict):
+            raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
+        for handler in self.__return_handlers__:
+            handler(returned)
+
+    def _notify_call_parameters(self, parameters: dict):
+        if not isinstance(parameters, dict):
+            raise TypeError(f"parameters data was {repr(parameters)}, which is not a dict")
+        for handler in self.__call_parameter_handlers__:
+            handler(parameters)
+
+    def _observe_returns(self, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        self.__return_handlers__.add(handler)
+
+    def _observe_call_parameters(self, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        self.__call_parameter_handlers__.add(handler)
 
     def __getitem__(self, item):
         return self._steps[item]
@@ -620,15 +663,6 @@ class Rack(Owner, util.Ownable):
 
     def __iter__(self):
         return (getattr(self, k) for k in self._steps)
-
-    def __repr__(self):
-        return repr(self.__wrapped__)
-
-    def __str__(self):
-        if hasattr(self, '__name__'):
-            return self.__objclass__.__qualname__ + '.' + self.__name__
-        else:
-            return repr(self)
 
     def __repr__(self):
         return f'{self.__class__.__qualname__}()'

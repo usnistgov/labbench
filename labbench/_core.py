@@ -1200,12 +1200,13 @@ class Device(HasStates, util.Ownable):
         self.__imports__()
 
         self.backend = DisconnectedBackend(self)
-        self.logger = logger.logger.getChild(repr(self))
-        self.logger = logging.LoggerAdapter(self.logger, dict(device=repr(self), origin=f" - "+repr(self)))
 
-        # Instantiate state now. It needs to be here, after settings are fully
+        # gotta have a logger
+        self.logger = logger.logger.getChild(str(self))
+        self.logger = logging.LoggerAdapter(self.logger, dict(device=repr(self), origin=f" - "+str(self)))
+
+        # Instantiate state now. It needed to wait until this point, after settings are fully
         # instantiated, in case state implementation depends on settings
-
         setattr(self, 'open', self.__open_wrapper__)
         setattr(self, 'close', self.__close_wrapper__)
 
@@ -1234,7 +1235,7 @@ class Device(HasStates, util.Ownable):
             method, starting with labbench.Device and working down
         """
         if self.connected:
-            self.logger.debug('{} already open'.format(repr(self)))
+            self.logger.debug(f'attempt to open {self}, which is already open')
             return
 
         self.backend = None
@@ -1242,8 +1243,16 @@ class Device(HasStates, util.Ownable):
         for opener in trace_methods(self.__class__, 'open', Device)[::-1]:
             opener(self)
 
+        self.logger.debug(f"{self} is open")
         # Force an update to self.connected
         self.connected
+
+    def __owner_init__(self, owner):
+        super().__owner_init__(owner)
+
+        # update the name of the logger to match the context within owner
+        self.logger = logger.logger.getChild(str(self))
+        self.logger = logging.LoggerAdapter(self.logger, dict(device=repr(self), origin=f" - "+str(self)))
 
     @util.hide_in_traceback
     @wraps(close)
@@ -1278,7 +1287,7 @@ class Device(HasStates, util.Ownable):
 
         self.connected
 
-        self.logger.debug(f'now closed')
+        self.logger.debug(f'is closed')
 
     def __imports__(self):
         pass
@@ -1328,8 +1337,6 @@ class Device(HasStates, util.Ownable):
             # the namespace is gone. we just assume disconnected
             return False
 
-    __str__ = __repr__
-    
 
 def device_contexts(objs, concurrent=True):
     other_contexts = dict([(a,o) for a,o in objs.items()])

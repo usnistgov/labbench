@@ -261,7 +261,6 @@ class Host(core.Device):
         import pip
 
     def close(self):
-        self.logger.warning('close host')
         try:
             self.backend['logger'].removeHandler(self.backend['log_handler'])
         except (AttributeError, TypeError):

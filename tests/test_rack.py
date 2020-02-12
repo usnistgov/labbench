@@ -62,11 +62,13 @@ class LaggyInstrument(EmulatedVISADevice):
     def fetch(self):
         """ Return the argument after a 1s delay
         """
+        import pandas as pd
         lb.logger.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.settings.fetch_time)
         self.perf['fetch'] = time.perf_counter() - t0
-        return self.settings.fetch_time
+        return pd.Series([1,2,3,4,5,6])
+        # return self.settings.fetch_time
     
     def dict(self):
         return {self.settings.resource: self.settings.resource}
@@ -103,7 +105,7 @@ class Rack2(lb.Rack):
         return 'rack 3 - acquire'
 
     def fetch(self, *, param2=7):
-        return self.dev.fetch()
+        return dict(rack2_data=self.dev.fetch())
 
 
 class Rack3(lb.Rack):
@@ -142,7 +144,7 @@ class MyRack(lb.Rack):
         arm=(rack1.arm),
         acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
         fetch=(rack2.fetch & rack3.fetch),
-        finish=db.new_row,
+        finish=(db.new_row),
     )
 
 if __name__ == '__main__':
@@ -156,6 +158,7 @@ if __name__ == '__main__':
             testbed.inst1.settings.delay = 0.12
 
             testbed.run.from_csv('run.csv')
+
             # for i in range(3):
             #     # Run the experiment
             #     ret = testbed.run(rack1_param1=1, rack2_param1=2, rack3_param2=3,
@@ -165,5 +168,3 @@ if __name__ == '__main__':
 
     df = lb.read(testbed.db.path+'/master.db')
     df.to_csv(testbed.db.path+'/master.csv')
-
-    print(testbed.db._metadata)

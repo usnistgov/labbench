@@ -39,7 +39,7 @@ import sys
 from threading import Thread, Event
 import warnings
 
-__all__ = ['CommandLineWrapper',
+__all__ = ['ShellBackend',
            'DotNetDevice',
            'LabviewSocketInterface',
            'SerialDevice',
@@ -49,7 +49,7 @@ __all__ = ['CommandLineWrapper',
            'Win32ComDevice']
 
 
-class CommandLineWrapper(core.Device):
+class ShellBackend(core.Device):
     """ Virtual device representing for interacting with a command line\
         executable. It supports threaded data logging through standard
         input, standard output, and standard error pipes.
@@ -104,7 +104,7 @@ class CommandLineWrapper(core.Device):
 
         # Monitor state changes
         states = set(self.settings.traits().keys())\
-            .difference(dir(CommandLineWrapper))
+            .difference(dir(ShellBackend))
         self.settings.observe(check_state_change, tuple(states))
 
     @property
@@ -425,7 +425,7 @@ class CommandLineWrapper(core.Device):
                 parent.wait(5)
 
             for child in children:
-                CommandLineWrapper._kill_proc_tree(child.pid)
+                ShellBackend._kill_proc_tree(child.pid)
         except psutil.NoSuchProcess:
             pass
 

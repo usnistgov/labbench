@@ -1041,7 +1041,7 @@ class Device(HasStates, util.Ownable):
             of devices are provided by other labbench Device subclasses:
 
                 * VISADevice exposes a pyvisa backend for VISA Instruments
-                * CommandLineWrapper exposes a threaded pipes backend for command line tools
+                * ShellBackend exposes a threaded pipes backend for command line tools
                 * Serial exposes a pyserial backend for serial port communication
                 * DotNetDevice exposes a pythonnet for wrapping dotnet libraries
 

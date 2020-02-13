@@ -207,7 +207,7 @@ If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime,
 
 ## Status
 The following types of backend classes are implemented to streamline development of new instrumentation drivers:
-* CommandLineWrapper (standard input/output wrapper for command line programs)
+* ShellBackend (standard input/output wrapper for command line programs)
 * DotNet (pythonnet backend for dotnet libraries)
 * LabViewSocketInterface (for controlling LabView VIs via a simple networking socket)
 * SerialDevice (pyserial backend)

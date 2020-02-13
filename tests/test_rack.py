@@ -119,42 +119,43 @@ class Rack3(lb.Rack):
         return self.dev.fetch()
 
 
-class MyRack(lb.Rack):
-    db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
-        'data',                         # Path to new directory that will contain containing all files
-        append=True,                    # `True` --- allow appends to an existing database; `False` --- append
-        text_relational_min=1024,       # Minimum text string length that triggers relational storage
-        force_relational=['host_log'],  # Data in these columns will always be relational
-        dirname_fmt='{id} {host_time}', # Format string that generates relational data (keyed on data column)
-        nonscalar_file_type='csv',      # Default format of numerical data, when possible
-        metadata_dirname='metadata',    # metadata will be stored in this subdirectory
-        tar=False                       # `True` to embed relational data folders within `data.tar`
-    )
-
-    # Devices
-    inst1: LaggyInstrument = LaggyInstrument(resource='a', delay=.12)
-    inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=.06)
-
-    # Test procedures
-    rack1 = Rack1(dev1=inst1, dev2=inst2)
-    rack2 = Rack2(dev=inst1)
-    rack3 = Rack3(dev=inst2)
-
-    run = lb.Coordinate(
-        setup=(rack1.setup & rack2.setup),  # executes these 2 methods concurrently
-        arm=(rack1.arm),
-        acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
-        fetch=(rack2.fetch & rack3.fetch),
-        finish=(db.new_row),
-    )
+# class MyRack(lb.Rack):
+#     db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
+#         'data',                         # Path to new directory that will contain containing all files
+#         append=True,                    # `True` --- allow appends to an existing database; `False` --- append
+#         text_relational_min=1024,       # Minimum text string length that triggers relational storage
+#         force_relational=['host_log'],  # Data in these columns will always be relational
+#         dirname_fmt='{id} {host_time}', # Format string that generates relational data (keyed on data column)
+#         nonscalar_file_type='csv',      # Default format of numerical data, when possible
+#         metadata_dirname='metadata',    # metadata will be stored in this subdirectory
+#         tar=False                       # `True` to embed relational data folders within `data.tar`
+#     )
+#
+#     # Devices
+#     inst1: LaggyInstrument = LaggyInstrument(resource='a', delay=.12)
+#     inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=.06)
+#
+#     # Test procedures
+#     rack1 = Rack1(dev1=inst1, dev2=inst2)
+#     rack2 = Rack2(dev=inst1)
+#     rack3 = Rack3(dev=inst2)
+#
+#     run = lb.Coordinate(
+#         setup=(rack1.setup & rack2.setup),  # executes these 2 methods concurrently
+#         arm=(rack1.arm),
+#         acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
+#         fetch=(rack2.fetch & rack3.fetch),
+#         finish=(db.new_row),
+#     )
 
 if __name__ == '__main__':
-    lb.show_messages('debug')
     lb.util._force_full_traceback(True)
 
     with lb.stopwatch('test connection'):
-        # with lb.Rack._from_module('module_as_testbed')() as testbed:
-        with MyRack() as testbed:
+        with lb.Rack._from_module('module_as_testbed')() as testbed:
+            lb.show_messages('debug')
+
+            # with MyRack() as testbed:
             testbed.inst2.settings.delay = 0.07
             testbed.inst1.settings.delay = 0.12
 

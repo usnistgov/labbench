@@ -147,7 +147,7 @@ class Step:
     __str__ = __repr__
 
 
-class RackMethod(util.Ownable):
+class CoordinatedMethod(util.Ownable):
     def __init__(self):
         self.to_template()
 
@@ -394,7 +394,7 @@ class Coordinate(util.Ownable):
 
         # this builds the callable object with a newly-defined subclass.
         # this tricks some IDEs into showing the call signature.
-        cls = type(self.__name__, (RackMethod,),
+        cls = type(self.__name__, (CoordinatedMethod,),
                    dict(sequence=self.sequence,
                         params=params,
                         defaults=defaults,
@@ -408,7 +408,7 @@ class Coordinate(util.Ownable):
                             annotations=annots,
                             positional=0)
 
-        # The testbed takes this RackMethod instance in place of self
+        # The testbed takes this CoordinatedMethod instance in place of self
         obj = object.__new__(cls)
         obj.__init__()
         return obj
@@ -577,6 +577,18 @@ class notify:
             raise AttributeError(f"{repr(handler)} is not callable")
         cls._handlers['calls'].add(handler)
 
+    @classmethod
+    def unobserve_returns(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['returns'].remove(handler)
+
+    @classmethod
+    def unobserve_calls(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['calls'].remove(handler)
+
 
 class Rack(Owner, util.Ownable):
     """ A Rack contains and coordinates devices and data handling with method functions that define test steps.
@@ -667,7 +679,7 @@ class Rack(Owner, util.Ownable):
             raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
 
         # replace self._steps with new mapping of wrappers
-        self._steps = {k: (obj if isinstance(obj, RackMethod) else Step(self, k))
+        self._steps = {k: (obj if isinstance(obj, CoordinatedMethod) else Step(self, k))
                        for k, obj in self._steps.items()}
 
     def __owner_init__(self, owner):

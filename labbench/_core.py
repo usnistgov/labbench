@@ -46,7 +46,7 @@ __all__ = ['Trait', 'Undefined', 'Any', 'Int', 'Float', 'Unicode', 'Complex', 'B
            'Bool', 'List', 'Dict', 'Address', 'NonScalar',
 
            'Device', 'list_devices',
-           'property', 'method', 'observe', 'unobserve'
+           'observe', 'unobserve'
            ]
 
 
@@ -169,7 +169,7 @@ class HasTraitsMeta(type):
         if len(bases) >= 1:
             if hasattr(bases, '__children__'):
                 ns['__children__'] = {}
-            traits = dict(((k, v.copy()) for k, v in bases[0].__traits__.items()))
+            traits = {k: v.copy() for k, v in bases[0].__traits__.items()}
             ns.update(traits)
             ns['__traits__'] = traits
             HasTraitsMeta.__pending__.append(traits)
@@ -278,7 +278,7 @@ class Trait:
 
         # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
         if len(self.remap) > 0:
-            remap_inbound = dict(((v, k) for k, v in self.remap.items()))
+            remap_inbound = {v: k for k, v in self.remap.items()}
             if len(self.remap) != len(remap_inbound):
                 raise ValueError(f"'remap' has duplicate values")
 
@@ -304,8 +304,8 @@ class Trait:
         cls.__annotations__ = dict(annots)
 
         # apply an explicit signature to cls.__init__
-        annots = dict(((k, cls.type) if v is ThisType else (k, v) \
-                       for k, v in annots.items()))
+        annots = {k: cls.type if v is ThisType else (k, v) \
+                  for k, v in annots.items()}
         cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys())
         util.wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls.__defaults__, 1, annots)
         
@@ -382,10 +382,7 @@ class Trait:
 
             # if there have been no hints, try to guess at the intent of the decorated methods
             if self.__decorator_action__ is None:
-                if len(positional_argcounts) == 1 and positional_argcounts[0] > 2:
-                    # long function signatures mean not a property
-                    self.__decorator_action__ = 'method'
-                elif set(positional_argcounts) in (set((1,)), set((1, 2))):
+                if set(positional_argcounts) in ({1}, {1, 2}, {2}):
                     self.__decorator_action__ = 'property'
                 else:
                     raise AttributeError(f"the intended behavior of the method(s) decorated by {self} "\
@@ -393,9 +390,9 @@ class Trait:
 
             if self.__decorator_action__ == 'property':
                 # adopt the properties!
-                if set(positional_argcounts) not in (set((1,)), set((2,)), set((1, 2))):
-                    raise AttributeError(f"to implement a {self} property, decorate a "\
-                                         f"1-argument getter and/or a 2-argument setter")
+                if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
+                    raise AttributeError(f"a decorator implementation with @{self} must apply to a getter "\
+                                         f"(above `def func(self)`) and/or setter (above `def func(self, value):`)")
                 for func, argcount in zip(self.__decorator_pending__, positional_argcounts):
                     if len(self.help.rstrip().strip()) == 0:
                         # take func docstring as default self.help
@@ -405,22 +402,8 @@ class Trait:
                         self.__getter__ = func
                     else:
                         self.__setter__ = func
-
-            elif self.__decorator_action__ == 'method':
-                if len(self.__decorator_pending__) != 1:
-                    raise AttributeError(f"to implement method behavior with {self}, decorate exactly "\
-                                         f"one method")
-
-                func = self.__decorator_pending__[0]
-
-                if len(self.help.rstrip().strip()) == 0:
-                    # take func docstring as default self.help
-                    self.help = func.__doc__.rstrip().strip()
-
-                self.__returner__ = func
             else:
-                raise AttributeError(f"{repr(self.__decorator_action__)} is an unrecognized kind of "\
-                                     f"trait decorator behavior in {self}")
+                raise AttributeError(f"{self} failed to implement a decorator")
 
     @util.hide_in_traceback
     def __set__(self, owner, value):
@@ -655,55 +638,55 @@ class Trait:
 Trait.__init_subclass__()
 
 
-def method(obj):
-    """ Add this decorator in addition to a trait decorator to specify that
-        the trait should behave as a callable method. For example:
-
-            ```python
-            import labbench as lb
-
-            class MyDevice(lb.Device)
-                @lb.method
-                @lb.Int(min=0, max=10)
-                def fetch_int(self):
-                    return 6
-
-            with MyDevice as m:
-                print(m.fetch_int())
-            ```
-
-        Decorate either before or after the trait decorator.
-    """
-    if not isinstance(obj, Trait) and not callable(obj):
-        raise ValueError('the method "method" decorator must be applied to a callable')
-    obj.__decorator_action__ = 'method'
-    return obj
-
-
-def property(obj):
-    """ Add this decorator in addition to a trait decorator to specify that
-        the trait should behave as a property (descriptor). This means
-        that it is not callable. For example:
-
-            ```python
-            import labbench as lb
-
-            class MyDevice(lb.Device)
-                @lb.property
-                @lb.Int(min=0, max=10)
-                def fetch_int(self):
-                    return 6
-
-            with MyDevice as m:
-                print(m.fetch_int)
-            ```
-
-        Decorate either before or after the trait decorator.
-    """
-    if not isinstance(obj, Trait) and not callable(obj):
-        raise ValueError('the method "method" decorator must be applied to a callable')
-    obj.__decorator_action__ = 'property'
-    return obj
+# def method(obj):
+#     """ Add this decorator in addition to a trait decorator to specify that
+#         the trait should behave as a callable method. For example:
+#
+#             ```python
+#             import labbench as lb
+#
+#             class MyDevice(lb.Device)
+#                 @lb.method
+#                 @lb.Int(min=0, max=10)
+#                 def fetch_int(self):
+#                     return 6
+#
+#             with MyDevice as m:
+#                 print(m.fetch_int())
+#             ```
+#
+#         Decorate either before or after the trait decorator.
+#     """
+#     if not isinstance(obj, Trait) and not callable(obj):
+#         raise ValueError('the method "method" decorator must be applied to a callable')
+#     obj.__decorator_action__ = 'method'
+#     return obj
+#
+#
+# def property(obj):
+#     """ Add this decorator in addition to a trait decorator to specify that
+#         the trait should behave as a property (descriptor). This means
+#         that it is not callable. For example:
+#
+#             ```python
+#             import labbench as lb
+#
+#             class MyDevice(lb.Device)
+#                 @lb.property
+#                 @lb.Int(min=0, max=10)
+#                 def fetch_int(self):
+#                     return 6
+#
+#             with MyDevice as m:
+#                 print(m.fetch_int)
+#             ```
+#
+#         Decorate either before or after the trait decorator.
+#     """
+#     if not isinstance(obj, Trait) and not callable(obj):
+#         raise ValueError('the method "method" decorator must be applied to a callable')
+#     obj.__decorator_action__ = 'property'
+#     return obj
 
 
 class HasTraits(metaclass=HasTraitsMeta):
@@ -1178,8 +1161,8 @@ class Device(HasStates, util.Ownable):
         txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in settings))
         cls.__doc__ += '\n\n' + txt
 
-        defaults = dict(((k, v.default) for k, v in settings if v.gettable))
-        types = dict(((k, v.type) for k, v in settings if v.gettable))
+        defaults = {k: v.default for k, v in settings if v.gettable}
+        types = {k: v.type for k, v in settings if v.gettable}
         util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
 
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt

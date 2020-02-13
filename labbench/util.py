@@ -247,7 +247,7 @@ def wrap_attribute(cls,
     wrapper.__doc__ = wrapped.__doc__
     wrapper.__qualname__ = wrapped.__qualname__
     wrapper.__defaults__ = tuple((v for k, v in defaults[:positional]))
-    wrapper.__kwdefaults__ = dict(((k, v) for k, v in defaults[positional:]))
+    wrapper.__kwdefaults__ = {k: v for k, v in defaults[positional:]}
     wrapper.__annotations__ = annotations
     wrapper.__dynamic__ = True
 

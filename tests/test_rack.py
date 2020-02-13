@@ -60,7 +60,6 @@ class LaggyInstrument(EmulatedVISADevice):
         lb.sleep(self.settings.delay)
         self.perf['open'] = time.perf_counter() - t0
 
-    @lb.method
     def fetch(self):
         """ Return the argument after a 1s delay
         """

@@ -36,7 +36,8 @@ import traceback
 
 
 EMPTY = inspect._empty
-
+BASIC_TYPES = bool, bytearray, bytes, complex, dict, float, frozenset, \
+              int, list, set, reversed, slice, str, tuple
 
 @contextlib.contextmanager
 def null_context(owner):
@@ -61,7 +62,7 @@ class Step:
             available = {getattr(self.owner, name) for name in annotations}
 
             accessed = {getattr(self.owner, name) for name in util.accessed_attributes(obj)
-                        if name in annotations}
+                        if not name.startswith('_')}
             self.dependencies = available.intersection(accessed)
         else:
             self.dependencies = set()
@@ -98,7 +99,7 @@ class Step:
     def extended_call(self, *args, **kws):
         i = len(self.owner.__name__)+1
         # remove the leading f"{self.owner.__name__}"
-        kws = dict(((k[i:], v) for k, v in kws.items()))
+        kws = {k[i:]: v for k, v in kws.items()}
         return self.__call__(*args, **kws)
 
     @util.hide_in_traceback
@@ -113,7 +114,7 @@ class Step:
         # notify owner about the parameters passed
         name_prefix = str(self.owner).replace('.', '_') + '_'
         if len(kws) > 0:
-            notify_params = dict(((name_prefix + k, v) for k, v in kws.items()))
+            notify_params = {name_prefix + k: v for k, v in kws.items()}
             Rack._notify.call_event(notify_params)
 
         # invoke the wrapped function
@@ -187,7 +188,7 @@ class RackMethod(util.Ownable):
         def call(func):
             # make a Call object with the subset of `kwargs`
             keys = available.intersection(func.extended_args())
-            params = dict(((k, kwargs[k]) for k in keys))
+            params = {k: kwargs[k] for k in keys}
             return util.Call(func.extended_call, **params)
 
         kws_out = {}
@@ -279,8 +280,8 @@ class Owner:
         log = getattr(self, 'logger', util.logger)
         contexts, ordered_entry = self._recursive_devices()
 
-        # ensure a unique ordering without changing the order of the first entry
-        ordered_entry = tuple(dict(((entry, None) for entry in ordered_entry)).keys())
+        # like set(ordered_entry), but maintains order in python >= 3.7
+        ordered_entry = tuple(dict.fromkeys(ordered_entry))
         order_desc = ' -> '.join([e.__qualname__ for e in ordered_entry])
         log.debug(f"ordered_entry before other devices: {order_desc}")
 
@@ -379,7 +380,7 @@ class Coordinate(util.Ownable):
     """
 
     def __init__(self, **spec):
-        self.sequence = dict(((k, self._parse_sequence(seq)) for k, seq in spec.items()))
+        self.sequence = {k: self._parse_sequence(seq) for k, seq in spec.items()}
 
     def __owner_subclass__(self, testbed_cls):
         # initialization on the parent class definition
@@ -541,6 +542,9 @@ class Coordinate(util.Ownable):
 
 
 class notify:
+    """
+    Singleton notification handler shared by all Rack instances.
+    """
     _handlers = dict(returns=set(), calls=set())
 
     @classmethod
@@ -575,7 +579,7 @@ class notify:
 
 
 class Rack(Owner, util.Ownable):
-    """ A Rack is a container for devices, data managers, and method functions that define test steps.
+    """ A Rack contains and coordinates devices and data handling with method functions that define test steps.
 
         The Rack object provides connection management for
         all devices and data managers for `with` block::
@@ -608,7 +612,7 @@ class Rack(Owner, util.Ownable):
     _notify = notify
 
     def __init_subclass__(cls, ordered_entry=[], concurrent=True):
-        # cls._racks = dict(((k, v) for k, v in cls.__dict__.items() if isinstance(v, Rack)))
+        # cls._racks = {k: v for k, v in cls.__dict__.items() if isinstance(v, Rack)}
 
         # register step methods
         cls._steps = {}
@@ -663,8 +667,8 @@ class Rack(Owner, util.Ownable):
             raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
 
         # replace self._steps with new mapping of wrappers
-        self._steps = dict(((k, obj) if isinstance(obj, RackMethod) else (k, Step(self, k))
-                            for k, obj in self._steps.items()))
+        self._steps = {k: (obj if isinstance(obj, RackMethod) else Step(self, k))
+                       for k, obj in self._steps.items()}
 
     def __owner_init__(self, owner):
         super().__owner_init__(owner)
@@ -705,8 +709,9 @@ class Rack(Owner, util.Ownable):
             raise TypeError(f"object of type '{type(name_or_module)}' is not a module")
 
         # pull in only dictionaries (for config) and instances of Device, Rack, etc
-        namespace = dict(((attr, obj) for attr, obj in name_or_module.__dict__.items()
-                          if isinstance(obj, (util.Ownable, dict)) and not attr.startswith('_')))
+
+        namespace = {attr: obj for attr, obj in name_or_module.__dict__.items()
+                     if not attr.startswith('_') and isinstance(obj, BASIC_TYPES + (core.Device, Owner, util.Ownable))}
 
         # block attribute overrides
         name_conflicts = set(namespace).intersection(cls.__dict__)
@@ -715,4 +720,4 @@ class Rack(Owner, util.Ownable):
                             f"conflict with attributes of '{cls.__qualname__}'")
 
         # subclass into a new Rack
-        return type(cls.__name__, (cls,), dict(cls.__dict__, **namespace))
+        return type(name_or_module.__name__.rsplit('.')[-1], (cls,), dict(cls.__dict__, **namespace))

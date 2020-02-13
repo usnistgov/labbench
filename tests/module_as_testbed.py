@@ -86,15 +86,15 @@ class Rack3(lb.Rack):
         self.dev.fetch()
 
 
-db: lb.data.Aggregator = lb.SQLiteLogger(
+db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
     'data',  # Path to new directory that will contain containing all files
-    overwrite=False,  # `True` --- delete existing master database; `False` --- append
+    append=True,  # `True` --- allow appends to an existing database; `False` --- append
     text_relational_min=1024,  # Minimum text string length that triggers relational storage
     force_relational=['host_log'],  # Data in these columns will always be relational
     dirname_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
     nonscalar_file_type='csv',  # Default format of numerical data, when possible
     metadata_dirname='metadata',  # metadata will be stored in this subdirectory
-    tar=True  # `True` to embed relational data folders within `data.tar`
+    tar=False  # `True` to embed relational data folders within `data.tar`
 )
 
 # Devices
@@ -111,5 +111,5 @@ run = lb.Coordinate(
     arm=(rack1.arm),
     acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
     fetch=(rack2.fetch & rack3.fetch),
-    # finish=db.new_row,
+    finish=(db.new_row),
 )

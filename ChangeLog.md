@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
 - `lb.NonScalar` data type
-- `lb.property` and `lb.method` decorators, which specify trait decorator behavior
 - `lb.hide_in_traceback` decorator scrubs the decorated function from tracebacks
+- `lb.Rack`, which also replaces `lb.Testbed`
+- `lb.Coordinate`, which defines methods for `Rack` as a sequence of other functions with mixed threading
 
 ### Changed
 - Show warnings on trait assignment typos like `device.frequency = 5` instead of `device.state.frequency = 5`
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 - FilenameDict and ConcurrentRunner, which have been deprecated for a while
 - `limit_exception_depth`, which is redundant with `hide_in_traceback`
+- `lb.Testbed`
 
 ## [0.20 - 2019-10-09]
 ### Added

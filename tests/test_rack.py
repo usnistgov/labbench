@@ -64,7 +64,7 @@ class LaggyInstrument(EmulatedVISADevice):
         """ Return the argument after a 1s delay
         """
         import pandas as pd
-        lb.logger.info(f'{self}.fetch start')
+        lb.console.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.settings.fetch_time)
         self.perf['fetch'] = time.perf_counter() - t0

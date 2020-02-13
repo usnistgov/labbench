@@ -26,7 +26,7 @@
 
 __all__ = [# "misc"
            'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages',
-           'logger',
+           'console',
 
 
            # concurrency and sequencing
@@ -63,7 +63,7 @@ import time
 import traceback
 
 
-logger = logging.LoggerAdapter(
+console = logging.LoggerAdapter(
     logging.getLogger('labbench'),
     dict(origin='') # description of origin within labbench (for screen logs only)
 )
@@ -332,8 +332,8 @@ def retry(exception_or_exceptions, tries=4, delay=0,
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
                     ex = e
-                    logger.warning(str(e))
-                    logger.warning(
+                    console.warning(str(e))
+                    console.warning(
                         f'{f.__name__} retry (attempt {retry+1}/{tries})')
                     exception_func()
                     sleep(active_delay)
@@ -393,8 +393,8 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
                 except exception_or_exceptions as e:
                     progress = time.time() - t0
                     ex = e
-                    logger.warning(str(e))
-                    logger.warning(
+                    console.warning(str(e))
+                    console.warning(
                         f'{f.__name__} retry ({progress}s/{timeout}s elapsed)')
                     exception_func()
                     sleep(active_delay)
@@ -432,21 +432,21 @@ def show_messages(minimum_level):
             f'message level must be one of {list(err_map.keys())}')
     level = err_map[minimum_level.lower()]
 
-    logger.setLevel(logging.DEBUG)
+    console.setLevel(logging.DEBUG)
 
     # Clear out any stale handlers
-    if hasattr(logger, '_screen_handler'):
-        logger.logger.removeHandler(logger._screen_handler)
+    if hasattr(console, '_screen_handler'):
+        console.logger.removeHandler(console._screen_handler)
 
     if level is not None:
-        logger._screen_handler = logging.StreamHandler()
-        logger._screen_handler.setLevel(level)
+        console._screen_handler = logging.StreamHandler()
+        console._screen_handler.setLevel(level)
         # - %(pathname)s:%(lineno)d'
         log_fmt = '%(asctime)s.%(msecs)03d - %(levelname)s%(origin)s - %(message)s'
         #    coloredlogs.install(level='DEBUG', logger=logger)
-        logger._screen_handler.setFormatter(
+        console._screen_handler.setFormatter(
             coloredlogs.ColoredFormatter(log_fmt))
-        logger.logger.addHandler(logger._screen_handler)
+        console.logger.addHandler(console._screen_handler)
 
 
 def kill_by_name(*names):
@@ -470,7 +470,7 @@ def kill_by_name(*names):
             proc = psutil.Process(pid)
             for target in names:
                 if proc.name().lower() == target.lower():
-                    logger.info(f'killing process {proc.name()}')
+                    console.info(f'killing process {proc.name()}')
                     proc.kill()
         except psutil.NoSuchProcess:
             continue
@@ -530,7 +530,7 @@ def stopwatch(desc=''):
         yield
     finally:
         T = time.perf_counter() - t0
-        logger.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
+        console.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
 
 
 class Call(object):
@@ -649,7 +649,7 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
 
         elapsed = time.perf_counter()-t0
         if elapsed > 0.1 and params['name']:
-            logger.debug(f'{params["name"]} - entry took {elapsed:0.2f}s')
+            console.debug(f'{params["name"]} - entry took {elapsed:0.2f}s')
         yield
 
     except BaseException:
@@ -667,13 +667,13 @@ def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
 
     elapsed = time.perf_counter()-t0
     if elapsed > 0.1 and params['name']:
-        logger.debug(f'exit {params["name"]} took {elapsed:0.2f}s')
+        console.debug(f'exit {params["name"]} took {elapsed:0.2f}s')
 
     if exc != (None, None, None):
         # sys.exc_info() may have been
         # changed by one of the exit methods
         # so provide explicit exception info
-        for h in logger.logger.handlers:
+        for h in console.logger.handlers:
             h.flush()
 
         raise exc[1]
@@ -868,7 +868,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         except Empty:
             if time.clock() - t0 > 60*15:
                 names = ','.join(list(threads.keys()))
-                logger.debug(f'{names} threads are still running')
+                console.debug(f'{names} threads are still running')
                 t0 = time.clock()
             continue
         except BaseException as e:
@@ -882,7 +882,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         # Below only happens when called is not none
         if master_exception is not None:
             names = ', '.join(list(threads.keys()))
-            logger.error(
+            console.error(
                 f'raising {master_exception.__class__.__name__} in main thread after child threads {names} return')
 
         # if there was an exception that wasn't us ending the thread,
@@ -917,7 +917,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
     # Raise exceptions as necessary
     if master_exception is not None:        
-        for h in logger.logger.handlers:
+        for h in console.logger.handlers:
             h.flush()
 
         for tb in tracebacks:
@@ -930,7 +930,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         raise master_exception
 
     elif len(tracebacks) > 0 and not catch:
-        for h in logger.logger.handlers:
+        for h in console.logger.handlers:
             h.flush()
         if len(tracebacks) == 1:
             raise last_exception
@@ -1226,7 +1226,7 @@ class ThreadSandbox(object):
 
             rsp.put((ret, exc), True)
 
-        logger.write('ThreadSandbox worker thread finished')
+        console.write('ThreadSandbox worker thread finished')
 
     @hide_in_traceback
     def __getattr__(self, name):

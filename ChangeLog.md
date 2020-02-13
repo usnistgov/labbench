@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - lb.notebook is no longer pulled in by default; importing it now injects wrappers around builtins.range and np.linspace 
 - `host_log.txt` is now in YAML
 - `CommandLineWrapper` is now `ShellBackend`
+- Renamed the `logger` attribute to `_console` in Rack and Device to reduce the confusing overuse of the word "logger" 
 
 ### Removed
 - FilenameDict and ConcurrentRunner, which have been deprecated for a while

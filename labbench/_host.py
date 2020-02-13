@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _core as core
+from . import _device as core
 from . import util as util
 
 import datetime
@@ -235,13 +235,13 @@ class Host(core.Device):
         # git repository information
         try:
             repo = git.Repo('.', search_parent_directories=True)
-            self.logger.debug("running in git repository")
+            self._console.debug("running in git repository")
             if repo.active_branch == self.settings.git_commit_in:
                 repo.index.commit('start of measurement')
-                self.logger.debug("git commit finished")
+                self._console.debug("git commit finished")
         except git.NoSuchPathError:
             repo = None
-            self.logger.info(f"not running in a git repository")
+            self._console.info(f"not running in a git repository")
 
         self.backend = {'logger': logger,
                         'log_stream': stream,

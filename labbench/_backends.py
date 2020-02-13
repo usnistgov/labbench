@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _core as core
+from . import _device as core
 from . import util as util
 from collections import OrderedDict
 import contextlib
@@ -159,7 +159,7 @@ class ShellBackend(core.Device):
             path = os.path.relpath(cmdl[0])
         except ValueError:
             path = cmdl[0]
-        self.logger.debug('foreground execute ' +
+        self._console.debug('foreground execute ' +
                           repr(' '.join((path,) + cmdl[1:])))
         cp = sp.run(cmdl, timeout=self.settings.timeout,
                     stdout=sp.PIPE)
@@ -170,11 +170,11 @@ class ShellBackend(core.Device):
             show_count = min(40, len(lines))
             remaining = max(0, len(lines)-show_count)
             for line in lines[:show_count//2]:
-                self.logger.debug(f'► {line}')
+                self._console.debug(f'► {line}')
             if remaining>0:
-                self.logger.debug(f'…{remaining} more lines')
+                self._console.debug(f'…{remaining} more lines')
             for line in lines[-show_count//2:]:
-                self.logger.debug(f'► {line}')
+                self._console.debug(f'► {line}')
         return ret
 
     def background(self, *extra_arguments, **flags):
@@ -225,11 +225,11 @@ class ShellBackend(core.Device):
             # Respawn (or don't)
             if self.__contexts.setdefault(
                     'respawn', False) and not self.__kill:
-                self.logger.debug('respawning')
+                self._console.debug('respawning')
                 self._kill_proc_tree(pid)
                 spawn(cmdl)
             else:
-                self.logger.debug('stdout closed; execution done')
+                self._console.debug('stdout closed; execution done')
 
         def stderr_to_exception(fd, cmdl):
             """ Thread worker to raise exceptions on standard error output
@@ -239,7 +239,7 @@ class ShellBackend(core.Device):
                     break
                 line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
-                    self.logger.debug(f'stderr {repr(line)}')
+                    self._console.debug(f'stderr {repr(line)}')
 #                    raise Exception(line)
                 else:
                     break
@@ -277,7 +277,7 @@ class ShellBackend(core.Device):
         except ValueError:
             path = cmdl[0]
 
-        self.logger.debug(
+        self._console.debug(
             f"background execute: {repr(' '.join((path,) + cmdl[1:]))}")
         self.__kill = False
         spawn(self.__make_commandline(*extra_arguments, **flags))
@@ -380,13 +380,13 @@ class ShellBackend(core.Device):
             raise Exception("process not running, could not write no stdin")
 
     def kill(self):
-        """ If a process is running in the background, kill it. Sends a logger
+        """ If a process is running in the background, kill it. Sends a console
             warning if no process is running.
         """
         self.__kill = True
         backend = self.backend
         if self.running():
-            self.logger.debug(f'killing process {backend.pid}') 
+            self._console.debug(f'killing process {backend.pid}')
             self._kill_proc_tree(backend.pid)
 
     def running(self):
@@ -559,12 +559,12 @@ class LabviewSocketInterface(core.Device):
                 sock.shutdown(socket.SHUT_RDWR)
                 sock.close()
             except BaseException:
-                self.logger.error('could not close socket ', repr(sock))
+                self._console.error('could not close socket ', repr(sock))
 
     def write(self, msg):
         """ Send a string over the tx socket.
         """
-        self.logger.debug(f'write {repr(msg)}')
+        self._console.debug(f'write {repr(msg)}')
         self.backend['tx'].sendto(msg, (self.settings.resource,
                                         self.settings.tx_port))
         util.sleep(self.settings.delay)
@@ -585,7 +585,7 @@ class LabviewSocketInterface(core.Device):
         if addr is None:
             raise Exception('received no data')
         rx_disp = rx[:min(80, len(rx))] + ('...' if len(rx) > 80 else '')
-        self.logger.debug(f'read {repr(rx_disp)}')
+        self._console.debug(f'read {repr(rx_disp)}')
 
         key, value = rx.rsplit(' ', 1)
         key = key.split(':', 1)[1].lstrip()
@@ -657,13 +657,13 @@ class SerialDevice(core.Device):
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(
             self.settings.resource, self.baud_rate, **params)
-        self.logger.debug(f'{repr(self)} connected')
+        self._console.debug(f'{repr(self)} connected')
 
     def close(self):
         """ Disconnect the serial instrument
         """
         self.backend.close()
-        self.logger.debug(f'{repr(self)} closed')
+        self._console.debug(f'{repr(self)} closed')
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):
@@ -747,7 +747,7 @@ class SerialLoggingDevice(SerialDevice):
             This is a stub that does nothing --- it should be implemented by a
             subclass for a specific serial logger device.
         """
-        self.logger.debug(
+        self._console.debug(
             f'{repr(self)}: no device-specific configuration implemented')
 
     def start(self):
@@ -761,9 +761,9 @@ class SerialLoggingDevice(SerialDevice):
             timeout, self.backend.timeout = self.backend.timeout, 0
             q = self._queue
             stop_event = self._stop
-            self.logger.debug(f'{repr(self)}: configuring log acquisition')
+            self._console.debug(f'{repr(self)}: configuring log acquisition')
             self.configure()
-            self.logger.debug(f'{repr(self)}: starting log acquisition')
+            self._console.debug(f'{repr(self)}: starting log acquisition')
             try:
                 while stop_event.wait(self.settings.poll_rate) is not True:
                     q.put(self.backend.read(
@@ -773,7 +773,7 @@ class SerialLoggingDevice(SerialDevice):
                 self.close()
                 raise e
             finally:
-                self.logger.debug(f'{repr(self)} ending log acquisition')
+                self._console.debug(f'{repr(self)} ending log acquisition')
                 try:
                     self.backend.timeout = timeout
                 except BaseException:
@@ -977,7 +977,7 @@ class VISADevice(core.Device):
             with contextlib.suppress(pyvisa.Error):
                 self.backend.clear()
         except BaseException as e:
-            self.logger.warning('unhandled close error: ' + str(e))
+            self._console.warning('unhandled close error: ' + str(e))
         finally:
             self.backend.close()
 
@@ -1015,7 +1015,7 @@ class VISADevice(core.Device):
         if self.__opc:
             msg = msg + ';*OPC'
         msg_out = repr(msg) if len(msg) < 1024 else f'({len(msg)} bytes)'
-        self.logger.debug(f'write {repr(msg_out)}')
+        self._console.debug(f'write {repr(msg_out)}')
         self.backend.write(msg)
 
     def query(self, msg, timeout=None):
@@ -1031,14 +1031,14 @@ class VISADevice(core.Device):
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
-        self.logger.debug(f'query {repr(msg_out)}')
+        self._console.debug(f'query {repr(msg_out)}')
         try:
             ret = self.backend.query(msg)
         finally:
             if timeout is not None:
                 self.backend.timeout = _to
         msg_out = repr(ret) if len(ret) < 80 else f'({len(msg)} bytes)'
-        self.logger.debug(f'      -> {msg_out}')
+        self._console.debug(f'      -> {msg_out}')
         return ret
 
     def __get_by_key__(self, name, command):

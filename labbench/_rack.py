@@ -26,7 +26,7 @@
 
 __all__ = ['Rack', 'Owner', 'Coordinate']
 
-from . import _core as core
+from . import _device as core
 from . import util as util
 import contextlib
 import inspect
@@ -123,7 +123,7 @@ class Step:
         ret = self.__wrapped__(self.owner, *args, **kws)
         elapsed = time.perf_counter()-t0
         if elapsed > 0.1:
-            core.logger.debug(f"{owner_name} completed in {elapsed:0.2f}s")
+            util.console.debug(f"{owner_name} completed in {elapsed:0.2f}s")
 
         # notify owner of return value
         if ret is not None:
@@ -157,10 +157,10 @@ class RackMethod(util.Ownable):
         for i, (name, sequence) in enumerate(self.sequence.items()):
             caller, step_kws = self._call_step(sequence, kwargs)
 
-            core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
+            util.console.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
             ret.update(caller(**step_kws) or {})
 
-        core.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
+        util.console.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
 
         return ret
 
@@ -168,7 +168,7 @@ class RackMethod(util.Ownable):
     def to_template(cls, path=None):
         if path is None:
             path = f"{cls.__objclass__.__qualname__}.{cls.__name__} template.csv"
-        core.logger.debug(f"writing csv template to {repr(path)}")
+        util.console.debug(f"writing csv template to {repr(path)}")
         import pandas as pd
         df = pd.DataFrame(columns=cls.params)
         df.index.name = 'Condition name'
@@ -178,7 +178,7 @@ class RackMethod(util.Ownable):
         import pandas as pd
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            core.logger.info(f"{self.__objclass__.__qualname__}.{self.__name__} from '{str(path)}' "
+            util.console.info(f"{self.__objclass__.__qualname__}.{self.__name__} from '{str(path)}' "
                              f"- '{row}' ({i+1}/{len(table.index)})")
             self.results = self(**table.loc[row].to_dict())
 
@@ -277,7 +277,7 @@ class Owner:
         :param ordered_entry:
         """
 
-        log = getattr(self, 'logger', util.logger)
+        log = getattr(self, '_console', util.console)
         contexts, ordered_entry = self._recursive_devices()
 
         # like set(ordered_entry), but maintains order in python >= 3.7
@@ -638,8 +638,8 @@ class Rack(Owner, util.Ownable):
         #         setattr(cls, name, annot_cls())
 
     def __init__(self, **devices):
-        self._logger = util.logger.logger.getChild(str(self))
-        self._logger = logging.LoggerAdapter(self._logger, dict(rack=repr(self), origin=f" - " + str(self)))
+        self._console = util.console.logger.getChild(str(self))
+        self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - " + str(self)))
 
         super().__init__(**devices)
 
@@ -672,8 +672,8 @@ class Rack(Owner, util.Ownable):
 
     def __owner_init__(self, owner):
         super().__owner_init__(owner)
-        self._logger = util.logger.logger.getChild(str(self))
-        self._logger = logging.LoggerAdapter(self._logger, dict(rack=repr(self), origin=f" - "+str(self)))
+        self._console = util.console.logger.getChild(str(self))
+        self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - "+str(self)))
 
     def __getattribute__(self, item):
         if item != '_steps' and item in self._steps:

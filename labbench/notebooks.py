@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _core as core
+from . import _device as core
 
 from ._backends import VISADevice
 from ._host import Host

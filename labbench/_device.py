@@ -50,9 +50,6 @@ __all__ = ['Trait', 'Undefined', 'Any', 'Int', 'Float', 'Unicode', 'Complex', 'B
            ]
 
 
-logger = util.logger
-
-
 class LabbenchDeprecationWarning(DeprecationWarning):
     pass
 
@@ -524,8 +521,8 @@ class Trait:
                 raise e
             
             # Once we have a python value, give warnings (not errors) if the device value fails further validation
-            if isinstance(owner, Device) and hasattr(owner, 'logger'):
-                log = owner.logger.warning
+            if isinstance(owner, Device) and hasattr(owner, '_console'):
+                log = owner._console.warning
             else:
                 log = warn
     
@@ -1184,9 +1181,9 @@ class Device(HasStates, util.Ownable):
 
         self.backend = DisconnectedBackend(self)
 
-        # gotta have a logger
-        self.logger = logger.logger.getChild(str(self))
-        self.logger = logging.LoggerAdapter(self.logger, dict(device=repr(self), origin=f" - "+str(self)))
+        # gotta have a console logger
+        self._console = util.console.logger.getChild(str(self))
+        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - "+str(self)))
 
         # Instantiate state now. It needed to wait until this point, after settings are fully
         # instantiated, in case state implementation depends on settings
@@ -1218,7 +1215,7 @@ class Device(HasStates, util.Ownable):
             method, starting with labbench.Device and working down
         """
         if self.connected:
-            self.logger.debug(f'attempt to open {self}, which is already open')
+            self._console.debug(f'attempt to open {self}, which is already open')
             return
 
         self.backend = None
@@ -1226,7 +1223,7 @@ class Device(HasStates, util.Ownable):
         for opener in trace_methods(self.__class__, 'open', Device)[::-1]:
             opener(self)
 
-        self.logger.debug(f"{self} is open")
+        self._console.debug(f"{self} is open")
         # Force an update to self.connected
         self.connected
 
@@ -1234,8 +1231,8 @@ class Device(HasStates, util.Ownable):
         super().__owner_init__(owner)
 
         # update the name of the logger to match the context within owner
-        self.logger = logger.logger.getChild(str(self))
-        self.logger = logging.LoggerAdapter(self.logger, dict(device=repr(self), origin=f" - "+str(self)))
+        self._console = util.console.logger.getChild(str(self))
+        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - "+str(self)))
 
     @util.hide_in_traceback
     @wraps(close)
@@ -1270,7 +1267,7 @@ class Device(HasStates, util.Ownable):
 
         self.connected
 
-        self.logger.debug(f'is closed')
+        self._console.debug(f'is closed')
 
     def __imports__(self):
         pass

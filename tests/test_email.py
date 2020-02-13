@@ -36,7 +36,7 @@ if __name__ == '__main__':
     try:
         with lb.Email(sender='AggregateLTETestTeam@nistgov.onmicrosoft.com',
                       recipients=['dkuester@nist.gov']) as email:
-            lb.logger.warning('test warning message')
+            lb.console.warning('test warning message')
             sys.stderr.write('error info\n')
             1 // 0
     except ZeroDivisionError:

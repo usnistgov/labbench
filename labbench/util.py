@@ -92,7 +92,7 @@ class Ownable:
         return self
 
     def __str__(self):
-        if hasattr(self, '__name__'):
+        if hasattr(self, '__owner_instname__') and hasattr(self, '__name__'):
             name = self.__name__
             owner_name = self.__owner_instname__()
             if owner_name:

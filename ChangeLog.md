@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
 ## [Unreleased]
-**This is a significant change that is API incompatible with 0.20!** 
+**This is a significant change that is API incompatible with labbench<=0.20** 
 
 ### Added
 - Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `lb.hide_in_traceback` decorator scrubs the decorated function from tracebacks
 - `lb.Rack`, which also replaces `lb.Testbed`
 - `lb.Coordinate`, which defines methods for `Rack` as a sequence of other functions with mixed threading
+- `lb.HDFLogger` for output to an HDF file
 
 ### Changed
 - Show warnings on trait assignment typos like `device.frequency = 5` instead of `device.state.frequency = 5`

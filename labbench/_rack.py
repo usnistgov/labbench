@@ -24,7 +24,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['Rack', 'Owner', 'Sequence', 'Step', 'Configuration']
+__all__ = ['Rack', 'Owner', 'Sequence', 'Configuration']
 
 from . import _device as core
 from . import util as util
@@ -158,18 +158,16 @@ class Step:
 
 class SequencedMethod(util.Ownable):
     def __init__(self):
-        print('coordinated method')
-        print(self.signatures)
         self.to_template()
 
     def __call__(self, **kwargs):
         ret = {}
 
         for i, (name, sequence) in enumerate(self.sequence.items()):
-            caller, step_kws = self._call_step(sequence, kwargs)
+            step_kws = self._call_step(sequence, kwargs)
 
             util.console.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
-            ret.update(caller(**step_kws) or {})
+            ret.update(util.concurrently(**step_kws) or {})
 
         util.console.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
 
@@ -203,9 +201,8 @@ class SequencedMethod(util.Ownable):
             return util.Call(func.extended_call, **params)
 
         kws_out = {}
-        caller, sequence = spec
 
-        for item in sequence:
+        for item in spec:
             if callable(item):
                 name = item.owner.__class__.__qualname__ + '_' + item.__name__
                 kws_out[name] = call(item)
@@ -216,7 +213,7 @@ class SequencedMethod(util.Ownable):
                       f"in call sequence specification"
                 raise ValueError(msg)
 
-        return caller, kws_out
+        return kws_out
 
     def __repr__(self):
         return f"<function {self.__name__}>"
@@ -229,7 +226,7 @@ class Owner:
     _concurrent = True
     
     def __init_subclass__(cls, ordered_entry: list = None):
-        print('init owner subclass ', cls)
+
         # registries that will be context managed
         cls._devices = {} # each of cls._devices.values() these will be context managed
         cls._owners = {} # each of these will get courtesy calls to _setup and _cleanup between _device entry and exit
@@ -244,7 +241,7 @@ class Owner:
 
         # prepare and register owned attributes
         for name, obj in dict(cls.__dict__).items():
-            print(cls, name, obj)
+
             ownable[name] = obj
             # prepare these first, so they are available to owned classes on __owner_subclass__
             if isinstance(obj, core.Device):
@@ -257,7 +254,6 @@ class Owner:
             if isinstance(obj, util.Ownable):
                 obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
                 obj = obj.__owner_subclass__(cls)
-                print('set owned ', name, obj, id(obj))
 
             setattr(cls, name, obj)
 
@@ -393,28 +389,48 @@ class Sequence(util.Ownable):
     to a top-level "master" Rack.
     """
 
-    def __init__(self, **spec):
-        self.sequence = {k: self._parse_sequence(seq) for k, seq in spec.items()}
+    def __init__(self, **specification):
+        def spec_entry(sequence):
+            if isinstance(sequence, (list, tuple)):
+                # specification for a concurrent and/or sequential calls to Step methods
+                sequence = list(sequence)
+
+            elif isinstance(sequence, Step):
+                # a Step method that is already packaged for use
+                sequence = [sequence]
+
+            elif isinstance(getattr(sequence, '__self__', sequence), util.Ownable) and \
+                    callable(sequence):
+                # some other kind of callable function that seems reasonable to adopt as a Step method
+                sequence = [Step(sequence, '__call__')]
+
+            else:
+                typename = type(sequence).__qualname__
+                raise TypeError(f"object of type '{typename}' is neither a Rack method nor a nested tuple/list")
+
+            return sequence
+
+        self.spec = {k: spec_entry(spec) for k, spec in specification.items()}
 
     def __owner_subclass__(self, testbed_cls):
         # initialization on the parent class definition
         # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
-        print('coordinate subclass')
+
         # determine the call signature for the new Sequence procedure
-        signatures = self._collect_signatures(tuple(self.sequence.values()))
-        params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default params
+        signatures = self._collect_signatures()
+        params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default ones
         defaults = dict([(arg, sig[0]) for arg, sig in signatures.items() if sig[0] is not EMPTY])
         annots = dict([(arg, sig[1]) for arg, sig in signatures.items() if sig[1] is not EMPTY])
 
         # this builds the callable object with a newly-defined subclass.
         # this tricks some IDEs into showing the call signature.
         cls = type(self.__name__, (SequencedMethod,),
-                   dict(sequence=self.sequence,
+                   dict(sequence=self.spec,
                         params=params,
                         defaults=defaults,
                         annotations=annots,
                         signatures=signatures,
-                        dependency_tree=self._dependency_tree(),
+                        dependencies=self._dependency_map(),
                         __name__=self.__name__,
                         __qualname__=testbed_cls.__name__+'.'+self.__name__,
                         __objclass__=self.__objclass__,
@@ -426,120 +442,47 @@ class Sequence(util.Ownable):
                             positional=0)
 
 
-        # The testbed takes this SequencedMethod instance in place of self
+        # the testbed gets this SequencedMethod instance in place of self
         obj = object.__new__(cls)
         obj.__init__()
-        print(defaults, id(obj))
         return obj
 
-    def _parse_sequence(self, sequence):
-        if isinstance(sequence, (list, tuple)):
-            # specification for a concurrent and/or sequential calls to Step methods
-            if sequence[0] == 'concurrent':
-                invoke = util.concurrently
-                sequence = sequence[1:]
-            else:
-                invoke = util.sequentially
-            sequence = list(sequence)
+    def _dependency_map(self, owner_deps={}) -> dict:
+        """ generate a list of Device dependencies in each Step.
 
-        elif isinstance(sequence, Step):
-            # definitely a Step method that is meant to be used this way
-            invoke = util.sequentially
-            sequence = [sequence]
-
-        elif isinstance(getattr(sequence, '__self__', sequence), util.Ownable) and \
-                callable(sequence):
-            # some other kind of callable function that seems reasonable to take as a Step method
-            invoke = util.sequentially
-            sequence = [Step(sequence, '__call__')]
-
-        else:
-            typename = type(sequence).__qualname__
-            raise TypeError(f"object of type '{typename}' is neither a Rack method nor a nested tuple/list")
-
-        # step through, if this is a sequence
-        for i in range(len(sequence)):
-            # validate replace each entry in the sequence with a parsed item
-            if isinstance(sequence[i], (list, tuple)):
-                sequence[i] = self._parse_sequence(sequence[i])
-            elif isinstance(sequence[i], Step):
-                continue
-            elif isinstance(getattr(sequence[i], '__self__', sequence[i]), util.Ownable) and \
-                    callable(sequence[i]):
-                # some other kind of callable function that seems reasonable to take as a Step method
-                sequence[i] = Step(sequence[i], '__call__')
-            else:
-                typename = type(sequence).__qualname__
-                raise TypeError(f"object of type '{typename}' is neither a "
-                                f"Rack method nor a nested tuple/list")
-
-        return invoke, sequence
-
-    def _dependency_tree(self, concurrent_parent=None, call_tree=None, dependency_tree={}):
-        """ generate a list of Device dependencies in each call
+        :returns: {Device instance: reference to method that uses Device instance}
         """
 
-        if call_tree is None:
-            call_tree = tuple(self.sequence.values())
+        deps = dict(owner_deps)
 
-        for caller, args in call_tree:
-            # dependencies are keyed on the arguments of the parent call to util.concurrently.
-            if concurrent_parent:
-                next_parent = concurrent_parent
-            elif caller is util.sequentially:
-                next_parent = None
-            elif caller is util.concurrently:
-                next_parent = tuple(args)
-            else:
-                raise ValueError(f"unhandled caller '{repr(caller)}'")
+        for spec in self.spec.values():
+            for func in spec:
+                if not isinstance(func, (Step, SequencedMethod)):
+                    raise TypeError(f"expected Step instance, but got '{type(func).__qualname__}' instead")
 
-            # if caller is not util.concurrently and not concurrent_parent:
-            #     # no risk of concurrency here
-            #     continue
-            # now caller is util.sequentially or concurrent_parent is False
-            
-            for arg in args:
-                if isinstance(arg, list):
-                    self._group_dependencies(concurrent_parent=next_parent,
-                                             call_tree=arg,
-                                             dependency_tree=dependency_tree)
+                # race condition check
+                conflicts = set(deps.keys()).intersection(func.dependencies)
+                if len(conflicts) > 0:
+                    users = {deps[device] for device in conflicts}
+                    raise RuntimeError(f"risk of concurrent access to {conflicts} by {users}")
 
-                elif isinstance(arg, Step):
-                    for child_dep in arg.dependencies:
-                        dependency_tree.setdefault(next_parent,{}).setdefault(child_dep, []).append(arg)
+                deps.update({device.__name__: device for device in func.dependencies})
 
-                else:
-                    raise TypeError(f"parsed tree should not include arguments of type '{type(arg).__qualname__}'")
+        return deps
 
-        return dependency_tree
-
-    def _collect_signatures(self, tree=None):
+    def _collect_signatures(self):
         """ collect a dictionary of parameter default values
 
         :param tree: nested list of calls that contains the parsed call tree
         :return: dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
             default_value is `EMPTY` if there is no default.
         """
-        print('collect signatures', self)
-        if tree is None:
-            tree = self.sequence
 
         signatures = {}
 
         # collect the defaults
-        for caller, args in tree:
-            if caller in (util.concurrently, util.sequentially):
-                funcs = args
-            else:
-                raise ValueError(f"first element with type '{repr(caller)}' does not indicate lb.concurrently or lb.sequentially")
-
+        for funcs in self.spec.values():
             for func in funcs:
-                if isinstance(func, list):
-                    signatures.update(self._collect_signatures(func))
-                    continue
-                elif not callable(func):
-                    raise ValueError(f"object of type '{type(func).__qualname__}' is neither a callable nor a nested list of callables")
-
                 # pull a dictionary of signature values (default, annotation) with EMPTY as a null sentinel value
                 for argname, (def_, annot) in func.extended_signature().items():
                     prev_def_, prev_annot = signatures.setdefault(argname, [EMPTY, EMPTY])
@@ -766,24 +709,10 @@ class Configuration(util.Ownable):
         self.path = Path(base_path)
         self.path.mkdir(exist_ok=True, parents=True)
 
-    # def __owner_init__(self, owner):
-    #     super().__owner_init__(owner)
-        # self._rack_defaults(owner)
-    #     print('owner init')
-    #     s
-    #
-    #     for name, rack in getattr(owner, '_racks', {}).items():
-    #         self._rack_defaults(rack)
-
     def __owner_subclass__(self, owner_cls):
         super().__owner_subclass__(owner_cls)
-        print('steps --- ', owner_cls._devices, owner_cls._owners)
-    #
-    #
-    #
         self._rack_defaults(owner_cls)
-    #
-    #     return self
+        return self
 
     def parameters(self, cls):
         defaults = {}
@@ -825,22 +754,26 @@ class Configuration(util.Ownable):
         return defaults, annots, methods, names
 
     def _rack_defaults(self, cls):
+        """ adjust the method argument parameters in the Rack subclass `cls` according to config file
+        """
         path = Path(self.path)/f"{cls.__qualname__}.defaults.yaml"
 
         if getattr(cls, '__config_path__', None) == str(path):
+            util.console.debug(f"already have {path}")
+            util.console.debug(f"already have {cls.__config_path__}")
             return
         else:
             cls.__config_path__ = str(path)
 
         defaults, annots, methods, names = self.parameters(cls)
 
-        print(defaults, annots, methods, names)
-
         # read the existing defaults
         defaults_in = {}
         if path.exists():
             with open(path, 'rb') as f:
                 defaults_in = yaml.safe_load(f) or {}
+
+        util.console.debug(f"read {defaults_in.keys()} from {path}")
 
         for k, v in dict(defaults_in).items():
             if v == defaults[k]:
@@ -872,7 +805,7 @@ class Configuration(util.Ownable):
                 method.__kwdefaults__[names[k]] = v
 
         if len(defaults_in) > 0:
-            util.console.debug(f"applied defaults {defaults_in} from f{str(path)}")
+            util.console.debug(f"applied defaults {defaults_in}")
 
         # take the updated defaults
         defaults.update(defaults_in)

@@ -27,12 +27,12 @@
 """
 
 from ._device import *
-from .data import CSVLogger, SQLiteLogger, read
+from .data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._host import Email
 from ._version import __version__
 from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, console
 from ._backends import *
-from ._rack import Rack, Owner, Configuration, Sequence
+from ._rack import *
 
 from . import data
 from . import util

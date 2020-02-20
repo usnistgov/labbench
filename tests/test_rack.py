@@ -120,10 +120,16 @@ class Rack3(lb.Rack):
 
 
 class MyRack(lb.Rack):
-    config = lb.data.Configuration('setup')
+    config = lb.Configuration('setup')
+
+    # db: lb.data.RelationalTableLogger = lb.HDFLogger(
+    #     path=time.strftime(f"%Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
+    #     append=True,  # `True` --- allow appends to an existing database; `False` --- append
+    #     key_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
+    # )
 
     db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
-        path='data',  # Path to new directory that will contain containing all files
+        path=time.strftime(f"%Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
         force_relational=['host_log'],  # Data in these columns will always be relational
@@ -142,16 +148,18 @@ class MyRack(lb.Rack):
     rack2 = Rack2(dev=inst1)
     rack3 = Rack3(dev=inst2)
 
-    run = lb.Coordinate(
-        setup=(rack1.setup & rack2.setup),  # executes these 2 methods concurrently
-        arm=(rack1.arm),
-        acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
-        fetch=(rack2.fetch & rack3.fetch),
-        finish=(db.new_row),
+    run = lb.Sequence(
+        setup=(rack1.setup, rack2.setup),  # executes these 2 methods concurrently
+        arm=rack1.arm,
+        acquire1=rack2.acquire,
+        acquire2=rack3.acquire,
+        fetch=(rack2.fetch, rack3.fetch),  # 2 also run concurrently
+        finish=db.new_row,
     )
 
 
 if __name__ == '__main__':
+    lb.show_messages('debug')
     lb.util._force_full_traceback(True)
 
     # Testbed = lb.Rack.take_module('module_as_testbed')
@@ -161,7 +169,7 @@ if __name__ == '__main__':
 
     with lb.stopwatch('test connection'):
         with Testbed() as testbed:
-            lb.show_messages('debug')
+
 
             # with MyRack() as testbed:
             testbed.inst2.settings.delay = 0.07
@@ -176,5 +184,5 @@ if __name__ == '__main__':
             #
             #     testbed.db()
 
-    df = lb.read(testbed.db.path/'master.db')
-    df.to_csv(testbed.db.path/'master.csv')
+    # df = lb.read(testbed.db.path/'master.db')
+    # df.to_csv(testbed.db.path/'master.csv')

@@ -58,7 +58,7 @@ if __name__ == '__main__':
     py_version_req = (3, 7)
     if sys.version_info < py_version_req:
         raise ValueError(
-            f"python version is {sys.version} but install requires >={'.'.join(py_version_req)}")
+            f"python version is {sys.version} but install requires >={'.'.join([str(v) for v in py_version_req])}")
 
     setup(name='labbench',
           version=__version__,

@@ -73,6 +73,7 @@ if __name__ == '__main__':
                             'pyserial(>=3.0)',
                             'pyvisa(>=1.8)',
                             'coloredlogs(>=7.0)',
+                            "feather-format(>=0.4.0)"
                             'numpy(>=1.0)',
                             'scipy(>=0.9)',
                             'sortedcontainers(>=1.4)',
@@ -80,7 +81,6 @@ if __name__ == '__main__':
                             'sqlalchemy',
                             'GitPython(>=2.0)',
                             'pyarrow',
-                            'traitlets(>=4)'
                             ],
           extras_require={'html': ['sphinx(>=1.6)','recommonmark'],
                           'notebook': ['notebook', 'ipywidgets']},

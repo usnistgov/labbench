@@ -1622,8 +1622,7 @@ class Device(HasStates, util.Ownable):
             # In case an exception has occurred before __init__
             return f'{name}()'
 
-    @property
-    @Bool()
+    @Bool(help="is the Device connected?")
     def connected(self):
         """ are we connected? """
         try:

@@ -197,7 +197,7 @@ class Trait:
 
         :param default: the default value of the trait (settings only)
 
-        :param key: some types of Device use of this key to automate interaction with the device (state traits only)
+        :param key: some types of Device take this input to determine automation behavior
 
         :param help: the Trait docstring
 
@@ -220,8 +220,8 @@ class Trait:
     type = None
 
     # These annotations define the arguments to __init__ @dataclass above
-    default: ThisType = None
-    key: None.__class__ = None
+    default: ThisType = Undefined
+    key: Undefined = Undefined
     help: str = ''
     label: str = ''
     settable: bool = True
@@ -240,7 +240,10 @@ class Trait:
     __decorator_action__ = None
 
     def __init__(self, *args, **kws):
-        if callable(kws['default']):
+        if kws['default'] is Undefined:
+            # always go with None when this value is allowed, fallback to self.default
+            kws['default'] = None if self.allow_none else self.default
+        elif callable(kws['default']):
             msg = f"trait decorators need to be instantiated - " \
                   f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
             raise AttributeError(msg)
@@ -308,8 +311,13 @@ class Trait:
         # apply an explicit signature to cls.__init__
         annots = {k: cls.type if v is ThisType else (k, v) \
                   for k, v in annots.items()}
-        cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys()
-                                if hasattr(cls, k))
+
+        cls.__defaults__ = {k: getattr(cls, k)
+                            for k in annots if hasattr(cls, k)}
+
+        if 'default' in cls.__defaults__:
+            cls.__defaults__['default'] = Undefined
+
         util.wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls.__defaults__, 1, annots)
 
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
@@ -357,7 +365,7 @@ class Trait:
         # classify the owner
         if issubclass(owner_cls, HasSettings):
             self.kind = 'setting'
-            invalid = ('key', 'remap')
+            invalid = ('remap',)
 
             if self.__decorator_action__ is not None or len(self.__decorator_pending__) > 0:
                 raise AttributeError(f"{self} is a settings trait -- it cannot be used as a decorator")
@@ -370,7 +378,7 @@ class Trait:
             invalid = tuple()
 
         for k in invalid:
-            if self.__defaults__[k] != getattr(self, k):
+            if self.__defaults__[k] is not Undefined and self.__defaults__[k] != getattr(self, k):
                 name = owner_cls.__qualname__
                 raise AttributeError(f"'{name}' classes do not support traits with parameter '{k}'")
 
@@ -630,7 +638,7 @@ class Trait:
             pairs = []
             for k, default in self.__defaults__.items():
                 v = getattr(self, k)
-                if v != default:
+                if not k.startswith('_') and v != default:
                     pairs.append(f'{k}={repr(v)}')
             name = self.__class__.__qualname__
             return f"{name}({','.join(pairs)})"
@@ -833,15 +841,15 @@ def unobserve(obj, handler):
         raise TypeError('object to unobserve must be an instance of Device, or Device.settings')
 
 
-class Undefined(Trait):
-    """ rejects any value """
-
-    @util.hide_in_traceback
-    def validate(self, value):
-        raise ValueError('undefined trait does not allow any value')
-
-
-Undefined = Undefined()
+# class Undefined(Trait):
+#     """ rejects any value """
+#
+#     @util.hide_in_traceback
+#     def validate(self, value):
+#         raise ValueError('undefined trait does not allow any value')
+#
+#
+# Undefined = Undefined()
 
 
 class LookupCorrectionMixIn(Trait):
@@ -933,6 +941,10 @@ class LookupCorrectionMixIn(Trait):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
+        if self.table is None:
+            raise AttributeError(f"use the uncalibrated {self._other} instead, or load a correction lookup "
+                                 f"table first to calibrate {self}")
+
         uncal = self._other.__get__(owner, owner_cls)
         cal = self.lookup_cal(uncal)
 
@@ -942,6 +954,10 @@ class LookupCorrectionMixIn(Trait):
             return cal
 
     def __set__(self, owner, cal):
+        if self.table is None:
+            raise AttributeError(f"use the uncalibrated {self._other} instead, or load a correction lookup "
+                                 f"table first to calibrate {self}")
+
         # start with type conversion and validation on the requested calibrated value
         cal = self._other.to_pythonic(cal)
 
@@ -1001,25 +1017,43 @@ class OffsetCorrectionMixIn(Trait):
         else:
             return getattr(owner, self.offset_name)
 
+    def _offset_trait(self, owner):
+        if self.kind == 'state':
+            return owner.settings[self.offset_name]
+        else:
+            return owner[self.offset_name]
+
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
-        return self._other.__get__(owner, owner_cls) + self._offset(owner)
+        offset = self._offset(owner)
+        if offset is None:
+            offset_trait = self._offset_trait(owner)
+            raise AttributeError(f"use the uncalibrated {self._other}, or calibrate {self} first "
+                                 f"by setting {offset_trait}")
+
+        return self._other.__get__(owner, owner_cls) + offset
 
     def __set__(self, owner, value):
+        offset = self._offset(owner)
+        if offset is None:
+            offset_trait = self._offset_trait(owner)
+            raise AttributeError(f"use the uncalibrated {self._other}, or calibrate {self} first "
+                                 f"by setting {offset_trait}")
+
         # use the other to the value into the proper format and validate it
         value = self._other.to_pythonic(value)
         type(self._other).validate(self, value)
 
-        self._other.__set__(owner, value - self._offset(owner))
+        self._other.__set__(owner, value - offset)
 
 
 class TransformMixIn(Trait):
     """ act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber trait
     """
-    forward: Any = lambda x: x
-    reverse: Any = lambda x: x
+    _forward: Any = lambda x: x
+    _reverse: Any = lambda x: x
 
     def __init_owner_instance__(self, owner):
         observe(owner, self.__owner_event__)
@@ -1030,39 +1064,40 @@ class TransformMixIn(Trait):
             return
 
         owner = msg['owner']
-        owner.__notify__(self.name, self.forward(msg['new']),
+        owner.__notify__(self.name, self._forward(msg['new']),
                          msg['type'], cache=msg['cache'])
 
     @property
     def min(self):
-        # TODO: does this actually work for any reversible self.forward()?
+        # TODO: does this actually work for any reversible self._forward()?
         if self._other.min is None:
             return None
-        return min(self.forward(self._other.max), self.forward(self._other.min))
+        return min(self._forward(self._other.max), self._forward(self._other.min))
 
     @property
     def max(self):
-        # TODO: does this actually work for any reversible self.forward()?
+        # TODO: does this actually work for any reversible self._forward()?
         if self._other.max is None:
             return None
-        return max(self.forward(self._other.max), self.forward(self._other.min))
+        return max(self._forward(self._other.max), self._forward(self._other.min))
 
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
-        return self.forward(self._other.__get__(owner, owner_cls))
+        return self._forward(self._other.__get__(owner, owner_cls))
 
     def __set__(self, owner, value):
         # use the other to the value into the proper format and validate it
         value = self._other.to_pythonic(value)
         type(self._other).validate(self, value)
-        self._other.__set__(owner, self.reverse(value))
+        self._other.__set__(owner, self._reverse(value))
 
 
 class BoundedNumber(Trait):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
     default: ThisType = 0
+    allow_none: bool = False
     min: ThisType = None
     max: ThisType = None
 
@@ -1078,7 +1113,7 @@ class BoundedNumber(Trait):
         return value
 
     def calibrate(self, offset_name=Undefined, lookup=Undefined,
-                  help='', allow_none=False):
+                  help='', label=Undefined, allow_none=False):
         """ generate a new Trait subclass that calibrates values given by
         another trait. their configuration comes from a trait in the owner.
 
@@ -1095,6 +1130,9 @@ class BoundedNumber(Trait):
         elif offset_name is not Undefined:
             mixin = OffsetCorrectionMixIn
             params['offset_name'] = offset_name
+
+        if label is Undefined:
+            label = self.label
 
         if len(params) != 1:
             raise ValueError(f"must set exactly one of `offset` and `table`")
@@ -1124,8 +1162,8 @@ class BoundedNumber(Trait):
 
         return ttype(help=help, label=self.label,
                      settable=self.settable, gettable=self.gettable,
-                     allow_none=allow_none, forward=forward,
-                     reverse=reverse)
+                     allow_none=allow_none, _forward=forward,
+                     _reverse=reverse)
 
     def __neg__(self):
         def neg(x):
@@ -1194,6 +1232,7 @@ class BoundedNumber(Trait):
 
 class NonScalar(Any):
     title: str = ''  # a name for the data
+    allow_none: bool = True
 
     """ generically non-scalar data, such as a list, array, but not including a string or bytes """
 
@@ -1228,10 +1267,12 @@ class Float(BoundedNumber, type=float):
 
 class Complex(Trait, type=complex):
     """ accepts numerical or str values, following normal python casting procedures (with bounds checking) """
+    allow_none: bool = False
 
 
 class Bool(Trait, type=bool):
     """ accepts boolean or numeric values, or a case-insensitive match to one of ('true',b'true','false',b'false') """
+    allow_none: bool = False
 
     @util.hide_in_traceback
     def validate(self, value):
@@ -1250,6 +1291,7 @@ class Bool(Trait, type=bool):
 class String(Trait):
     """ base class for string types, which adds support for case sensitivity arguments """
     case: bool = True
+    allow_none: bool = True
 
     @util.hide_in_traceback
     def contains(self, iterable, value):
@@ -1539,7 +1581,7 @@ class Device(HasStates, util.Ownable):
         for opener in trace_methods(self.__class__, 'open', Device)[::-1]:
             opener(self)
 
-        self._console.debug(f"{self} is open")
+        self._console.debug(f"opened")
         # Force an update to self.connected
         self.connected
 
@@ -1583,7 +1625,7 @@ class Device(HasStates, util.Ownable):
 
         self.connected
 
-        self._console.debug(f'is closed')
+        self._console.debug('closed')
 
     def __imports__(self):
         pass

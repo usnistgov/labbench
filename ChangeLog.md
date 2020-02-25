@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
 ## [Unreleased]
-**This is a significant change that is API incompatible with labbench<=0.20** 
+**API incompatible with labbench<=0.20** 
 
 ### Added
 - Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `lb.Rack`, which also replaces `lb.Testbed`
 - `lb.Coordinate`, which defines methods for `Rack` as a sequence of other functions with mixed threading
 - `lb.HDFLogger` for output to an HDF file
+- `lb.ShellBackend` replaces `lb.CommandLineWrapper`, and is defined by settings annotations
 
 ### Changed
 - Show warnings on trait assignment typos like `device.frequency = 5` instead of `device.state.frequency = 5`
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - FilenameDict and ConcurrentRunner, which have been deprecated for a while
 - `limit_exception_depth`, which is redundant with `hide_in_traceback`
 - `lb.Testbed`
+- `lb.CommandLineWrapper`, which replaces `lb.ShellBackend`
 
 ## [0.20 - 2019-10-09]
 ### Added

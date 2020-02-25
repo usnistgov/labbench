@@ -50,11 +50,11 @@ __all__ = ['ShellBackend',
 
 
 class ShellBackend(core.Device):
-    """ Virtual device representing for interacting with a command line\
-        executable. It supports threaded data logging through standard
+    """ Virtual device controlled by a shell command in another process. It supports
+        threaded data logging through standard
         input, standard output, and standard error pipes.
 
-        On open, the `backend` attribute is None. On a
+        The shell is connection-less, so the `backend` is `None` after connect. On a
         call to execute(), `backend` becomes is a subprocess instance. When
         EOF is reached on the executable's stdout, the backend is assumed
         terminated and is reset to None.
@@ -63,16 +63,34 @@ class ShellBackend(core.Device):
         The output piped to the command line standard output is queued in a
         background thread. Call read_stdout() to retreive (and clear) this
         queued stdout.
+
+        Special behaviors:
+        * traits in `ShellBackend.settings` support the `key` argument, which can be a
+        string to specify a command flag, `None` to specify an argument with no flags,
+        or left as `lb.Undefined` to be ignored in forming a command line.
     """
 
-    binary_path: core.Unicode\
-        (default=None, allow_none=True, help='path to the file to run')
-    timeout: core.Float\
-        (default=1, min=0, label='s', help='wait time after close before killing the process')
-    arguments: core.List\
-        (default=[], help='list of command line arguments to pass into the executable')
-    arguments_min: core.Int\
-        (default=0, settable=False, min=0, help='minimum extra command line arguments needed to run')
+    binary_path: core.Unicode(
+        default=None,
+        allow_none=True,
+        help='path to the file to run'
+    )
+
+    timeout: core.Float(
+        default=1,
+        min=0,
+        help='wait time after close before killing the process',
+        label='s'
+    )
+
+    # arguments: core.List(
+    #     default=[], help='list of command line arguments to pass into the executable'
+    # )
+    #
+    # arguments_min: core.Int(
+    #     default=0, min=0,
+    #     settable=False, help='minimum extra command line arguments needed to run'
+    # )
 
     def __imports__(self):
         global sp
@@ -103,24 +121,24 @@ class ShellBackend(core.Device):
         self._stdout_queue = Queue()
 
         # Monitor state changes
-        states = set(self.settings.__traits__.keys())\
+        states = set(self.settings.__traits__.keys()) \
             .difference(dir(ShellBackend))
-        self.settings.observe(check_state_change, tuple(states))
 
-    @property
-    @contextlib.contextmanager
-    def no_state_arguments(self):
-        """ Use this context manager to disable automatic use of state traits
-            in generating argument strings.
-        """
-        self.__contexts['use_state_arguments'] = False
-        yield
-        self.__contexts['use_state_arguments'] = True
+        core.observe(self.settings, check_state_change, name=tuple(states))
+
+    # @property
+    # @contextlib.contextmanager
+    # def no_state_arguments(self):
+    #     """ disable automatic use of state traits in generating argument strings
+    #     """
+    #     self.__contexts['use_state_arguments'] = False
+    #     yield
+    #     self.__contexts['use_state_arguments'] = True
 
     @property
     @contextlib.contextmanager
     def respawn(self):
-        """ Use this context manager to respawning background execution.
+        """ respawn a background process when it quits
         """
         self.__contexts['respawn'] = True
         yield
@@ -136,7 +154,7 @@ class ShellBackend(core.Device):
         yield
         self.__contexts['exception_on_stderr'] = False
 
-    def foreground(self, *extra_arguments, **flags):
+    def foreground(self, **flags):
         """ Blocking execution of the binary at the file location
             `self.settings.binary_path`.
 
@@ -154,13 +172,13 @@ class ShellBackend(core.Device):
 
             :returns: the return code of the process after its completion
         """
-        cmdl = self.__make_commandline(*extra_arguments, **flags)
+        cmdl = self._commandline(**flags)
         try:
             path = os.path.relpath(cmdl[0])
         except ValueError:
             path = cmdl[0]
         self._console.debug('foreground execute ' +
-                          repr(' '.join((path,) + cmdl[1:])))
+                            repr(' '.join((path,) + cmdl[1:])))
         cp = sp.run(cmdl, timeout=self.settings.timeout,
                     stdout=sp.PIPE)
         ret = cp.stdout
@@ -168,16 +186,16 @@ class ShellBackend(core.Device):
         if ret:
             lines = ret.decode().splitlines()
             show_count = min(40, len(lines))
-            remaining = max(0, len(lines)-show_count)
-            for line in lines[:show_count//2]:
+            remaining = max(0, len(lines) - show_count)
+            for line in lines[:show_count // 2]:
                 self._console.debug(f'► {line}')
-            if remaining>0:
+            if remaining > 0:
                 self._console.debug(f'…{remaining} more lines')
-            for line in lines[-show_count//2:]:
+            for line in lines[-show_count // 2:]:
                 self._console.debug(f'► {line}')
         return ret
 
-    def background(self, *extra_arguments, **flags):
+    def background(self, **flags):
         """ Run the executable in the background (returning immediately while
             the executable continues running).
 
@@ -207,11 +225,11 @@ class ShellBackend(core.Device):
 
             :returns: None
         """
+
         def stdout_to_queue(fd, cmdl):
             """ Thread worker to funnel stdout into a queue
             """
-            def readline():
-                return fd.readline()
+
             pid = self.backend.pid
             q = self._stdout_queue
             for line in iter(fd.readline, ''):
@@ -229,7 +247,7 @@ class ShellBackend(core.Device):
                 self._kill_proc_tree(pid)
                 spawn(cmdl)
             else:
-                self._console.debug('stdout closed; execution done')
+                self._console.debug('process ended')
 
         def stderr_to_exception(fd, cmdl):
             """ Thread worker to raise exceptions on standard error output
@@ -240,7 +258,7 @@ class ShellBackend(core.Device):
                 line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
                     self._console.debug(f'stderr {repr(line)}')
-#                    raise Exception(line)
+                #                    raise Exception(line)
                 else:
                     break
 
@@ -271,7 +289,7 @@ class ShellBackend(core.Device):
                     proc.stderr, cmdl)).start()
 
         # Generate the commandline and spawn
-        cmdl = self.__make_commandline(*extra_arguments, **flags)
+        cmdl = self._commandline(**flags)
         try:
             path = os.path.relpath(cmdl[0])
         except ValueError:
@@ -280,61 +298,47 @@ class ShellBackend(core.Device):
         self._console.debug(
             f"background execute: {repr(' '.join((path,) + cmdl[1:]))}")
         self.__kill = False
-        spawn(self.__make_commandline(*extra_arguments, **flags))
+        spawn(cmdl)
 
-    def __make_commandline(self, *extra_arguments, **flags):
+    def _flag_names(self):
+        return (name for name, trait in self.settings.__traits__.items()
+                if trait.key is not core.Undefined)
+
+    def _commandline(self, **flags):
         """ Form a list of commandline argument strings for foreground
             or background calls.
+
+            :returns: tuple of string
         """
-        for k, v in flags.items():
-            if not (isinstance(k, str) and isinstance(v, str)):
-                raise ValueError(
-                    'command line flag keys and values must be strings')
 
-        if self.__contexts.setdefault('use_state_arguments', True):
-            all_flags = dict(
-                [(k, v) for k, v in self.settings.__traits__.items() if v.metadata['flag']])
+        # validate the set of flags
+        unsupported = set(flags).difference(self._flag_names())
+        if len(unsupported) > 1:
+            raise KeyError(f"flags {unsupported} are unsupported")
 
-            # Check for invalid flags
-            bad_flags = set(flags.keys()).difference(all_flags.keys())
-            if len(bad_flags) > 0:
-                msg = f'command line keyword arguments {repr(tuple(bad_flags))} not found in {repr(self)}.settings'
-                raise ValueError(msg)
+        # apply flags
+        for name, value in flags.items():
+            setattr(self.settings, name, value)
 
-            args = list(self.settings.arguments)
-            if extra_arguments is not None:
-                args = args + list(extra_arguments)
-            if self.settings.arguments_min\
-               and len(args) < self.settings.arguments_min:
-                raise ValueError(
-                    f'{repr(self)} given {repr(args)} arguments but needs at least {self.settings.arguments_min}')
-
-            # Set flags according to the arguments
-            for k, v in flags.items():
-                setattr(self.settings, k, v)
-        else:
-            args = list(extra_arguments)
-            # Set flags according to the arguments
-            for k, v in flags.items():
-                if not (isinstance(k, str) and isinstance(v, str)):
-                    raise ValueError(
-                        'command line values and flags must be strings')
-                args += [k, v]
-
-        cmd = (self.settings.binary_path,) + tuple(args)
+        cmd = (self.settings.binary_path,)
 
         # Update state traits with the flags
-        if self.__contexts['use_state_arguments']:
-            for k, trait in self.settings.__traits__.items():
-                v = getattr(self.settings, k)
+        for name in self._flag_names():
+            trait = self.settings[name]
+            value = getattr(self.settings, name)
 
-                if trait.key and v is not None:
-                    if isinstance(trait, core.Bool):
-                        if v:
-                            cmd = cmd + (trait.key,)
-                    elif v is not None:
-                        cmd = cmd + (trait.key, str(v))
-
+            if value is None:
+                continue
+            elif isinstance(trait, core.Bool) and value is False:
+                continue
+            elif trait.key is None:
+                cmd = cmd + (value,)
+            elif isinstance(trait, core.Bool) and value is True:
+                cmd = cmd + (trait.key,)
+            elif not isinstance(trait.key, str) and trait.key is not core.Undefined:
+                raise TypeError(f"keys defined in {self} must be strings")
+            else:
+                cmd = cmd + (trait.key, value)
         return cmd
 
     def read_stdout(self, wait_for=0):
@@ -397,8 +401,8 @@ class ShellBackend(core.Device):
         # Cache the current running one for a second in case the backend "closes"
         backend = self.backend
         return self.connected \
-            and backend is not None \
-            and backend.poll() is None
+               and backend is not None \
+               and backend.poll() is None
 
     def clear(self):
         """ Clear queued standard output, discarding any contents
@@ -486,7 +490,7 @@ class DotNetDevice(core.Device):
         from System.Reflection import Assembly
         import System
 
-#        if libname is None:
+        #        if libname is None:
         libname = os.path.splitext(os.path.basename(self.dll_name))[0]
 
         if hasattr(self.library, '__loader__'):
@@ -494,7 +498,7 @@ class DotNetDevice(core.Device):
                 then use some introspection and the module's
                 __loader__ to load the contents of the dll
             """
-#            relpath = module.__name__.replace('.', os.path.sep)
+            #            relpath = module.__name__.replace('.', os.path.sep)
             self.dll_name = os.path.join(
                 self.library.__path__[0], self.dll_name)
             contents = self.library.__loader__.getdata(self.dll_name)
@@ -531,17 +535,17 @@ class LabviewSocketInterface(core.Device):
         TCP/IP ports where communication is to take place.
     """
 
-    resource: core.Address\
+    resource: core.Address \
         (default='127.0.0.1', help='TCP/IP host address of the LabView VI host')
-    tx_port: core.Int\
+    tx_port: core.Int \
         (default=61551, help='TX port to send to the LabView VI')
-    rx_port: core.Int\
+    rx_port: core.Int \
         (default=61552, help='TX port to send to the LabView VI')
-    delay: core.Float\
+    delay: core.Float \
         (default=1, help='time to wait after each state write or query')
-    timeout: core.Float\
+    timeout: core.Float \
         (default=2, help='maximum wait replies before raising TimeoutError')
-    rx_buffer_size: core.Int\
+    rx_buffer_size: core.Int \
         (default=1024, min=1)
 
     def open(self):
@@ -626,21 +630,21 @@ class SerialDevice(core.Device):
     """
 
     # Connection settings
-    timeout: core.Float\
-        (default=2,min=0, help='Max time to wait for a connection before raising TimeoutError.')
-    write_termination: core.Bytes\
+    timeout: core.Float \
+        (default=2, min=0, help='Max time to wait for a connection before raising TimeoutError.')
+    write_termination: core.Bytes \
         (default=b'\n', help='Termination character to send after a write.')
-    baud_rate: core.Int\
-        (default=9600,min=1, help='Data rate of the physical serial connection.')
-    parity: core.Bytes\
+    baud_rate: core.Int \
+        (default=9600, min=1, help='Data rate of the physical serial connection.')
+    parity: core.Bytes \
         (default=b'N', help='Parity in the physical serial connection.')
-    stopbits: core.Float\
+    stopbits: core.Float \
         (default=1, min=1, max=2, step=0.5, help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
-    xonxoff: core.Bool\
+    xonxoff: core.Bool \
         (default=False, help='`True` to enable software flow control.')
-    rtscts: core.Bool\
+    rtscts: core.Bool \
         (default=False, help='`True` to enable hardware (RTS/CTS) flow control.')
-    dsrdtr: core.Bool\
+    dsrdtr: core.Bool \
         (default=False, help='`True` to enable hardware (DSR/DTR) flow control.')
 
     def __imports__(self):
@@ -652,7 +656,7 @@ class SerialDevice(core.Device):
         """ Connect to the serial device with the VISA resource string defined
             in self.settings.resource
         """
-        keys = 'timeout', 'parity', 'stopbits',\
+        keys = 'timeout', 'parity', 'stopbits', \
                'xonxoff', 'rtscts', 'dsrdtr'
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(
@@ -731,13 +735,13 @@ class SerialLoggingDevice(SerialDevice):
         from the serial port.
     """
 
-    poll_rate: core.Float\
+    poll_rate: core.Float \
         (default=0.1, min=0, help='Data retreival rate from the device (in seconds)')
-    data_format: core.Bytes\
+    data_format: core.Bytes \
         (default=b'', help='Data format metadata')
-    stop_timeout: core.Float\
+    stop_timeout: core.Float \
         (default=0.5, min=0, help='delay after `stop` before terminating run thread')
-    max_queue_size: core.Int\
+    max_queue_size: core.Int \
         (default=100000, min=1, help='bytes to allocate in the data retreival buffer')
 
     def configure(self):
@@ -844,9 +848,9 @@ class TelnetDevice(core.Device):
     """
 
     # Connection settings
-    timeout: core.Float\
+    timeout: core.Float \
         (default=2, min=0, label='s', help='connection timeout')
-    port: core.Int\
+    port: core.Int \
         (default=23, min=1)
 
     def __imports__(self):
@@ -889,20 +893,20 @@ class VISADevice(core.Device):
         Use of `inst` makes it possible to add callbacks to support
         automatic state logging, or to build a UI.
     """
-    
+
     # Settings
-    read_termination: core.Unicode\
+    read_termination: core.Unicode \
         (default='\n', help='end-of-receive termination character')
 
-    write_termination: core.Unicode\
+    write_termination: core.Unicode \
         (default='\n', help='end-of-transmit termination character')
 
     # States
-    identity = core.Unicode\
+    identity = core.Unicode \
         (key='*IDN', settable=False, cache=True,
          help='identity string reported by the instrument')
 
-    options = core.Unicode\
+    options = core.Unicode \
         (key='*OPT', settable=False, cache=True,
          help='options reported by the instrument')
 
@@ -920,7 +924,7 @@ class VISADevice(core.Device):
                 }
 
     _rm = None
-    
+
     @classmethod
     def __imports__(cls):
         global pyvisa
@@ -956,9 +960,12 @@ class VISADevice(core.Device):
             a call to `close` either at the successful completion
             of the `with` block, or if there is any exception.
         """
+
         # The resource manager is "global" at the class level here
         if VISADevice._rm is None:
-             self.set_backend('@ni')
+            VISADevice.set_backend('@ni')
+
+        self.__opc = False
 
         self.backend = VISADevice._rm.open_resource(self.settings.resource,
                                                     read_termination=self.settings.read_termination,
@@ -992,8 +999,8 @@ class VISADevice(core.Device):
             cls._rm = pyvisa.ResourceManager(backend_name)
         except OSError as e:
             e.args = e.args + \
-            (
-                    'labbench VISA support requires NI VISA; is it installed?\nhttp://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe',)
+                     (
+                         'labbench VISA support requires NI VISA; is it installed?\nhttp://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe',)
             raise e
 
     @classmethod
@@ -1031,7 +1038,7 @@ class VISADevice(core.Device):
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
-        self._console.debug(f'query {repr(msg_out)}')
+        self._console.debug(f'query {msg_out}')
         try:
             ret = self.backend.query(msg)
         finally:
@@ -1041,7 +1048,7 @@ class VISADevice(core.Device):
         self._console.debug(f'      -> {msg_out}')
         return ret
 
-    def __get_by_key__(self, name, command):
+    def __get_by_key__(self, name, scpi_key):
         """ Send an SCPI command to get a state value from the
             device. This function
             adds a '?' to match SCPI convention. This is
@@ -1051,9 +1058,9 @@ class VISADevice(core.Device):
             :param str key: The SCPI command to send
             :param trait: The trait state corresponding with the command (ignored)
         """
-        return self.query(command + '?').rstrip()
+        return self.query(scpi_key + '?').rstrip()
 
-    def __set_by_key__(self, name, command, value):
+    def __set_by_key__(self, name, scpi_key, value):
         """ Send an SCPI command to set a state value on the
             device. This function adds a '?' to match SCPI convention. This is
             automatically called for `state` attributes that
@@ -1063,7 +1070,7 @@ class VISADevice(core.Device):
             :param trait: The trait state corresponding with the command (ignored)
             :param str value: The value to assign to the parameter
         """
-        self.write(command + ' ' + str(value))
+        self.write(scpi_key + ' ' + str(value))
 
     def wait(self):
         """ Convenience function to send standard SCPI '\\*WAI'
@@ -1101,9 +1108,9 @@ class VISADevice(core.Device):
 
     class suppress_timeout(contextlib.suppress):
         """ Context manager to suppress timeout exceptions.
-        
+
             Example::
-                
+
                 with inst.suppress_timeout():
                     inst.write('long running command 1')
                     inst.write('long running command 2')
@@ -1115,7 +1122,7 @@ class VISADevice(core.Device):
 
         def __exit__(self, exctype, excinst, exctb):
             return exctype == pyvisa.errors.VisaIOError \
-                and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
+                   and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
 
 
 class Win32ComDevice(core.Device):
@@ -1135,9 +1142,9 @@ class Win32ComDevice(core.Device):
         core.Unicode(default='',
                      help='the win32com object string')  # Must be a module
 
-    concurrency:\
+    concurrency: \
         core.Bool(default=True,
-                     help='whether this implementation supports threading')
+                  help='whether this implementation supports threading')
 
     def __imports__(self):
         global win32com

@@ -395,7 +395,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
                     ex = e
                     console.warning(str(e))
                     console.warning(
-                        f'{f.__name__} retry ({progress}s/{timeout}s elapsed)')
+                        f'{f.__name__} retry ({progress:0.2f}s/{timeout:0.2f}s elapsed)')
                     exception_func()
                     sleep(active_delay)
                     active_delay = active_delay * backoff

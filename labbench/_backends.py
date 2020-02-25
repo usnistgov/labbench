@@ -103,7 +103,7 @@ class ShellBackend(core.Device):
         self._stdout_queue = Queue()
 
         # Monitor state changes
-        states = set(self.settings.traits().keys())\
+        states = set(self.settings.__traits__.keys())\
             .difference(dir(ShellBackend))
         self.settings.observe(check_state_change, tuple(states))
 
@@ -293,7 +293,7 @@ class ShellBackend(core.Device):
 
         if self.__contexts.setdefault('use_state_arguments', True):
             all_flags = dict(
-                [(k, v) for k, v in self.settings.traits().items() if v.metadata['flag']])
+                [(k, v) for k, v in self.settings.__traits__.items() if v.metadata['flag']])
 
             # Check for invalid flags
             bad_flags = set(flags.keys()).difference(all_flags.keys())
@@ -325,7 +325,7 @@ class ShellBackend(core.Device):
 
         # Update state traits with the flags
         if self.__contexts['use_state_arguments']:
-            for k, trait in self.settings.traits().items():
+            for k, trait in self.settings.__traits__.items():
                 v = getattr(self.settings, k)
 
                 if trait.key and v is not None:

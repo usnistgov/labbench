@@ -1311,6 +1311,7 @@ class ConfigStore:
 
 import ast
 import textwrap
+import re
 
 def accessed_attributes(method):
     """ enumerate the attributes of the parent class accessed by `method`
@@ -1327,6 +1328,10 @@ def accessed_attributes(method):
 
     # parse into a code tree
     source = inspect.getsource(method)
+
+    # filter out lines that start with comments, which have no tokens and confuse textwrap.dedent
+    source = '\n'.join(re.findall("^[\ \t\r\n]*[^\#].*", source, re.MULTILINE))
+
     parsed = ast.parse(textwrap.dedent(source))
     if len(parsed.body) > 1:
         # this should not be possible

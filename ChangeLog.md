@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
-- `lb.NonScalar` data type
+- `lb.NonScalar` trait type
 - `lb.hide_in_traceback` decorator scrubs the decorated function from tracebacks
 - `lb.Rack`, which also replaces `lb.Testbed`
 - `lb.Coordinate`, which defines methods for `Rack` as a sequence of other functions with mixed threading
@@ -34,7 +34,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `host_log.txt` is now in YAML
 - `CommandLineWrapper` is now `ShellBackend`
 - Renamed the `logger` attribute to `_console` in Rack and Device to reduce the confusing overuse of the word "logger" 
-
+- `lb.BoundedNumber` (and subclasses `lb.Int`, `lb.Float`) now support creating derived Traits that act as arithmetic transformations, calibration against `device.setting`, and calibration against lookup tables 
+- `feather-format` is now an explicit dependency, because it is no longer (always?) pulled in by `pyarrow`
+ 
 ### Removed
 - FilenameDict and ConcurrentRunner, which have been deprecated for a while
 - `limit_exception_depth`, which is redundant with `hide_in_traceback`

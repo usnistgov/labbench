@@ -69,11 +69,11 @@ if __name__ == '__main__':
           packages=setuptools.find_packages(),
           packagedata={'labbench': ['*.pyi']},
           license='NIST',
-          install_requires=['pandas(>=0.20)',
+          install_requires=['pandas(>=0.23)',
                             'pyserial(>=3.0)',
                             'pyvisa(>=1.8)',
                             'coloredlogs(>=7.0)',
-                            "feather-format(>=0.4.0)"
+                            "feather-format(>=0.4.0)",
                             'numpy(>=1.0)',
                             'scipy(>=0.9)',
                             'sortedcontainers(>=1.4)',

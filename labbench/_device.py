@@ -43,7 +43,7 @@ import sys
 import traceback
 
 __all__ = ['Trait', 'Undefined', 'Any', 'Int', 'Float', 'Unicode', 'Complex', 'Bytes',
-           'Bool', 'List', 'Dict', 'Address', 'NonScalar',
+           'Bool', 'List', 'Dict', 'Address', 'NonScalar', 'BoundedNumber',
 
            'Device', 'list_devices',
            'observe', 'unobserve'
@@ -238,10 +238,10 @@ class Trait:
     __returner__ = None
     __decorator_pending__ = []
     __decorator_action__ = None
-    
+
     def __init__(self, *args, **kws):
         if callable(kws['default']):
-            msg = f"trait decorators need to be instantiated - "\
+            msg = f"trait decorators need to be instantiated - " \
                   f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
             raise AttributeError(msg)
 
@@ -263,15 +263,20 @@ class Trait:
             elif k == 'default' and self.allow_none and isinstance(v, type(None)):
                 # for the 'default' parameter, be fine with None
                 continue
-            elif not isinstance(v, t):
-                # complain if the parameter is set to the wrong type
-                tname = t.__qualname__
-                vname = type(v).__qualname__
-                raise ValueError(f"argument '{k}' has type '{vname}', but it should be '{tname}'")
-                
-        # Some trickery to define with
+            else:
+                try:
+                    isinst = isinstance(v, t)
+                except TypeError:
+                    raise TypeError(f"annotation {repr(k)}: {type(t)} does not specify a type")
+                if not isinst:
+                    # complain if the parameter is set to the wrong type
+                    tname = t.__qualname__
+                    vname = type(v).__qualname__
+                    raise ValueError(f"argument '{k}' of {self} has type '{vname}', but it should be '{tname}'")
+
+        # trickery to prevent settings conflicts
         if self.remap and self.only:
-            raise ValueError(f"the 'remap' and 'valid' parameters are redundant")
+            raise ValueError(f"the 'remap' and 'only' parameters are redundant")
 
         # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
         if len(self.remap) > 0:
@@ -303,9 +308,10 @@ class Trait:
         # apply an explicit signature to cls.__init__
         annots = {k: cls.type if v is ThisType else (k, v) \
                   for k, v in annots.items()}
-        cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys())
+        cls.__defaults__ = dict((k, getattr(cls, k)) for k in annots.keys()
+                                if hasattr(cls, k))
         util.wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls.__defaults__, 1, annots)
-        
+
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
         cls.__slots__ = [n for n in dir(cls) if not n.startswith('_')] + ['metadata', 'kind', 'name']
 
@@ -324,7 +330,11 @@ class Trait:
             Trait takes advantage of this to remember the owning class for debug
             messages and to register with the owner class.
         """
-        self.__objclass__ = owner_cls # inspect module expects this
+        if not issubclass(owner_cls, HasTraits):
+            # otherwise, other objects that house this Trait may unintentionally become owners
+            return
+
+        self.__objclass__ = owner_cls  # inspect module expects this
 
         # Take the given name, unless we've bene tagged with a different
         self.name = name
@@ -382,13 +392,13 @@ class Trait:
                 if set(positional_argcounts) in ({1}, {1, 2}, {2}):
                     self.__decorator_action__ = 'property'
                 else:
-                    raise AttributeError(f"the intended behavior of the method(s) decorated by {self} "\
-                                          "is ambiguous - specify with @labbench.property or @labbench.method")
+                    raise AttributeError(f"the intended behavior of the method(s) decorated by {self} " \
+                                         "is ambiguous - specify with @labbench.property or @labbench.method")
 
             if self.__decorator_action__ == 'property':
                 # adopt the properties!
                 if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
-                    raise AttributeError(f"a decorator implementation with @{self} must apply to a getter "\
+                    raise AttributeError(f"a decorator implementation with @{self} must apply to a getter " \
                                          f"(above `def func(self)`) and/or setter (above `def func(self, value):`)")
                 for func, argcount in zip(self.__decorator_pending__, positional_argcounts):
                     if len(self.help.rstrip().strip()) == 0:
@@ -401,6 +411,9 @@ class Trait:
                         self.__setter__ = func
             else:
                 raise AttributeError(f"{self} failed to implement a decorator")
+
+    def __init_owner_instance__(self, owner):
+        pass
 
     @util.hide_in_traceback
     def __set__(self, owner, value):
@@ -416,9 +429,9 @@ class Trait:
                 value = self.validate(value)
             except BaseException as e:
                 name = owner.__class__.__qualname__ + '.' + self.name
-                e.args = (f" in attempt to set '{name}', " + e.args[0],) + e.args[1:]
+                e.args = (f"cannot set '{name}' to {repr(value)}: " + e.args[0],) + e.args[1:]
                 raise e
-            
+
             if len(self.only) > 0 and not self.contains(self.only, value):
                 raise ValueError(f"value '{value}' is not among the allowed values {repr(self.only)}")
         elif self.allow_none:
@@ -437,15 +450,15 @@ class Trait:
         if self.kind == 'setting':
             # from the setting
             owner.__set_value__(self.name, value)
-        
+
         elif self.__setter__ is not None:
             # from the function decorated by this trait
             self.__setter__(owner, value)
-            
+
         elif self.key is None:
             # from the command (with below)
             objname = owner.__class__.__qualname__ + '.' + self.name
-            raise AttributeError(f"cannot set {objname}: no @{self.name} "\
+            raise AttributeError(f"cannot set {objname}: no @{self.name} " \
                                  f"setter is defined, and command is None")
         else:
             owner.__set_by_key__(self.name, self.key, value)
@@ -462,12 +475,17 @@ class Trait:
         :return: retreived value
         """
 
-        if owner is None:
-            # this is the owner class looking for the trait instance itself
+        # only continue to get the value if the __get__ was called for an owning
+        # instance, and owning class is a match for what we were told in __set_name__.
+        # otherwise, someone else is trying to access `self` and we
+        # shouldn't get in their way.
+        if owner is None or \
+                owner_cls.__dict__.get(self.name, None) is not self.__objclass__.__dict__.get(self.name):
+            # the .__dict__.get acrobatics avoids a recursive __get__ loop
             return self
+
         elif self.__returner__ is not None:
-            
-            # Inject the labbench Trait hooks into the return value
+            # inject the labbench Trait hooks into the return value
             @wraps(self.__returner__)
             def method(*args, **kws):
                 value = self.__returner__(owner, *args, **kws)
@@ -481,21 +499,21 @@ class Trait:
 
         elif self.kind == 'setting':
             value = owner.__get_value__(self.name)
-            
+
         elif (self.cache and self.name in owner.__previous__):
             # return the cached value if applicable
             return owner.__previous__[self.name]
-        
+
         elif self.__getter__ is not None:
             # get value with the decorator implementation, if available
             value = self.__getter__(owner)
-            
+
         else:
             # otherwise, get with owner.__get_by_key__, if available
             if self.key is None:
-                # otherwise, 'get' 
+                # otherwise, 'get'
                 objname = owner.__class__.__qualname__ + '.' + self.name
-                raise AttributeError(f"cannot set {objname}: no @{self.name} "\
+                raise AttributeError(f"cannot set {objname}: no @{self.name} " \
                                      f"getter is defined, and command is None")
             value = owner.__get_by_key__(self.name, self.key)
 
@@ -519,13 +537,13 @@ class Trait:
                 name = owner.__class__.__qualname__ + '.' + self.name
                 e.args = (e.args[0] + f" in attempt to get '{name}'",) + e.args[1:]
                 raise e
-            
+
             # Once we have a python value, give warnings (not errors) if the device value fails further validation
             if isinstance(owner, Device) and hasattr(owner, '_console'):
                 log = owner._console.warning
             else:
                 log = warn
-    
+
             try:
                 if value != self.validate(value):
                     raise ValueError
@@ -562,9 +580,9 @@ class Trait:
         :param value: value to check
         :return: a valid value
         """
-        if isinstance(value, self.type):
-            raise ValueError(f"a '{type(self).__qualname__}' trait only accepts" \
-                             f"values of type '{type(self.type).__qualname__}'")
+        if not isinstance(value, self.type):
+            raise ValueError(f"a '{type(self).__qualname__}' trait only accepts " \
+                             f"values of type '{self.type.__qualname__}'")
         return value
 
     def contains(self, iterable, value):
@@ -585,8 +603,8 @@ class Trait:
             self.__decorator_action__ = getattr(func, '__decorator_action__', None)
         elif hasattr(func, '__decorator_action__'):
             if func.__decorator_action__ != self.__decorator_action__:
-                raise AttributeError(f"the given function {repr(func)} is decorated "\
-                                     f"to act as {func.__decorator_action__}, but "\
+                raise AttributeError(f"the given function {repr(func)} is decorated " \
+                                     f"to act as {func.__decorator_action__}, but " \
                                      f"{repr(self)} is already decorated to act as {self.__decorator_action__}")
             self.__decorator_action__ = func.__decorator_action__
 
@@ -635,57 +653,6 @@ class Trait:
 Trait.__init_subclass__()
 
 
-# def method(obj):
-#     """ Add this decorator in addition to a trait decorator to specify that
-#         the trait should behave as a callable method. For example:
-#
-#             ```python
-#             import labbench as lb
-#
-#             class MyDevice(lb.Device)
-#                 @lb.method
-#                 @lb.Int(min=0, max=10)
-#                 def fetch_int(self):
-#                     return 6
-#
-#             with MyDevice as m:
-#                 print(m.fetch_int())
-#             ```
-#
-#         Decorate either before or after the trait decorator.
-#     """
-#     if not isinstance(obj, Trait) and not callable(obj):
-#         raise ValueError('the method "method" decorator must be applied to a callable')
-#     obj.__decorator_action__ = 'method'
-#     return obj
-#
-#
-# def property(obj):
-#     """ Add this decorator in addition to a trait decorator to specify that
-#         the trait should behave as a property (descriptor). This means
-#         that it is not callable. For example:
-#
-#             ```python
-#             import labbench as lb
-#
-#             class MyDevice(lb.Device)
-#                 @lb.property
-#                 @lb.Int(min=0, max=10)
-#                 def fetch_int(self):
-#                     return 6
-#
-#             with MyDevice as m:
-#                 print(m.fetch_int)
-#             ```
-#
-#         Decorate either before or after the trait decorator.
-#     """
-#     if not isinstance(obj, Trait) and not callable(obj):
-#         raise ValueError('the method "method" decorator must be applied to a callable')
-#     obj.__decorator_action__ = 'property'
-#     return obj
-
-
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __pending__ = {}
@@ -694,15 +661,18 @@ class HasTraits(metaclass=HasTraitsMeta):
         self.__notify_list__ = {}
         self.__previous__ = {}
 
+        for name, trait in self.__traits__.items():
+            trait.__init_owner_instance__(self)
+
     def __init_subclass__(cls):
         if cls.__traits__ in HasTraitsMeta.__pending__:
             HasTraitsMeta.__pending__.remove(cls.__traits__)
-            
+
         for name, trait in dict(cls.__traits__).items():
             if not hasattr(trait, '__objclass__'):
                 trait.__set_name__(cls, name)
             trait.__init_owner_subclass__(cls)
- 
+
     def __iter__(self):
         return iter(self.__traits__.values())
 
@@ -720,7 +690,8 @@ class HasTraits(metaclass=HasTraitsMeta):
     def __notify__(self, name, value, type, cache):
         old = self.__previous__.setdefault(name, Undefined)
 
-        msg = dict(new=value, old=old, owner=self, name=name, type=type, cache=cache)
+        msg = dict(new=value, old=old, owner=self,
+                   name=name, type=type, cache=cache)
 
         for handler in self.__notify_list__.values():
             handler(dict(msg))
@@ -729,12 +700,12 @@ class HasTraits(metaclass=HasTraitsMeta):
 
     def __set_by_key__(self, name, command, value):
         objname = self.__class__.__qualname__ + '.' + name
-        raise AttributeError(f"cannot set {objname}: no @{name} "\
+        raise AttributeError(f"cannot set {objname}: no @{name} " \
                              f"setter is defined, and {name}.__set_by_key__ is not defined")
 
     def __get_by_key__(self, name, command):
         objname = self.__class__.__qualname__ + '.' + name
-        raise AttributeError(f"cannot get {objname}: no @{name} "\
+        raise AttributeError(f"cannot get {objname}: no @{name} " \
                              f"getter is defined, and {name}.__get_by_key__ is not defined")
 
 
@@ -750,7 +721,7 @@ class HasSettings(HasTraits):
         return iter(self.__traits__.keys())
 
     @util.hide_in_traceback
-    def __get_value__ (self, name):
+    def __get_value__(self, name):
         """ Get value of a trait for this settings instance
 
         :param name: Name of the trait
@@ -759,7 +730,7 @@ class HasSettings(HasTraits):
         return self.__previous__[name]
 
     @util.hide_in_traceback
-    def __set_value__ (self, name, value):
+    def __set_value__(self, name, value):
         """ Set value of a trait for this settings instance
 
         :param name: Name of the trait
@@ -782,7 +753,7 @@ class HasStates(HasTraits):
         # that were overwritten by method definitions
         for k, trait in dict(cls.__traits__).items():
             obj = getattr(cls, k)
-            
+
             # Apply the trait decorator to the object if it is "part 2" of a
             # decorator
             if obj is not trait and callable(obj):
@@ -806,7 +777,7 @@ class Any(Trait):
 Trait.__annotations__['key'] = Any
 
 
-def observe(obj, handler, names=None):
+def observe(obj, handler, name=Any, type_=('get', 'set')):
     """ Register a handler function to be called whenever a trait changes.
 
         The handler function takes a single message argument. This
@@ -823,10 +794,22 @@ def observe(obj, handler, names=None):
         :param names: notify only changes to these trait names (None to disable filtering)
     """
 
+    if not callable(handler):
+        raise ValueError(f"argument 'handler' is {repr(handler)}, which is not a callable")
+
+    if isinstance(name, str):
+        name = (name,)
+
+    if isinstance(type, str):
+        type_ = (type_,)
+
     def wrapped(msg):
-        # filter according to names
-        if names is None or msg['name'] in names:
-            handler(msg)
+        # filter according to name and type
+        if name is not Any and msg['name'] not in name:
+            return
+        elif msg['type'] not in type_:
+            return
+        handler(msg)
 
     if isinstance(obj, HasTraits):
         obj.__notify_list__[handler] = wrapped
@@ -861,6 +844,218 @@ class Undefined(Trait):
 Undefined = Undefined()
 
 
+class LookupCorrectionMixIn(Trait):
+    """ act as another BoundedNumber trait calibrated with a lookup table
+    """
+
+    table: Any = None  # really a pandas Series
+
+    @property
+    def min(self):
+        if self.table is None:
+            return None
+        else:
+            return self._by_uncal.min()
+
+    @property
+    def max(self):
+        if self.table is None:
+            return None
+        else:
+            return self._by_uncal.max()
+
+    def __init_owner_instance__(self, owner):
+        if self.table is not None:
+            self.set_table(self.table)
+        observe(owner, self.__owner_event__, name=self._other.name)
+
+    def __owner_event__(self, msg):
+        owner = msg['owner']
+        owner.__notify__(self.name, self.lookup_cal(msg['new']),
+                         msg['type'], cache=msg['cache'])
+
+    def lookup_cal(self, uncal):
+        """ return the index value that gives the attenuation level nearest to `proposal`
+        """
+        if self.table is None:
+            if self.allow_none:
+                return None
+            else:
+                raise ValueError(f"no calibration table loaded in {self}, and allow_none evaluates as False")
+        else:
+            try:
+                return self._by_uncal.loc[uncal]
+            except KeyError:
+                pass
+
+            # this odd try-except...raise oddness spares us internal
+            # pandas details in the traceback
+            if self.allow_none:
+                return None
+            else:
+                raise ValueError(f"the lookup table has no entry at {repr(uncal)} {self.label}")
+
+    def find_uncal(self, cal):
+        """ look up the calibrated value for the given uncalibrated value. In the event of a lookup
+        error, then if `self.allow_none` evaluates as True, triggers return of None, or if
+         `self.allow_none` evaluates False, ValueError is raised.
+        """
+        if self.table is None:
+            if self.allow_none:
+                return None
+            else:
+                raise ValueError(f"no calibration table loaded in {self}, and allow_none evaluates as False")
+        else:
+            i = self._by_cal.index.get_loc(cal, method='nearest')
+            return self._by_cal.iloc[i]
+
+    def set_table(self, series_or_uncal, cal=None):
+        """ set the lookup table as `set_table(series)`, where `series` is a pandas Series (uncalibrated
+        values in the index), or `set_table(cal_vector, uncal_vector)`, where both vectors have 1
+        dimension of the same length.
+        """
+
+        import pandas as pd
+
+        if isinstance(series_or_uncal, pd.Series):
+            self._by_uncal = pd.Series(series_or_uncal).copy()
+        elif cal is not None:
+            self._by_uncal = pd.Series(cal, index=series_or_uncal)
+        elif series_or_uncal is None:
+            self.table = self._by_cal = self._by_uncal = None
+            return
+        else:
+            raise ValueError(f"must call set_table with None, a Series, or a pair of vector " \
+                             f"arguments, not {series_or_uncal}")
+        self._by_uncal = self._by_uncal.sort_index()
+        self._by_uncal.index.name = 'uncal'
+        self._by_uncal.name = 'cal'
+        self.table = self._by_uncal
+
+        self._by_cal = pd.Series(self._by_uncal.index,
+                                 index=self._by_uncal.values,
+                                 name='uncal').sort_index()
+        self._by_cal.index.name = 'cal'
+
+    def __get__(self, owner, owner_cls=None):
+        if owner is None or owner_cls is not self.__objclass__:
+            return self
+
+        uncal = self._other.__get__(owner, owner_cls)
+
+        cal = self.lookup_cal(uncal)
+        return cal
+
+    def __set__(self, owner, cal):
+        # start with type conversion and validation on the requested calibrated value
+        cal = self._other.to_pythonic(cal)
+
+        # lookup the uncalibrated value that results in the nearest calibrated result
+        uncal = self.find_uncal(cal)
+
+        # raise an exception if the calibration table contains invalid values, instead
+        if uncal != type(self._other).validate(self, uncal):
+            raise ValueError(f"calibration lookup in {self} produced invalid value {repr(uncal)}")
+
+        # choose a setting
+        self._other.__set__(owner, uncal)
+
+
+class OffsetCorrectionMixIn(Trait):
+    """ act as another BoundedNumber trait, calibrated with an additive offset
+    """
+    offset_name: str = None  # the name of a trait in owner.settings that contains the offset value
+
+    @property
+    def min(self):
+        if self._other.min is None:
+            return None
+        return self._other.min + self.offset
+
+    @property
+    def max(self):
+        if self._other.max is None:
+            return None
+        return self._other.max + self.offset
+
+    def __init_owner_instance__(self, owner):
+        observe(owner, self.__owner_event__)
+
+    def __owner_event__(self, msg):
+        # pass on a corresponding notification when self._other changes
+        if msg['name'] != self._other.name:
+            return
+
+        owner = msg['owner']
+        owner.__notify__(self.name, msg['new'] + self._offset(owner),
+                         msg['type'], cache=msg['cache'])
+
+    def _offset(self, owner):
+        # pull in the offset value from settings
+        if self.kind == 'state':
+            return getattr(owner.settings, self.offset_name)
+        else:
+            return getattr(owner, self.offset_name)
+
+    def __get__(self, owner, owner_cls=None):
+        if owner is None or owner_cls is not self.__objclass__:
+            return self
+
+        return self._other.__get__(owner, owner_cls) + self._offset(owner)
+
+    def __set__(self, owner, value):
+        # use the other to the value into the proper format and validate it
+        value = self._other.to_pythonic(value)
+        type(self._other).validate(self, value)
+
+        self._other.__set__(owner, value - self._offset(owner))
+
+
+class TransformMixIn(Trait):
+    """ act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber trait
+    """
+    forward: Any = lambda x: x
+    reverse: Any = lambda x: x
+
+    def __init_owner_instance__(self, owner):
+        observe(owner, self.__owner_event__)
+
+    def __owner_event__(self, msg):
+        # pass on a corresponding notification when self._other changes
+        if msg['name'] != self._other.name:
+            return
+
+        owner = msg['owner']
+        owner.__notify__(self.name, self.forward(msg['new']),
+                         msg['type'], cache=msg['cache'])
+
+    @property
+    def min(self):
+        # TODO: does this actually work for any reversible self.forward()?
+        if self._other.min is None:
+            return None
+        return min(self.forward(self._other.max), self.forward(self._other.min))
+
+    @property
+    def max(self):
+        # TODO: does this actually work for any reversible self.forward()?
+        if self._other.max is None:
+            return None
+        return max(self.forward(self._other.max), self.forward(self._other.min))
+
+    def __get__(self, owner, owner_cls=None):
+        if owner is None or owner_cls is not self.__objclass__:
+            return self
+
+        return self.forward(self._other.__get__(owner, owner_cls))
+
+    def __set__(self, owner, value):
+        # use the other to the value into the proper format and validate it
+        value = self._other.to_pythonic(value)
+        type(self._other).validate(self, value)
+        self._other.__set__(owner, self.reverse(value))
+
+
 class BoundedNumber(Trait):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
     default: ThisType = 0
@@ -873,24 +1068,129 @@ class BoundedNumber(Trait):
             raise ValueError(f"a '{type(self).__qualname__}' trait value must be a numerical, str, or bytes instance")
         # Check bounds once it's a numerical type
         if self.max is not None and value > self.max:
-            raise ValueError(f'{value} > the upper bound {self.max}')
+            raise ValueError(f"tried to set {self}={value}, but its upper bound is {self.max})")
         if self.min is not None and value < self.min:
-            raise ValueError(f'{value} < the lower bound {self.min}')
+            raise ValueError(f'tried to set {self}={value}, but its lower bound is {self.min})')
         return value
+
+    def calibrate(self, offset_name=Undefined, lookup=Undefined,
+                  help='', allow_none=False):
+        """ generate a new Trait subclass that calibrates values given by
+        another trait. their configuration comes from a trait in the owner.
+
+        :param offset_name: the name of a setting trait in the owner containing a numerical offset
+
+        :param lookup: a table containing calibration data, or None to configure later
+        """
+
+        params = {}
+        if lookup is not Undefined:
+            mixin = LookupCorrectionMixIn
+            params['table'] = lookup
+
+        elif offset_name is not Undefined:
+            mixin = OffsetCorrectionMixIn
+            params['offset_name'] = offset_name
+
+        if len(params) != 1:
+            raise ValueError(f"must set exactly one of `offset` and `table`")
+
+        name = self.__class__.__name__
+        name = ('' if name.startswith('Dependent') else 'Dependent') + name
+        ttype = type(name, (mixin, type(self)), dict(_other=self))
+
+        return ttype(help=help, label=self.label,
+                     settable=self.settable, gettable=self.gettable,
+                     allow_none=allow_none, **params)
+
+    def transform(self, forward, reverse, help='',
+                  allow_none=False):
+        """ generate a new Trait subclass that calibrates values given by
+        another trait.
+
+        :param forward: a function that returns the transformed numerical value
+        given the untransformed value
+        :param reverse: a function that returns the untransformed numerical value
+        given the transformed value.
+        """
+
+        name = self.__class__.__name__
+        name = ('' if name.startswith('Dependent') else 'Dependent') + name
+        ttype = type(name, (TransformMixIn, type(self)), dict(_other=self))
+
+        return ttype(help=help, label=self.label,
+                     settable=self.settable, gettable=self.gettable,
+                     allow_none=allow_none, forward=forward,
+                     reverse=reverse)
+
+    def __neg__(self):
+        def neg(x):
+            return -x
+
+        return self.transform(neg, neg, allow_none=self.allow_none, help=f"-1*({self.help})")
+
+    def __add__(self, other):
+        def add(x):
+            return x+other
+        def sub(x):
+            return x-other
+        return self.transform(add, sub, allow_none=self.allow_none, help=f"({self.help}) + {other}")
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        def add(x):
+            return x+other
+        def sub(x):
+            return x-other
+        return self.transform(sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}")
+
+    def __rsub__(self, other):
+        def add(x):
+            return other+x
+
+        def sub(x):
+            return other-x
+
+        return self.transform(sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}")
+
+    def __mul__(self, other):
+        def mul(x):
+            return x*other
+        def div(x):
+            return x/other
+        return self.transform(mul, div, allow_none=self.allow_none, help=f"({self.help}) + {other}")
+
+    __rmul__ = __mul__
+
+    def __truediv__(self, other):
+        def mul(x):
+            return x*other
+        def div(x):
+            return x/other
+        return self.transform(div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}")
+
+    def __rdiv__(self, other):
+        def mul(x):
+            return other*x
+        def div(x):
+            return other/x
+        return self.transform(div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
 
 class NonScalar(Any):
-    title: str = '' # a name for the data
+    title: str = ''  # a name for the data
 
     """ generically non-scalar data, such as a list, array, but not including a string or bytes """
 
     @util.hide_in_traceback
     def validate(self, value):
-        if isinstance(value, (bytes,str)):
+        if isinstance(value, (bytes, str)):
             raise ValueError(f"given text data but expected a non-scalar data")
         if not hasattr(value, '__iter__') and not hasattr(value, '__len__'):
             raise ValueError(f"expected non-scalar data but given a non-iterable")
         return value
+
 
 class Int(BoundedNumber, type=int):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
@@ -910,6 +1210,7 @@ class Float(BoundedNumber, type=float):
             else:
                 return value - (mod - self.step)
         return value
+
 
 class Complex(Trait, type=complex):
     """ accepts numerical or str values, following normal python casting procedures (with bounds checking) """
@@ -958,6 +1259,7 @@ class Unicode(String, type=str):
 class Bytes(String, type=bytes):
     """ accepts bytes objects only - encode str (unicode) explicitly before assignment """
     default: ThisType = b''
+
 
 class Iterable(Trait):
     """ accepts any iterable """
@@ -1014,8 +1316,8 @@ class DisconnectedBackend(object):
         raise ConnectionError(msg)
 
     def __repr__(self):
-        return 'DisconnectedBackend()' 
-    
+        return 'DisconnectedBackend()'
+
     str = __repr__
 
 
@@ -1080,9 +1382,9 @@ class Device(HasStates, util.Ownable):
         To set a state value inside the device, use normal python assigment::
 
             device.parameter = value
-            
+
         To get a state value from the device, you can also use it as a normal python variable::
-        
+
             variable = device.parameter + 1
     """
     backend = DisconnectedBackend(None)
@@ -1129,7 +1431,7 @@ class Device(HasStates, util.Ownable):
                 annotations[name] = trait.copy(default=v)
             else:
                 clsname = cls.__qualname__
-                raise AttributeError(f"the '{clsname}' setting annotation '{name}' "\
+                raise AttributeError(f"the '{clsname}' setting annotation '{name}' " \
                                      f"must be a Trait or an updated default value")
         settings = type('settings', (cls.settings,),
                         dict(cls.settings.__dict__,
@@ -1183,7 +1485,7 @@ class Device(HasStates, util.Ownable):
 
         # gotta have a console logger
         self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - "+str(self)))
+        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - " + str(self)))
 
         # Instantiate state now. It needed to wait until this point, after settings are fully
         # instantiated, in case state implementation depends on settings
@@ -1232,7 +1534,7 @@ class Device(HasStates, util.Ownable):
 
         # update the name of the logger to match the context within owner
         self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - "+str(self)))
+        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - " + str(self)))
 
     @util.hide_in_traceback
     @wraps(close)
@@ -1319,18 +1621,19 @@ class Device(HasStates, util.Ownable):
 
 
 def device_contexts(objs, concurrent=True):
-    other_contexts = dict([(a,o) for a,o in objs.items()])
+    other_contexts = dict([(a, o) for a, o in objs.items()])
 
     # Enforce the ordering set by self.enter_first
     if concurrent:
         # Any remaining context managers will be run concurrently if concurrent=True
         contexts = dict(first_contexts,
-                                     others=util.concurrently(name=f'',
-                                                         **other_contexts))
+                        others=util.concurrently(name=f'',
+                                                 **other_contexts))
     else:
         # Otherwise, run them sequentially
         contexts = dict(first_contexts, **other_contexts)
     self.__cm = util.sequentially(name=f'{repr(self)} connections',
-                             **contexts)
+                                  **contexts)
+
 
 Device.__init_subclass__()

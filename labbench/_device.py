@@ -878,10 +878,7 @@ class LookupCorrectionMixIn(Trait):
         """ return the index value that gives the attenuation level nearest to `proposal`
         """
         if self.table is None:
-            if self.allow_none:
-                return None
-            else:
-                raise ValueError(f"no calibration table loaded in {self}, and allow_none evaluates as False")
+            return None
         else:
             try:
                 return self._by_uncal.loc[uncal]
@@ -890,10 +887,8 @@ class LookupCorrectionMixIn(Trait):
 
             # this odd try-except...raise oddness spares us internal
             # pandas details in the traceback
-            if self.allow_none:
-                return None
-            else:
-                raise ValueError(f"the lookup table has no entry at {repr(uncal)} {self.label}")
+            util.console.warning(f"{self} has no entry at {repr(uncal)} {self.label}")
+            return None
 
     def find_uncal(self, cal):
         """ look up the calibrated value for the given uncalibrated value. In the event of a lookup
@@ -901,10 +896,7 @@ class LookupCorrectionMixIn(Trait):
          `self.allow_none` evaluates False, ValueError is raised.
         """
         if self.table is None:
-            if self.allow_none:
-                return None
-            else:
-                raise ValueError(f"no calibration table loaded in {self}, and allow_none evaluates as False")
+            return None
         else:
             i = self._by_cal.index.get_loc(cal, method='nearest')
             return self._by_cal.iloc[i]
@@ -942,9 +934,12 @@ class LookupCorrectionMixIn(Trait):
             return self
 
         uncal = self._other.__get__(owner, owner_cls)
-
         cal = self.lookup_cal(uncal)
-        return cal
+
+        if cal is None:
+            return uncal
+        else:
+            return cal
 
     def __set__(self, owner, cal):
         # start with type conversion and validation on the requested calibrated value
@@ -953,12 +948,15 @@ class LookupCorrectionMixIn(Trait):
         # lookup the uncalibrated value that results in the nearest calibrated result
         uncal = self.find_uncal(cal)
 
-        # raise an exception if the calibration table contains invalid values, instead
-        if uncal != type(self._other).validate(self, uncal):
+        if uncal is None:
+            self._other.__set__(owner, cal)
+        elif uncal != type(self._other).validate(self, uncal):
+            # raise an exception if the calibration table contains invalid
+            # values, instead
             raise ValueError(f"calibration lookup in {self} produced invalid value {repr(uncal)}")
-
-        # choose a setting
-        self._other.__set__(owner, uncal)
+        else:
+            # apply the setting
+            self._other.__set__(owner, uncal)
 
 
 class OffsetCorrectionMixIn(Trait):
@@ -987,8 +985,14 @@ class OffsetCorrectionMixIn(Trait):
             return
 
         owner = msg['owner']
-        owner.__notify__(self.name, msg['new'] + self._offset(owner),
-                         msg['type'], cache=msg['cache'])
+        value = msg['new']
+        offset = self._offset(owner)
+        if None in (value, offset):
+            value = None
+        else:
+            value = value + self._offset(owner)
+
+        owner.__notify__(self.name, value, msg['type'], cache=msg['cache'])
 
     def _offset(self, owner):
         # pull in the offset value from settings
@@ -1125,56 +1129,66 @@ class BoundedNumber(Trait):
 
     def __neg__(self):
         def neg(x):
-            return -x
+            return None if x is None else -x
 
         return self.transform(neg, neg, allow_none=self.allow_none, help=f"-1*({self.help})")
 
     def __add__(self, other):
         def add(x):
-            return x+other
+            return None if x is None else x + other
+
         def sub(x):
-            return x-other
+            return None if x is None else x - other
+
         return self.transform(add, sub, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
     __radd__ = __add__
 
     def __sub__(self, other):
         def add(x):
-            return x+other
+            return None if x is None else x + other
+
         def sub(x):
-            return x-other
+            return None if x is None else x - other
+
         return self.transform(sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
     def __rsub__(self, other):
         def add(x):
-            return other+x
+            return None if x is None else other + x
 
         def sub(x):
-            return other-x
+            return None if x is None else other - x
 
         return self.transform(sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
     def __mul__(self, other):
         def mul(x):
-            return x*other
+            return None if x is None else x * other
+
         def div(x):
-            return x/other
+            return None if x is None else x / other
+
         return self.transform(mul, div, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
         def mul(x):
-            return x*other
+            return None if x is None else x * other
+
         def div(x):
-            return x/other
+            return None if x is None else x / other
+
         return self.transform(div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
     def __rdiv__(self, other):
         def mul(x):
-            return other*x
+            return None if x is None else other * x
+
         def div(x):
-            return other/x
+            return None if x is None else other / x
+
         return self.transform(div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
 

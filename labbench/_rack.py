@@ -220,7 +220,7 @@ class SequencedMethod(util.Ownable):
 
 
 class Owner:
-    """ own context-managed instances of Device, with setup and cleanup calls to owned instances of Owner
+    """ own context-managed instances of Device as well as setup and cleanup calls to owned instances of Owner
     """
     _ordered_entry = []
     _concurrent = True
@@ -305,23 +305,32 @@ class Owner:
         # Pull any objects of types listed by self.ordered_entry, in the
         # order of (1) the types listed in self.ordered_entry, then (2) the order
         # they appear in objs
-        first_contexts = dict()
-        other_contexts = dict(contexts)
+        first = dict()
+        remaining = dict(contexts)
         for cls in ordered_entry:
             for attr, obj in contexts.items():
                 if isinstance(obj, cls):
-                    first_contexts[attr] = other_contexts.pop(attr)
+                    first[attr] = remaining.pop(attr)
+        firsts_desc = '->'.join([repr(c) for c in first.values()])
 
-        # enforce ordering given by self.ordered_entry
-        firsts_desc = ', '.join([repr(c) for c in first_contexts.values()])
+        # then, other devices, which need to be ready before we start into Rack setup methods
+        devices = {attr: remaining.pop(attr)
+                   for attr, obj in dict(remaining).items()
+                   if isinstance(obj, core.Device)}
+        devices_desc = f"({', '.join([repr(c) for c in devices.values()])})"
+        devices = util.concurrently(name='', **devices)
 
-        others = util.concurrently(name='', **other_contexts)
-        contexts = dict(first_contexts, others=others)
-        others_desc = f"({' & '.join([repr(c) for c in other_contexts.values()])})"
+        # what remain are instances of Rack and other Owner types
+        remaining_desc = f"({', '.join([repr(c) for c in remaining.values()])})"
+        remaining = util.concurrently(name='', **remaining)
 
-        if len(firsts_desc)>0:
-            others_desc = firsts_desc + ', ' + others_desc
-        log.debug(f"device open sequence: {others_desc}")
+        # the dictionary here is a sequence
+        seq = dict(first, devices=devices, remaining=remaining)
+
+        desc = '->'.join([d for d in (firsts_desc, devices_desc, remaining_desc)
+                          if len(d)>0])
+
+        log.debug(f"entry order set to {desc}")
         return util.sequentially(name=f'{repr(self)}', **contexts) or null_context(self)
 
     def _recursive_devices(self):

@@ -648,6 +648,7 @@ class MultipleContexts:
         self.call_handler = call_handler
         self.exc = {}
 
+    @hide_in_traceback
     def enter(self, name, context):
         if not self.abort:
             # proceed only if there have been no exceptions
@@ -674,6 +675,7 @@ class MultipleContexts:
             finally:
                 raise e
 
+    @hide_in_traceback
     def __exit__(self, *exc):
         with stopwatch(f"{self.params['name']} - context exit", 0.5):
             for name, context in self._entered.items():

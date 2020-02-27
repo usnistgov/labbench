@@ -28,7 +28,10 @@ __all__ = ['Rack', 'Owner', 'Sequence', 'Configuration']
 
 from . import _device as core
 from . import util as util
+
+from functools import wraps
 from pathlib import Path
+
 import contextlib
 import inspect
 import logging
@@ -219,6 +222,109 @@ class SequencedMethod(util.Ownable):
         return f"<function {self.__name__}>"
 
 
+class OwnerContextAdapter:
+    """ transform calls to __enter__ -> _setup and __exit__ -> _cleanup
+
+    """
+    def __init__(self, owner):
+        self.owner = owner
+
+    def __enter__(self):
+        self.owner._setup()
+
+    def __exit__(self, *exc_info):
+        self.owner._cleanup()
+
+    def __repr__(self):
+        return repr(self.owner)
+
+
+def recursive_devices(top):
+    ordered_entry = list(top._ordered_entry)
+    devices = dict(top._devices)
+    name_prefix = getattr(top, '__name__', '')
+    if len(name_prefix) > 0:
+        name_prefix = name_prefix + '.'
+
+    for owner in top._owners.values():
+        children, o_ordered_entry = recursive_devices(owner)
+
+        # this might be faster by reversing key and value order in devices (and thus children)?
+        for name, child in children.items():
+            if child not in devices.values():
+                devices[name_prefix+name] = child
+
+        ordered_entry.extend(o_ordered_entry)
+
+    return devices, ordered_entry
+
+
+def recursive_owner_managers(top):
+    managers = {}
+    for name, owner in top._owners.items():
+        managers.update({"{name}_{k}": cm
+                         for k, cm in recursive_owner_managers(owner).items()})
+        managers[name] = OwnerContextAdapter(owner)
+    managers[repr(top)] = OwnerContextAdapter(top)
+    return managers
+
+
+def owner_context_manager(top):
+    """
+    Make a context manager for an owner, as well as any of its owned instances of Device and Owner
+    (recursively).
+    Entry into this context will manage all of these.
+
+    :param top: Owner instance
+    :returns: Context manager
+    """
+
+    log = getattr(top, '_console', util.console)
+    contexts, ordered_entry = recursive_devices(top)
+
+    # like set(ordered_entry), but maintains order in python >= 3.7
+    ordered_entry = tuple(dict.fromkeys(ordered_entry))
+    order_desc = ' -> '.join([e.__qualname__ for e in ordered_entry])
+    log.debug(f"ordered_entry before other devices: {order_desc}")
+
+    # Pull any objects of types listed by top.ordered_entry, in the
+    # order of (1) the types listed in top.ordered_entry, then (2) the order
+    # they appear in objs
+    first = dict()
+    remaining = dict(contexts)
+    for cls in ordered_entry:
+        for attr, obj in contexts.items():
+            if isinstance(obj, cls):
+                first[attr] = remaining.pop(attr)
+    firsts_desc = '->'.join([repr(c) for c in first.values()])
+
+    # then, other devices, which need to be ready before we start into Rack setup methods
+    devices = {attr: remaining.pop(attr)
+               for attr, obj in dict(remaining).items()
+               if isinstance(obj, core.Device)}
+    devices_desc = f"({', '.join([repr(c) for c in devices.values()])})"
+    devices = util.concurrently(name='', **devices)
+
+    # what remain are instances of Rack and other Owner types
+    owners = recursive_owner_managers(top)
+    owners_desc = f"({'->'.join([repr(c) for c in owners.values()])})"
+
+    # top._recursive_owners()
+    # top.__context_manager.__enter__()
+    # for child in top._owners.values():
+    #     child._setup()
+    # # top._setup()
+    #
+    # the dictionary here is a sequence
+    seq = dict(first, _devices=devices, **owners)
+
+    desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc)
+                      if len(d)>0])
+
+    log.debug(f"context order: {desc}")
+    return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
+
+
 class Owner:
     """ own context-managed instances of Device as well as setup and cleanup calls to owned instances of Owner
     """
@@ -269,7 +375,7 @@ class Owner:
                 obj.__owner_init__(self)
 
     def __setattr__(self, key, obj):
-        # keep util.Ownable instance naming up to date, as well as self._devices and self._owners
+        # update naming for any util.Ownable instances
         if isinstance(obj, util.Ownable):
             if getattr(obj, '__objclass__', None) is not type(self):
                 obj.__set_name__(type(self), key)
@@ -283,105 +389,6 @@ class Owner:
 
         object.__setattr__(self, key, obj)
 
-    def __new_manager(self):
-        """
-        Add context management to an owner to support entry and exit from multiple connections
-
-        :param owner: the sublass or instance that owns the connections to manage
-        :param ordered_entry:
-        """
-
-        class RackContext:
-            def __init__(self, owner):
-                self.owner = owner
-
-            def __enter__(self):
-                self.owner._setup()
-
-            def __exit__(self, *exc_info):
-                self.owner._cleanup()
-
-            def __repr__(self):
-                return repr(self.owner)
-
-        def _recursive_owner_managers():
-            managers = {}
-            for name, owner in self._owners.items():
-                managers.update({"{name}_{k}": manager
-                                 for k, manager in owner._recursive_owner_managers().items()})
-                managers[name] = RackContext(owner)
-            managers[repr(self)] = RackContext(self)
-            return managers
-
-        log = getattr(self, '_console', util.console)
-        contexts, ordered_entry = self._recursive_devices()
-
-        # like set(ordered_entry), but maintains order in python >= 3.7
-        ordered_entry = tuple(dict.fromkeys(ordered_entry))
-        order_desc = ' -> '.join([e.__qualname__ for e in ordered_entry])
-        log.debug(f"ordered_entry before other devices: {order_desc}")
-
-        # owner.__enter__ = self.__enter__
-        # owner.__exit__ = self.__exit__
-
-        # Pull any objects of types listed by self.ordered_entry, in the
-        # order of (1) the types listed in self.ordered_entry, then (2) the order
-        # they appear in objs
-        first = dict()
-        remaining = dict(contexts)
-        for cls in ordered_entry:
-            for attr, obj in contexts.items():
-                if isinstance(obj, cls):
-                    first[attr] = remaining.pop(attr)
-        firsts_desc = '->'.join([repr(c) for c in first.values()])
-
-        # then, other devices, which need to be ready before we start into Rack setup methods
-        devices = {attr: remaining.pop(attr)
-                   for attr, obj in dict(remaining).items()
-                   if isinstance(obj, core.Device)}
-        devices_desc = f"({', '.join([repr(c) for c in devices.values()])})"
-        devices = util.concurrently(name='', **devices)
-
-        # what remain are instances of Rack and other Owner types
-        owners = _recursive_owner_managers()
-        owners_desc = f"({'->'.join([repr(c) for c in owners.values()])})"
-
-        # self._recursive_owners()
-        # self.__context_manager.__enter__()
-        # for child in self._owners.values():
-        #     child._setup()
-        # # self._setup()
-        #
-        # the dictionary here is a sequence
-        seq = dict(first, _devices=devices, **owners)
-
-        desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc)
-                          if len(d)>0])
-
-        print(seq)
-
-        log.debug(f"context order: {desc}")
-        return util.sequentially(name=f'{repr(self)}', **seq) or null_context(self)
-
-    def _recursive_devices(self):
-        ordered_entry = list(self._ordered_entry)
-        devices = dict(self._devices)
-        name_prefix = getattr(self, '__name__', '')
-        if len(name_prefix) > 0:
-            name_prefix = name_prefix + '.'
-
-        for owner in self._owners.values():
-            children, o_ordered_entry = owner._recursive_devices()
-
-            # this might be faster by reversing key and value order in devices (and thus children)?
-            for name, child in children.items():
-                if child not in devices.values():
-                    devices[name_prefix+name] = child
-
-            ordered_entry.extend(o_ordered_entry)
-
-        return devices, ordered_entry
-
     def _cleanup(self):
         pass
 
@@ -391,9 +398,9 @@ class Owner:
     @property
     def __enter__(self):
         # Rack._notify.clear()
-        self.__context_manager = self.__new_manager()
-
-        from functools import wraps
+        self.__context_manager = owner_context_manager(self)
+        # self.__context_manager.__enter__()
+        # return self
 
         @wraps(type(self).__enter__.fget)
         def __enter__():
@@ -403,22 +410,10 @@ class Owner:
         return __enter__
 
     @property
-    def __exit__(self):#self, *exc_info):
+    def __exit__(self):
+        # pass along from self.__context_manager
         return self.__context_manager.__exit__
-        # try:
-        #     self._cleanup()
-        # except BaseException as e:
-        #     traceback.print_exc()
-        #
-        # for child in self._owners.values():
-        #     try:
-        #         child._cleanup()
-        #     except BaseException as e:
-        #         traceback.print_exc()
-        #
-        # ret = self.__context_manager.__exit__(*exc_info)
-        # # Rack._notify.clear()
-        # return ret
+
 
 @util.hide_in_traceback
 def __call__():

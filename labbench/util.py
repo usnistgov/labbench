@@ -426,10 +426,10 @@ def show_messages(minimum_level):
                'info': logging.INFO,
                None: None}
 
-    if minimum_level.lower() not in err_map:
-        raise ValueError(
-            f'message level must be one of {list(err_map.keys())}')
-    level = err_map[minimum_level.lower()]
+    if minimum_level not in err_map and not isinstance(minimum_level, int):
+        raise ValueError(f'message level must be a flag {tuple(err_map.keys())} or an integer, not {repr(minimum_level)}')
+
+    level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
 
     console.setLevel(logging.DEBUG)
 

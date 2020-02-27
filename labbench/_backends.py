@@ -173,14 +173,16 @@ class ShellBackend(core.Device):
             :returns: the return code of the process after its completion
         """
         cmdl = self._commandline(**flags)
+        path = cmdl[0]
         try:
-            path = os.path.relpath(cmdl[0])
+            rel = os.path.relpath(path)
+            if len(rel) < len(path):
+                path = rel
         except ValueError:
-            path = cmdl[0]
-        self._console.debug('foreground execute ' +
-                            repr(' '.join((path,) + cmdl[1:])))
-        cp = sp.run(cmdl, timeout=self.settings.timeout,
-                    stdout=sp.PIPE)
+            pass
+
+        self._console.debug(f"shell execute '{repr(' '.join((path,) + cmdl[1:]))}'")
+        cp = sp.run(cmdl, timeout=self.settings.timeout, stdout=sp.PIPE)
         ret = cp.stdout
 
         if ret:

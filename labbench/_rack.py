@@ -108,6 +108,7 @@ class Step:
     def extended_args(self):
         return [(self.owner.__name__ + '_' + name) for name in self.args]
 
+    @util.hide_in_traceback
     def extended_call(self, *args, **kws):
         i = len(self.owner.__name__)+1
         # remove the leading f"{self.owner.__name__}"
@@ -163,6 +164,7 @@ class SequencedMethod(util.Ownable):
     def __init__(self):
         self.to_template()
 
+    @util.hide_in_traceback
     def __call__(self, **kwargs):
         ret = {}
 

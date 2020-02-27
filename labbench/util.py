@@ -324,6 +324,7 @@ def retry(exception_or_exceptions, tries=4, delay=0,
     """
     def decorator(f):
         @wraps(f)
+        @hide_in_traceback
         def do_retry(*args, **kwargs):
             active_delay = delay
             for retry in range(tries):
@@ -383,6 +384,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
     """
     def decorator(f):
         @wraps(f)
+        @hide_in_traceback
         def do_retry(*args, **kwargs):
             active_delay = delay
             t0 = time.time()
@@ -678,7 +680,9 @@ class MultipleContexts:
     @hide_in_traceback
     def __exit__(self, *exc):
         with stopwatch(f"{self.params['name']} - context exit", 0.5):
-            for name, context in self._entered.items():
+            for name in tuple(self._entered.keys())[::-1]:
+                context = self._entered[name]
+
                 if name in self.exc:
                     continue
 

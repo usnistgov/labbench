@@ -982,40 +982,51 @@ class OffsetCorrectionMixIn(Trait):
 
     @property
     def min(self):
-        if self._other.min is None:
+        if None in (self._other.min, self.offset):
             return None
         return self._other.min + self.offset
 
     @property
     def max(self):
-        if self._other.max is None:
+        if None in (self._other.max, self.offset):
             return None
         return self._other.max + self.offset
 
     def __init_owner_instance__(self, owner):
-        observe(owner, self.__owner_event__)
+        self._last_value = None
 
-    def __owner_event__(self, msg):
-        # pass on a corresponding notification when self._other changes
-        if msg['name'] != self._other.name:
-            return
+        observe(owner, self.__other_update__, self._other.name)
 
+        # get the current offset, and observe changes to the value to keep it
+        # up to date
+        if self.kind == 'state':
+            observe(owner.settings, self.__offset_update__, name=self.offset_name)
+            self.offset = getattr(owner.settings, self.offset_name)
+        else:
+            observe(owner, self.__offset_update__, name=self.offset_name)
+            self.offset = getattr(owner, self.offset_name)
+
+    def __offset_update__(self, msg):
         owner = msg['owner']
-        value = msg['new']
-        offset = self._offset(owner)
-        if None in (value, offset):
+        self.offset = msg['new']
+
+        if None in (self._last_value, self.offset):
             value = None
         else:
-            value = value + self._offset(owner)
+            value = self._last_value + self.offset
 
         owner.__notify__(self.name, value, msg['type'], cache=msg['cache'])
 
-    def _offset(self, owner):
-        # pull in the offset value from settings
-        if self.kind == 'state':
-            return getattr(owner.settings, self.offset_name)
+    def __other_update__(self, msg):
+        owner = msg['owner']
+        value = self._last_value = msg['new']
+
+        if None in (value, self.offset):
+            value = None
         else:
-            return getattr(owner, self.offset_name)
+            value = value + self.offset
+
+        owner.__notify__(self.name, value, msg['type'], cache=msg['cache'])
 
     def _offset_trait(self, owner):
         if self.kind == 'state':
@@ -1027,17 +1038,15 @@ class OffsetCorrectionMixIn(Trait):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
-        offset = self._offset(owner)
-        if offset is None:
+        if self.offset is None:
             offset_trait = self._offset_trait(owner)
             raise AttributeError(f"use the uncalibrated {self._other}, or calibrate {self} first "
                                  f"by setting {offset_trait}")
 
-        return self._other.__get__(owner, owner_cls) + offset
+        return self._other.__get__(owner, owner_cls) + self.offset
 
     def __set__(self, owner, value):
-        offset = self._offset(owner)
-        if offset is None:
+        if self.offset is None:
             offset_trait = self._offset_trait(owner)
             raise AttributeError(f"use the uncalibrated {self._other}, or calibrate {self} first "
                                  f"by setting {offset_trait}")
@@ -1046,7 +1055,7 @@ class OffsetCorrectionMixIn(Trait):
         value = self._other.to_pythonic(value)
         type(self._other).validate(self, value)
 
-        self._other.__set__(owner, value - offset)
+        self._other.__set__(owner, value - self.offset)
 
 
 class TransformMixIn(Trait):
@@ -1107,9 +1116,9 @@ class BoundedNumber(Trait):
             raise ValueError(f"a '{type(self).__qualname__}' trait value must be a numerical, str, or bytes instance")
         # Check bounds once it's a numerical type
         if self.max is not None and value > self.max:
-            raise ValueError(f"tried to set {self}={value}, but its upper bound is {self.max})")
+            raise ValueError(f"tried to set {self}={value}, but its upper bound is {self.max}")
         if self.min is not None and value < self.min:
-            raise ValueError(f'tried to set {self}={value}, but its lower bound is {self.min})')
+            raise ValueError(f'tried to set {self}={value}, but its lower bound is {self.min}')
         return value
 
     def calibrate(self, offset_name=Undefined, lookup=Undefined,
@@ -1527,7 +1536,6 @@ class Device(HasStates, util.Ownable):
     def __init__(self, **settings):
         """ Apply initial settings here; use a `with` block or invoke `open()` to use the driver.
         """
-        super().__init__()
 
         self.settings = self.settings()
 
@@ -1541,7 +1549,10 @@ class Device(HasStates, util.Ownable):
 
         # gotta have a console logger
         self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - " + str(self)))
+        self._console = logging.LoggerAdapter(
+            self._console,
+            dict(device=repr(self), origin=f" - " + str(self))
+        )
 
         # Instantiate state now. It needed to wait until this point, after settings are fully
         # instantiated, in case state implementation depends on settings
@@ -1550,6 +1561,9 @@ class Device(HasStates, util.Ownable):
 
         self.__warn_state_names__ = tuple(self.__traits__.keys())
         self.__warn_settings_names__ = tuple(self.settings.__traits__.keys())
+
+        # initialize state traits last so that calibration behaviors can use self.settings or self._console
+        super().__init__()
 
     @util.hide_in_traceback
     def __setattr__(self, name, value):

@@ -47,7 +47,6 @@ __all__ = [# "misc"
            ]
 
 
-from collections import OrderedDict
 from contextlib import contextmanager, _GeneratorContextManager
 from functools import wraps
 from queue import Queue, Empty
@@ -513,7 +512,8 @@ def hash_caller(call_depth=1):
 
 
 @contextmanager
-def stopwatch(desc=''):
+def stopwatch(desc: str = '',
+              threshold: float = 0):
     """ Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
@@ -521,16 +521,24 @@ def stopwatch(desc=''):
     sleep statement time elapsed 1.999s.
 
     :param desc: text for display that describes the event being timed
-    :type desc: str
+    :param threshold: only show timing if at least this much time (in s) elapsed
+    :
     :return: context manager
     """
     t0 = time.perf_counter()
-
     try:
         yield
     finally:
-        T = time.perf_counter() - t0
-        console.info(f'{desc} time elapsed {T:0.3f}s'.lstrip())
+        elapsed = time.perf_counter() - t0
+        if elapsed >= threshold:
+            msg = str(desc)+' ' if len(desc) else ''
+            msg += f"{elapsed:0.3f} s elapsed"
+
+            exc_info = sys.exc_info()
+            if exc_info != (None, None, None):
+                msg += f" before exception {exc_info[1]}"
+
+            console.info(msg.lstrip())
 
 
 class Call(object):
@@ -583,7 +591,7 @@ class Call(object):
     def wrap_list_to_dict(cls, name_func_pairs):
         """ Adjust naming and wrap callables with Call
         """
-        ret = OrderedDict()
+        ret = {}
         # First, generate the list of callables
         for name, func in name_func_pairs:
             if not isinstance(func, cls):
@@ -601,82 +609,110 @@ class Call(object):
             
         return ret
 
-@hide_in_traceback
-@contextmanager
-@hide_in_traceback
-def flexible_enter(call_handler: Callable[[dict,list,dict],dict],
-                    params: dict,
-                    objs: list):
+
+class MultipleContexts:
     """ Handle opening multiple contexts in a single `with` block. This is
         a threadsafe implementation that accepts a handler function that may
         implement any desired any desired type of concurrency in entering
         each context.
 
         The handler is responsible for sequencing the calls that enter each
-        context. In the event of an exception, `flexible_enter` calls
+        context. In the event of an exception, `MultipleContexts` calls
         the __exit__ condition of each context that has already
         been entered.
-        
+
         In the current implementation, __exit__ calls are made sequentially
         (not through call_handler), in the reversed order that each context
         __enter__ was called.
-        
-        
-        :param call_handler: this callable executes entry into each context and any desired concurrency
+    """
+
+    def __init__(self,
+                 call_handler: Callable[[dict,list,dict],dict],
+                 params: dict,
+                 objs: list):
+        """
+        :param call_handler: one of `sequentially_call` or `concurrently_call`
         :param params: a dictionary of operating parameters (see `concurrently`)
         :param objs: a list of contexts to be entered and dict-like objects to return
-        
+
         :returns: context object for use in a `with` statement
-    """
-    t0 = time.perf_counter()
-    exits = []
 
-    def enter(c):
-        exits.append(lambda *args: c.__exit__(*args))
-        c.__enter__()
+        """
 
-    try:
-        call_objs = []
-        for name, obj in objs:
-            if name is None:
-                name = f'{repr(obj)}.__enter__ at {hex(id(obj.__enter__))}'            
-            obj = Call(enter, obj)
-            obj.name = name
-            call_objs.append((name, obj))     
-        
-        # Run the __enter__ methods
-        call_handler(params, call_objs)
+        self.abort = False
+        self._entered = {}
+        self.__name__ = '__enter__'
 
-        elapsed = time.perf_counter()-t0
-        if elapsed > 0.1 and params['name']:
-            console.debug(f'{params["name"]} - entry took {elapsed:0.2f}s')
-        yield
+        self.objs = objs
+        self.params = params
+        self.call_handler = call_handler
+        self.exc = {}
 
-    except BaseException:
-        exc = sys.exc_info()
-    else:
-        exc = (None, None, None)
+    def enter(self, name, context):
+        if not self.abort:
+            # proceed only if there have been no exceptions
+            try:
+                context.__enter__() # start of a context entry thread
+            except:
+                self.abort = True
+                self.exc[name] = sys.exc_info()
+                raise
+            else:
+                self._entered[name] = context
 
-    t0 = time.perf_counter()
-    while exits:
-        exit = exits.pop()
+    @hide_in_traceback
+    def __enter__(self):
+        calls = [(name, Call(self.enter, name, obj)) for name, obj in self.objs]
+
+        # try:
         try:
-            exit(*exc)
-        except BaseException:
-            exc = sys.exc_info()
+            with stopwatch(f"{self.params['name']} - context entry", 0.5):
+                self.call_handler(self.params, calls)
+        except BaseException as e:
+            try:
+                self.__exit__(None, None, None) # exit any open contexts before raise
+            finally:
+                raise e
 
-    elapsed = time.perf_counter()-t0
-    if elapsed > 0.1 and params['name']:
-        console.debug(f'exit {params["name"]} took {elapsed:0.2f}s')
+    def __exit__(self, *exc):
+        with stopwatch(f"{self.params['name']} - context exit", 0.5):
+            for name, context in self._entered.items():
+                if name in self.exc:
+                    continue
 
-    if exc != (None, None, None):
-        # sys.exc_info() may have been
-        # changed by one of the exit methods
-        # so provide explicit exception info
-        for h in console.logger.handlers:
-            h.flush()
+                try:
+                    context.__exit__(None, None, None)
+                except:
+                    exc = sys.exc_info()
+                    traceback.print_exc()
 
-        raise exc[1]
+                    # don't overwrite the original exception, if there was one
+                    self.exc.setdefault(name, exc)
+
+            contexts = dict(self.objs)
+            for name, exc in self.exc.items():
+                if name in contexts and name not in self._entered:
+                    try:
+                        contexts[name].__exit__(None, None, None)
+                    except BaseException as e:
+                        if e is not self.exc[name][1]:
+                            msg = f"{name}.__exit__ raised {e} in cleanup attempt after another "\
+                                   f"exception in {name}.__enter__"
+                            console.warning(msg)
+
+        if len(self.exc) == 1:
+            exc_info = list(self.exc.values())[0]
+            raise exc_info[1]
+        elif len(self.exc) > 1:
+            raise ConcurrentException(f"exceptions raised in {len(self.exc)} contexts are printed inline")
+        if exc != (None, None, None):
+            # sys.exc_info() may have been
+            # changed by one of the exit methods
+            # so provide explicit exception info
+            for h in console.logger.handlers:
+                h.flush()
+
+            raise exc[1]
 
 
 RUNNERS = {(False, False): None,
@@ -797,8 +833,8 @@ def enter_or_call(flexible_caller, objs, kws):
         raise TypeError("all objects supported both calling and context management - not sure which to run")
     elif runner == 'context':
         if len(dicts) > 0:
-            raise ValueError('unexpectedly return value dictionary argument for context management')
-        return flexible_enter(flexible_caller, params, candidates)
+            raise ValueError(f'unexpected return value dictionary argument for context management {dicts}')
+        return MultipleContexts(flexible_caller, params, candidates)
     else:
         ret = merge_inputs(dicts, candidates)
         result = flexible_caller(params, candidates)
@@ -846,8 +882,8 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
     # Setup calls then funcs
     # Set up mappings between wrappers, threads, and the function to call
     wrappers = Call.wrap_list_to_dict(name_func_pairs)
-    threads = OrderedDict([(name, Thread(target=w, name=name))
-                           for name, w in wrappers.items()])
+    threads = {name: Thread(target=w, name=name)
+               for name, w in wrappers.items()}
 
     # Start threads with calls to each function
     finished = Queue()
@@ -878,7 +914,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
         if called is None:
             continue
-        
+
         # Below only happens when called is not none
         if master_exception is not None:
             names = ', '.join(list(threads.keys()))
@@ -888,6 +924,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         # if there was an exception that wasn't us ending the thread,
         # show messages
         if called.traceback is not None:
+
             tb = traceback_skip(called.traceback, 1)
             
             if called.traceback[0] is not ThreadEndedByMaster:
@@ -1015,7 +1052,7 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
 
     # Run each callable
     for name, wrapper in wrappers.items():
-        ret = wrapper()       
+        ret = wrapper()
         if ret is not None or params['nones']:
             results[name] = ret
 

@@ -291,6 +291,28 @@ class Owner:
         :param ordered_entry:
         """
 
+        class RackContext:
+            def __init__(self, owner):
+                self.owner = owner
+
+            def __enter__(self):
+                self.owner._setup()
+
+            def __exit__(self, *exc_info):
+                self.owner._cleanup()
+
+            def __repr__(self):
+                return repr(self.owner)
+
+        def _recursive_owner_managers():
+            managers = {}
+            for name, owner in self._owners.items():
+                managers.update({"{name}_{k}": manager
+                                 for k, manager in owner._recursive_owner_managers().items()})
+                managers[name] = RackContext(owner)
+            managers[repr(self)] = RackContext(self)
+            return managers
+
         log = getattr(self, '_console', util.console)
         contexts, ordered_entry = self._recursive_devices()
 
@@ -321,17 +343,25 @@ class Owner:
         devices = util.concurrently(name='', **devices)
 
         # what remain are instances of Rack and other Owner types
-        remaining_desc = f"({', '.join([repr(c) for c in remaining.values()])})"
-        remaining = util.concurrently(name='', **remaining)
+        owners = _recursive_owner_managers()
+        owners_desc = f"({'->'.join([repr(c) for c in owners.values()])})"
 
+        # self._recursive_owners()
+        # self.__context_manager.__enter__()
+        # for child in self._owners.values():
+        #     child._setup()
+        # # self._setup()
+        #
         # the dictionary here is a sequence
-        seq = dict(first, devices=devices, remaining=remaining)
+        seq = dict(first, _devices=devices, **owners)
 
-        desc = '->'.join([d for d in (firsts_desc, devices_desc, remaining_desc)
+        desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc)
                           if len(d)>0])
 
-        log.debug(f"entry order set to {desc}")
-        return util.sequentially(name=f'{repr(self)}', **contexts) or null_context(self)
+        print(seq)
+
+        log.debug(f"context order: {desc}")
+        return util.sequentially(name=f'{repr(self)}', **seq) or null_context(self)
 
     def _recursive_devices(self):
         ordered_entry = list(self._ordered_entry)
@@ -358,31 +388,37 @@ class Owner:
     def _setup(self):
         pass
 
+    @property
     def __enter__(self):
         # Rack._notify.clear()
         self.__context_manager = self.__new_manager()
 
-        self.__context_manager.__enter__()
-        for child in self._owners.values():
-            child._setup()
-        self._setup()
-        return self
+        from functools import wraps
 
-    def __exit__(self, *exc_info):
-        try:
-            self._cleanup()
-        except BaseException as e:
-            traceback.print_exc()
+        @wraps(type(self).__enter__.fget)
+        def __enter__():
+            self.__context_manager.__enter__()
+            return self
 
-        for child in self._owners.values():
-            try:
-                child._cleanup()
-            except BaseException as e:
-                traceback.print_exc()
+        return __enter__
 
-        ret = self.__context_manager.__exit__(*exc_info)
-        # Rack._notify.clear()
-        return ret
+    @property
+    def __exit__(self):#self, *exc_info):
+        return self.__context_manager.__exit__
+        # try:
+        #     self._cleanup()
+        # except BaseException as e:
+        #     traceback.print_exc()
+        #
+        # for child in self._owners.values():
+        #     try:
+        #         child._cleanup()
+        #     except BaseException as e:
+        #         traceback.print_exc()
+        #
+        # ret = self.__context_manager.__exit__(*exc_info)
+        # # Rack._notify.clear()
+        # return ret
 
 @util.hide_in_traceback
 def __call__():

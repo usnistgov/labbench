@@ -326,15 +326,19 @@ def retry(exception_or_exceptions, tries=4, delay=0,
         @wraps(f)
         @hide_in_traceback
         def do_retry(*args, **kwargs):
+            notified = False
             active_delay = delay
             for retry in range(tries):
                 try:
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
+                    if not notified:
+                        etype = type(e).__qualname__
+                        msg = f"caught '{etype}' on first call to '{f.__name__}' - repeating the call "\
+                              f"up to {tries-1} times or until no exception is raised"
+                        console.info(msg)
+                        notified = True
                     ex = e
-                    console.warning(str(e))
-                    console.warning(
-                        f'{f.__name__} retry (attempt {retry+1}/{tries})')
                     exception_func()
                     sleep(active_delay)
                     active_delay = active_delay * backoff
@@ -386,6 +390,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
         @wraps(f)
         @hide_in_traceback
         def do_retry(*args, **kwargs):
+            notified = False
             active_delay = delay
             t0 = time.time()
             while time.time() - t0 < timeout:                
@@ -393,10 +398,15 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
                     progress = time.time() - t0
+
+                    if not notified and timeout-progress>0:
+                        etype = type(e).__qualname__
+                        msg = f"caught '{etype}' in first call to '{f.__name__}' - repeating calls for "\
+                              f"up to {timeout-progress:0.3f}s or until no exception is raised"
+                        console.info(msg)
+                        notified = True
+
                     ex = e
-                    console.warning(str(e))
-                    console.warning(
-                        f'{f.__name__} retry ({progress:0.2f}s/{timeout:0.2f}s elapsed)')
                     exception_func()
                     sleep(active_delay)
                     active_delay = active_delay * backoff

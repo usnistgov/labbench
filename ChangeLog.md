@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Renamed the `logger` attribute to `_console` in Rack and Device to reduce the confusing overuse of the word "logger" 
 - `lb.BoundedNumber` (and subclasses `lb.Int`, `lb.Float`) now support creating derived Traits that act as arithmetic transformations, calibration against `device.setting`, and calibration against lookup tables 
 - `feather-format` is now an explicit dependency, because it is no longer (always?) pulled in by `pyarrow`
+- Logger messages are only emitted after exceptions on the first attempt now in `lb.retry` and `lb.until_timeout`
  
 ### Removed
 - FilenameDict and ConcurrentRunner, which have been deprecated for a while

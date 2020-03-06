@@ -354,7 +354,8 @@ class Trait:
             self.kind = None
 
     def __init_owner_subclass__(self, owner_cls):
-        """ At this point, definition in the owner subclass is complete, and its __init_subclass__
+        """ The owner calls this in each of its traits at the end of defining the subclass
+            (near the end of __init_subclass__).
             has been called. Now it is time to ensure properties are compatible with the owner class.
             This is here --- not in __set_name__ --- because python
             obfuscates exceptions raised in __set_name__.
@@ -427,14 +428,14 @@ class Trait:
     def __set__(self, owner, value):
         # First, validate the pythonic types
         if not self.settable:
-            raise AttributeError(f"{self} is not settable")
+            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not settable")
 
         # Validate the pythonic value
         if value is not None:
             # Convert to the representation expected by owner.__set_by_key__
             try:
                 value = Trait.to_pythonic(self, value)
-                value = self.validate(value)
+                value = self.validate(value, owner)
             except BaseException as e:
                 name = owner.__class__.__qualname__ + '.' + self.name
                 e.args = (f"cannot set '{name}' to {repr(value)}: " + e.args[0],) + e.args[1:]
@@ -466,7 +467,7 @@ class Trait:
         elif self.key is None:
             # from the command (with below)
             objname = owner.__class__.__qualname__ + '.' + self.name
-            raise AttributeError(f"cannot set {objname}: no @{self.name} " \
+            raise AttributeError(f"cannot set {objname}: no @{self.__repr__(owner_inst=owner)} " \
                                  f"setter is defined, and command is None")
         else:
             owner.__set_by_key__(self.name, self.key, value)
@@ -503,7 +504,7 @@ class Trait:
 
         elif not self.gettable:
             # stop now if this is not a gettable Trait
-            raise AttributeError(f"{self} is not gettable")
+            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not gettable")
 
         elif self.kind == 'setting':
             value = owner.__get_value__(self.name)
@@ -521,7 +522,7 @@ class Trait:
             if self.key is None:
                 # otherwise, 'get'
                 objname = owner.__class__.__qualname__ + '.' + self.name
-                raise AttributeError(f"cannot set {objname}: no @{self.name} " \
+                raise AttributeError(f"cannot get {objname}: no @{self.__repr__(owner_inst=owner)} " \
                                      f"getter is defined, and command is None")
             value = owner.__get_by_key__(self.name, self.key)
 
@@ -543,7 +544,7 @@ class Trait:
                 value = self.to_pythonic(value)
             except BaseException as e:
                 name = owner.__class__.__qualname__ + '.' + self.name
-                e.args = (e.args[0] + f" in attempt to get '{name}'",) + e.args[1:]
+                e.args = (e.args[0] + f" in attempt to get '{self.__repr__(owner_inst=owner)}'",) + e.args[1:]
                 raise e
 
             # Once we have a python value, give warnings (not errors) if the device value fails further validation
@@ -553,16 +554,16 @@ class Trait:
                 log = warn
 
             try:
-                if value != self.validate(value):
+                if value != self.validate(value, owner):
                     raise ValueError
             except ValueError:
-                log(f"'{self.name}' {self.kind} received the value {repr(value)}, " \
+                log(f"'{self.__repr__(owner_inst=owner)}' {self.kind} received the value {repr(value)}, " \
                     f"which fails {repr(self)}.validate()")
             if value is None and not self.allow_none:
-                log(f"'{self.name}' {self.kind} received value None, which" \
+                log(f"'{self.__repr__(owner_inst=owner)}' {self.kind} received value None, which" \
                     f"is not allowed for {repr(self)}")
             if len(self.only) > 0 and not self.contains(self.only, value):
-                log(f"'{self.name}' {self.kind} received {repr(value)}, which" \
+                log(f"'{self.__repr__(owner_inst=owner)}' {self.kind} received {repr(value)}, which" \
                     f"is not in the valid value list {repr(self.only)}")
 
         owner.__notify__(self.name, value, 'get', cache=self.cache or (self.kind == 'setting'))
@@ -582,7 +583,7 @@ class Trait:
         return value
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         """ This is the default validator, which requires that trait values have the same type as self.type.
             A ValueError is raised for other types.
         :param value: value to check
@@ -629,10 +630,12 @@ class Trait:
         return self
 
     ### Object protocol boilerplate methods
-    def __repr__(self, omit=[]):
+    def __repr__(self, omit=[], owner_inst=None):
         owner_cls = getattr(self, '__objclass__', None)
 
-        if owner_cls is None:
+        if owner_inst is not None:
+            return str(owner_inst)+'.'+self.name
+        elif owner_cls is None:
             # revert to the class definition if the owning class
             # hasn't claimed us yet
             pairs = []
@@ -642,7 +645,6 @@ class Trait:
                     pairs.append(f'{k}={repr(v)}')
             name = self.__class__.__qualname__
             return f"{name}({','.join(pairs)})"
-
         else:
             # otherwise, this is more descriptive
             return f"{owner_cls.__qualname__}.{self.name}"
@@ -668,6 +670,7 @@ class HasTraits(metaclass=HasTraitsMeta):
     def __init__(self):
         self.__notify_list__ = {}
         self.__previous__ = {}
+        self.__calibrations__ = {}
 
         for name, trait in self.__traits__.items():
             trait.__init_owner_instance__(self)
@@ -774,7 +777,7 @@ class Any(Trait):
     """ allows any value """
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         return value
 
     @util.hide_in_traceback
@@ -858,95 +861,98 @@ class LookupCorrectionMixIn(Trait):
 
     table: Any = None  # really a pandas Series
 
-    @property
-    def min(self):
-        if self.table is None:
+    def _min(self, owner):
+        by_cal, by_uncal = owner.__calibrations__.get(self.name, (None, None))
+        if by_uncal is None:
             return None
         else:
-            return self._by_uncal.min()
+            return by_uncal.min()
 
-    @property
-    def max(self):
-        if self.table is None:
+    def _max(self, owner):
+        by_cal, by_uncal = owner.__calibrations__.get(self.name, (None, None))
+        if by_uncal is None:
             return None
         else:
-            return self._by_uncal.max()
+            return by_uncal.max()
 
     def __init_owner_instance__(self, owner):
-        if self.table is not None:
-            self.set_table(self.table)
         observe(owner, self.__owner_event__, name=self._other.name)
 
     def __owner_event__(self, msg):
         owner = msg['owner']
-        owner.__notify__(self.name, self.lookup_cal(msg['new']),
+        owner.__notify__(self.name, self.lookup_cal(msg['new'], owner),
                          msg['type'], cache=msg['cache'])
 
-    def lookup_cal(self, uncal):
+    def lookup_cal(self, uncal, owner):
         """ return the index value that gives the attenuation level nearest to `proposal`
         """
-        if self.table is None:
-            return None
-        else:
-            try:
-                return self._by_uncal.loc[uncal]
-            except KeyError:
-                pass
-
-            # this odd try-except...raise oddness spares us internal
-            # pandas details in the traceback
-            util.console.warning(f"{self} has no entry at {repr(uncal)} {self.label}")
+        by_cal, by_uncal = owner.__calibrations__.get(self.name, (None, None))
+        if by_uncal is None:
             return None
 
-    def find_uncal(self, cal):
+        try:
+            return by_uncal.loc[uncal]
+        except KeyError:
+            pass
+
+        # this odd try-except...raise oddness spares us internal
+        # pandas details in the traceback
+        util.console.warning(f"{self.__repr__(owner_inst=owner)} has no entry at {repr(uncal)} {self.label}")
+        return None
+
+    def find_uncal(self, cal, owner):
         """ look up the calibrated value for the given uncalibrated value. In the event of a lookup
         error, then if `self.allow_none` evaluates as True, triggers return of None, or if
          `self.allow_none` evaluates False, ValueError is raised.
         """
-        if self.table is None:
+        by_cal, by_uncal = owner.__calibrations__.get(self.name, (None, None))
+        if by_uncal is None:
             return None
-        else:
-            i = self._by_cal.index.get_loc(cal, method='nearest')
-            return self._by_cal.iloc[i]
 
-    def set_table(self, series_or_uncal, cal=None):
+        i = by_cal.index.get_loc(cal, method='nearest')
+        return by_cal.iloc[i]
+
+    def set_table(self, series_or_uncal, cal=None, owner=None):
         """ set the lookup table as `set_table(series)`, where `series` is a pandas Series (uncalibrated
         values in the index), or `set_table(cal_vector, uncal_vector)`, where both vectors have 1
         dimension of the same length.
         """
 
+        if owner is None:
+            raise ValueError(f"must pass owner to set_table")
+
         import pandas as pd
 
         if isinstance(series_or_uncal, pd.Series):
-            self._by_uncal = pd.Series(series_or_uncal).copy()
+            by_uncal = pd.Series(series_or_uncal).copy()
         elif cal is not None:
-            self._by_uncal = pd.Series(cal, index=series_or_uncal)
+            by_uncal = pd.Series(cal, index=series_or_uncal)
         elif series_or_uncal is None:
-            self.table = self._by_cal = self._by_uncal = None
             return
         else:
             raise ValueError(f"must call set_table with None, a Series, or a pair of vector " \
                              f"arguments, not {series_or_uncal}")
-        self._by_uncal = self._by_uncal.sort_index()
-        self._by_uncal.index.name = 'uncal'
-        self._by_uncal.name = 'cal'
-        self.table = self._by_uncal
+        by_uncal = by_uncal.sort_index()
+        by_uncal.index.name = 'uncal'
+        by_uncal.name = 'cal'
 
-        self._by_cal = pd.Series(self._by_uncal.index,
-                                 index=self._by_uncal.values,
-                                 name='uncal').sort_index()
-        self._by_cal.index.name = 'cal'
+        by_cal = pd.Series(by_uncal.index, index=by_uncal.values, name='uncal')
+        by_cal = by_cal.sort_index()
+        by_cal.index.name = 'cal'
+
+        owner.__calibrations__[self.name] = by_cal, by_uncal
 
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
-        if self.table is None:
-            raise AttributeError(f"use the uncalibrated {self._other} instead, or load a correction lookup "
-                                 f"table first to calibrate {self}")
+        by_cal, by_uncal = owner.__calibrations__.get(self.name, (None, None))
+        if by_uncal is None:
+            raise AttributeError(f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or load a correction lookup "
+                                 f"table first to calibrate {self.__repr__(owner_inst=owner)}")
 
         uncal = self._other.__get__(owner, owner_cls)
-        cal = self.lookup_cal(uncal)
+        cal = self.lookup_cal(uncal, owner)
 
         if cal is None:
             return uncal
@@ -954,22 +960,23 @@ class LookupCorrectionMixIn(Trait):
             return cal
 
     def __set__(self, owner, cal):
-        if self.table is None:
-            raise AttributeError(f"use the uncalibrated {self._other} instead, or load a correction lookup "
-                                 f"table first to calibrate {self}")
+        by_cal, by_uncal = owner.__calibrations__.get(self.name, (None, None))
+        if by_uncal is None:
+            raise AttributeError(f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or load a correction lookup "
+                                 f"table first to calibrate {self.__repr__(owner_inst=owner)}")
 
         # start with type conversion and validation on the requested calibrated value
         cal = self._other.to_pythonic(cal)
 
         # lookup the uncalibrated value that results in the nearest calibrated result
-        uncal = self.find_uncal(cal)
+        uncal = self.find_uncal(cal, owner)
 
         if uncal is None:
             self._other.__set__(owner, cal)
-        elif uncal != type(self._other).validate(self, uncal):
+        elif uncal != type(self._other).validate(self, uncal, owner):
             # raise an exception if the calibration table contains invalid
             # values, instead
-            raise ValueError(f"calibration lookup in {self} produced invalid value {repr(uncal)}")
+            raise ValueError(f"calibration lookup in {self.__repr__(owner_inst=owner)} produced invalid value {repr(uncal)}")
         else:
             # apply the setting
             self._other.__set__(owner, uncal)
@@ -980,17 +987,15 @@ class OffsetCorrectionMixIn(Trait):
     """
     offset_name: str = None  # the name of a trait in owner.settings that contains the offset value
 
-    @property
-    def min(self):
-        if None in (self._other.min, self.offset):
+    def _min(self, owner):
+        if None in (self._other._min(owner), owner.__calibrations__[self.name]):
             return None
-        return self._other.min + self.offset
+        return self._other._min(owner) + owner.__calibrations__[self.name]
 
-    @property
-    def max(self):
-        if None in (self._other.max, self.offset):
+    def _max(self, owner):
+        if None in (self._other._max(owner), owner.__calibrations__[self.name]):
             return None
-        return self._other.max + self.offset
+        return self._other._max(owner) + owner.__calibrations__[self.name]
 
     def __init_owner_instance__(self, owner):
         self._last_value = None
@@ -1001,19 +1006,23 @@ class OffsetCorrectionMixIn(Trait):
         # up to date
         if self.kind == 'state':
             observe(owner.settings, self.__offset_update__, name=self.offset_name)
-            self.offset = getattr(owner.settings, self.offset_name)
-        else:
+            owner.__calibrations__[self.name] = getattr(owner.settings, self.offset_name)
+        elif self.kind == 'setting':
             observe(owner, self.__offset_update__, name=self.offset_name)
-            self.offset = getattr(owner, self.offset_name)
+            owner.__calibrations__[self.name] = getattr(owner, self.offset_name)
+        elif self.kind == 'trait':
+            raise ValueError(f"{self.__repr__(owner_inst=owner)}.kind == 'trait' -- somehow this trait is uninitialized")
+        else:
+            raise ValueError(f"unrecognized trait type '{self.kind}'")
 
     def __offset_update__(self, msg):
         owner = msg['owner']
-        self.offset = msg['new']
+        owner.__calibrations__[self.name] = msg['new']
 
-        if None in (self._last_value, self.offset):
+        if None in (self._last_value, owner.__calibrations__[self.name]):
             value = None
         else:
-            value = self._last_value + self.offset
+            value = self._last_value + owner.__calibrations__[self.name]
 
         owner.__notify__(self.name, value, msg['type'], cache=msg['cache'])
 
@@ -1021,10 +1030,10 @@ class OffsetCorrectionMixIn(Trait):
         owner = msg['owner']
         value = self._last_value = msg['new']
 
-        if None in (value, self.offset):
+        if None in (value, owner.__calibrations__[self.name]):
             value = None
         else:
-            value = value + self.offset
+            value = value + owner.__calibrations__[self.name]
 
         owner.__notify__(self.name, value, msg['type'], cache=msg['cache'])
 
@@ -1038,24 +1047,24 @@ class OffsetCorrectionMixIn(Trait):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
-        if self.offset is None:
+        if owner.__calibrations__[self.name] is None:
             offset_trait = self._offset_trait(owner)
-            raise AttributeError(f"use the uncalibrated {self._other}, or calibrate {self} first "
-                                 f"by setting {offset_trait}")
+            raise AttributeError(f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or calibrate "
+                                 f"{self.__repr__(owner_inst=owner)} first by setting {offset_trait}")
 
-        return self._other.__get__(owner, owner_cls) + self.offset
+        return self._other.__get__(owner, owner_cls) + owner.__calibrations__[self.name]
 
     def __set__(self, owner, value):
-        if self.offset is None:
+        if owner.__calibrations__[self.name] is None:
             offset_trait = self._offset_trait(owner)
-            raise AttributeError(f"use the uncalibrated {self._other}, or calibrate {self} first "
-                                 f"by setting {offset_trait}")
+            raise AttributeError(f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or calibrate "
+                                 f"{self.__repr__(owner_inst=owner)} first by setting {offset_trait}")
 
         # use the other to the value into the proper format and validate it
         value = self._other.to_pythonic(value)
-        type(self._other).validate(self, value)
+        type(self._other).validate(self, value, owner)
 
-        self._other.__set__(owner, value - self.offset)
+        self._other.__set__(owner, value - owner.__calibrations__[self.name])
 
 
 class TransformMixIn(Trait):
@@ -1076,19 +1085,17 @@ class TransformMixIn(Trait):
         owner.__notify__(self.name, self._forward(msg['new']),
                          msg['type'], cache=msg['cache'])
 
-    @property
-    def min(self):
-        # TODO: does this actually work for any reversible self._forward()?
-        if self._other.min is None:
+    def _min(self, owner):
+        # TODO: ensure this works properly for any reversible self._forward()?
+        if self._other._min(owner) is None:
             return None
-        return min(self._forward(self._other.max), self._forward(self._other.min))
+        return min(self._forward(self._other._max(owner)), self._forward(self._other._min(owner)))
 
-    @property
-    def max(self):
+    def _max(self, owner):
         # TODO: does this actually work for any reversible self._forward()?
-        if self._other.max is None:
+        if self._other._max(owner) is None:
             return None
-        return max(self._forward(self._other.max), self._forward(self._other.min))
+        return max(self._forward(self._other._max(owner)), self._forward(self._other._min(owner)))
 
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
@@ -1099,7 +1106,7 @@ class TransformMixIn(Trait):
     def __set__(self, owner, value):
         # use the other to the value into the proper format and validate it
         value = self._other.to_pythonic(value)
-        type(self._other).validate(self, value)
+        type(self._other).validate(self, value, owner)
         self._other.__set__(owner, self._reverse(value))
 
 
@@ -1111,15 +1118,30 @@ class BoundedNumber(Trait):
     max: ThisType = None
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         if not isinstance(value, (bytes, str, bool, numbers.Number)):
             raise ValueError(f"a '{type(self).__qualname__}' trait value must be a numerical, str, or bytes instance")
+
         # Check bounds once it's a numerical type
-        if self.max is not None and value > self.max:
-            raise ValueError(f"tried to set {self}={value}, but its upper bound is {self.max}")
-        if self.min is not None and value < self.min:
-            raise ValueError(f'tried to set {self}={value}, but its lower bound is {self.min}')
+        min = self._min(owner)
+        max = self._max(owner)
+
+        if max is not None and value > max:
+            raise ValueError(f"tried to set {self.__repr__(owner_inst=owner)}={value}, but its upper bound is {max}")
+        if min is not None and value < min:
+            raise ValueError(f'tried to set {self.__repr__(owner_inst=owner)}={value}, but its lower bound is {min}')
+
         return value
+
+    def _max(self, owner):
+        """ overload this to dynamically compute max
+        """
+        return self.max
+
+    def _min(self, owner):
+        """ overload this to dynamically compute max
+        """
+        return self.min
 
     def calibrate(self, offset_name=Undefined, lookup=Undefined,
                   help='', label=Undefined, allow_none=False):
@@ -1246,7 +1268,7 @@ class NonScalar(Any):
     """ generically non-scalar data, such as a list, array, but not including a string or bytes """
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         if isinstance(value, (bytes, str)):
             raise ValueError(f"given text data but expected a non-scalar data")
         if not hasattr(value, '__iter__') and not hasattr(value, '__len__'):
@@ -1263,8 +1285,8 @@ class Float(BoundedNumber, type=float):
     step: ThisType = None
 
     @util.hide_in_traceback
-    def validate(self, value):
-        value = super().validate(value)
+    def validate(self, value, owner=None):
+        value = super().validate(value, owner)
         if self.step is not None:
             mod = value % self.step
             if mod < self.step / 2:
@@ -1284,7 +1306,7 @@ class Bool(Trait, type=bool):
     allow_none: bool = False
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         if isinstance(value, (bool, numbers.Number)):
             return value
         elif isinstance(value, (str, bytes)):
@@ -1293,7 +1315,7 @@ class Bool(Trait, type=bool):
                 return True
             elif lvalue in ('false', b'false'):
                 return False
-        raise ValueError(f"'{type(self).__qualname__}' traits accept only boolean, numerical values," \
+        raise ValueError(f"'{self.__repr__(owner_inst=owner)}' accepts only boolean, numerical values," \
                          "or one of ('true',b'true','false',b'false'), case-insensitive")
 
 
@@ -1315,7 +1337,7 @@ class Unicode(String, type=str):
     default: ThisType = ''
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         if not isinstance(value, (str, numbers.Number)):
             raise ValueError(f"'{type(self).__qualname__}' traits accept values of str or numerical type")
         return value
@@ -1330,7 +1352,7 @@ class Iterable(Trait):
     """ accepts any iterable """
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         if not hasattr(value, '__iter__'):
             raise ValueError(f"'{type(self).__qualname__}' traits accept only iterable values")
         return value
@@ -1353,7 +1375,7 @@ class Address(Unicode):
     """ accepts IDN-compatible network address, such as an IP address or DNS hostname """
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         """Rough IDN compatible domain validator"""
 
         host = value.encode('idna').lower()

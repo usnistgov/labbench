@@ -335,7 +335,7 @@ def retry(exception_or_exceptions, tries=4, delay=0,
                     if not notified:
                         etype = type(e).__qualname__
                         msg = f"caught '{etype}' on first call to '{f.__name__}' - repeating the call "\
-                              f"up to {tries-1} times or until no exception is raised"
+                              f"{tries-1} more times or until no exception is raised"
                         console.info(msg)
                         notified = True
                     ex = e
@@ -402,7 +402,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
                     if not notified and timeout-progress>0:
                         etype = type(e).__qualname__
                         msg = f"caught '{etype}' in first call to '{f.__name__}' - repeating calls for "\
-                              f"up to {timeout-progress:0.3f}s or until no exception is raised"
+                              f"another {timeout-progress:0.3f}s, or until no exception is raised"
                         console.info(msg)
                         notified = True
 
@@ -443,7 +443,7 @@ def show_messages(minimum_level):
 
     level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
 
-    console.setLevel(logging.DEBUG)
+    console.setLevel(level)
 
     # Clear out any stale handlers
     if hasattr(console, '_screen_handler'):

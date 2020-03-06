@@ -131,7 +131,7 @@ class Step:
             Rack._notify.call_event(notify_params)
 
         # invoke the wrapped function
-        owner_name = str(self.owner)
+        owner_name = getattr(self.owner, '__qualname__', str(self.owner))
         t0 = time.perf_counter()
         ret = self.__wrapped__(self.owner, *args, **kws)
         elapsed = time.perf_counter()-t0

@@ -912,16 +912,16 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
     tracebacks = []
     master_exception = None
     
-    t0 = time.clock()
+    t0 = time.perf_counter()
 
     while len(threads) > 0:
         try:
             called = finished.get(timeout=0.25)
         except Empty:
-            if time.clock() - t0 > 60*15:
+            if time.perf_counter() - t0 > 60*15:
                 names = ','.join(list(threads.keys()))
                 console.debug(f'{names} threads are still running')
-                t0 = time.clock()
+                t0 = time.perf_counter()
             continue
         except BaseException as e:
             master_exception = e

@@ -42,10 +42,8 @@ Make sure tha tyou have installed your favorite distribution of python with inte
 
 * To install the current version, open a command prompt and type
   ```pip install labbench```
-* To install the "stable" development version (git master branch), open a command prompt and type
-  ```pip install git+https://github.nist.gov/usnistgov/labbench```
 * To install the "bleeding edge" development version (git develop branch), open a command prompt and type
-  ```pip install git+https://github.nist.gov/usnistgov/labbench@develop```
+  ```pip install git+https://github.com/usnistgov/labbench@develop```
 
 If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime, such as [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
 

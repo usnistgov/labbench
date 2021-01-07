@@ -81,6 +81,7 @@ if __name__ == '__main__':
                             'sqlalchemy',
                             'GitPython(>=2.0)',
                             'pyarrow',
+                            'pyyaml',
                             ],
           extras_require={'html': ['sphinx(>=1.6)','recommonmark'],
                           'notebook': ['notebook', 'ipywidgets']},

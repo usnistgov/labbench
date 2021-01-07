@@ -145,9 +145,7 @@ def hide_in_traceback(func):
             code.co_cellvars]
 
         if tuple(sys.version_info)[:2] >= (3,8):
-            print('new!')
             args.insert(1,code.co_posonlyargcount)
-            print(code)
 
         f.__code__ = types.CodeType(*args)
 

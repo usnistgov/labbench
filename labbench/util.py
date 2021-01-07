@@ -31,7 +31,7 @@ __all__ = [# "misc"
 
            # concurrency and sequencing
            'concurrently', 'sequentially', 'Call', 'ConcurrentException',
-           'check_master', 'ThreadSandbox', 'ThreadEndedByMaster', 
+           'check_master', 'ThreadSandbox', 'ThreadEndedByMaster',
 
            # timing and flow management
            'retry', 'until_timeout', 'sleep', 'stopwatch',
@@ -128,8 +128,7 @@ TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 def hide_in_traceback(func):
     def adjust(f):
         code = f.__code__
-        f.__code__ = types.CodeType(
-            code.co_argcount,
+        args = [code.co_argcount,
             code.co_kwonlyargcount,
             code.co_nlocals,
             code.co_stacksize,
@@ -143,7 +142,14 @@ def hide_in_traceback(func):
             code.co_firstlineno,
             code.co_lnotab,
             code.co_freevars,
-            code.co_cellvars)
+            code.co_cellvars]
+
+        if tuple(sys.version_info)[:2] >= (3,8):
+            print('new!')
+            args.insert(1,code.co_posonlyargcount)
+            print(code)
+
+        f.__code__ = types.CodeType(*args)
 
     if not callable(func):
         raise TypeError(f"{func} is not callable")
@@ -221,21 +227,27 @@ def wrap_attribute(cls,
     # Generate a code object with the adjusted signature
     code = wrapper.__code__
 
-    code = types.CodeType(1 + positional,  # co_argcount
-                          len(fields) - positional,  # co_kwonlyargcount
-                          len(fields) + 1,  # co_nlocals
-                          code.co_stacksize,
-                          code.co_flags,
-                          code.co_code,
-                          code.co_consts,
-                          code.co_names,
-                          ('self',) + tuple(fields),
-                          code.co_filename,
-                          code.co_name,
-                          code.co_firstlineno,
-                          code.co_lnotab,
-                          code.co_freevars,
-                          code.co_cellvars)
+    args = [1 + positional,  # co_argcount
+            len(fields) - positional,  # co_kwonlyargcount
+            len(fields) + 1,  # co_nlocals
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            ('self',) + tuple(fields),
+            code.co_filename,
+            code.co_name,
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            code.co_cellvars]
+
+    if tuple(sys.version_info)[:2] >= (3, 8):
+        # there is a new co_posonlyargs argument since 3.8
+        args.insert(1, positional)
+
+    code = types.CodeType(*args)
 
     # Generate the new wrapper function and its signature
     __globals__ = getattr(wrapped, '__globals__', builtins.__dict__)
@@ -300,7 +312,7 @@ def retry(exception_or_exceptions, tries=4, delay=0,
     The following retries the telnet connection 5 times on ConnectionRefusedError::
 
         import telnetlib
-    
+
         # Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError
         @retry(ConnectionRefusedError, tries=5)
         def open(host, port):
@@ -369,7 +381,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
     The following retries the telnet connection for 5 seconds on ConnectionRefusedError::
 
         import telnetlib
-    
+
         @until_timeout(ConnectionRefusedError, 5)
         def open(host, port):
             t = telnetlib.Telnet()
@@ -393,7 +405,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
             notified = False
             active_delay = delay
             t0 = time.time()
-            while time.time() - t0 < timeout:                
+            while time.time() - t0 < timeout:
                 try:
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
@@ -572,7 +584,7 @@ class Call(object):
 
         # This is a means for the main thread to raise an exception
         # if this is running in a separate thread
-        
+
     def __repr__(self):
         args = ','.join([repr(v) for v in self.args] + \
                         [(k+'='+repr(v)) for k,v in self.kws.items()])
@@ -618,7 +630,7 @@ class Call(object):
                       f'pass as a keyword argument to specify a different name'
                 raise KeyError(msg)
             ret[name] = func
-            
+
         return ret
 
 
@@ -740,7 +752,7 @@ DIR_DICT = set(dir(dict))
 
 
 def isdictducktype(cls):
-    return set(dir(cls)).issuperset(DIR_DICT)  
+    return set(dir(cls)).issuperset(DIR_DICT)
 
 
 @hide_in_traceback
@@ -759,7 +771,7 @@ def enter_or_call(flexible_caller, objs, kws):
                   traceback_delay=False,
                   flatten=True,
                   name=None)
-    
+
     def merge_inputs(dicts: list, candidates: list):
         """ Merge nested returns and check for return data key conflicts in
             the callable
@@ -772,11 +784,11 @@ def enter_or_call(flexible_caller, objs, kws):
                 msg = f'attempting to merge results and dict arguments, but the key names ({which}) conflict in nested calls'
                 raise KeyError(msg)
             ret.update(d)
-                
+
         conflicts = set(ret.keys()).intersection([n for (n,obj) in candidates])
         if len(conflicts) > 0:
             raise KeyError('keys of conflict in nested return dictionary keys with ')
-            
+
         return ret
 
     def merge_results(inputs, result):
@@ -799,7 +811,7 @@ def enter_or_call(flexible_caller, objs, kws):
             params['name'] = 'command'
         else:
             params['name'] = stack[2].code_context[0].strip()
-    
+
     # Combine the position and keyword arguments, and assign labels
     allobjs = list(objs) + list(kws.values())
     names = (len(objs)*[None]) + list(kws.keys())
@@ -813,7 +825,7 @@ def enter_or_call(flexible_caller, objs, kws):
     # or (2) all callables. Decide what type of operation to proceed with.
     runner = None
     for i, (k, obj) in enumerate(candidates):
-        
+
         # pass through dictionary objects from nested calls
         if isdictducktype(obj.__class__):
             dicts.append(candidates.pop(i))
@@ -822,10 +834,10 @@ def enter_or_call(flexible_caller, objs, kws):
         thisone = RUNNERS[(callable(obj) and not isinstance(obj, _GeneratorContextManager)), # Is it callable?
                           (hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)) # Is it a context manager?
                          ]
-            
+
         if thisone is None:
             msg = f'each argument must be a callable and/or a context manager, '
-            
+
             if k is None:
                 msg += f'but given {repr(obj)}'
             else:
@@ -841,7 +853,7 @@ def enter_or_call(flexible_caller, objs, kws):
     # Enforce uniqueness in the callable or context manager objects
     candidate_objs = [c[1] for c in candidates]
     if len(set(candidate_objs)) != len(candidate_objs):
-        raise ValueError('each callable and context manager must be unique')                
+        raise ValueError('each callable and context manager must be unique')
 
     if runner is None:
         return {}
@@ -911,7 +923,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
     # As each thread ends, collect the return value and any exceptions
     tracebacks = []
     master_exception = None
-    
+
     t0 = time.perf_counter()
 
     while len(threads) > 0:
@@ -942,7 +954,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         if called.traceback is not None:
 
             tb = traceback_skip(called.traceback, 1)
-            
+
             if called.traceback[0] is not ThreadEndedByMaster:
 #                exception_count += 1
                 tracebacks.append(tb)
@@ -962,14 +974,14 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         # Remove this thread from the dictionary of running threads
         del threads[called.name]
         concurrency_count -= 1
-    
+
     # Clear the stop request, if there are no other threads that
     # still need to exit
     if concurrency_count == 0 and stop_request_event.is_set():
         stop_request_event.clear()
 
     # Raise exceptions as necessary
-    if master_exception is not None:        
+    if master_exception is not None:
         for h in console.logger.handlers:
             h.flush()
 
@@ -979,7 +991,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             except BaseException:
                 sys.stderr.write('\nthread error (fixme to print message)')
                 sys.stderr.write('\n')
-            
+
         raise master_exception
 
     elif len(tracebacks) > 0 and not catch:
@@ -1052,7 +1064,7 @@ def concurrently(*objs, **kws):
         raises a ConcurrentException.
 
     """
-    
+
     return enter_or_call(concurrently_call, objs, kws)
 
 
@@ -1084,13 +1096,13 @@ def sequentially(*objs, **kws):
          This is the sequential implementation of the `concurrently` function,
          with a compatible convention of returning dictionaries.
 
-        Multiple references to the same function in `objs` only result in one call. The `nones` 
+        Multiple references to the same function in `objs` only result in one call. The `nones`
         argument may be callables in  case they are executed (and each flag value is treated as defaults).
 
         :param objs:  each argument may be a callable (function, or class that defines a __call__ method), or context manager (such as a Device instance)
         :param kws: dictionary of further callables or context managers, with names set by the dictionary key
         :param nones: if True, include dictionary entries for calls that return None (default is False); left as another entry in `kws` if callable or a context manager
-        :param flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)        
+        :param flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
         :return: a dictionary keyed on the object name containing the return value of each function
         :rtype: dictionary of keyed by function
 
@@ -1119,7 +1131,7 @@ def sequentially(*objs, **kws):
 
         **Caveats**
 
-        - Unlike `concurrently`, an exception in a context manager's __enter__ 
+        - Unlike `concurrently`, an exception in a context manager's __enter__
           means that any remaining context managers will not be entered.
 
         When the callable object is a Device method, :func concurrency: checks
@@ -1194,7 +1206,7 @@ class ThreadSandbox(object):
         is intended to work around challenges in threading wrapped win32com APIs.
 
         Use it as follows:
-    
+
             obj = ThreadSandbox(MyClass(myclassarg, myclasskw=myclassvalue))
 
         Then use `obj` as a normal MyClass instance.
@@ -1349,7 +1361,7 @@ class ConfigStore:
                 ret.update([(k + '_' + k2, v2) for k2, v2 in v.items()])
         return ret
 
-    @classmethod    
+    @classmethod
     def frame(cls):
         """ Return a pandas DataFrame containing all attributes
             in the class
@@ -1368,7 +1380,7 @@ import re
 
 def accessed_attributes(method):
     """ enumerate the attributes of the parent class accessed by `method`
-    
+
     :method: callable that is a method or defined in a class
     :returns: tuple of attribute names
     """
@@ -1399,5 +1411,5 @@ def accessed_attributes(method):
 
     def isselfattr(node):
         return isinstance(node, ast.Attribute) and getattr(node.value, 'id', None) == self_name
-        
+
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})

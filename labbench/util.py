@@ -128,26 +128,28 @@ TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 def hide_in_traceback(func):
     def adjust(f):
         code = f.__code__
-        args = [code.co_argcount,
-            code.co_kwonlyargcount,
-            code.co_nlocals,
-            code.co_stacksize,
-            code.co_flags,
-            code.co_code,
-            code.co_consts + (TRACEBACK_HIDE_TAG,),
-            code.co_names,
-            code.co_varnames,
-            code.co_filename,
-            code.co_name,
-            code.co_firstlineno,
-            code.co_lnotab,
-            code.co_freevars,
-            code.co_cellvars]
 
         if tuple(sys.version_info)[:2] >= (3,8):
-            args.insert(1,code.co_posonlyargcount)
-
-        f.__code__ = types.CodeType(*args)
+            f.__code__ = code.replace(co_consts=code.co_consts+(TRACEBACK_HIDE_TAG,))
+        else:
+            # python < 3.8
+            f.__code__ = types.CodeType(
+                code.co_argcount,
+                code.co_kwonlyargcount,
+                code.co_nlocals,
+                code.co_stacksize,
+                code.co_flags,
+                code.co_code,
+                code.co_consts + (TRACEBACK_HIDE_TAG,),
+                code.co_names,
+                code.co_varnames,
+                code.co_filename,
+                code.co_name,
+                code.co_firstlineno,
+                code.co_lnotab,
+                code.co_freevars,
+                code.co_cellvars
+            )
 
     if not callable(func):
         raise TypeError(f"{func} is not callable")
@@ -160,7 +162,7 @@ def hide_in_traceback(func):
     return func
 
 
-def _force_full_traceback(force):
+def _force_full_traceback(force: bool):
     sys._debug_tb = force
 
 
@@ -233,7 +235,7 @@ def wrap_attribute(cls,
             code.co_code,
             code.co_consts,
             code.co_names,
-            ('self',) + tuple(fields),
+            ('self',) + tuple(fields), # co_varnames
             code.co_filename,
             code.co_name,
             code.co_firstlineno,
@@ -242,10 +244,33 @@ def wrap_attribute(cls,
             code.co_cellvars]
 
     if tuple(sys.version_info)[:2] >= (3, 8):
-        # there is a new co_posonlyargs argument since 3.8
-        args.insert(1, positional)
+        # there is a new co_posonlyargs argument since 3.8, so might as well use the
+        # new .replace syntactic sugar
+        code = code.replace(
+            co_argcount=1+positional, # to include self
+            co_posonlyargcount=0,
+            co_kwonlyargcount=len(fields)-positional,
+            co_nlocals=len(fields)+1,  # to include self
+            co_varnames=('self',) + tuple(fields)
+        )
+    else:
+        args = [1 + positional,  # co_argcount
+                len(fields) - positional,  # co_kwonlyargcount
+                len(fields) + 1,  # co_nlocals
+                code.co_stacksize,
+                code.co_flags,
+                code.co_code,
+                code.co_consts,
+                code.co_names,
+                ('self',) + tuple(fields),  # co_varnames
+                code.co_filename,
+                code.co_name,
+                code.co_firstlineno,
+                code.co_lnotab,
+                code.co_freevars,
+                code.co_cellvars]
 
-    code = types.CodeType(*args)
+        code = types.CodeType(*args)
 
     # Generate the new wrapper function and its signature
     __globals__ = getattr(wrapped, '__globals__', builtins.__dict__)
@@ -623,7 +648,6 @@ class Call(object):
             else:
                 func.name = name
             if name in ret:
-                print('\n\n', name_func_pairs)
                 msg = f'another callable is already named {repr(name)} - '\
                       f'pass as a keyword argument to specify a different name'
                 raise KeyError(msg)
@@ -661,17 +685,30 @@ class MultipleContexts:
 
         """
 
+        # enter = self.enter
+        # def wrapped_enter(name, context):
+        #     return enter(name, context)
+        # wrapped_enter.__name__ = 'MultipleContexts_enter_' + hex(id(self)+id(call_handler))
+
+        def name(o):
+            return
+
         self.abort = False
         self._entered = {}
         self.__name__ = '__enter__'
 
-        self.objs = objs
+        # make up names for the __enter__ objects
+        self.objs = [(f'enter_{type(o).__name__}_{hex(id(o))}', o) for _,o in objs]
+
         self.params = params
         self.call_handler = call_handler
         self.exc = {}
 
     @hide_in_traceback
     def enter(self, name, context):
+        """
+        enter!
+        """
         if not self.abort:
             # proceed only if there have been no exceptions
             try:

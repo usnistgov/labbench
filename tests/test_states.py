@@ -86,10 +86,9 @@ class MockDecorator(MockBase):
 
 
 class MockReturner(MockBase):
-    param = lb.Int(key='param', min=0, max=10)
     flag = lb.Bool(key='flag', remap=remap)
     
-    @param
+    @lb.Int(key='param', min=0, max=10)
     def param(self, a, b,c):
         return a+b+c
 
@@ -98,13 +97,13 @@ class MockCommand(MockBase):
     param = lb.Int(key='param', min=0, max=10)
     flag = lb.Bool(key='flag', remap=remap)
     
-    def __command_get__(self, name, command):
-        self.add_get_count(command)
-        return self.values[command]
+    def __get_by_key__(self, name, key):
+        self.add_get_count(key)
+        return self.values[key]
 
-    def __command_set__(self, name, command, value):
-        self._last[command] = value
-        self.values[command] = value
+    def __set_by_key__(self, name, key, value):
+        self._last[key] = value
+        self.values[key] = value
 
 
 class TestStates(unittest.TestCase):

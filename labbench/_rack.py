@@ -36,7 +36,6 @@ import contextlib
 import inspect
 import logging
 import time
-import traceback
 import yaml
 
 

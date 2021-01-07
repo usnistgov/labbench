@@ -401,8 +401,13 @@ class Trait:
                 if set(positional_argcounts) in ({1}, {1, 2}, {2}):
                     self.__decorator_action__ = 'property'
                 else:
-                    raise AttributeError(f"the intended behavior of the method(s) decorated by {self} " \
-                                         "is ambiguous - specify with @labbench.property or @labbench.method")
+                    if len(self.__decorator_pending__) > 1:
+                        raise AttributeError(
+                            f"can only decorate one function with 2 or more arguments to use as a method, "
+                            f"but {len(self.__decorator_pending__)} methods have been decorated"
+                        )
+
+                    self.__decorator_action__ = 'method'
 
             if self.__decorator_action__ == 'property':
                 # adopt the properties!
@@ -418,6 +423,13 @@ class Trait:
                         self.__getter__ = func
                     else:
                         self.__setter__ = func
+            elif self.__decorator_action__ == 'method':
+                for func, argcount in zip(self.__decorator_pending__, positional_argcounts):
+                    if len(self.help.rstrip().strip()) == 0:
+                        # take func docstring as default self.help
+                        self.help = (func.__doc__ or '').rstrip().strip()
+
+                    self.__returner__ = func
             else:
                 raise AttributeError(f"{self} failed to implement a decorator")
 

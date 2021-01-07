@@ -31,8 +31,10 @@ if '..' not in sys.path:
     sys.path.insert(0, '..')
 import labbench as lb
 
-from test_settings import *
-from test_states import *
+lb.util._force_full_traceback(True)
+
+# from test_settings import *
+# from test_states import *
 # from test_db import *
 from test_concurrently import *
 # from test_doc import *

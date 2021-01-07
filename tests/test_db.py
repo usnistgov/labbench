@@ -40,6 +40,7 @@ from emulate import EmulatedVISADevice
 int_start = 3
 int_stop = 10
    
+path = 'test'
 
 class EmulatedInstrument(EmulatedVISADevice):
     """ This "instrument" makes mock data and instrument states to
@@ -87,7 +88,6 @@ class TestDB(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    path = 'test'
 
     lb.show_messages('debug')
        

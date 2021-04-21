@@ -25,7 +25,8 @@
 # licenses.
 
 from . import _device as core
-from . import util as util
+from . import _traits as traits
+from . import util
 
 import datetime
 import io
@@ -88,23 +89,36 @@ class Email(core.Device):
         subject line. Stderr is also sent.
     """
 
-    resource: core.Address\
-        (default='smtp.nist.gov', help='smtp server to use')
+    resource: traits.Address = core.value(
+        default='smtp.nist.gov',
+        help='smtp server to use'
+    )
 
-    port: core.Int\
-        (default=25, min=1, help='TCP/IP port')
+    port: int = core.value(
+        default=25,
+        min=1,
+        help='TCP/IP port'
+    )
     
-    sender: core.Unicode\
-        (default='myemail@nist.gov', help='email address of the sender')
-    
-    recipients: core.List\
-        (default=['myemail@nist.gov'], help='list of email addresses of recipients')
+    sender: int = core.value(
+        default='myemail@nist.gov',
+        help='email address of the sender'
+    )
 
-    success_message: core.Unicode\
-        (default='Test finished normally', help='subject line for test success emails (None to suppress the emails)')
+    recipients: list = core.value(
+        default=['myemail@nist.gov'],
+        help='list of email addresses of recipients'
+    )
 
-    failure_message: core.Unicode\
-        (default='Exception ended test early', help='subject line for test failure emails (None to suppress the emails)')
+    success_message: str = core.value(
+        default='Test finished normally',
+        help='subject line for test success emails (None to suppress the emails)'
+    )
+
+    failure_message: str = core.value(
+        default='Exception ended test early',
+        help='subject line for test failure emails (None to suppress the emails)'
+    )
 
     def _send(self, subject, body):
         sys.stderr.flush()
@@ -132,7 +146,7 @@ class Email(core.Device):
     def close(self):
         if self.connected:
             self.backend.close()
-            time.sleep(1)
+            util.sleep(1)
             self.send_summary()
 
     def send_summary(self):
@@ -212,9 +226,11 @@ class YAMLFormatter(logging.Formatter):
 
 class Host(core.Device):
     # Settings
-    git_commit_in: core.Unicode\
-        (default=None, allow_none=True,
-         help='git commit on open() if run inside a git repo with this branch name')
+    git_commit_in: str = core.value(
+        default=None,
+        allow_none=True,
+         help='git commit on open() if run inside a git repo with this branch name'
+    )
                 
     time_format = '%Y-%m-%d %H:%M:%S'
 
@@ -250,7 +266,7 @@ class Host(core.Device):
                         'repo': repo}
 
         # Preload the git repo parameters
-        for name in self.__traits__:
+        for name in self._traits:
             if name.startswith('git'):
                 getattr(self, name)
 
@@ -288,21 +304,21 @@ class Host(core.Device):
                                for k in sys.modules.keys() if k in versions]))
         return pd.Series(running).sort_index()
    
-    @core.Unicode()
+    @core.property(str)
     def time(self):
         """ Get a timestamp of the current time
         """
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
-    @core.Unicode()
+    @core.property(str)
     def log(self):
         """ Get the current host log contents.
         """
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
     
-    @core.Unicode(cache=True)
+    @core.property(str, cache=True)
     def git_commit_id(self):
         """ Try to determine the current commit hash of the current git repo
         """
@@ -312,7 +328,7 @@ class Host(core.Device):
         except git.NoSuchPathError:
             return ''
 
-    @core.Unicode(cache=True)
+    @core.property(str, cache=True)
     def git_remote_url(self):
         """ Try to identify the remote URL of the repository of the current git repo
         """
@@ -321,20 +337,19 @@ class Host(core.Device):
         except BaseException:
             return ''
 
-    @core.Unicode(cache=True)
+    @core.property(str, cache=True)
     def hostname(self):
         """ Get the name of the current host
         """
         return socket.gethostname()
 
-    @core.Unicode(cache=True)
+    @core.property(str, cache=True)
     def git_browse_url(self):
         """ URL for browsing the current git repository
         """
-        return '{}/tree/{}'.\
-               format(self.git_remote_url, self.git_commit_id)
+        return f'{self.git_remote_url}/tree/{self.git_commit_id}'
 
-    @core.Unicode(cache=True)
+    @core.property(str, cache=True)
     def git_pending_changes(self):
         if self.backend['repo'] is not None:
             diffs = self.backend['repo'].index.diff(None)

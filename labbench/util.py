@@ -26,7 +26,7 @@
 
 __all__ = [# "misc"
            'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages',
-           'console',
+           'console', 'autocomplete_init', 'LabbenchDeprecationWarning',
 
 
            # concurrency and sequencing
@@ -60,12 +60,32 @@ import psutil
 import sys
 import time
 import traceback
+from warnings import simplefilter
 
 
 console = logging.LoggerAdapter(
     logging.getLogger('labbench'),
     dict(origin='') # description of origin within labbench (for screen logs only)
 )
+
+
+def _autocomplete_init(callable):
+    """ Use as a decorator to trick text editors that use static code introspection
+        into autocompleting an init function based on class annotations.
+
+        In order for this to work, subclasses must be decorated separately to work.
+    """
+    return callable
+
+
+from dataclasses import dataclass as autocomplete_init
+locals()['autocomplete_init'] = _autocomplete_init
+
+
+class LabbenchDeprecationWarning(DeprecationWarning):
+    pass
+
+simplefilter('once', LabbenchDeprecationWarning)
 
 
 class Ownable:
@@ -200,6 +220,8 @@ class _filtered_exc_info:
             raise
 
 
+
+# TODO: remove this
 def wrap_attribute(cls,
                    name: str,
                    wrapper,
@@ -1326,7 +1348,7 @@ class ThreadSandbox(object):
 
             rsp.put((ret, exc), True)
 
-        console.write('ThreadSandbox worker thread finished')
+        console.debug('ThreadSandbox worker thread finished')
 
     @hide_in_traceback
     def __getattr__(self, name):

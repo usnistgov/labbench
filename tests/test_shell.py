@@ -47,7 +47,7 @@ class Shell_Python(lb.ShellBackend):
     )
 
     def _flag_names(self):
-        return (name for name, trait in self.settings.__traits__.items()
+        return (name for name, trait in self.settings._traits.items()
                 if trait.key is not lb.Undefined)
 
     def _commandline(self, **flags):
@@ -87,7 +87,7 @@ class Shell_Python(lb.ShellBackend):
 # class TestSettings(unittest.TestCase):
 #     def test_defaults(self):
 #         with Mock() as m:
-#             for name, trait in m.settings.__traits__.items():
+#             for name, trait in m.settings._traits.items():
 #                 self.assertEqual(getattr(m.settings, name),
 #                                  trait.default, msg=f'defaults: {name}')
 #

@@ -25,7 +25,8 @@
 # licenses.
 
 from . import _device as core
-from . import util as util
+from . import _traits as traits
+from . import util
 from collections import OrderedDict
 import contextlib
 import inspect
@@ -49,6 +50,7 @@ __all__ = ['ShellBackend',
            'Win32ComDevice']
 
 
+@util.autocomplete_init
 class ShellBackend(core.Device):
     """ Virtual device controlled by a shell command in another process. It supports
         threaded data logging through standard
@@ -70,24 +72,24 @@ class ShellBackend(core.Device):
         or left as `lb.Undefined` to be ignored in forming a command line.
     """
 
-    binary_path: core.Unicode(
+    binary_path:str = core.value(
         default=None,
         allow_none=True,
         help='path to the file to run'
     )
 
-    timeout: core.Float(
+    timeout:float = core.value(
         default=1,
         min=0,
         help='wait time after close before killing the process',
         label='s'
     )
 
-    # arguments: core.List(
+    # arguments:list = core.value(
     #     default=[], help='list of command line arguments to pass into the executable'
     # )
     #
-    # arguments_min: core.Int(
+    # arguments_min:int = core.value(
     #     default=0, min=0,
     #     settable=False, help='minimum extra command line arguments needed to run'
     # )
@@ -121,7 +123,7 @@ class ShellBackend(core.Device):
         self._stdout_queue = Queue()
 
         # Monitor state changes
-        states = set(self.settings.__traits__.keys()) \
+        states = set(self.settings._traits.keys()) \
             .difference(dir(ShellBackend))
 
         core.observe(self.settings, check_state_change, name=tuple(states))
@@ -303,7 +305,7 @@ class ShellBackend(core.Device):
         spawn(cmdl)
 
     def _flag_names(self):
-        return (name for name, trait in self.settings.__traits__.items()
+        return (name for name, trait in self.settings._traits.items()
                 if trait.key is not core.Undefined)
 
     def _commandline(self, **flags):
@@ -436,6 +438,7 @@ class ShellBackend(core.Device):
             pass
 
 
+@util.autocomplete_init
 class DotNetDevice(core.Device):
     """ This Device backend represents a wrapper around a .NET library. It is implemented
         with pythonnet, and handlesimports.
@@ -521,6 +524,7 @@ class DotNetDevice(core.Device):
         pass
 
 
+@util.autocomplete_init
 class LabviewSocketInterface(core.Device):
     """ Implement the basic sockets-based control interface for labview.
         This implementation uses a transmit and receive socket.
@@ -537,17 +541,17 @@ class LabviewSocketInterface(core.Device):
         TCP/IP ports where communication is to take place.
     """
 
-    resource: core.Address \
+    resource:traits.Address = core.value \
         (default='127.0.0.1', help='TCP/IP host address of the LabView VI host')
-    tx_port: core.Int \
+    tx_port:int = core.value \
         (default=61551, help='TX port to send to the LabView VI')
-    rx_port: core.Int \
+    rx_port:int = core.value \
         (default=61552, help='TX port to send to the LabView VI')
-    delay: core.Float \
+    delay:float = core.value \
         (default=1, help='time to wait after each state write or query')
-    timeout: core.Float \
+    timeout:float = core.value \
         (default=2, help='maximum wait replies before raising TimeoutError')
-    rx_buffer_size: core.Int \
+    rx_buffer_size:int = core.value \
         (default=1024, min=1)
 
     def open(self):
@@ -613,6 +617,7 @@ class LabviewSocketInterface(core.Device):
                     continue
 
 
+@util.autocomplete_init
 class SerialDevice(core.Device):
     """ A general base class for communication with serial devices.
         Unlike (for example) VISA instruments, there is no
@@ -632,21 +637,21 @@ class SerialDevice(core.Device):
     """
 
     # Connection settings
-    timeout: core.Float \
+    timeout:float = core.value \
         (default=2, min=0, help='Max time to wait for a connection before raising TimeoutError.')
-    write_termination: core.Bytes \
+    write_termination:bytes = core.value \
         (default=b'\n', help='Termination character to send after a write.')
-    baud_rate: core.Int \
+    baud_rate:int = core.value \
         (default=9600, min=1, help='Data rate of the physical serial connection.')
-    parity: core.Bytes \
+    parity:bytes = core.value \
         (default=b'N', help='Parity in the physical serial connection.')
-    stopbits: core.Float \
+    stopbits:float = core.value \
         (default=1, min=1, max=2, step=0.5, help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
-    xonxoff: core.Bool \
+    xonxoff:bool = core.value \
         (default=False, help='`True` to enable software flow control.')
-    rtscts: core.Bool \
+    rtscts:bool = core.value \
         (default=False, help='`True` to enable hardware (RTS/CTS) flow control.')
-    dsrdtr: core.Bool \
+    dsrdtr:bool = core.value \
         (default=False, help='`True` to enable hardware (DSR/DTR) flow control.')
 
     def __imports__(self):
@@ -726,6 +731,7 @@ class SerialDevice(core.Device):
                             for port in list_ports.comports()])
 
 
+@util.autocomplete_init
 class SerialLoggingDevice(SerialDevice):
     """ Manage connection, acquisition, and data retreival on a single GPS device.
         The goal is to make GPS devices controllable somewhat like instruments:
@@ -737,13 +743,13 @@ class SerialLoggingDevice(SerialDevice):
         from the serial port.
     """
 
-    poll_rate: core.Float \
+    poll_rate:float = core.value \
         (default=0.1, min=0, help='Data retreival rate from the device (in seconds)')
-    data_format: core.Bytes \
+    data_format:bytes = core.value \
         (default=b'', help='Data format metadata')
-    stop_timeout: core.Float \
+    stop_timeout:float = core.value \
         (default=0.5, min=0, help='delay after `stop` before terminating run thread')
-    max_queue_size: core.Int \
+    max_queue_size:int = core.value \
         (default=100000, min=1, help='bytes to allocate in the data retreival buffer')
 
     def configure(self):
@@ -831,6 +837,7 @@ class SerialLoggingDevice(SerialDevice):
         self.stop()
 
 
+@util.autocomplete_init
 class TelnetDevice(core.Device):
     """ A general base class for communication devices via telnet.
         Unlike (for example) VISA instruments, there is no
@@ -850,9 +857,9 @@ class TelnetDevice(core.Device):
     """
 
     # Connection settings
-    timeout: core.Float \
+    timeout:float = core.value \
         (default=2, min=0, label='s', help='connection timeout')
-    port: core.Int \
+    port:int = core.value \
         (default=23, min=1)
 
     def __imports__(self):
@@ -872,6 +879,7 @@ class TelnetDevice(core.Device):
         self.backend.close()
 
 
+@util.autocomplete_init
 class VISADevice(core.Device):
     r""" .. class:: VISADevice(resource, read_termination='\\n', write_termination='\\n')
 
@@ -897,22 +905,28 @@ class VISADevice(core.Device):
     """
 
     # Settings
-    read_termination: core.Unicode \
-        (default='\n', help='end-of-receive termination character')
+    read_termination:str = core.value(
+        default='\n',
+        help='end-of-receive termination character'
+    )
 
-    write_termination: core.Unicode \
-        (default='\n', help='end-of-transmit termination character')
+    write_termination:str = core.value(
+        default='\n',
+        help='end-of-transmit termination character'
+    )
 
     # States
-    identity = core.Unicode \
-        (key='*IDN', settable=False, cache=True,
-         help='identity string reported by the instrument')
+    identity:str = core.property(
+        key='*IDN', settable=False, cache=True,
+        help='identity string reported by the instrument'
+    )
 
-    options = core.Unicode \
-        (key='*OPT', settable=False, cache=True,
-         help='options reported by the instrument')
+    options:str = core.property(
+        key='*OPT', settable=False, cache=True,
+        help='options reported by the instrument'
+    )
 
-    @core.Dict(key='*STB', settable=False)
+    @core.property(key='*STB', type=dict, settable=False)
     def status_byte(self):
         """ VISA status byte reported by the instrument """
         code = int(self.query('*STB?'))
@@ -1127,6 +1141,7 @@ class VISADevice(core.Device):
                    and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
 
 
+@util.autocomplete_init
 class Win32ComDevice(core.Device):
     """ Basic support for calling win32 COM APIs.
 
@@ -1140,13 +1155,8 @@ class Win32ComDevice(core.Device):
         this thread support wrapper is applied to the dispatched Win32Com object.
     """
 
-    com_object: \
-        core.Unicode(default='',
-                     help='the win32com object string')  # Must be a module
-
-    concurrency: \
-        core.Bool(default=True,
-                  help='whether this implementation supports threading')
+    com_object:str = core.value(default='', help='the win32com object string')  # Must be a module
+    concurrency:bool = core.value(default=True, help='whether this implementation supports threading')
 
     def __imports__(self):
         global win32com

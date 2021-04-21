@@ -90,7 +90,7 @@ def single(inst, inst_name):
             if name in _df.index:
                 _df.drop(name, inplace=True)
             return
-        label = obj.__traits__[name].label
+        label = obj._traits[name].label
         _df.loc[name] = str(value) + ' ' + str('' if label is None else label),
         _df.sort_index(inplace=True)
         caption = caption_fmt.format(inst_name).replace(',', '<br>')

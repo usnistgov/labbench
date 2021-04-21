@@ -59,7 +59,7 @@ class UpdateMock(Mock):
 class TestSettings(unittest.TestCase):
     def test_defaults(self):
         with Mock() as m:
-            for name, trait in m.settings.__traits__.items():
+            for name, trait in m.settings._traits.items():
                 self.assertEqual(getattr(m.settings, name),
                                  trait.default, msg=f'defaults: {name}')
                 

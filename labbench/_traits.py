@@ -30,7 +30,7 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-from . import util as util
+from . import util
 
 from typing import Generic, T
 from warnings import warn
@@ -39,6 +39,15 @@ from functools import wraps
 from inspect import isclass
 import numbers
 import re
+
+# for common types
+from pathlib import Path
+import numpy as np
+import pandas as pd
+
+
+# TODO: dynamically create trait subclasses for arbitrary types?
+TRAIT_TYPE_REGISTRY = {}
 
 
 Undefined = type(None)
@@ -69,8 +78,6 @@ class HasTraitsMeta(type):
             HasTraitsMeta.__pending__.append({})
             return dict(_traits=HasTraitsMeta.__pending__[-1])
 
-
-TRAIT_TYPE_REGISTRY = {}
 
 @util.autocomplete_init
 class Trait:
@@ -637,14 +644,14 @@ class HasTraits(metaclass=HasTraitsMeta):
                 continue
             annot_type = annotations[name]
 
-            if isinstance(annot_type, Trait):
-                # explicitly define a new setting
-                annot_str = f"{cls.__qualname__}.{name}: {annot_type}"
-                raise AttributeError(f'type annotation "{annot_str}" should specify the pythonic type, not a labbench object')
+            if not isclass(annot_type):
+                annot_str = f"in annotation '{name}: {annot_type}'"
+                raise AttributeError(f'specify a type in the annotation "{name}:{repr(annot_type)}" instead of {repr(annot_type)}')
 
             if annot_type != trait.type and trait.type not in (None, Undefined):
                 trait_str = f"{cls.__qualname__}.{name}"
-                warn(f'{trait_str} type annotation {annot_type.__qualname__} overrides its prior type={trait.type.__qualname__}')
+                print(repr(annot_type), repr(trait.type))
+                warn(f'{trait_str} type annotation {annot_type.__name__} overrides its prior type={trait.type.__qualname__}')
             elif annot_type == trait.type:
                 # nothing changed, move along
                 continue
@@ -1295,7 +1302,7 @@ class Bool(Trait, type=bool):
 class String(Trait):
     """ base class for string types, which adds support for case sensitivity arguments """
     case: bool = True
-    allow_none: bool = True
+    # allow_none: bool = True # let's not override this default
 
     @util.hide_in_traceback
     def contains(self, iterable, value):
@@ -1351,113 +1358,30 @@ class Tuple(Iterable, type=tuple):
 
 
 @util.autocomplete_init
-class Address(Unicode):
-    """ accepts IDN-compatible network address, such as an IP address or DNS hostname """
+class Path(Trait, type=Path):
+    must_exist:bool = False
+    """ does the path need to exist when set? """
 
     @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        """Rough IDN compatible domain validator"""
+    def validate(self, value):
+        path = self.type(value)
 
-        host = value.encode('idna').lower()
-        pattern = re.compile(br'^([0-9a-z][-\w]*[0-9a-z]\.)+[a-z0-9\-]{2,15}$')
-        m = pattern.match(host)
-        if m is None:
-            raise ValueError('invalid TCP/IP address')
-        else:
-            return m.string.decode()
+        if self.must_exist and not path.exists():
+            raise IOError()
+
+        return path
 
 
-def value(
-    default=Undefined,
-    type=None,
-    *,
-    help: str = Undefined,
-    label: str = Undefined,
-    settable: bool = Undefined,
-    gettable: bool = Undefined,
-    cache: bool = Undefined,
-    only: tuple = Undefined,
-    remap: dict = Undefined,
-    case: bool = Undefined,
-    allow_none: bool = Undefined,
-    step: float = Undefined,
-    min: ThisType = Undefined,
-    max: ThisType = Undefined,
-    offset_name: str = Undefined,
-    table: Any = Undefined,
-    ):
-
-    if type is not None and issubclass(type, Trait):
-        trait_cls = type
-    else:
-        trait_cls = TRAIT_TYPE_REGISTRY[type]
-
-    kws = {k:v for k,v in locals().items() if v is not Undefined}
-    kws.pop('type',None)
-    kws.pop('trait_cls', None)
-
-    return trait_cls(role=Trait.ROLE_VALUE, **kws)
+@util.autocomplete_init
+class PandasDataFrame(Trait, type=pd.DataFrame):
+    pass
 
 
-def property(
-    key=Undefined,    
-    type=None,
-    *,
-    help: str = Undefined,
-    label: str = Undefined,
-    settable: bool = Undefined,
-    gettable: bool = Undefined,
-    cache: bool = Undefined,
-    only: tuple = Undefined,
-    remap: dict = Undefined,
-    case: bool = Undefined,
-    allow_none: bool = Undefined,
-    step: float = Undefined,
-    min: ThisType = Undefined,
-    max: ThisType = Undefined,
-    offset_name: str = Undefined,
-    table: Any = Undefined,
-    ):
-
-    if type is not None and issubclass(type, Trait):
-        trait_cls = type
-    else:
-        trait_cls = TRAIT_TYPE_REGISTRY[type]
-
-    kws = {k:v for k,v in locals().items() if v is not Undefined}
-    kws.pop('type',None)
-    kws.pop('trait_cls', None)
-
-    return trait_cls(role=Trait.ROLE_PROPERTY, **kws)
+@util.autocomplete_init
+class PandasSeries(Trait, type=pd.Series):
+    pass
 
 
-def data(
-    type=None,
-    *,
-    help: str = Undefined,
-    label: str = Undefined,
-    settable: bool = Undefined,
-    gettable: bool = Undefined,
-    cache: bool = Undefined,
-    only: tuple = Undefined,
-    remap: dict = Undefined,
-    case: bool = Undefined,
-    allow_none: bool = Undefined,
-    step: float = Undefined,
-    min: ThisType = Undefined,
-    max: ThisType = Undefined,
-    offset_name: str = Undefined,
-    table: Any = Undefined,
-    ):
-
-    if type is not None and issubclass(type, Trait):
-        trait_cls = type
-    else:
-        trait_cls = TRAIT_TYPE_REGISTRY[type]
-
-    kws = {k:v for k,v in locals().items() if v is not Undefined}
-    kws.pop('type',None)
-    kws.pop('trait_cls', None)
-    
-
-    return trait_cls(role=Trait.ROLE_RETURN_DATA, **kws)
+@util.autocomplete_init
+class NumpyArray(Trait, type=np.ndarray):
+    pass

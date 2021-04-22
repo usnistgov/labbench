@@ -25,7 +25,7 @@
 # licenses.
 
 from . import _device as core
-from . import _traits as traits
+from . import types
 from . import util
 from collections import OrderedDict
 import contextlib
@@ -541,18 +541,12 @@ class LabviewSocketInterface(core.Device):
         TCP/IP ports where communication is to take place.
     """
 
-    resource:traits.Address = core.value \
-        (default='127.0.0.1', help='TCP/IP host address of the LabView VI host')
-    tx_port:int = core.value \
-        (default=61551, help='TX port to send to the LabView VI')
-    rx_port:int = core.value \
-        (default=61552, help='TX port to send to the LabView VI')
-    delay:float = core.value \
-        (default=1, help='time to wait after each state write or query')
-    timeout:float = core.value \
-        (default=2, help='maximum wait replies before raising TimeoutError')
-    rx_buffer_size:int = core.value \
-        (default=1024, min=1)
+    resource:types.NetworkAddress = core.value('127.0.0.1', help='TCP/IP host address of the LabView VI host')
+    tx_port:int = core.value(61551, help='TX port to send to the LabView VI')
+    rx_port:int = core.value(61552, help='TX port to send to the LabView VI')
+    delay:float = core.value(1, help='time to wait after each state write or query')
+    timeout:float = core.value(2, help='maximum wait replies before raising TimeoutError')
+    rx_buffer_size:int = core.value(1024, min=1)
 
     def open(self):
         self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
@@ -905,15 +899,9 @@ class VISADevice(core.Device):
     """
 
     # Settings
-    read_termination:str = core.value(
-        default='\n',
-        help='end-of-receive termination character'
-    )
+    read_termination:str = core.value('\n')
 
-    write_termination:str = core.value(
-        default='\n',
-        help='end-of-transmit termination character'
-    )
+    write_termination:str = core.value('\n')
 
     # States
     identity:str = core.property(

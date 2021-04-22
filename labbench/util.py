@@ -77,11 +77,11 @@ def _autocomplete_init(callable):
     """
     return callable
 
-
 from dataclasses import dataclass as autocomplete_init
 locals()['autocomplete_init'] = _autocomplete_init
 
 
+# show deprecation warnings only once
 class LabbenchDeprecationWarning(DeprecationWarning):
     pass
 

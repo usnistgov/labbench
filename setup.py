@@ -82,6 +82,7 @@ if __name__ == '__main__':
                             'GitPython(>=2.0)',
                             'pyarrow',
                             'pyyaml',
+                            'validators'
                             ],
           extras_require={'html': ['sphinx(>=1.6)','recommonmark'],
                           'notebook': ['notebook', 'ipywidgets']},

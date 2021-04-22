@@ -37,7 +37,9 @@ from ._backends import *
 from ._rack import *
 
 from . import data
+from . import types
 from . import util
+from . import _traits
 
 # scrub __module__ for cleaner repr() calls and documentation
 for _obj in dict(locals()).values():

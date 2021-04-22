@@ -25,7 +25,7 @@
 # licenses.
 
 from . import _device as core
-from . import _traits as traits
+from . import types
 from . import util
 
 import datetime
@@ -89,7 +89,7 @@ class Email(core.Device):
         subject line. Stderr is also sent.
     """
 
-    resource: traits.Address = core.value(
+    resource: types.NetworkAddress = core.value(
         default='smtp.nist.gov',
         help='smtp server to use'
     )

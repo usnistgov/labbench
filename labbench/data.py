@@ -1,5 +1,3 @@
-# -*- coding: UTF-8 -*-_traits
-
 # This software was developed by employees of the National Institute of
 # Standards and Technology (NIST), an agency of the Federal Government.
 # Pursuant to title 17 United States Code Section 105, works of NIST employees

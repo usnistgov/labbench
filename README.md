@@ -27,13 +27,13 @@ import labbench as lb
 import pandas as pd
 
 class PowerSensor(lb.VISADevice):
-    initiate_continuous = lb.Bool(key='INIT:CONT')
-    output_trigger = lb.Bool(key='OUTP:TRIG')
-    trigger_source = lb.Unicode(key='TRIG:SOUR', only=('IMM', 'INT', 'EXT', 'BUS', 'INT1'), case=False)
-    trigger_count = lb.Int(key='TRIG:COUN', min=1, max=200)
-    measurement_rate = lb.Unicode(key='SENS:MRAT', only=('NORM', 'DOUB', 'FAST'), case=False)
-    sweep_aperture = lb.Float(key='SWE:APER', min=20e-6, max=200e-3, help='time (s)')
-    frequency = lb.Float(key='SENS:FREQ', min=10e6, max=18e9, step=1e-3,
+    initiate_continuous:bool = lb.property(key='INIT:CONT')
+    output_trigger:bool = lb.property(key='OUTP:TRIG')
+    trigger_source:unicode = lb.property(key='TRIG:SOUR', only=('IMM', 'INT', 'EXT', 'BUS', 'INT1'), case=False)
+    trigger_count:int = lb.property(key='TRIG:COUN', min=1, max=200)
+    measurement_rate:unicode = lb.property(key='SENS:MRAT', only=('NORM', 'DOUB', 'FAST'), case=False)
+    sweep_aperture:float = lb.property(key='SWE:APER', min=20e-6, max=200e-3, help='time (s)')
+    frequency:float = lb.property(key='SENS:FREQ', min=10e6, max=18e9, step=1e-3,
                          help='input signal center frequency (in Hz)')
 
     def preset(self):

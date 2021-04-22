@@ -31,9 +31,8 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from . import util
-from ._traits import HasTraits, Trait, value, property
+from ._traits import HasTraits, Trait, Undefined, ThisType, Any, TRAIT_TYPE_REGISTRY
 
-from typing import Generic, T
 from functools import wraps
 
 import logging
@@ -41,7 +40,7 @@ import sys
 import traceback
 
 
-__all__ = ['Device', 'list_devices']
+__all__ = ['Device', 'list_devices', 'property', 'value']
 
 
 def trace_methods(cls, name, until_cls=None):
@@ -142,6 +141,102 @@ class DisconnectedBackend(object):
         return 'DisconnectedBackend()'
 
     str = __repr__
+
+
+def value(
+    default=Undefined,
+    type=None,
+    *,
+    help: str = Undefined,
+    label: str = Undefined,
+    settable: bool = Undefined,
+    gettable: bool = Undefined,
+    cache: bool = Undefined,
+    only: tuple = Undefined,
+    remap: dict = Undefined,
+    case: bool = Undefined,
+    allow_none: bool = Undefined,
+    step: float = Undefined,
+    min: ThisType = Undefined,
+    max: ThisType = Undefined,
+    offset_name: str = Undefined,
+    table: Any = Undefined,
+    ):
+
+    if type is not None and issubclass(type, Trait):
+        trait_cls = type
+    else:
+        trait_cls = TRAIT_TYPE_REGISTRY[type]
+
+    kws = {k:v for k,v in locals().items() if v is not Undefined}
+    kws.pop('type',None)
+    kws.pop('trait_cls', None)
+
+    return trait_cls(role=Trait.ROLE_VALUE, **kws)
+
+
+def property(
+    key=Undefined,    
+    type=None,
+    *,
+    help: str = Undefined,
+    label: str = Undefined,
+    settable: bool = Undefined,
+    gettable: bool = Undefined,
+    cache: bool = Undefined,
+    only: tuple = Undefined,
+    remap: dict = Undefined,
+    case: bool = Undefined,
+    allow_none: bool = Undefined,
+    step: float = Undefined,
+    min: ThisType = Undefined,
+    max: ThisType = Undefined,
+    offset_name: str = Undefined,
+    table: Any = Undefined,
+    ):
+
+    if type is not None and issubclass(type, Trait):
+        trait_cls = type
+    else:
+        trait_cls = TRAIT_TYPE_REGISTRY[type]
+
+    kws = {k:v for k,v in locals().items() if v is not Undefined}
+    kws.pop('type',None)
+    kws.pop('trait_cls', None)
+
+    return trait_cls(role=Trait.ROLE_PROPERTY, **kws)
+
+
+def datareturn(
+    type=None,
+    *,
+    help: str = Undefined,
+    label: str = Undefined,
+    settable: bool = Undefined,
+    gettable: bool = Undefined,
+    cache: bool = Undefined,
+    only: tuple = Undefined,
+    remap: dict = Undefined,
+    case: bool = Undefined,
+    allow_none: bool = Undefined,
+    step: float = Undefined,
+    min: ThisType = Undefined,
+    max: ThisType = Undefined,
+    offset_name: str = Undefined,
+    table: Any = Undefined,
+    ):
+
+    if type is not None and issubclass(type, Trait):
+        trait_cls = type
+    else:
+        trait_cls = TRAIT_TYPE_REGISTRY[type]
+
+    kws = {k:v for k,v in locals().items() if v is not Undefined}
+    kws.pop('type',None)
+    kws.pop('trait_cls', None)
+    
+
+    return trait_cls(role=Trait.ROLE_RETURN_DATA, **kws)
 
 
 # @util.hide_in_traceback
@@ -440,3 +535,4 @@ class Device(HasTraits, util.Ownable):
 
 
 Device.__init_subclass__()
+

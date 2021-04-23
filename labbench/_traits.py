@@ -35,6 +35,7 @@ from . import util
 from typing import Generic, T
 from warnings import warn
 from functools import wraps
+import validators as _val
 
 from inspect import isclass
 import numbers
@@ -128,11 +129,12 @@ class Trait:
     ROLE_UNSET = 'unset'
 
     type = None
+    role = ROLE_UNSET
 
     # keyword argument types and default values
     default: ThisType = Undefined
     key: Undefined = Undefined
-    role: str = ROLE_UNSET
+    # role: str = ROLE_UNSET
     help: str = ''
     label: str = ''
     settable: bool = True
@@ -150,11 +152,55 @@ class Trait:
     _decorated_funcs = []
     # __decorator_action__ = None
 
-    def __init__(self, **kws):
+    def __init__(self, *args, **kws):
         self.kws = kws
         self.metadata = {}
         self._decorated_funcs = []
-        self.role = kws.get('role', self._arg_defaults['role'])
+
+        if len(args) >= 1:
+            if len(args) == 1 and self.role == self.ROLE_VALUE:
+                if 'default' in kws:
+                    raise ValueError(f"duplicate 'default' argument")                
+                self.kws['default'] = args[0]
+            else:
+                raise ValueError(f'no positional arguments supported')
+
+        kws = dict(self._arg_defaults, **self.kws)
+
+        if kws['default'] is Undefined:
+            # always go with None when this value is allowed, fallback to self.default
+            kws['default'] = None if self.allow_none else self.default
+        elif callable(kws['default']):
+            msg = f"trait decorators need to be instantiated - " \
+                  f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
+            raise AttributeError(msg)
+
+        # check role and related parameter dependencies
+        if self.role == self.ROLE_VALUE:
+            invalid_args = ('remap', 'key')
+        elif self.role == self.ROLE_PROPERTY:
+            invalid_args = ('default',)
+        elif self.role == self.ROLE_DATARETURN:
+            invalid_args = 'default', 'key'
+        else:
+            raise ValueError(f"role is none of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}")
+
+        for k in invalid_args:
+            if self._arg_defaults[k] is not Undefined and self._arg_defaults[k] != getattr(self, k):
+                raise AttributeError(f"keyword argument '{k}' is not allowed with {self.role}")
+
+        # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
+        if len(self.remap) > 0:
+            remap_inbound = {v: k for k, v in self.remap.items()}
+            if len(self.remap) != len(remap_inbound):
+                raise ValueError(f"'remap' has duplicate values")
+
+            self.from_pythonic = self.remap.__getitem__
+            self.to_pythonic = remap_inbound.__getitem__
+
+        # Apply the settings
+        for k, v in kws.items():
+            setattr(self, k, v)
 
     @classmethod
     def __init_subclass__(cls, type=Undefined):
@@ -228,73 +274,6 @@ class Trait:
 
             This is also where we finalize selecting decorator behavior; is it a property or a method?
         """
-        # argument validation needs to happen after owner subclass validation to allow
-        # type annotations
-        kws = dict(self._arg_defaults, **self.kws)        
-
-        if kws['default'] is Undefined:
-            # always go with None when this value is allowed, fallback to self.default
-            kws['default'] = None if self.allow_none else self.default
-        elif callable(kws['default']):
-            msg = f"trait decorators need to be instantiated - " \
-                  f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
-            raise AttributeError(msg)
-
-        # Apply the settings
-        for k, v in kws.items():
-            setattr(self, k, v)
-        # self.__dict__.update(kws) # TODO: does this break anything? would be faster
-
-        # Now go back and type-check
-        for k, v in kws.items():
-            annot_type = self.__annotations__[k]
-
-            if annot_type is ThisType:
-                # replace the ThisType placeholder in the definition with the actual type
-                annot_type = self.type
-            elif annot_type in (None, Undefined, Any):
-                # do no more additional work for parameters that accept any type
-                continue
-            elif k == 'default' and self.allow_none and isinstance(v, type(None)):
-                # for the 'default' parameter, be fine with None
-                continue
-            else:
-                try:
-                    isinst = isinstance(v, annot_type)
-                except TypeError:
-                    raise TypeError(f"annotation {repr(k)}: {type(annot_type)} does not specify a type")
-                if not isinst:
-                    # complain if the parameter is set to the wrong type
-                    tname = annot_type.__qualname__
-                    vname = type(v).__qualname__
-                    raise ValueError(f"keyword argument '{k}={repr(v)}' of {self} should should have type '{tname}'")
-
-        # check role and related parameter dependencies
-        if self.role == self.ROLE_VALUE:
-            invalid_args = ('remap', 'key')
-        elif self.role == self.ROLE_PROPERTY:
-            invalid_args = ('default',)
-        elif self.role == self.ROLE_DATARETURN:
-            invalid_args = 'default', 'key'
-        else:
-            raise ValueError(f"role is none of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}")
-
-        for k in invalid_args:
-            if self._arg_defaults[k] is not Undefined and self._arg_defaults[k] != getattr(self, k):
-                raise AttributeError(f"argument '{k}' is not allowed with {self.role}")
-
-        # trickery to prevent settings conflicts
-        if self.remap and self.only:
-            raise ValueError(f"the 'remap' and 'only' parameters are redundant")
-
-        # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
-        if len(self.remap) > 0:
-            remap_inbound = {v: k for k, v in self.remap.items()}
-            if len(self.remap) != len(remap_inbound):
-                raise ValueError(f"'remap' has duplicate values")
-
-            self.from_pythonic = self.remap.__getitem__
-            self.to_pythonic = remap_inbound.__getitem__
 
         if self.role == self.ROLE_VALUE and len(self._decorated_funcs) > 0:
             raise AttributeError(f"tried to combine a default value and a decorator implementation in {self}")
@@ -1382,3 +1361,41 @@ class PandasSeries(Trait, type=pd.Series):
 @util.autocomplete_init
 class NumpyArray(Trait, type=np.ndarray):
     pass
+
+
+@util.autocomplete_init
+class NetworkAddress(Unicode):
+    """ a IDN-compatible network address string, such as an IP address or DNS hostname """
+
+    accept_port:bool = True
+
+    @util.hide_in_traceback
+    def validate(self, value, owner=None):
+        """Rough IDN compatible domain validator"""
+        
+        host,*extra = value.split(':',1)
+
+        if len(extra) > 0:
+            port = extra[0]
+            try:
+                int(port)
+            except ValueError:
+                raise ValueError(f'port {port} in "{value}" is invalid')
+
+            if not self.accept_port:
+                raise ValueError(f'{self} does not accept a port number (accept_port=False)')
+
+        for validate in _val.ipv4, _val.ipv6, _val.domain:
+            if validate(host):
+                break
+        else:
+            raise ValueError('invalid host address')
+
+        host = value.encode('idna').lower()
+        pattern = re.compile(br'^([0-9a-z][-\w]*[0-9a-z]\.)+[a-z0-9\-]{2,15}$')
+        m = pattern.match(host)
+
+        if m is None:
+            raise ValueError(f'"{value}" is an invalid host address')
+        
+        return value

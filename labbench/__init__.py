@@ -38,7 +38,6 @@ from ._backends import *
 from ._rack import *
 
 from . import data
-from . import types
 from . import util
 from ._traits import observe, unobserve
 

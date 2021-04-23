@@ -73,22 +73,22 @@ class MungerBase(core.Device):
 
     """
 
-    resource:str = core.value(
+    resource = core.value.str(
         '', help='base directory for all data')
 
-    text_relational_min:int = core.value(
+    text_relational_min = core.value.int(
         1024, min=0, help='minimum size threshold that triggers storing text in a relational file')
 
-    force_relational:list = core.value(
+    force_relational = core.value.list(
         ['host_log'], help='list of column names to always save as relational data')
 
-    dirname_fmt:str = core.value(
+    dirname_fmt = core.value.str(
         '{id} {host_time}', help='directory name format for the relational data of each row (keyed on column)')
 
-    nonscalar_file_type:str = core.value(
+    nonscalar_file_type = core.value.str(
         'csv', help='file format for non-scalar numerical data')
 
-    metadata_dirname:str = core.value(
+    metadata_dirname = core.value.str(
         'metadata', help='subdirectory name for metadata')
 
     def __call__(self, index, row):
@@ -1154,8 +1154,8 @@ class MungeToHDF(Device):
 
     """
 
-    resource:str = core.value('', help='hdf file location')
-    key_fmt:str = core.value('{id} {host_time}', help='format for linked data in the master database (keyed on column)')
+    resource = core.value.str('', help='hdf file location')
+    key_fmt = core.value.str('{id} {host_time}', help='format for linked data in the master database (keyed on column)')
 
     def open(self):
         import h5py

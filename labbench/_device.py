@@ -31,9 +31,10 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from . import util
-from ._traits import HasTraits, Trait, Undefined, ThisType, Any, TRAIT_TYPE_REGISTRY
+from . import _traits
 
 from functools import wraps
+from inspect import isclass
 
 import logging
 import sys
@@ -143,155 +144,44 @@ class DisconnectedBackend(object):
     str = __repr__
 
 
-def value(
-        default=Undefined,
-        type=None,
-        *,
-        # global arguments
-        help: str = Undefined,
-        label: str = Undefined,
-        settable: bool = Undefined,
-        gettable: bool = Undefined,
-        cache: bool = Undefined,
-        only: tuple = Undefined,
-        remap: dict = Undefined,
-        allow_none: bool = Undefined,
+class AttributeDefinition:
+    bool = _traits.Bool
+    float = _traits.Float
+    int = _traits.Int
+    complex = _traits.Complex
 
-        # str or bytes arguments
-        case: bool = Undefined,
+    str = _traits.Unicode
+    bytes = _traits.Bytes
 
-        # numeric arguments
-        step: float = Undefined,
-        min: ThisType = Undefined,
-        max: ThisType = Undefined,
+    list = _traits.List
+    tuple = _traits.Tuple
+    dict = _traits.Dict
 
-        # path arguments
-        must_exist:bool = Undefined,
+    Path = _traits.Path
+    DataFrame = _traits.PandasDataFrame
+    Series =_traits.PandasSeries
+    ndarray = _traits.NumpyArray
 
-        # NetworkAddress arguments
-        accept_port:bool = Undefined,
+    NetworkAddress = _traits.NetworkAddress
 
-        # calibration arguments
-        offset_name: str = Undefined,
-        table: Any = Undefined,
-    ):
+    def __init__(self, role):
+        self._role = role
+        
+        for name, attr in dict(self.__class__.__dict__).items():
+            if isclass(attr) and issubclass(attr, _traits.Trait):
+                new_attr = type(name, (attr,), dict(role=role))
 
-    if type is not None and issubclass(type, Trait):
-        trait_cls = type
-    else:
-        trait_cls = TRAIT_TYPE_REGISTRY[type]
-
-    kws = {k:v for k,v in locals().items() if v is not Undefined}
-    kws.pop('type',None)
-    kws.pop('trait_cls', None)
-
-    return trait_cls(role=Trait.ROLE_VALUE, **kws)
+                # subclass our traits with the given role
+                setattr(self, name, new_attr)
 
 
-def property(
-        key=Undefined,    
-        type=None,
-        *,
-        # global arguments
-        help: str = Undefined,
-        label: str = Undefined,
-        settable: bool = Undefined,
-        gettable: bool = Undefined,
-        cache: bool = Undefined,
-        only: tuple = Undefined,
-        remap: dict = Undefined,
-        allow_none: bool = Undefined,
-
-        # str or bytes arguments
-        case: bool = Undefined,
-
-        # numeric arguments
-        step: float = Undefined,
-        min: ThisType = Undefined,
-        max: ThisType = Undefined,
-
-        # path arguments
-        must_exist:bool = Undefined,
-
-        # NetworkAddress arguments
-        accept_port:bool = Undefined,
-
-        # calibration arguments
-        offset_name: str = Undefined,
-        table: Any = Undefined,
-    ):
-
-    if type is not None and issubclass(type, Trait):
-        trait_cls = type
-    else:
-        trait_cls = TRAIT_TYPE_REGISTRY[type]
-
-    kws = {k:v for k,v in locals().items() if v is not Undefined}
-    kws.pop('type',None)
-    kws.pop('trait_cls', None)
-
-    return trait_cls(role=Trait.ROLE_PROPERTY, **kws)
-
-
-def datareturn(
-        type=None,
-        *,
-        # global arguments
-        help: str = Undefined,
-        label: str = Undefined,
-        settable: bool = Undefined,
-        gettable: bool = Undefined,
-        cache: bool = Undefined,
-        only: tuple = Undefined,
-        remap: dict = Undefined,
-        allow_none: bool = Undefined,
-
-        # str or bytes arguments
-        case: bool = Undefined,
-
-        # numeric arguments
-        step: float = Undefined,
-        min: ThisType = Undefined,
-        max: ThisType = Undefined,
-
-        # path arguments
-        must_exist:bool = Undefined,
-
-        # NetworkAddress arguments
-        accept_port:bool = Undefined,
-
-        # calibration arguments
-        offset_name: str = Undefined,
-        table: Any = Undefined,
-    ):
-
-    if type is not None and issubclass(type, Trait):
-        trait_cls = type
-    else:
-        trait_cls = TRAIT_TYPE_REGISTRY[type]
-
-    kws = {k:v for k,v in locals().items() if v is not Undefined}
-    kws.pop('type',None)
-    kws.pop('trait_cls', None)
-
-    return trait_cls(role=Trait.ROLE_DATARETURN, **kws)
-
-
-# @util.hide_in_traceback
-# def __init__():
-#     """ Wrapper function to call __init__ with adjusted function signature
-#     """
-
-#     # The signature has been dynamically replaced and is unknown. Pull it in
-#     # via locals() instead. We assume we're inside a __init__(self, ...) call.
-#     items = dict(locals())
-#     self = items.pop(next(iter(items.keys())))
-#     self.__init___wrapped(**items)
-
+property = AttributeDefinition(_traits.Trait.ROLE_PROPERTY)
+value = AttributeDefinition(_traits.Trait.ROLE_VALUE)
+datareturn = AttributeDefinition(_traits.Trait.ROLE_DATARETURN)
 
 
 @util.autocomplete_init
-class Device(HasTraits, util.Ownable):
+class Device(_traits.HasTraits, util.Ownable):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
         driver.
@@ -338,8 +228,8 @@ class Device(HasTraits, util.Ownable):
             Device.resource = 'insert-your-address-string-here'
     """
 
-    resource:str = value('', allow_none=True, help='device address or URI')
-    concurrency:bool = value(True, settable=False, help='True if the device supports threading')
+    resource = value.str(help='device address or URI')
+    concurrency= value.bool(True, settable=False, help='True if the device supports threading')
 
     """ Container for state traits in a Device. Getting or setting state traits
         triggers live updates: communication with the device to get or set the
@@ -544,7 +434,7 @@ class Device(HasTraits, util.Ownable):
             # In case an exception has occurred before __init__
             return f'{name}()'
 
-    @property(bool)
+    @property.bool()
     def connected(self):
         """ are we connected? """
         try:

@@ -7,18 +7,13 @@ if lb_path not in sys.path:
 import re
 import labbench as lb
 
-
-
 def labbench_name_remapping():
-    trait_type_map = lb._traits.TRAIT_TYPE_REGISTRY
-
-
-    name_remapping = {
-        v.__name__: k.__name__ for k,v in trait_type_map.items()
-        if k is not None
+    from inspect import isclass
+    
+    return {
+        v.__name__:k for k,v in lb.value.__class__.__dict__.items()
+        if isclass(v) and issubclass(v, lb._traits.Trait)
     }
-
-    return name_remapping
 
 def port_v21_to_v22(path, write=False):
 
@@ -52,19 +47,19 @@ def port_v21_to_v22(path, write=False):
 
     text, n0 = re.subn(
         rf'@({module_prefix})({target_traits})\(',
-        repl_remap(r'@\1property(type=\2, ',2),
+        repl_remap(r'@\1property.\2(',2),
         text
     )
 
     text, n1 = re.subn(
         rf'({py_object_name})\s*:\s*({module_prefix})({target_traits})\s*\(',
-        repl_remap(r'\1:\3 = \2value(',3),
+        repl_remap(r'\1 = \2value.\3(',3),
         text
     )
 
     text, n2 = re.subn(
         rf'({py_object_name})\s*=\s*({module_prefix})({target_traits})\s*\(',
-        repl_remap(r'\1:\3 = \2property(',3),
+        repl_remap(r'\1 = \2property.\3(',3),
         text
     )
 

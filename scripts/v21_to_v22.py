@@ -69,12 +69,18 @@ def port_v21_to_v22(path, write=False):
     )
 
     text, n4 = re.subn(
-        rf'\.settings\.',
-        rf'.',
+        rf'\.settings([\.\,\[\]\s])',
+        rf'\1',
         text
     )
 
-    print(f'replaced {n0} property decorators, {n1} value assignments, {n2} property assignments, {n4} .settings references \n')
+    text, n3 = re.subn(
+        rf'(\s*{py_object_name})\s*:\s*([^=\s\#\n\r\{{\}}\,\\\(\)]+)(\s*[\#\n\r]+)',
+        r'\1 = \2\3',
+        text
+    )
+
+    print(f'replaced {n0} property decorators, {n1} value assignments, {n2} property assignments, {n3} value changes in subclasses, {n4} .settings uses \n')
 
     if write:
         with open(path, 'w') as f:

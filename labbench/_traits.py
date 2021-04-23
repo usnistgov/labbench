@@ -122,9 +122,9 @@ class Trait:
 
     """
     
-    ROLE_VALUE = 'default'
-    ROLE_PROPERTY = 'key'
-    ROLE_RETURN_DATA = 'return'
+    ROLE_VALUE = 'value'
+    ROLE_PROPERTY = 'property'
+    ROLE_DATARETURN = 'return'
     ROLE_UNSET = 'unset'
 
     type = None
@@ -274,10 +274,10 @@ class Trait:
             invalid_args = ('remap', 'key')
         elif self.role == self.ROLE_PROPERTY:
             invalid_args = ('default',)
-        elif self.role is not self.ROLE_RETURN_DATA:
+        elif self.role == self.ROLE_DATARETURN:
             invalid_args = 'default', 'key'
         else:
-            raise ValueError(f"role must be one of {(self.ROLE_PROPERTY, self.ROLE_RETURN_DATA, self.ROLE_VALUE)}")
+            raise ValueError(f"role is none of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}")
 
         for k in invalid_args:
             if self._arg_defaults[k] is not Undefined and self._arg_defaults[k] != getattr(self, k):
@@ -298,7 +298,7 @@ class Trait:
 
         if self.role == self.ROLE_VALUE and len(self._decorated_funcs) > 0:
             raise AttributeError(f"tried to combine a default value and a decorator implementation in {self}")
-        elif self.role == self.ROLE_RETURN_DATA and len(self._decorated_funcs) == 0:
+        elif self.role == self.ROLE_DATARETURN and len(self._decorated_funcs) == 0:
             raise AttributeError(f"decorate a method to tag its return data")
         elif len(self._decorated_funcs)==0:
             return
@@ -306,7 +306,7 @@ class Trait:
         positional_argcounts = [f.__code__.co_argcount - len(f.__defaults__ or tuple()) \
                         for f in self._decorated_funcs]
 
-        if self.role == self.ROLE_RETURN_DATA:
+        if self.role == self.ROLE_DATARETURN:
             for func, argcount in zip(self._decorated_funcs, positional_argcounts):
                 if len(self.help.rstrip().strip()) == 0:
                     # take func docstring as default self.help
@@ -626,54 +626,46 @@ class HasTraits(metaclass=HasTraitsMeta):
 
     def __init_subclass__(cls):
         cls._traits = dict(getattr(cls, '_traits', {}))
-        cls._trait_roles = {}        
+        cls._properties = []
+        cls._values = []
+        cls._datareturns = []
+        parent_traits = getattr(cls.__mro__[1],'_traits',{})
+        
         annotations = getattr(cls, '__annotations__', {})
 
         for name, trait in dict(cls._traits).items():
             # Apply the trait decorator to the object if it is "part 2" of a decorator
             obj = getattr(cls, name)
 
-            if not isinstance(obj, Trait) and callable(obj):
-                try:
-                    setattr(cls, name, trait(obj))
-                except:        
-                    raise
+            if not isinstance(obj, Trait):
+                if trait.role in (Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN) and callable(obj):
+                    # if it's a method, decorate it
+                    trait = trait(obj)
+                
+                elif trait.role == Trait.ROLE_VALUE:
+                    # an inherited value trait receives a new default value
+                    trait = trait.copy(default=obj)
+
+                else:
+                    # otherwise enforce "once a Trait, always a Trait" in subclasses
+                    raise AttributeError(f"datareturn or property attributes can only be overridden in subclasses by Traits")
 
             # Update the trait type using annotations, if appropriate
-            if name not in annotations:
-                continue
-            annot_type = annotations[name]
+            if name in annotations:
+                annot_type = annotations[name]
 
-            if not isclass(annot_type):
-                annot_str = f"in annotation '{name}: {annot_type}'"
-                raise AttributeError(f'specify a type in the annotation "{name}:{repr(annot_type)}" instead of {repr(annot_type)}')
+                if not isclass(annot_type):
+                    annot_str = f"in annotation '{name}: {annot_type}'"
+                    raise AttributeError(f'specify a type in the annotation "{name}:{repr(annot_type)}" instead of {repr(annot_type)}')
 
-            if annot_type != trait.type and trait.type not in (None, Undefined):
-                trait_str = f"{cls.__qualname__}.{name}"
-                print(repr(annot_type), repr(trait.type))
-                warn(f'{trait_str} type annotation {annot_type.__name__} overrides its prior type={trait.type.__qualname__}')
-            elif annot_type == trait.type:
-                # nothing changed, move along
-                continue
+                if annot_type != trait.type:
+                    if trait.type not in (None, Undefined):
+                        trait_str = f"{cls.__qualname__}.{name}"
+                        warn(f'{trait_str} type annotation {annot_type.__name__} overrides its prior type={trait.type.__qualname__}')
 
-            # update the trait type
-            new_trait_type = TRAIT_TYPE_REGISTRY.get(annot_type, Any)
-            setattr(cls, name, trait.copy(new_trait_type, **trait.kws))
+                    # update the trait type
+                    trait = trait.copy(TRAIT_TYPE_REGISTRY.get(annot_type, Any))
 
-            if isinstance(annot_type, Trait):
-                annot_str = f"{cls.__qualname__}.{name}: {annot_type}"
-                raise AttributeError(f'type annotation "{annot_str}" should specify the pythonic type, not a labbench object')
-
-            # if the annotated object is a trait, adjust its trait type
-            if annot_type != trait.type and trait.type not in (None, Undefined):
-                trait_str = f"{cls.__qualname__}.{name}"
-                warn(f'{trait_str} type annotation {annot_type.__qualname__} overrides its prior type={trait.type.__qualname__}')
-            elif annot_type == trait.type:
-                # nothing changed, move along
-                continue
-
-            # update the trait type
-            trait = trait.copy(TRAIT_TYPE_REGISTRY.get(annot_type, Any), **trait.kws)
             setattr(cls, name, trait)
             cls._traits[name] = trait
             # else:
@@ -699,7 +691,12 @@ class HasTraits(metaclass=HasTraitsMeta):
             if not hasattr(trait, '__objclass__'):
                 trait.__set_name__(cls, name)
             trait.__init_owner_subclass__(cls)
-            cls._trait_roles.setdefault(trait.role, []).append(name)
+            if trait.role == Trait.ROLE_VALUE:
+                cls._values.append(name)
+            elif trait.role == Trait.ROLE_DATARETURN:
+                cls._datareturns.append(name)
+            elif trait.role == Trait.ROLE_PROPERTY:
+                cls._properties.append(name)
 
     def __iter__(self):
         return iter(self._traits.values())

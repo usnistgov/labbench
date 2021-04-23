@@ -26,9 +26,10 @@
 .. licenses.
 """
 from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, console, _force_full_traceback
+
 _force_full_traceback(True)
 
-from ._device import *
+from ._device import Device, list_devices, property, value, datareturn
 from .data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._host import Email
 from ._version import __version__
@@ -39,13 +40,15 @@ from ._rack import *
 from . import data
 from . import types
 from . import util
-from . import _traits
+from ._traits import observe, unobserve
 
-# scrub __module__ for cleaner repr() calls and documentation
-for _obj in dict(locals()).values():
-    if getattr(_obj, '__module__', '').startswith('labbench.'):
-        _obj.__module__ = 'labbench'
-del _obj
+from ._device import Device
+
+# # scrub __module__ for cleaner repr() calls and documentation
+# for _obj in dict(locals()).values():
+#     if getattr(_obj, '__module__', '').startswith('labbench.'):
+#         _obj.__module__ = 'labbench'
+# del _obj
 
 show_messages('info')
 

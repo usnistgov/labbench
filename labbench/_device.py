@@ -40,7 +40,7 @@ import sys
 import traceback
 
 
-__all__ = ['Device', 'list_devices', 'property', 'value']
+__all__ = ['Device', 'list_devices', 'property', 'value', 'datareturn']
 
 
 def trace_methods(cls, name, until_cls=None):
@@ -144,23 +144,36 @@ class DisconnectedBackend(object):
 
 
 def value(
-    default=Undefined,
-    type=None,
-    *,
-    help: str = Undefined,
-    label: str = Undefined,
-    settable: bool = Undefined,
-    gettable: bool = Undefined,
-    cache: bool = Undefined,
-    only: tuple = Undefined,
-    remap: dict = Undefined,
-    case: bool = Undefined,
-    allow_none: bool = Undefined,
-    step: float = Undefined,
-    min: ThisType = Undefined,
-    max: ThisType = Undefined,
-    offset_name: str = Undefined,
-    table: Any = Undefined,
+        default=Undefined,
+        type=None,
+        *,
+        # global arguments
+        help: str = Undefined,
+        label: str = Undefined,
+        settable: bool = Undefined,
+        gettable: bool = Undefined,
+        cache: bool = Undefined,
+        only: tuple = Undefined,
+        remap: dict = Undefined,
+        allow_none: bool = Undefined,
+
+        # str or bytes arguments
+        case: bool = Undefined,
+
+        # numeric arguments
+        step: float = Undefined,
+        min: ThisType = Undefined,
+        max: ThisType = Undefined,
+
+        # path arguments
+        must_exist:bool = Undefined,
+
+        # NetworkAddress arguments
+        accept_port:bool = Undefined,
+
+        # calibration arguments
+        offset_name: str = Undefined,
+        table: Any = Undefined,
     ):
 
     if type is not None and issubclass(type, Trait):
@@ -176,23 +189,36 @@ def value(
 
 
 def property(
-    key=Undefined,    
-    type=None,
-    *,
-    help: str = Undefined,
-    label: str = Undefined,
-    settable: bool = Undefined,
-    gettable: bool = Undefined,
-    cache: bool = Undefined,
-    only: tuple = Undefined,
-    remap: dict = Undefined,
-    case: bool = Undefined,
-    allow_none: bool = Undefined,
-    step: float = Undefined,
-    min: ThisType = Undefined,
-    max: ThisType = Undefined,
-    offset_name: str = Undefined,
-    table: Any = Undefined,
+        key=Undefined,    
+        type=None,
+        *,
+        # global arguments
+        help: str = Undefined,
+        label: str = Undefined,
+        settable: bool = Undefined,
+        gettable: bool = Undefined,
+        cache: bool = Undefined,
+        only: tuple = Undefined,
+        remap: dict = Undefined,
+        allow_none: bool = Undefined,
+
+        # str or bytes arguments
+        case: bool = Undefined,
+
+        # numeric arguments
+        step: float = Undefined,
+        min: ThisType = Undefined,
+        max: ThisType = Undefined,
+
+        # path arguments
+        must_exist:bool = Undefined,
+
+        # NetworkAddress arguments
+        accept_port:bool = Undefined,
+
+        # calibration arguments
+        offset_name: str = Undefined,
+        table: Any = Undefined,
     ):
 
     if type is not None and issubclass(type, Trait):
@@ -208,22 +234,35 @@ def property(
 
 
 def datareturn(
-    type=None,
-    *,
-    help: str = Undefined,
-    label: str = Undefined,
-    settable: bool = Undefined,
-    gettable: bool = Undefined,
-    cache: bool = Undefined,
-    only: tuple = Undefined,
-    remap: dict = Undefined,
-    case: bool = Undefined,
-    allow_none: bool = Undefined,
-    step: float = Undefined,
-    min: ThisType = Undefined,
-    max: ThisType = Undefined,
-    offset_name: str = Undefined,
-    table: Any = Undefined,
+        type=None,
+        *,
+        # global arguments
+        help: str = Undefined,
+        label: str = Undefined,
+        settable: bool = Undefined,
+        gettable: bool = Undefined,
+        cache: bool = Undefined,
+        only: tuple = Undefined,
+        remap: dict = Undefined,
+        allow_none: bool = Undefined,
+
+        # str or bytes arguments
+        case: bool = Undefined,
+
+        # numeric arguments
+        step: float = Undefined,
+        min: ThisType = Undefined,
+        max: ThisType = Undefined,
+
+        # path arguments
+        must_exist:bool = Undefined,
+
+        # NetworkAddress arguments
+        accept_port:bool = Undefined,
+
+        # calibration arguments
+        offset_name: str = Undefined,
+        table: Any = Undefined,
     ):
 
     if type is not None and issubclass(type, Trait):
@@ -234,9 +273,8 @@ def datareturn(
     kws = {k:v for k,v in locals().items() if v is not Undefined}
     kws.pop('type',None)
     kws.pop('trait_cls', None)
-    
 
-    return trait_cls(role=Trait.ROLE_RETURN_DATA, **kws)
+    return trait_cls(role=Trait.ROLE_DATARETURN, **kws)
 
 
 # @util.hide_in_traceback
@@ -249,6 +287,7 @@ def datareturn(
 #     items = dict(locals())
 #     self = items.pop(next(iter(items.keys())))
 #     self.__init___wrapped(**items)
+
 
 
 @util.autocomplete_init
@@ -353,8 +392,8 @@ class Device(HasTraits, util.Ownable):
             cls.__init__.__doc__ = ''
 
         # Update cls.__doc__
-        settings = {name: cls._traits[name] for name in cls._trait_roles[Trait.ROLE_VALUE]}
-        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in settings.items()))
+        values = {name: cls._traits[name] for name in cls._values}
+        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in values.items()))
         cls.__doc__ += '\n\n' + txt
 
         # TODO: @autocomplete_init seems to make this unecessary - validate
@@ -365,11 +404,13 @@ class Device(HasTraits, util.Ownable):
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 
 
-    def __init__(self, **settings):
-        """ Apply initial settings here; use a `with` block or invoke `open()` to use the driver.
+    def __init__(self, **values):
+        """ Update default values with these arguments on instantiation.
         """
+        # initialize state traits last so that calibration behaviors can use values and self._console
+        super().__init__()
 
-        for name, init_value in settings.items():
+        for name, init_value in values.items():
             if init_value != self._traits[name].default:
                 setattr(self, name, init_value)
 
@@ -377,13 +418,10 @@ class Device(HasTraits, util.Ownable):
 
         self.backend = DisconnectedBackend(self)
 
-        # Instantiate state now. It needed to wait until this point, after settings are fully
-        # instantiated, in case state implementation depends on settings
+        # Instantiate state now. It needed to wait until this point, after values are fully
+        # instantiated, in case state implementation depends on values
         setattr(self, 'open', self.__open_wrapper__)
         setattr(self, 'close', self.__close_wrapper__)
-
-        # initialize state traits last so that calibration behaviors can use values and self._console
-        super().__init__()
 
         # gotta have a console logger
         self._console = util.console.logger.getChild(str(self))

@@ -49,16 +49,16 @@ class EmulatedInstrument(EmulatedVISADevice):
     """
     
     # Settings
-    whatever: lb.Int(default=5)
+    whatever = lb.value.int(default=5)
 
     # States
-    initiate_continuous = lb.Bool(key='INIT:CONT')
-    output_trigger = lb.Bool(key='OUTP:TRIG')
-    sweep_aperture = lb.Float(
+    initiate_continuous = lb.property.bool(key='INIT:CONT')
+    output_trigger = lb.property.bool(key='OUTP:TRIG')
+    sweep_aperture = lb.property.float(
         key='SWE:APER', min=20e-6, max=200e-3, help='time (in s)')
-    frequency = lb.Float(key='SENS:FREQ', min=10e6,
+    frequency = lb.property.float(key='SENS:FREQ', min=10e6,
                          max=18e9, help='center frequency (in Hz)')
-    atten = lb.Float(key='POW', min=0, max=100, step=0.5)
+    atten = lb.property.float(key='POW', min=0, max=100, step=0.5)
 
     def trigger(self):
         """ This would tell the instrument to start a measurement
@@ -101,7 +101,7 @@ if __name__ == '__main__':
         inst.fetch_trace()
         
         for inst.frequency in np.linspace(10e6, 100e6, 5):
-            inst.settings.whatever = inst.frequency
+            inst.whatever = inst.frequency
             inst._console.debug('debug message!')
             lb.console.debug('general debug message')
             trace = inst.fetch_trace()

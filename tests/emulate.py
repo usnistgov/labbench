@@ -12,19 +12,19 @@ class EmulatedVISADevice(lb.Device):
         (default='\n', help='end-of-transmit termination character')
 
     # States
-    @lb.Unicode(key='*IDN', settable=False, cache=True)
+    @lb.property.str(key='*IDN', settable=False, cache=True)
     def identity(self):
         """ identity string reported by the instrument """
         return self.__class__.__qualname__
 
-    @lb.Unicode(key='*OPT', settable=False, cache=True)
+    @lb.property.str(key='*OPT', settable=False, cache=True)
     def options(self):
         """ options reported by the instrument """
 
-        return ','.join(((f"{s.name}={repr(self.settings.__previous__[s.name])}" \
+        return ','.join(((f"{s.name}={repr(self.__previous__[s.name])}" \
                           for s in self.settings)))
 
-    @lb.Dict(key='*STB', settable=False)
+    @lb.property.dict(key='*STB', settable=False)
     def status_byte(self):
         """ VISA status byte reported by the instrument """
         return {'error queue not empty': False,
@@ -54,5 +54,4 @@ class EmulatedVISADevice(lb.Device):
         else:
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 
-    def __set_by_key__(self, name, command, value):
-        pass
+    def __set_by_key__(self, name, command, value) = pass

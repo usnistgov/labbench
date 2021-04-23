@@ -57,7 +57,7 @@ class LaggyInstrument(EmulatedVISADevice):
     def open(self):        
         self.perf = {}
         t0 = time.perf_counter()
-        lb.sleep(self.settings.delay)
+        lb.sleep(self.delay)
         self.perf['open'] = time.perf_counter() - t0
 
     def fetch(self):
@@ -66,13 +66,13 @@ class LaggyInstrument(EmulatedVISADevice):
         import pandas as pd
         lb.console.info(f'{self}.fetch start')
         t0 = time.perf_counter()
-        lb.sleep(self.settings.fetch_time)
+        lb.sleep(self.fetch_time)
         self.perf['fetch'] = time.perf_counter() - t0
         return pd.Series([1,2,3,4,5,6])
-        # return self.settings.fetch_time
+        # return self.fetch_time
     
     def dict(self):
-        return {self.settings.resource: self.settings.resource}
+        return {self.resource: self.resource}
 
     def none(self):
         """ Return None
@@ -80,23 +80,21 @@ class LaggyInstrument(EmulatedVISADevice):
         return None
 
     def close(self):
-        if self.settings.fail_disconnect:
+        if self.fail_disconnect:
             1 // 0
 
 
 class Rack1(lb.Rack):
-    dev1: LaggyInstrument
-    dev2: LaggyInstrument
+    dev1 = LaggyInstrument
+    dev2 = LaggyInstrument
 
-    def setup(self, param1):
-        pass
+    def setup(self, param1) = pass
 
-    def arm(self):
-        pass
+    def arm(self) = pass
 
 
 class Rack2(lb.Rack):
-    dev: LaggyInstrument
+    dev = LaggyInstrument
 
     def setup(self):
         return 'rack 2 - setup'
@@ -110,10 +108,9 @@ class Rack2(lb.Rack):
 
 
 class Rack3(lb.Rack):
-    dev: LaggyInstrument
+    dev = LaggyInstrument
 
-    def acquire(self, *, param2=7, param3):
-        pass
+    def acquire(self, *, param2=7, param3) = pass
 
     def fetch(self, *, param4):
         self.dev.fetch()
@@ -172,8 +169,8 @@ if __name__ == '__main__':
 
 
             # with MyRack() as testbed:
-            testbed.inst2.settings.delay = 0.07
-            testbed.inst1.settings.delay = 0.12
+            testbed.inst2.delay = 0.07
+            testbed.inst1.delay = 0.12
 
             testbed.run.from_csv('run.csv')
 

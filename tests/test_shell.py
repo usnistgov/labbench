@@ -36,18 +36,18 @@ remap = {True: 'ON', False: 'OFF'}
 flag_start = False
 
 class Shell_Python(lb.ShellBackend):
-    binary_path: lb.Unicode(f"python")
+    binary_path = lb.value.str(f"python")
 
-    path: lb.Unicode(
+    path = lb.value.str(
         key=None, help='path to a python script file'
     )
 
-    command: lb.Unicode(
+    command = lb.value.str(
         key='-c', help="execute a python command"
     )
 
     def _flag_names(self):
-        return (name for name, trait in self.settings._traits.items()
+        return (name for name, trait in self._traits.items()
                 if trait.key is not lb.Undefined)
 
     def _commandline(self, **flags):
@@ -64,18 +64,17 @@ class Shell_Python(lb.ShellBackend):
 
         # apply flags
         for name, value in flags.items():
-            setattr(self.settings, name, value)
+            setattr(self, name, value)
 
-        cmd = (self.settings.binary_path,)
+        cmd = (self.binary_path,)
 
         # Update state traits with the flags
         for name in self._flag_names():
-            trait = self.settings[name]
-            value = getattr(self.settings, name)
+            trait = self[name]
+            value = getattr(self, name)
             print(name, repr(value), repr(trait.key), repr(lb.Undefined))
 
-            if value is None:
-                continue
+            if value is None = continue
             elif trait.key in (None, ''):
                 cmd = cmd + (value,)
             elif not isinstance(trait.key, str) and trait.key is not Undefined:
@@ -87,8 +86,8 @@ class Shell_Python(lb.ShellBackend):
 # class TestSettings(unittest.TestCase):
 #     def test_defaults(self):
 #         with Mock() as m:
-#             for name, trait in m.settings._traits.items():
-#                 self.assertEqual(getattr(m.settings, name),
+#             for name, trait in m._traits.items():
+#                 self.assertEqual(getattr(m, name),
 #                                  trait.default, msg=f'defaults: {name}')
 #
 if __name__ == '__main__':
@@ -97,7 +96,7 @@ if __name__ == '__main__':
     lb.show_messages('debug')
 
     python = Shell_Python(path=r'c:\script.py', command='print("hello world")')
-    print(python.settings['resource'].key is lb.Undefined)
+    print(python['resource'].key is lb.Undefined)
     print(lb.Unicode.__defaults__)
     print(inspect.signature(lb.Unicode.__init__))
 

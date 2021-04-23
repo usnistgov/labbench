@@ -48,8 +48,8 @@ flag_start = False
 class MockBase(lb.Device):
     _getter_counts = {}
 
-    # param = lb.Int(key='param', min=0, max=10)
-    # flag = lb.Bool(key='flag', remap=remap)
+    # param = lb.property.int(key='param', min=0, max=10)
+    # flag = lb.property.bool(key='flag', remap=remap)
 
     def open(self):
         self._getter_counts = {}
@@ -68,7 +68,7 @@ class MockBase(lb.Device):
 
 
 class MockDecorator(MockBase):
-    @lb.Int(min=0, max=10)
+    @lb.property.int(min=0, max=10)
     def param(self, value):
         self.values['param'] = value
 
@@ -76,7 +76,7 @@ class MockDecorator(MockBase):
         self.add_get_count('param')
         return self.values['param']
     
-    @lb.Bool(remap=remap)
+    @lb.property.bool(remap=remap)
     def flag(self, value):
         self.values['flag'] = value
 
@@ -86,16 +86,16 @@ class MockDecorator(MockBase):
 
 
 class MockReturner(MockBase):
-    flag = lb.Bool(key='flag', remap=remap)
+    flag = lb.property.bool(key='flag', remap=remap)
     
-    @lb.Int(key='param', min=0, max=10)
+    @lb.property.int(key='param', min=0, max=10)
     def param(self, a, b,c):
         return a+b+c
 
 
 class MockCommand(MockBase):
-    param = lb.Int(key='param', min=0, max=10)
-    flag = lb.Bool(key='flag', remap=remap)
+    param = lb.property.int(key='param', min=0, max=10)
+    flag = lb.property.bool(key='flag', remap=remap)
     
     def __get_by_key__(self, name, key):
         self.add_get_count(key)

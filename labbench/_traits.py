@@ -605,9 +605,9 @@ class HasTraits(metaclass=HasTraitsMeta):
 
     def __init_subclass__(cls):
         cls._traits = dict(getattr(cls, '_traits', {}))
-        cls._properties = []
-        cls._values = []
-        cls._datareturns = []
+        cls._property_attrs = []
+        cls._value_attrs = []
+        cls._datareturn_attrs = []
         parent_traits = getattr(cls.__mro__[1],'_traits',{})
         
         annotations = getattr(cls, '__annotations__', {})
@@ -671,11 +671,11 @@ class HasTraits(metaclass=HasTraitsMeta):
                 trait.__set_name__(cls, name)
             trait.__init_owner_subclass__(cls)
             if trait.role == Trait.ROLE_VALUE:
-                cls._values.append(name)
+                cls._value_attrs.append(name)
             elif trait.role == Trait.ROLE_DATARETURN:
-                cls._datareturns.append(name)
+                cls._datareturn_attrs.append(name)
             elif trait.role == Trait.ROLE_PROPERTY:
-                cls._properties.append(name)
+                cls._property_attrs.append(name)
 
     def __iter__(self):
         return iter(self._traits.values())

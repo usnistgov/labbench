@@ -18,14 +18,14 @@ class LaggyInstrument(EmulatedVISADevice):
     """
 
     # Connection and driver settings
-    delay: lb.Float(default=0, min=0, help='connection time (s)')
-    fetch_time: lb.Float(default=0, min=0, help='fetch time (s)')
-    fail_disconnect: lb.Bool(default=False, help='raise DivideByZero on disconnect?')
+    delay = lb.value.float(default=0, min=0, help='connection time (s)')
+    fetch_time = lb.value.float(default=0, min=0, help='fetch time (s)')
+    fail_disconnect = lb.value.bool(default=False, help='raise DivideByZero on disconnect?')
 
     def open(self):
         self.perf = {}
         t0 = time.perf_counter()
-        lb.sleep(self.settings.delay)
+        lb.sleep(self.delay)
         self.perf['open'] = time.perf_counter() - t0
 
     def fetch(self):
@@ -33,12 +33,12 @@ class LaggyInstrument(EmulatedVISADevice):
         """
         lb.console.info(f'{self}.fetch start')
         t0 = time.perf_counter()
-        lb.sleep(self.settings.fetch_time)
+        lb.sleep(self.fetch_time)
         self.perf['fetch'] = time.perf_counter() - t0
-        return self.settings.fetch_time
+        return self.fetch_time
 
     def dict(self):
-        return {self.settings.resource: self.settings.resource}
+        return {self.resource: self.resource}
 
     def none(self):
         """ Return None
@@ -46,23 +46,21 @@ class LaggyInstrument(EmulatedVISADevice):
         return None
 
     def close(self):
-        if self.settings.fail_disconnect:
+        if self.fail_disconnect:
             1 / 0
 
 
 class Rack1(lb.Rack):
-    dev1: LaggyInstrument
-    dev2: LaggyInstrument
+    dev1 = LaggyInstrument
+    dev2 = LaggyInstrument
 
-    def setup(self, param1):
-        pass
+    def setup(self, param1) = pass
 
-    def arm(self):
-        pass
+    def arm(self) = pass
 
 
 class Rack2(lb.Rack):
-    dev: LaggyInstrument
+    dev = LaggyInstrument
 
     def setup(self):
         return 'rack 2 - setup'
@@ -76,10 +74,9 @@ class Rack2(lb.Rack):
 
 
 class Rack3(lb.Rack):
-    dev: LaggyInstrument
+    dev = LaggyInstrument
 
-    def acquire(self, *, param2=7, param3):
-        pass
+    def acquire(self, *, param2=7, param3) = pass
 
     def fetch(self, *, param4):
         self.dev.fetch()

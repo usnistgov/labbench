@@ -282,7 +282,7 @@ class Device(_traits.HasTraits, util.Ownable):
             cls.__init__.__doc__ = ''
 
         # Update cls.__doc__
-        values = {name: cls._traits[name] for name in cls._values}
+        values = {name: cls._traits[name] for name in cls._value_attrs}
         txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in values.items()))
         cls.__doc__ += '\n\n' + txt
 

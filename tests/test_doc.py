@@ -37,7 +37,7 @@ int_stop = 10
 
 
 class Child(lb.Device):
-    param = lb.Int(min=0, max=10)
+    param = lb.property.int(min=0, max=10)
 
     def open(self):
         print('connect child')

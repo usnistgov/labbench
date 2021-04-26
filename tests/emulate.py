@@ -5,11 +5,8 @@ class EmulatedVISADevice(lb.Device):
     """
 
     # Settings
-    read_termination: lb.Unicode \
-        (default='\n', help='end-of-receive termination character')
-
-    write_termination: lb.Unicode \
-        (default='\n', help='end-of-transmit termination character')
+    read_termination = lb.value.str(default='\n', help='end-of-receive termination character')
+    write_termination = lb.value.str(default='\n', help='end-of-transmit termination character')
 
     # States
     @lb.property.str(key='*IDN', settable=False, cache=True)
@@ -54,4 +51,5 @@ class EmulatedVISADevice(lb.Device):
         else:
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 
-    def set_key(self, name, command, value) = pass
+    def set_key(self, name, command, value):
+        pass

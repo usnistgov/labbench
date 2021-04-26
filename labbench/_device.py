@@ -32,6 +32,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 
 from . import util
 from . import _traits
+from ._traits import Undefined
 
 from functools import wraps
 from inspect import isclass
@@ -294,11 +295,14 @@ class Device(_traits.HasTraits, util.Ownable):
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 
 
-    def __init__(self, **values):
+    def __init__(self, resource=Undefined, **values):
         """ Update default values with these arguments on instantiation.
         """
         # initialize state traits last so that calibration behaviors can use values and self._console
         super().__init__()
+
+        if resource is not Undefined:
+            values['resource'] = resource
 
         for name, init_value in values.items():
             if init_value != self._traits[name].default:
@@ -390,8 +394,7 @@ class Device(_traits.HasTraits, util.Ownable):
             if ex[0] is not util.ThreadEndedByMaster:
                 depth = len(tuple(traceback.walk_tb(ex[2])))
                 traceback.print_exception(*ex, limit=-(depth - 1))
-                sys.stderr.write(
-                    '(Exception suppressed to continue close)\n\n')
+                sys.stderr.write('(Exception suppressed to continue close)\n\n')
 
         self.connected
 
@@ -408,7 +411,7 @@ class Device(_traits.HasTraits, util.Ownable):
         except BaseException as e:
             args = list(e.args)
             if len(args) > 0:
-                args[0] = '{}: {}'.format(repr(self), str(args[0]))
+                args[0] = f'{repr(self)}: {args[0]}'
                 e.args = tuple(args)
             raise e
 

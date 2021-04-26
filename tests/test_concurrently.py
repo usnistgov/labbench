@@ -36,20 +36,19 @@ import numpy as np
 lb = importlib.reload(lb)
 from emulate import EmulatedVISADevice
 
-class LaggyInstrument(EmulatedVISADevice):
-    """ A mock "instrument"
-    with settings and states to
-    demonstrate the process of setting
-    up a measurement.
-    """
-    delay: lb.Float\
-        (default=0, min=0, help='connection time')
-    fetch_time: lb.Float\
-        (default=0, min=0, help='fetch time')
-    fail_disconnect: lb.Bool\
-        (default=False, help='whether to raise DivideByZero on disconnect')
+lb.util.show_messages('debug')
 
-    def open(self):        
+lb._force_full_traceback(True)
+
+
+class LaggyInstrument(EmulatedVISADevice):
+    """ A mock "instrument" to measure time response in concurrency
+    """
+    delay = lb.value.float(0, min=0, help='connection time')
+    fetch_time = lb.value.float(0, min=0, help='fetch time')
+    fail_disconnect = lb.value.bool(False, help='whether to raise DivideByZero on disconnect')
+
+    def open(self):
         self.perf = {}
         self._console.info(f'{self} connect start')
         t0 = time.perf_counter()
@@ -106,15 +105,17 @@ class TestConcurrency(unittest.TestCase):
         :return: context manager
         """
         t0 = time.perf_counter()
-        try = yield
-        except = raise
+        try:
+            yield
+        except:
+            raise
         else:
             elapsed = time.perf_counter()-t0
             self.assertAlmostEqual(elapsed, expected_delay, delta=self.delay_tol)
             lb.console.info(f'acceptable time elapsed {elapsed:0.3f}s'.lstrip())
 
     def test_concurrent_connect_delay(self):
-        global inst1, inst2
+        # global inst1, inst2
         inst1 = LaggyInstrument(resource='fast', delay=0.16)
         inst2 = LaggyInstrument(resource='slow', delay=0.36)
 
@@ -296,7 +297,7 @@ class TestConcurrency(unittest.TestCase):
         
     def test_testbed_instantiation(self):        
         with self.assert_delay(0):
-            testbed = MyRack()
+            testbed = MyRack2()
         
 
         expected_delay = max(testbed.inst1.delay,

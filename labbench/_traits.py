@@ -80,7 +80,6 @@ class HasTraitsMeta(type):
             return dict(_traits=HasTraitsMeta.__pending__[-1])
 
 
-@util.autocomplete_init
 class Trait:
     """ This type of Trait is a swiss army knife object for typing checking,
         casting, decorators, and callbacks in Device classes. Together, these
@@ -89,10 +88,10 @@ class Trait:
 
         A Device instance supports two types of Traits:
 
-        * A _setting trait_ just performs type checking and notifies callback functions
+        * A _value trait_ just performs type checking and notifies callback functions
           for locally-cached variables.
 
-        * A _state trait_ triggers set and get operations that are implemented by the
+        * A _property trait_ triggers set and get operations that are implemented by the
           owning class. Implement the get and set operations in the owning class;
           hook them to this trait by decorating with this trait, or through
           get_key and set_key in the owning class.

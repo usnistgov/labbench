@@ -26,7 +26,7 @@
 
 __all__ = [# "misc"
            'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages',
-           'console', 'autocomplete_init', 'LabbenchDeprecationWarning',
+           'console', 'autocomplete_init', 'LabbenchDeprecationWarning', 't0',
 
 
            # concurrency and sequencing
@@ -54,6 +54,7 @@ from threading import Thread, ThreadError, Event
 from typing import Callable
 
 import builtins
+import hashlib
 import inspect
 import logging
 import psutil
@@ -61,6 +62,8 @@ import sys
 import time
 import traceback
 from warnings import simplefilter
+
+import_t0 = time.perf_counter()
 
 
 console = logging.LoggerAdapter(
@@ -550,7 +553,6 @@ def hash_caller(call_depth=1):
         and the arguments passed it.
     """
     import inspect
-    import hashlib
     import pickle
 
     thisframe = inspect.currentframe()
@@ -863,11 +865,9 @@ def enter_or_call(flexible_caller, objs, kws):
             params[name] = kws.pop(name)
 
     if params['name'] is None:
-        stack = inspect.stack()
-        if stack is None:
-            params['name'] = 'command'
-        else:
-            params['name'] = stack[2].code_context[0].strip()
+        # come up with a gobbledigook name that is at least unique
+        frame = inspect.currentframe().f_back.f_back
+        params['name'] = f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
 
     # Combine the position and keyword arguments, and assign labels
     allobjs = list(objs) + list(kws.values())
@@ -923,6 +923,7 @@ def enter_or_call(flexible_caller, objs, kws):
     else:
         ret = merge_inputs(dicts, candidates)
         result = flexible_caller(params, candidates)
+
         start_keys = set(ret.keys()).union(result.keys())
         if params['flatten']:
             merge_results(ret, result)

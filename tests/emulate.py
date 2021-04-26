@@ -36,7 +36,7 @@ class EmulatedVISADevice(lb.Device):
                 'operating': True,
                 }
 
-    def __get_by_key__(self, name, command):
+    def get_key(self, name, command):
         import numpy as np
 
         trait = self[name]
@@ -54,4 +54,4 @@ class EmulatedVISADevice(lb.Device):
         else:
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 
-    def __set_by_key__(self, name, command, value) = pass
+    def set_key(self, name, command, value) = pass

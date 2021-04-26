@@ -32,7 +32,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 
 from . import util
 
-from typing import Generic, T
+from typing import Generic, T, Callable
 from warnings import warn
 from functools import wraps
 import validators as _val
@@ -95,7 +95,7 @@ class Trait:
         * A _state trait_ triggers set and get operations that are implemented by the
           owning class. Implement the get and set operations in the owning class;
           hook them to this trait by decorating with this trait, or through
-          __get_by_key__ and __set_by_key__ in the owning class.
+          get_key and set_key in the owning class.
 
         The trait behavior is determined by whether its owner is a Device or HasSettings
         instance.
@@ -134,6 +134,7 @@ class Trait:
     # keyword argument types and default values
     default: ThisType = Undefined
     key: Undefined = Undefined
+    func: Callable = None
     # role: str = ROLE_UNSET
     help: str = ''
     label: str = ''
@@ -153,59 +154,67 @@ class Trait:
     # __decorator_action__ = None
 
     def __init__(self, *args, **kws):
-        self.kws = kws
-        self.metadata = {}
-        self._decorated_funcs = []
-
         if len(args) >= 1:
             if len(args) == 1 and self.role == self.ROLE_VALUE:
                 if 'default' in kws:
-                    raise ValueError(f"duplicate 'default' argument")                
-                self.kws['default'] = args[0]
+                    raise ValueError(f"duplicate 'default' argument in {self}")                
+                kws['default'] = args[0]
+            elif len(args) == 1 and self.role == self.ROLE_DATARETURN:
+                if 'func' in kws:
+                    raise ValueError("duplicate 'func' argument")
+                kws['func'] = args[0]
             else:
                 raise ValueError(f'no positional arguments supported')
 
-        kws = dict(self._arg_defaults, **self.kws)
+        self.kws = dict(kws)
+        self.metadata = {}
+        self._decorated_funcs = []
 
-        if kws['default'] is Undefined:
-            # always go with None when this value is allowed, fallback to self.default
-            kws['default'] = None if self.allow_none else self.default
-        elif callable(kws['default']):
-            msg = f"trait decorators need to be instantiated - " \
-                  f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
-            raise AttributeError(msg)
+        kws = dict(self._arg_defaults, **kws)
 
         # check role and related parameter dependencies
         if self.role == self.ROLE_VALUE:
-            invalid_args = ('remap', 'key')
+            invalid_args = ('remap', 'key', 'func')
         elif self.role == self.ROLE_PROPERTY:
-            invalid_args = ('default',)
+            invalid_args = ('default', 'func')
         elif self.role == self.ROLE_DATARETURN:
-            invalid_args = 'default', 'key'
+            invalid_args = 'default', 'key', 'settable', 'gettable'
         else:
-            raise ValueError(f"role is none of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}")
+            raise ValueError(f"{self.__class__.__qualname__}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}")
 
         for k in invalid_args:
-            if self._arg_defaults[k] is not Undefined and self._arg_defaults[k] != getattr(self, k):
+            if self._arg_defaults[k] is not Undefined and self._arg_defaults[k] != kws[k]:
+
                 raise AttributeError(f"keyword argument '{k}' is not allowed with {self.role}")
 
+        if self.role == self.ROLE_VALUE and kws['default'] is Undefined:
+            # always go with None when this value is allowed, fallback to self.default
+            kws['default'] = None if self.allow_none else self.default
+        if self.role == self.ROLE_DATARETURN and kws['func'] is not None:
+            # apply a decorator
+            self(func)
+        # elif callable(kws['default']):
+        #     msg = f"trait decorators need to be instantiated - " \
+        #           f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
+        #     raise AttributeError(msg)
+
         # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
-        if len(self.remap) > 0:
-            remap_inbound = {v: k for k, v in self.remap.items()}
-            if len(self.remap) != len(remap_inbound):
-                raise ValueError(f"'remap' has duplicate values")
+        if len(kws['remap']) > 0:
+            self.remap_inbound = {v: k for k, v in kws['remap'].items()}
+        else:
+            self.remap_inbound = {}
 
-            self.from_pythonic = self.remap.__getitem__
-            self.to_pythonic = remap_inbound.__getitem__
-
+        if len(kws['remap']) != len(self.remap_inbound):
+            raise ValueError(f"'remap' has duplicate values")
+                
         # Apply the settings
         for k, v in kws.items():
             setattr(self, k, v)
 
     @classmethod
     def __init_subclass__(cls, type=Undefined):
-        """ customize the definition of this Trait type (called
-            automatically after the subclass is defined)
+        """ python triggers this call immediately after a Trait subclass
+            is defined, allowing us to automatically customize its implementation.
 
         :param type: the python type represented by the trait
         """
@@ -357,8 +366,8 @@ class Trait:
 
         # Validate the pythonic value
         if value is not None:
-            # Convert to the representation expected by owner.__set_by_key__
             try:
+                # cast to self.type and validate
                 value = Trait.to_pythonic(self, value)
                 value = self.validate(value, owner)
             except BaseException as e:
@@ -380,22 +389,30 @@ class Trait:
             e.args = (e.args[0] + f" in attempt to set '{name}'",) + e.args[1:]
             raise e
 
-        # Apply value
         if self.role == self.ROLE_VALUE:
-            # from the setting
+            # apply as a value trait
             owner.__set_value__(self.name, value)
 
-        elif self._setter is not None:
-            # from the function decorated by this trait
-            self._setter(owner, value)
+        elif self.role == self.ROLE_PROPERTY:
+            # convert to the outbound representation
+            value = self.remap.get(value, value)
 
-        elif self.key is None:
-            # from the command (with below)
-            objname = owner.__class__.__qualname__ + '.' + self.name
-            raise AttributeError(f"cannot set {objname}: no @{self.__repr__(owner_inst=owner)} " \
-                                 f"setter is defined, and command is None")
+            # send to the device
+            if self._setter is not None:
+                # from the function decorated by this trait
+                self._setter(owner, value)
+
+            elif self.key is not None:
+                # otherwise, use the owner's set_key
+                owner.set_key(self.name, self.key, value)
+
+            else:
+                objname = owner.__class__.__qualname__ + '.' + self.name
+                raise AttributeError(f"cannot set {objname}: no @{self.__repr__(owner_inst=owner)}."
+                                     f"setter and no key argument")
+        
         else:
-            owner.__set_by_key__(self.name, self.key, value)
+            raise AttributeError(f'data return traits cannot be set')
 
         owner.__notify__(self.name, value, 'set', cache=self.cache)
 
@@ -403,7 +420,7 @@ class Trait:
     def __get__(self, owner, owner_cls=None):
         """ Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
-        decorator function or the owner's __get_by_key__ method to retrieve
+        decorator function or the owner's get_key method to retrieve
         the result.
 
         :return: retreived value
@@ -418,7 +435,7 @@ class Trait:
             # the .__dict__.get acrobatics avoids a recursive __get__ loop
             return self
 
-        elif self._returner is not None:
+        elif self.role == self.ROLE_DATARETURN:
             # inject the labbench Trait hooks into the return value
             @wraps(self._returner)
             def method(*args, **kws):
@@ -432,24 +449,28 @@ class Trait:
             raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not gettable")
 
         elif self.role == self.ROLE_VALUE:
-            value = owner.__get_value__(self.name)
+            return owner.__get_value__(self.name)
 
-        elif (self.cache and self.name in owner.__previous__):
+        # from here on, operate as a property getter
+        if (self.cache and self.name in owner.__cache__):
             # return the cached value if applicable
-            return owner.__previous__[self.name]
+            return owner.__cache__[self.name]
 
         elif self._getter is not None:
             # get value with the decorator implementation, if available
             value = self._getter(owner)
 
         else:
-            # otherwise, get with owner.__get_by_key__, if available
+            # otherwise, get with owner.get_key, if available
             if self.key is None:
                 # otherwise, 'get'
                 objname = owner.__class__.__qualname__ + '.' + self.name
                 raise AttributeError(f"cannot get {objname}: no @{self.__repr__(owner_inst=owner)} " \
                                      f"getter is defined, and command is None")
-            value = owner.__get_by_key__(self.name, self.key)
+            value = owner.get_key(self.name, self.key)
+
+        # apply remapping as appropriate for the trait
+        value = self.remap_inbound.get(value, value)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -592,15 +613,18 @@ class HasTraits(metaclass=HasTraitsMeta):
     # _traits = {} # TODO: see if uncommenting this fixes linting problems without breaking anything
 
     def __init__(self):
+        # who is informed on new get or set values
         self.__notify_list__ = {}
-        self.__previous__ = {}
+
+        # for cached properties and values in this instance
+        self.__cache__ = {}
         self._calibrations = {}
 
         for name, trait in self._traits.items():
             trait.__init_owner_instance__(self)
 
-            if trait.default is not None:
-                self.__previous__[name] = trait.default
+            if trait.default is not Undefined:
+                self.__cache__[name] = trait.default
 
 
     def __init_subclass__(cls):
@@ -677,15 +701,9 @@ class HasTraits(metaclass=HasTraitsMeta):
             elif trait.role == Trait.ROLE_PROPERTY:
                 cls._property_attrs.append(name)
 
-    def __iter__(self):
-        return iter(self._traits.values())
-
-    def __len__(self):
-        return len(self._traits)
-
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache):
-        old = self.__previous__.setdefault(name, Undefined)
+        old = self.__cache__.setdefault(name, Undefined)
 
         msg = dict(new=value, old=old, owner=self,
                    name=name, type=type, cache=cache)
@@ -693,17 +711,17 @@ class HasTraits(metaclass=HasTraitsMeta):
         for handler in self.__notify_list__.values():
             handler(dict(msg))
 
-        self.__previous__[name] = value
+        self.__cache__[name] = value
 
-    def __set_by_key__(self, name, command, value):
+    def set_key(self, name, command, value):
         objname = self.__class__.__qualname__ + '.' + name
         raise AttributeError(f"cannot set {objname}: no @{name} " \
-                             f"setter is defined, and {name}.__set_by_key__ is not defined")
+                             f"setter is defined, and {name}.set_key is not defined")
 
-    def __get_by_key__(self, name, command):
+    def get_key(self, name, command):
         objname = self.__class__.__qualname__ + '.' + name
         raise AttributeError(f"cannot get {objname}: no @{name} " \
-                             f"getter is defined, and {name}.__get_by_key__ is not defined")
+                             f"getter is defined, and {name}.get_key is not defined")
 
     @util.hide_in_traceback
     def __get_value__(self, name):
@@ -712,7 +730,7 @@ class HasTraits(metaclass=HasTraitsMeta):
         :param name: Name of the trait
         :return: cached value, or the trait default if it has not yet been set
         """
-        return self.__previous__[name]
+        return self.__cache__[name]
 
     @util.hide_in_traceback
     def __set_value__(self, name, value):
@@ -722,7 +740,7 @@ class HasTraits(metaclass=HasTraitsMeta):
         :param value: value to assign
         :return: None
         """
-        # assignment to to self.__previous__ here would corrupt 'old' message key in __notify__
+        # assignment to to self.__cache__ here would corrupt 'old' message key in __notify__
         pass
 
 

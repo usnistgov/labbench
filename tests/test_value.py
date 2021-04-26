@@ -50,8 +50,8 @@ class Mock(lb.Device):
  
     str0 = lb.value.str()
     str1 = lb.value.str(default='hello')
-    str2 = lb.value.str(default='moose', only=('moose', 'squirrel'))
-    str3 = lb.value.str(default='moose', only=('MOOSE', 'squirrel'), case=False)
+    str2 = lb.value.str('moose', only=('moose', 'squirrel'))
+    str3 = lb.value.str('moose', only=('MOOSE', 'squirrel'), case=False)
     
 class UpdateMock(Mock):
     float0 = 7

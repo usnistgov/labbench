@@ -572,7 +572,7 @@ class LabviewSocketInterface(core.Device):
                                         self.settings.tx_port))
         util.sleep(self.settings.delay)
 
-    def __set_by_key__(self, name, command, value):
+    def set_key(self, name, command, value):
         """ Send a formatted command string to implement state control.
         """
         self.write(f'{command} {value}')
@@ -833,7 +833,7 @@ class TelnetDevice(core.Device):
         or by setting them afterward in `settings`.
 
         Subclassed devices that need state descriptors will need
-        to implement __get_by_key__ and __set_by_key__ methods to implement
+        to implement get_key and set_key methods to implement
         the state set and get operations (as appropriate).
     """
 
@@ -1037,7 +1037,7 @@ class VISADevice(core.Device):
         self._console.debug(f'      -> {msg_out}')
         return ret
 
-    def __get_by_key__(self, name, scpi_key):
+    def get_key(self, name, scpi_key):
         """ Send an SCPI command to get a state value from the
             device. This function
             adds a '?' to match SCPI convention. This is
@@ -1049,7 +1049,7 @@ class VISADevice(core.Device):
         """
         return self.query(scpi_key + '?').rstrip()
 
-    def __set_by_key__(self, name, scpi_key, value):
+    def set_key(self, name, scpi_key, value):
         """ Send an SCPI command to set a state value on the
             device. This function adds a '?' to match SCPI convention. This is
             automatically called for `state` attributes that

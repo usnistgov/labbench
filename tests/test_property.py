@@ -200,12 +200,12 @@ class MockKeyedProperty(MockBase):
     str1 = lb.property.str(key='str1', cache=True, remap={'python value': 'device value'})
     str2 = lb.property.str(key='str2', settable=False)
 
-    def get_key(self, name, key):
+    def get_key(self, key, name=None):
         print('get ', name, key)
         self.add_get_count(key)
         return self.remote_values[key]
 
-    def set_key(self, name, key, value):
+    def set_key(self, key, value, name=None):
         self._last[key] = value
         self.remote_values[key] = self.get_expected_remote_value(name, value)
 

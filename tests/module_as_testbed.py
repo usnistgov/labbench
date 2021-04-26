@@ -12,12 +12,12 @@ from emulate import EmulatedVISADevice
 
 class LaggyInstrument(EmulatedVISADevice):
     """ A mock "instrument"
-    with settings and states to
-    demonstrate the process of setting
+    with value traits and states to
+    demonstrate the process of value trait
     up a measurement.
     """
 
-    # Connection and driver settings
+    # Connection and driver value traits
     delay = lb.value.float(default=0, min=0, help='connection time (s)')
     fetch_time = lb.value.float(default=0, min=0, help='fetch time (s)')
     fail_disconnect = lb.value.bool(default=False, help='raise DivideByZero on disconnect?')

@@ -43,8 +43,8 @@ int_stop = 10
 path = 'test'
 
 class EmulatedInstrument(EmulatedVISADevice):
-    """ This "instrument" makes mock data and instrument states to
-        demonstrate we can show the process of setting
+    """ This "instrument" makes mock data and instrument property traits to
+        demonstrate we can show the process of value trait
         up a measurement.
     """
     

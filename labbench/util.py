@@ -816,7 +816,7 @@ def isdictducktype(cls):
 
 @hide_in_traceback
 def enter_or_call(flexible_caller, objs, kws):
-    """ Extract settings from the keyword arguments flags, decide whether
+    """ Extract value traits from the keyword arguments flags, decide whether
         `objs` and `kws` should be treated as context managers or callables,
         and then either enter the contexts or call the callables.
     """
@@ -824,7 +824,7 @@ def enter_or_call(flexible_caller, objs, kws):
     objs = list(objs)
 
     # Treat keyword arguments passed as callables should be left as callables;
-    # otherwise, override the parameter setting
+    # otherwise, override the parameter
     params = dict(catch=False,
                   nones=False,
                   traceback_delay=False,
@@ -950,12 +950,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             concurrent execution or not.
         """
         func = func_in.func if isinstance(func_in, Call) else func_in
-        if hasattr(func, '__self__') and \
-           hasattr(func.__self__, 'settings'):
-            if not getattr(func.__self__.settings, 'concurrency', True):
-                # is this a Device that does not support concurrency?
-                raise ConcurrentException(
-                    f'{func.__self__} does not support concurrency')
+        if hasattr(func, '__self__') and not getattr(func.__self__, 'concurrency', True):
+            # is this a Device that does not support concurrency?
+            raise ConcurrentException(f'{func.__self__} does not support concurrency')
         return func_in
 
     stop_request_event.clear()
@@ -1399,7 +1396,7 @@ sandbox_keys = set(ThreadSandbox.__dict__.keys()
 
 
 class ConfigStore:
-    """ Define dictionaries of configuration settings
+    """ Define dictionaries of configuration value traits
         in subclasses of this object. Each dictionary should
         be an attribute of the subclass. The all() class method
         returns a flattened dictionary consisting of all values

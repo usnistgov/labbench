@@ -116,8 +116,8 @@ class MungerBase(core.Device):
 
             # A long string that should be written to a text file
             elif isinstance(value, (str, bytes)):
-                if len(value) > self.settings.text_relational_min\
-                   or name in self.settings.force_relational:
+                if len(value) > self.text_relational_min\
+                   or name in self.force_relational:
                     row[name] = self._from_text(name, value, index, row)
             elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
                 # vector, table, matrix, etc.
@@ -129,7 +129,7 @@ class MungerBase(core.Device):
 
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
-                if len(value) > self.settings.text_relational_min:
+                if len(value) > self.text_relational_min:
                     self._from_text(key_name, value)
                 else:
                     return value
@@ -143,9 +143,8 @@ class MungerBase(core.Device):
 
         summary = dict(extra)
         for owner, owner_name in name.items():
-            if owner_name.endswith('_settings'):
-                for trait in owner:
-                    summary[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
+            for trait in owner._value_attrs:
+                summary[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
         summary = {k: process_value(v, k) for k, v in summary.items()}
 
         metadata = dict(summary=pd.DataFrame([summary], index=['Value']).T)
@@ -188,7 +187,7 @@ class MungerBase(core.Device):
         if row is None:
             ext = 'csv'
         else:
-            ext = self.settings.nonscalar_file_type
+            ext = self.nonscalar_file_type
 
         try:
             value = pd.DataFrame(value)
@@ -287,7 +286,7 @@ class MungeToDirectory(MungerBase):
         return open(os.path.join(relpath, name), 'wb+')
 
     def _open_metadata(self, name):
-        dirpath = os.path.join(self.settings.resource, self.settings.metadata_dirname)
+        dirpath = os.path.join(self.resource, self.metadata_dirname)
         with suppress(FileExistsError):
             os.makedirs(dirpath)
         return open(os.path.join(dirpath, name), 'wb+')
@@ -298,7 +297,7 @@ class MungeToDirectory(MungerBase):
         :param stream: stream for writing to the relational data file
         :return: the key
         """
-        return os.path.relpath(stream.name, self.settings.resource)
+        return os.path.relpath(stream.name, self.resource)
 
     def _import_from_file(self, old_path, dest):
         # Retry moves for several seconds in case the file is in the process
@@ -317,11 +316,11 @@ class MungeToDirectory(MungerBase):
             shutil.copyfile(old_path, dest)
 
     def _make_path_heirarchy(self, index, row):
-        relpath = self.settings.dirname_fmt.format(id=index, **row)
+        relpath = self.dirname_fmt.format(id=index, **row)
 
         # TODO: Find a more generic way to force valid path name
         relpath = relpath.replace(':', '')
-        relpath = os.path.join(self.settings.resource, relpath)
+        relpath = os.path.join(self.resource, relpath)
         return relpath
 
     def _write_metadata(self, metadata):
@@ -403,19 +402,19 @@ class MungeToTar(MungerBase):
             self._console.error(
                 "no timestamp yet from host yet; this shouldn't happen :(")
 
-        relpath = os.path.join(self.settings.dirname_fmt.format(id=index, **row), name)
+        relpath = os.path.join(self.dirname_fmt.format(id=index, **row), name)
 
         return TarFileIO(self.tarfile, relpath)
 
     def _open_metadata(self, name):
-        dirpath = os.path.join(self.settings.metadata_dirname, name)
+        dirpath = os.path.join(self.metadata_dirname, name)
         return TarFileIO(self.tarfile, dirpath)
 
     def open(self):
-        if not os.path.exists(self.settings.resource):
+        if not os.path.exists(self.resource):
             with suppress(FileExistsError):
-                os.makedirs(self.settings.resource)
-        self.tarfile = tarfile.open(os.path.join(self.settings.resource, self.tarname), 'a')
+                os.makedirs(self.resource)
+        self.tarfile = tarfile.open(os.path.join(self.resource, self.tarname), 'a')
 
     def close(self):
         util.console.warning('MungeToTar cleanup()')
@@ -468,7 +467,7 @@ class MungeToTar(MungerBase):
 
 
 class Aggregator(util.Ownable):
-    """ Passive aggregation of data from Device state and settings traits and methods in Rack instances
+    """ Passive aggregation of data from Device property trait and value traits traits and methods in Rack instances
     """
 
     def __init__(self, persistent_state: bool = True):
@@ -477,8 +476,8 @@ class Aggregator(util.Ownable):
         self.trait_rules = dict(always={}, never={})
 
         # pending data
-        self._pending_states = {} #pending = dict(state={}, settings={}, rack={})
-        self._pending_settings = {}
+        self._pending_states = {} #pending = dict(state={}, value traits={}, rack={})
+        self._pending_values = {}
         self._pending_rack = {}
         self._persistent_state = persistent_state
 
@@ -499,13 +498,13 @@ class Aggregator(util.Ownable):
 
         # observe changes in its Device instances
         self.set_device_labels(**rack._devices)
-        self.set_device_labels(**{n+'_settings': d.settings for n, d in rack._devices.items()})
+        self.set_device_labels(**{n+'_values': d.get_values() for n, d in rack._devices.items()})
 
-        # monitor changes in device state on the rack
+        # monitor changes in device property trait on the rack
         if rack is not None:
             for name, obj in rack._devices.items():
                 self.observe_states(obj)
-                self.observe_settings(obj)
+                self.observe_values(obj)
 
     def enable(self):
         # catch return data as well
@@ -517,7 +516,7 @@ class Aggregator(util.Ownable):
         Rack._notify.observe_calls(self.__receive_rack_data)
 
     def observe_states(self, devices, changes=True, always=[], never=['connected']):
-        """ Configure Each time a device state is set from python,
+        """ Configure Each time a device property trait is set from python,
             intercept the value to include in the aggregate
             state.
 
@@ -526,22 +525,22 @@ class Aggregator(util.Ownable):
             or tuple) to apply to each one.
 
             Subsequent calls to :func:`observe_states` replace
-            the existing list of observed states for each
+            the existing list of observed property traits for each
             device.
 
             :param devices: Device instance or iterable of Device instances
 
-            :param bool changes: Whether to automatically log each time a state is set for the supplied device(s)
+            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
 
-            :param always: name (or iterable of multiple names) of states to actively update on each call to get()
+            :param always: name (or iterable of multiple names) of property traits to actively update on each call to get()
 
-            :param never: name (or iterable of multiple names) of states to exclude from aggregated result (overrides :param:`always`)
+            :param never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
         """
 
         self.__observe__(devices, kind='state', changes=changes, always=always, never=never)
 
-    def observe_settings(self, devices, changes=True, always=[], never=[]):
-        """ Configure Each time a device setting is set from python,
+    def observe_values(self, devices, changes=True, always=[], never=[]):
+        """ Configure Each time a value trait is set from python,
             intercept the value to include in the aggregate
             state.
 
@@ -549,20 +548,20 @@ class Aggregator(util.Ownable):
             several devices in an iterable (such as a list
             or tuple) to apply to each one.
 
-            Subsequent calls to :func:`observe_settings` replace
-            the existing list of observed states for each
+            Subsequent calls to :func:`observe_values` replace
+            the existing list of observed property traits for each
             device.
 
             :param devices: dictionary of names keyed on Device instances, a Device instance, or an iterable of Device instances
 
-            :param bool changes: Whether to automatically log each time a state is set for the supplied device(s)
+            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
 
-            :param always: name (or iterable of multiple names) of settings to actively update on each call to get()
+            :param always: name (or iterable of multiple names) of value traits to actively update on each call to get()
 
-            :param never: name (or iterable of multiple names) of settings to exclude from aggregated result (overrides :param:`always`)
+            :param never: name (or iterable of multiple names) of value traits to exclude from aggregated result (overrides :param:`always`)
         """
 
-        self.__observe__(devices, kind='settings', changes=changes, always=always, never=never)
+        self.__observe__(devices, kind='value traits', changes=changes, always=always, never=never)
 
     def get(self) -> dict:
         """ Return a dictionary of observed Device trait data and calls and returns in Rack instances. A get is
@@ -573,13 +572,13 @@ class Aggregator(util.Ownable):
         """
 
         for device, name in list(self.name_map.items()):
-            # Perform gets for each state called out in self.trait_rules['always']
+            # Perform gets for each property trait called out in self.trait_rules['always']
             if device in self.trait_rules['always'].keys():
                 for attr in self.trait_rules['always'][device]:
                     if isinstance(device, core.Device):
                         self._pending_states[self.key(name, attr)] = getattr(device, attr)
                     else:
-                        self._pending_settings[self.key(name, attr)] = getattr(device, attr)
+                        self._pending_values[self.key(name, attr)] = getattr(device, attr)
 
             # Remove keys corresponding with self.trait_rules['never']
             if device in self.trait_rules['never'].keys():
@@ -587,10 +586,10 @@ class Aggregator(util.Ownable):
                     if isinstance(device, core.Device):
                         self._pending_states.pop(self.key(name, attr), None)
                     else:
-                        self._pending_settings.pop(self.key(name, attr), None)
+                        self._pending_values.pop(self.key(name, attr), None)
 
         # start by aggregating the trait data, and checking for conflicts with keys in the Rack data
-        aggregated = dict(self._pending_settings, **self._pending_states)
+        aggregated = dict(self._pending_values, **self._pending_states)
         key_conflicts = set(aggregated).intersection(self._pending_rack)
         if len(key_conflicts) > 0:
             self.critical(f"key conflicts in aggregated data - Rack data is overwriting trait data for {key_conflicts}")
@@ -598,8 +597,8 @@ class Aggregator(util.Ownable):
         # combine the data
         aggregated = dict(aggregated, **self._pending_rack)
 
-        # clear Rack data, as well as state data if we don't assume it is consistent.
-        # settings traits are locally cached, so it is safe to keep them in the next step
+        # clear Rack data, as well as property trait data if we don't assume it is consistent.
+        # value traits traits are locally cached, so it is safe to keep them in the next step
         self._pending_rack = {}
         if not self._persistent_state:
             self._pending_states = {}
@@ -608,7 +607,7 @@ class Aggregator(util.Ownable):
 
     def key(self, device_name, state_name):
         """ Generate a name for a trait based on the names of
-            a device and one of its states or settings.
+            a device and one of its states or value traits.
         """
         return f'{device_name}_{state_name}'
 
@@ -621,7 +620,7 @@ class Aggregator(util.Ownable):
         for label, device in list(mapping.items()):
             if isinstance(device, Aggregator):
                 pass
-            elif not isinstance(device, (Device, Device.settings)):
+            elif not isinstance(device, Device):
                 raise ValueError(f'{device} is not an instance of Device')
 
         self.name_map.update([(v, k) for k, v in mapping.items()])
@@ -654,7 +653,7 @@ class Aggregator(util.Ownable):
         elif isinstance(msg['owner'], core.Device):
             self._pending_states[self.key(name, attr)] = msg['new']
         else:
-            self._pending_settings[self.key(name, attr)] = msg['new']
+            self._pending_values[self.key(name, attr)] = msg['new']
 
     def __update_names__(self, devices):
         """" ensure self.name_map includes entries for each Device instance in devices.values().
@@ -672,7 +671,7 @@ class Aggregator(util.Ownable):
                 self.name_map[device] = name
 
             elif device in self.name_map:
-                # naming for device.settings needs this
+                # naming for device. needs this
                 name = self.name_map[device]
 
             elif hasattr(device, '__name__'):
@@ -682,8 +681,6 @@ class Aggregator(util.Ownable):
             else:
                 self.name_map[device] = name = self.__whoisthis(device)
                 self._console.warning(f"guessing {device} should be named '{name}'")
-
-            self.name_map[device.settings] = name + '_settings'
 
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
             raise Exception('Could not automatically determine unique names of device instances! '\
@@ -715,23 +712,21 @@ class Aggregator(util.Ownable):
         else:
             raise ValueError("argument 'never' must be a string, or iterable of strings")
 
-        if kind not in ('state', 'settings'):
-            raise ValueError(f"value of the 'kind' argument must be either 'state' or 'settings', not {kind}")
+        if kind not in ('state', 'value traits'):
+            raise ValueError(f"value of the 'kind' argument must be either 'state' or 'value traits', not {kind}")
 
         self.__update_names__(devices)
 
         # Register handlers
         for device in devices.keys():
-            trait_owner = device if kind == 'state' else device.settings
-            
             if changes:
-                observe(trait_owner, self.__receive_trait_update)
+                observe(device, self.__receive_trait_update)
             else:
-                core.unobserve(trait_owner, self.__receive_trait_update)
+                core.unobserve(device, self.__receive_trait_update)
             if always:
-                self.trait_rules['always'][trait_owner] = always
+                self.trait_rules['always'][device] = always
             if never:
-                self.trait_rules['never'][trait_owner] = never
+                self.trait_rules['never'][device] = never
 
     def __whoisthis(self, target, from_depth=2):
         """ Introspect into the caller to name an object .
@@ -773,8 +768,8 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
     """ Abstract base class for loggers that queue dictionaries of data before writing
         to disk. This extends :class:`Aggregator` to support
 
-        #. queuing aggregate state of devices by lists of dictionaries;
-        #. custom metadata in each queued aggregate state entry; and
+        #. queuing aggregate property trait of devices by lists of dictionaries;
+        #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
         :param str path: Base path to use for the master database
@@ -879,7 +874,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             Each row is represented as a dictionary of
             pairs formatted as {'column_name': 'row_value'}. These
             pairs come from a combination of 1) keyword arguments passed as
-            `kwargs`, 2) a single dictionary argument, and/or 3) state traits
+            `kwargs`, 2) a single dictionary argument, and/or 3) property trait traits
             configured automatically with `self.aggregator.observe_states`.
 
             The first pass at forming the row is the single dictionary argument ::
@@ -977,14 +972,14 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
     def set_path_format(self, format):
         """ Set the path name convention for relational files that is used when
             a table entry contains non-scalar (multidimensional) information and will
-            need to be stored in a separate file. The entry in the aggregate states table
+            need to be stored in a separate file. The entry in the aggregate property traits table
             becomes the path to the file.
 
             The format string follows the syntax of python's python's built-in :func:`str.format`.\
             You may use any keys from the table to form the path. For example, consider a\
-            scenario where aggregate device states includes `inst1_frequency` of `915e6`,\
+            scenario where aggregate device property traits includes `inst1_frequency` of `915e6`,\
             and :func:`append` has been called as `append(dut="DUT15")`. If the current\
-            aggregate state entry includes inst1_frequency=915e6, then the format string\
+            aggregate property trait entry includes inst1_frequency=915e6, then the format string\
             '{dut}/{inst1_frequency}' means relative data path 'DUT15/915e6'.
 
             :param format: a string compatible with :func:`str.format`, with replacement\
@@ -1004,7 +999,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             :return: None
         """
 
-        self.aggregator.observe_settings(self.munge, never=self.munge.settings.__traits__)
+        self.aggregator.observe_values(self.munge, never=self.munge.__traits__)
 
         # Do some checks on the relative data directory before we consider overwriting
         # the master db.
@@ -1044,12 +1039,12 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
 
 
 class CSVLogger(RelationalTableLogger):
-    """ Store data and states to disk into a master database formatted as a comma-separated value (CSV) file.
+    """ Store data, value traits, and property traits to disk into a master database formatted as a comma-separated value (CSV) file.
 
         This extends :class:`Aggregator` to support
 
-        #. queuing aggregate state of devices by lists of dictionaries;
-        #. custom metadata in each queued aggregate state entry; and
+        #. queuing aggregate property trait of devices by lists of dictionaries;
+        #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
         :param str path: Base path to use for the master database
@@ -1159,7 +1154,7 @@ class MungeToHDF(Device):
 
     def open(self):
         import h5py
-        self.backend = h5 = h5py.File(self.settings.resource, 'a')
+        self.backend = h5 = h5py.File(self.resource, 'a')
         
     def close(self):
         self.backend.close()
@@ -1217,13 +1212,13 @@ class MungeToHDF(Device):
 
         summary = dict(extra)
         for owner, owner_name in name.items():
-            if owner_name.endswith('_settings'):
+            if owner_name.endswith('_values'):
                 for trait in owner:
                     summary[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
         summary = {k: process_value(v, k) for k, v in summary.items()}
 
         metadata = pd.DataFrame([summary], index=['Value']).T
-        metadata.astype(str).to_hdf(self.settings.resource, key='metadata', append=True)
+        metadata.astype(str).to_hdf(self.resource, key='metadata', append=True)
 
     def _from_nonscalar(self, name, value, index=0, row=None):
         """ Write nonscalar (potentially array-like, or a python object) data
@@ -1250,7 +1245,7 @@ class MungeToHDF(Device):
             self.backend[key] = pickle.dumps(value)
 
         else:
-            df.to_hdf(self.settings.resource, key=key)
+            df.to_hdf(self.resource, key=key)
 
         return key
 
@@ -1264,16 +1259,17 @@ class MungeToHDF(Device):
         if row is None:
             return f'/metadata {name}'
         else:
-            return '/'+self.settings.key_fmt.format(id=index, **row) + ' ' + name
+            return '/'+self.key_fmt.format(id=index, **row) + ' ' + name
 
 
 class HDFLogger(RelationalTableLogger):
-    """ Store data and states to disk into a master database formatted as a comma-separated value (CSV) file.
+    """ Store data and activity from value and property sets and gets to disk
+        into a master database formatted as an HDF file.
 
         This extends :class:`Aggregator` to support
 
-        #. queuing aggregate state of devices by lists of dictionaries;
-        #. custom metadata in each queued aggregate state entry; and
+        #. queuing aggregate property trait of devices by lists of dictionaries;
+        #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
         :param str path: Base path to use for the master database
@@ -1361,12 +1357,12 @@ class HDFLogger(RelationalTableLogger):
 
 
 class SQLiteLogger(RelationalTableLogger):
-    """ Store data and states to disk into an an sqlite master database.
+    """ Store data and property traits to disk into an an sqlite master database.
 
         This extends :class:`Aggregator` to support
 
-        #. queuing aggregate state of devices by lists of dictionaries;
-        #. custom metadata in each queued aggregate state entry; and
+        #. queuing aggregate property trait of devices by lists of dictionaries;
+        #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
         :param str path: Base path to use for the master database
@@ -1467,7 +1463,7 @@ class SQLiteLogger(RelationalTableLogger):
 
         # Put together a DataFrame from self.pending that is guaranteed
         # to include the columns defined in self._columns
-        state = pd.DataFrame(self.pending)
+        traits = pd.DataFrame(self.pending)
         state.index += self.last_index
         blank = pd.DataFrame(columns=self._columns)
 

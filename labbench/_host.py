@@ -126,14 +126,14 @@ class Email(core.Device):
         import smtplib
 
         msg = MIMEText(body, 'html')
-        msg['From'] = self.settings.sender
+        msg['From'] = self.sender
         msg['Subject'] = subject
-        msg['To'] = ", ".join(self.settings.recipients)
-        self.server = smtplib.SMTP(self.settings.resource, self.settings.port)
+        msg['To'] = ", ".join(self.recipients)
+        self.server = smtplib.SMTP(self.resource, self.port)
         
         try:
-            self.server.sendmail(self.settings.sender,
-                                 self.settings.recipients,
+            self.server.sendmail(self.sender,
+                                 self.recipients,
                                  msg.as_string())
         finally:
             self.server.quit()
@@ -149,7 +149,7 @@ class Email(core.Device):
             self.send_summary()
 
     def send_summary(self):
-        """ Send the email containing the final state of the test.
+        """ Send the email containing the final property trait of the test.
         """
         exc = sys.exc_info()
 
@@ -159,17 +159,17 @@ class Email(core.Device):
         if exc != (None, None, None):
             from traceback import format_exc
 
-            if self.settings.failure_message is None:
+            if self.failure_message is None:
                 return
-            subject = self.settings.failure_message
+            subject = self.failure_message
             message = '<b>Exception</b>\n'\
                       + '<font face="Courier New, Courier, monospace">'\
                       + format_exc()\
                       + '</font>'
         else:
-            if self.settings.success_message is None:
+            if self.success_message is None:
                 return
-            subject = self.settings.success_message
+            subject = self.success_message
             message = ''
 
         if len(self.backend.log) > 0:
@@ -251,7 +251,7 @@ class Host(core.Device):
         try:
             repo = git.Repo('.', search_parent_directories=True)
             self._console.debug("running in git repository")
-            if repo.active_branch == self.settings.git_commit_in:
+            if repo.active_branch == self.git_commit_in:
                 repo.index.commit('start of measurement')
                 self._console.debug("git commit finished")
         except git.NoSuchPathError:

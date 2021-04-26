@@ -98,7 +98,6 @@ def single(inst, inst_name):
             'class="table"').set_table_styles(table_styles).render()
 
     core.observe(inst, _on_change)
-    core.observe(inst.settings, _on_change)
 
     return widgets.HBox([html])
 
@@ -130,7 +129,7 @@ class TextareaLogHandler(logging.StreamHandler):
 
 
 class panel(object):
-    """ Show tables summarizing device settings and states in jupyter notebook.
+    """ Show tables summarizing value traits and property traits in jupyter notebook.
     Only a single panel will be shown in a python kernel.
 
     :param source: Either an integer indicating how far up the calling tree to search\

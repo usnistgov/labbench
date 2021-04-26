@@ -190,7 +190,7 @@ class Device(_traits.HasTraits, util.Ownable):
         Drivers that subclass `Device` get
 
         * device connection management via context management (the `with` statement)
-        * test state management for easy test logging and extension to UI
+        * test property trait management for easy test logging and extension to UI
         * a degree automatic stylistic consistency between drivers
 
         .. note::
@@ -214,17 +214,17 @@ class Device(_traits.HasTraits, util.Ownable):
         ************************
     """
 
-    """ Settings traits.
+    """ Value traits.
 
-        These are stored only on the host; setting or getting these values do not
-        trigger live updates (or any communication) with the device. These
-        define connection addressing information, communication settings,
+        These are stored only within this class - accessing these traits in
+        a Device instance do not trigger interaction with the device. These
+        define connection addressing information, communication value traits,
         and options that only apply to implementing python support for the
         device.
 
         The device uses this container to define the keyword options supported
         by its __init__ function. These are applied when you instantiate the device.
-        After you instantiate the device, you can still change the setting with::
+        After you instantiate the device, you can still change the value trait with::
 
             Device.resource = 'insert-your-address-string-here'
     """
@@ -232,16 +232,16 @@ class Device(_traits.HasTraits, util.Ownable):
     resource = value.str(help='device address or URI')
     concurrency= value.bool(True, settable=False, help='True if the device supports threading')
 
-    """ Container for state traits in a Device. Getting or setting state traits
+    """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
-        value on the Device. Therefore, getting or setting state traits
+        value on the Device. Therefore, getting or setting property trait traits
         needs the device to be connected.
 
-        To set a state value inside the device, use normal python assigment::
+        To set a property trait value inside the device, use normal python assigment::
 
             device.parameter = value
 
-        To get a state value from the device, you can also use it as a normal python variable::
+        To get a property trait value from the device, you can also use it as a normal python variable::
 
             variable = device.parameter + 1
     """
@@ -271,7 +271,7 @@ class Device(_traits.HasTraits, util.Ownable):
     def __init_subclass__(cls):
         super().__init_subclass__()
 
-        # Update __doc__ with settings
+        # Update __doc__ with value traits
         if cls.__doc__:
             cls.__doc__ = trim(cls.__doc__)
         else:
@@ -298,7 +298,7 @@ class Device(_traits.HasTraits, util.Ownable):
     def __init__(self, resource=Undefined, **values):
         """ Update default values with these arguments on instantiation.
         """
-        # initialize state traits last so that calibration behaviors can use values and self._console
+        # initialize property trait traits last so that calibration behaviors can use values and self._console
         super().__init__()
 
         if resource is not Undefined:
@@ -312,8 +312,8 @@ class Device(_traits.HasTraits, util.Ownable):
 
         self.backend = DisconnectedBackend(self)
 
-        # Instantiate state now. It needed to wait until this point, after values are fully
-        # instantiated, in case state implementation depends on values
+        # Instantiate property trait now. It needed to wait until this point, after values are fully
+        # instantiated, in case property trait implementation depends on values
         setattr(self, 'open', self.__open_wrapper__)
         setattr(self, 'close', self.__close_wrapper__)
 
@@ -324,18 +324,18 @@ class Device(_traits.HasTraits, util.Ownable):
             dict(device=repr(self), origin=f" - " + str(self))
         )
 
-    # TODO: Remove this? May be unecessary now that .state and .settings have been removed
+    # TODO: Remove this? May be unecessary now that .state and . have been removed
     # @util.hide_in_traceback
     # def __setattr__(self, name, value):
     #     """ Throw warnings if we suspect a typo on an attempt to assign to a state
-    #         or settings trait
+    #         or value trait
     #     """
     #     # if self.__warn_state_names__ and not hasattr(self, name):
     #     #     if name in self.__warn_state_names__:
     #     #         msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait state.{name} instead?'
     #     #         warn(msg)
     #     #     if name in self._trait_roles[Trait.ROLE_VALUE]:
-    #     #         msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait settings.{name} instead?'
+    #     #         msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait value traits.{name} instead?'
     #     #         warn(msg)
     #     super().__setattr__(name, value)
 

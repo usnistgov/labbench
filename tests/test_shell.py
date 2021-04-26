@@ -68,7 +68,7 @@ class Shell_Python(lb.ShellBackend):
 
         cmd = (self.binary_path,)
 
-        # Update state traits with the flags
+        # Update property trait traits with the flags
         for name in self._flag_names():
             trait = self[name]
             value = getattr(self, name)

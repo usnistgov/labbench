@@ -66,7 +66,7 @@ class ShellBackend(core.Device):
         queued stdout.
 
         Special behaviors:
-        * traits in `ShellBackend.settings` support the `key` argument, which can be a
+        * traits in `ShellBackend` support the `key` argument, which can be a
         string to specify a command flag, `None` to specify an argument with no flags,
         or left as `lb.Undefined` to be ignored in forming a command line.
     """
@@ -111,26 +111,26 @@ class ShellBackend(core.Device):
         def check_state_change(change={}):
             if self.running():
                 raise ValueError(
-                    'cannot change command line state traits during execution')
+                    'cannot change command line property trait traits during execution')
 
-        if not os.path.exists(self.settings.binary_path):
+        if not os.path.exists(self.binary_path):
             raise OSError(
-                f'executable does not exist at resource=r"{self.settings.binary_path}"')
+                f'executable does not exist at resource=r"{self.binary_path}"')
 
         self.backend = None
 
         self._stdout_queue = Queue()
 
-        # Monitor state changes
-        states = set(self.settings._traits.keys()) \
+        # Monitor property trait changes
+        properties = set(self._value_attrs) \
             .difference(dir(ShellBackend))
 
-        core.observe(self.settings, check_state_change, name=tuple(states))
+        core.observe(self, check_state_change, name=tuple(properties))
 
     # @property
     # @contextlib.contextmanager
     # def no_state_arguments(self):
-    #     """ disable automatic use of state traits in generating argument strings
+    #     """ disable automatic use of property trait traits in generating argument strings
     #     """
     #     self.__contexts['use_state_arguments'] = False
     #     yield
@@ -157,13 +157,12 @@ class ShellBackend(core.Device):
 
     def foreground(self, **flags):
         """ Blocking execution of the binary at the file location
-            `self.settings.binary_path`.
+            `self.binary_path`.
 
             Normally, the command line arguments are determined by
-            * appending extra_arguments to the global arguments in self.settings.arguments, and
+            * appending extra_arguments to the global arguments in self.arguments, and
             * appending pairs of [key,value] from the `flags` dictionary to the
-              global flags defined with command flags in local state traits in
-              `self.settings`
+              global flags defined with value traits
 
             Use the self.no_state_arguments context manager to skip these
             global arguments like this::
@@ -183,7 +182,7 @@ class ShellBackend(core.Device):
             pass
 
         self._console.debug(f"shell execute '{repr(' '.join((path,) + cmdl[1:]))}'")
-        cp = sp.run(cmdl, timeout=self.settings.timeout, stdout=sp.PIPE)
+        cp = sp.run(cmdl, timeout=self.timeout, stdout=sp.PIPE)
         ret = cp.stdout
 
         if ret:
@@ -214,11 +213,11 @@ class ShellBackend(core.Device):
 
             Normally, the command line arguments are determined by
 
-            * appending extra_arguments to the global arguments in self.settings.arguments, and
+            * appending extra_arguments to the global arguments in self.arguments, and
 
             * appending pairs of [key,value] from the `flags` dictionary to the
-              global flags defined with command flags in local state traits in
-              `self.settings`
+              global flags defined with command flags in local property trait traits in
+              `self.`
 
             Use the self.no_state_arguments context manager to skip these
             global arguments like this::
@@ -304,8 +303,8 @@ class ShellBackend(core.Device):
         spawn(cmdl)
 
     def _flag_names(self):
-        return (name for name, trait in self.settings._traits.items()
-                if trait.key is not core.Undefined)
+        return (name for name in self._value_attrs
+                if self._traits[name].key is not core.Undefined)
 
     def _commandline(self, **flags):
         """ Form a list of commandline argument strings for foreground
@@ -321,14 +320,14 @@ class ShellBackend(core.Device):
 
         # apply flags
         for name, value in flags.items():
-            setattr(self.settings, name, value)
+            setattr(self, name, value)
 
-        cmd = (self.settings.binary_path,)
+        cmd = (self.binary_path,)
 
-        # Update state traits with the flags
+        # Update property trait traits with the flags
         for name in self._flag_names():
-            trait = self.settings[name]
-            value = getattr(self.settings, name)
+            trait = self._traits[name]
+            value = getattr(self, name)
 
             if value is None:
                 continue
@@ -363,7 +362,7 @@ class ShellBackend(core.Device):
             n = 0
             while True:
                 line = self._stdout_queue.get(
-                    wait_for > 0, timeout=self.settings.timeout)
+                    wait_for > 0, timeout=self.timeout)
                 if isinstance(line, Exception):
                     raise line
 
@@ -534,7 +533,7 @@ class LabviewSocketInterface(core.Device):
         specific labview VI the same was as in VISA commands by
         assigning the commands implemented in the corresponding labview VI.
 
-        The `resource` argument (which can also be set as `settings.resource`)
+        The `resource` argument 
         is the ip address of the host where the labview script
         is running. Use the tx_port and rx_port attributes to set the
         TCP/IP ports where communication is to take place.
@@ -543,7 +542,7 @@ class LabviewSocketInterface(core.Device):
     resource = core.value.NetworkAddress('127.0.0.1', accept_port=False, help='LabView VI host address')
     tx_port = core.value.int(61551, help='TX port to send to the LabView VI')
     rx_port = core.value.int(61552, help='TX port to send to the LabView VI')
-    delay = core.value.float(1, help='time to wait after each state write or query')
+    delay = core.value.float(1, help='time to wait after each property trait write or query')
     timeout = core.value.float(2, help='maximum wait replies before raising TimeoutError')
     rx_buffer_size = core.value.int(1024, min=1)
 
@@ -551,9 +550,9 @@ class LabviewSocketInterface(core.Device):
         self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
                         'rx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM)}
 
-        self.backend['rx'].bind((self.settings.resource,
-                                 self.settings.rx_port))
-        self.backend['rx'].settimeout(self.settings.timeout)
+        self.backend['rx'].bind((self.resource,
+                                 self.rx_port))
+        self.backend['rx'].settimeout(self.timeout)
         self.clear()
 
     def close(self):
@@ -568,23 +567,23 @@ class LabviewSocketInterface(core.Device):
         """ Send a string over the tx socket.
         """
         self._console.debug(f'write {repr(msg)}')
-        self.backend['tx'].sendto(msg, (self.settings.resource,
-                                        self.settings.tx_port))
-        util.sleep(self.settings.delay)
+        self.backend['tx'].sendto(msg, (self.resource,
+                                        self.tx_port))
+        util.sleep(self.delay)
 
-    def set_key(self, name, command, value):
-        """ Send a formatted command string to implement state control.
+    def set_key(self, key, value, name):
+        """ Send a formatted command string to implement property trait control.
         """
-        self.write(f'{command} {value}')
+        self.write(f'{key} {value}')
 
     def read(self, convert_func=None):
-        """ Receive from the rx socket until `self.settings.rx_buffer_size` samples
+        """ Receive from the rx socket until `self.rx_buffer_size` samples
             are received or timeout happens after `self.timeout` seconds.
 
             Optionally, apply the conversion function to the value after
             it is received.
         """
-        rx, addr = self.backend['rx'].recvfrom(self.settings.rx_buffer_size)
+        rx, addr = self.backend['rx'].recvfrom(self.rx_buffer_size)
         if addr is None:
             raise Exception('received no data')
         rx_disp = rx[:min(80, len(rx))] + ('...' if len(rx) > 80 else '')
@@ -624,17 +623,17 @@ class SerialDevice(core.Device):
         platform-dependent `port` argument to new serial.Serial
         objects.
 
-        Subclassed devices that need state descriptors will need
+        Subclassed devices that need property trait descriptors will need
         to implement state_get and state_set methods in order to define
-        how the state descriptors set and get operations.
+        how the property trait descriptors set and get operations.
     """
 
-    # Connection settings
+    # Connection value traits
     timeout = core.value.float(2, min=0, help='Max time to wait for a connection before raising TimeoutError.')
     write_termination = core.value.bytes(b'\n', help='Termination character to send after a write.')
     baud_rate:int = core.value.int(9600, min=1, help='Data rate of the physical serial connection.')
     parity = core.value.bytes(b'N', help='Parity in the physical serial connection.')
-    stopbits = core.value.float(1, min=1, max=2, step=0.5, help='Number of stop bits, one of `[1., 1.5, or 2.]`.')
+    stopbits = core.value.float(1, min=1, max=2, step=0.5, help='Number of stop bits, one of `[1, 1.5, or 2.]`.')
     xonxoff = core.value.bool(False, help='`True` to enable software flow control.')
     rtscts = core.value.bool(False, help='`True` to enable hardware (RTS/CTS) flow control.')
     dsrdtr = core.value.bool(False, help='`True` to enable hardware (DSR/DTR) flow control.')
@@ -646,13 +645,13 @@ class SerialDevice(core.Device):
     # Overload methods as needed to implement the Device object protocol
     def open(self):
         """ Connect to the serial device with the VISA resource string defined
-            in self.settings.resource
+            in self.resource
         """
         keys = 'timeout', 'parity', 'stopbits', \
                'xonxoff', 'rtscts', 'dsrdtr'
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(
-            self.settings.resource, self.baud_rate, **params)
+            self.resource, self.baud_rate, **params)
         self._console.debug(f'{repr(self)} connected')
 
     def close(self):
@@ -758,9 +757,9 @@ class SerialLoggingDevice(SerialDevice):
             self.configure()
             self._console.debug(f'{repr(self)}: starting log acquisition')
             try:
-                while stop_event.wait(self.settings.poll_rate) is not True:
+                while stop_event.wait(self.poll_rate) is not True:
                     q.put(self.backend.read(
-                        10 * self.settings.baud_rate * self.settings.poll_rate))
+                        10 * self.baud_rate * self.poll_rate))
             except SerialException as e:
                 self._stop.set()
                 self.close()
@@ -830,14 +829,14 @@ class TelnetDevice(core.Device):
 
         A TelnetDevice `resource` string is an IP address. The port is specified
         by `port`. These can be set when you instantiate the TelnetDevice
-        or by setting them afterward in `settings`.
+        or by setting them afterward in `value traits`.
 
-        Subclassed devices that need state descriptors will need
+        Subclassed devices that need property trait descriptors will need
         to implement get_key and set_key methods to implement
-        the state set and get operations (as appropriate).
+        the property trait set and get operations (as appropriate).
     """
 
-    # Connection settings
+    # Connection value traits
     timeout= core.value.float(2, min=0, label='s', help='connection timeout')
     port = core.value.int(23, min=1)
 
@@ -847,10 +846,10 @@ class TelnetDevice(core.Device):
 
     def open(self):
         """ Open a telnet connection to the host defined
-            by the string in self.settings.resource
+            by the string in self.resource
         """
-        self.backend = Telnet(self.settings.resource, port=self.settings.port,
-                              timeout=self.settings.timeout)
+        self.backend = Telnet(self.resource, port=self.port,
+                              timeout=self.timeout)
 
     def close(self):
         """ Disconnect the telnet connection
@@ -880,7 +879,7 @@ class VISADevice(core.Device):
             print(inst.query('*IDN?'))
 
         Use of `inst` makes it possible to add callbacks to support
-        automatic state logging, or to build a UI.
+        automatic property trait logging, or to build a UI.
     """
 
     # Settings
@@ -930,7 +929,7 @@ class VISADevice(core.Device):
     # Overload methods as needed to implement RemoteDevice
     def open(self):
         """ Connect to the VISA instrument defined by the VISA resource
-            set by `self.settings.resource`. The pyvisa backend object is assigned
+            set by `self.resource`. The pyvisa backend object is assigned
             to `self.backend`.
 
             :returns: None
@@ -956,9 +955,9 @@ class VISADevice(core.Device):
 
         self.__opc = False
 
-        self.backend = VISADevice._rm.open_resource(self.settings.resource,
-                                                    read_termination=self.settings.read_termination,
-                                                    write_termination=self.settings.write_termination)
+        self.backend = VISADevice._rm.open_resource(self.resource,
+                                                    read_termination=self.read_termination,
+                                                    write_termination=self.write_termination)
 
     def close(self):
         """ Disconnect the VISA instrument. If you use a `with` block
@@ -1000,7 +999,7 @@ class VISADevice(core.Device):
         return cls._rm.list_resources()
 
     def write(self, msg):
-        """ Write an SCPI command to the device with pyvisa.
+        """ Send an SCPI command to the device via the pyvisa backend.
 
             Handles debug logging and adjustments when in overlap_and_block
             contexts as appropriate.
@@ -1014,9 +1013,9 @@ class VISADevice(core.Device):
         self._console.debug(f'write {repr(msg_out)}')
         self.backend.write(msg)
 
-    def query(self, msg, timeout=None):
-        """ Query an SCPI command to the device with pyvisa,
-            and return a string containing the device response.
+    def query(self, msg, timeout=None) -> str:
+        """ Query the device with an SCPI command via pyvisa,
+            and return the device response string.
 
             Handles debug logging and adjustments when in overlap_and_block
             contexts as appropriate.
@@ -1037,29 +1036,30 @@ class VISADevice(core.Device):
         self._console.debug(f'      -> {msg_out}')
         return ret
 
-    def get_key(self, name, scpi_key):
-        """ Send an SCPI command to get a state value from the
+    def get_key(self, scpi_key, name=None):
+        """ Send an SCPI command to get a property trait value from the
             device. This function
-            adds a '?' to match SCPI convention. This is
-            automatically called for `state` attributes that
-            define a message.
+            adds a '?' to match SCPI convention.
+            
+            This is automatically called for property traits defined with 'key='.
 
             :param str key: The SCPI command to send
-            :param trait: The trait state corresponding with the command (ignored)
+            :param trait: The trait property trait corresponding with the command (ignored)
         """
         return self.query(scpi_key + '?').rstrip()
 
-    def set_key(self, name, scpi_key, value):
-        """ Send an SCPI command to set a state value on the
-            device. This function adds a '?' to match SCPI convention. This is
-            automatically called for `state` attributes that
-            define a message.
+    def set_key(self, scpi_key, value, name=None):
+        """ Send an SCPI command to set a property trait value on the
+            device using the given key. The command string follows the SCPI convention
+            by separating the key and value with a space.
 
-            :param str key: The SCPI command to send
-            :param trait: The trait state corresponding with the command (ignored)
+            This is automatically called for property traits defined with 'key='.
+
+            :param str key: The key string to use to  to send
+            :param trait: The trait property trait corresponding with the command (ignored)
             :param str value: The value to assign to the parameter
         """
-        self.write(scpi_key + ' ' + str(value))
+        self.write(f'{scpi_key} {value}')
 
     def wait(self):
         """ Convenience function to send standard SCPI '\\*WAI'
@@ -1150,18 +1150,18 @@ class Win32ComDevice(core.Device):
         def factory():
             from pythoncom import CoInitialize
             CoInitialize()
-            return win32com.client.Dispatch(self.settings.com_object)
+            return win32com.client.Dispatch(self.com_object)
 
         # Oddness for win32 threadsafety
         sys.coinit_flags = 0
 
-        if self.settings.com_object == '':
-            raise Exception('settings.com_object needs to be set')
+        if self.com_object == '':
+            raise Exception('value traits.com_object needs to be set')
 
-        if self.settings.concurrency:
+        if self.concurrency:
             self.backend = util.ThreadSandbox(factory, should_sandbox)
         else:
-            self.backend = win32com.client.Dispatch(self.settings.com_object)
+            self.backend = win32com.client.Dispatch(self.com_object)
 
     def close(self):
         pass

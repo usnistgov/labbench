@@ -99,7 +99,7 @@ class Trait:
         The trait behavior is determined by whether its owner is a Device or HasSettings
         instance.
 
-        :param default: the default value of the trait (settings only)
+        :param default: the default value of the trait (value traits only)
 
         :param key: some types of Device take this input to determine automation behavior
 
@@ -113,12 +113,12 @@ class Trait:
 
         :param cache: if True, interact with the device only once, then return copies (state traits only)
 
-        :param only: a whitelist of valid values; setting others raise ValueError
+        :param only: value allowlist; others raise ValueError
 
         :param allow_none: permit None values in addition to the specified type
 
         :param remap: a lookup table that maps the python type (keys) to a potentially different backend values (values) ,
-                      in places of the to_pythonic and from_pythonic methods (states only)
+                      in places of the to_pythonic and from_pythonic methods (property traits only)
 
     """
     
@@ -206,7 +206,7 @@ class Trait:
         if len(kws['remap']) != len(self.remap_inbound):
             raise ValueError(f"'remap' has duplicate values")
                 
-        # Apply the settings
+        # set value traits
         for k, v in kws.items():
             setattr(self, k, v)
 
@@ -403,7 +403,7 @@ class Trait:
 
             elif self.key is not None:
                 # otherwise, use the owner's set_key
-                owner.set_key(self.name, self.key, value)
+                owner.set_key(self.key, value, self.name)
 
             else:
                 objname = owner.__class__.__qualname__ + '.' + self.name
@@ -463,10 +463,10 @@ class Trait:
             # otherwise, get with owner.get_key, if available
             if self.key is None:
                 # otherwise, 'get'
-                objname = owner.__class__.__qualname__ + '.' + self.name
-                raise AttributeError(f"cannot get {objname}: no @{self.__repr__(owner_inst=owner)} " \
-                                     f"getter is defined, and command is None")
-            value = owner.get_key(self.name, self.key)
+                objname = owner.__class__.__qualname__
+                ownername = self.__repr__(owner_inst=owner)
+                raise AttributeError(f"to set the property {name}, decorate a method in {objname} or use the function key argument")
+            value = owner.get_key(self.key, self.name)
 
         # apply remapping as appropriate for the trait
         value = self.remap_inbound.get(value, value)
@@ -609,8 +609,6 @@ class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __pending__ = {}
 
-    # _traits = {} # TODO: see if uncommenting this fixes linting problems without breaking anything
-
     def __init__(self):
         # who is informed on new get or set values
         self.__notify_list__ = {}
@@ -674,12 +672,12 @@ class HasTraits(metaclass=HasTraitsMeta):
             #     clsname = cls.__qualname__
             #     raise AttributeError(f"the '{clsname}' setting annotation '{name}' " \
             #                          f"must be a Trait or an updated default value")
-        # settings = type('settings', (cls.settings,),
-        #                 dict(cls.settings.__dict__,
-        #                      _traits=dict(cls.settings._traits),
+        # value traits = type('value traits', (cls.,),
+        #                 dict(cls..__dict__,
+        #                      _traits=dict(cls.._traits),
         #                      **annotations))
-        # settings.__qualname__ = cls.__qualname__ + '.settings'
-        # cls.settings = settings
+        # value traits.__qualname__ = cls.__qualname__ + '.'
+        # cls. = value traits
 
         # if annotations:
         #     cls.__annotations__ = dict(getattr(cls.__base__, '__annotations__', {}),
@@ -693,6 +691,7 @@ class HasTraits(metaclass=HasTraitsMeta):
             if not hasattr(trait, '__objclass__'):
                 trait.__set_name__(cls, name)
             trait.__init_owner_subclass__(cls)
+
             if trait.role == Trait.ROLE_VALUE:
                 cls._value_attrs.append(name)
             elif trait.role == Trait.ROLE_DATARETURN:
@@ -712,19 +711,30 @@ class HasTraits(metaclass=HasTraitsMeta):
 
         self.__cache__[name] = value
 
-    def set_key(self, name, command, value):
-        objname = self.__class__.__qualname__ + '.' + name
-        raise AttributeError(f"cannot set {objname}: no @{name} " \
-                             f"setter is defined, and {name}.set_key is not defined")
+    def set_key(self, key, value, name=None):
+        """ implement this in subclasses to use `key` to set a parameter value from the
+            Device with self.backend. 
+        
+            property traits defined with "key=" call this to set values
+            in the backend.
+        """
 
-    def get_key(self, name, command):
-        objname = self.__class__.__qualname__ + '.' + name
-        raise AttributeError(f"cannot get {objname}: no @{name} " \
-                             f"getter is defined, and {name}.get_key is not defined")
+        clsname = self.__class__.__qualname__
+        raise NotImplementedError(f"implement {clsname}.get_key for access to key/value parameters on the device")
+
+    def get_key(self, key, name=None):
+        """ implement this in subclasses to use `key` to retreive a parameter value from the
+            Device with self.backend. 
+        
+            property traits defined with "key=" call this to retrieve values
+            from the backend.
+        """
+        clsname = self.__class__.__qualname__
+        raise NotImplementedError(f"implement {clsname}.get_key for access key/value parameters on the device")
 
     @util.hide_in_traceback
     def __get_value__(self, name):
-        """ Get value of a trait for this settings instance
+        """ Get value of a trait for this value traits instance
 
         :param name: Name of the trait
         :return: cached value, or the trait default if it has not yet been set
@@ -733,7 +743,7 @@ class HasTraits(metaclass=HasTraitsMeta):
 
     @util.hide_in_traceback
     def __set_value__(self, name, value):
-        """ Set value of a trait for this settings instance
+        """ Set value of a trait for this value traits instance
 
         :param name: Name of the trait
         :param value: value to assign
@@ -939,7 +949,7 @@ class LookupCorrectionMixIn(Trait):
             # values, instead
             raise ValueError(f"calibration lookup in {self.__repr__(owner_inst=owner)} produced invalid value {repr(uncal)}")
         else:
-            # apply the setting
+            # execute the set
             self._other.__set__(owner, uncal)
 
 
@@ -969,8 +979,8 @@ class OffsetCorrectionMixIn(Trait):
         # # get the current offset, and observe changes to the value to keep it
         # # up to date
         # if self.role == self.ROLE_PROPERTY:
-        #     observe(owner.settings, self.__offset_update__, name=self.offset_name)
-        #     owner._calibrations[self.name] = getattr(owner.settings, self.offset_name)
+        #     observe(owner., self.__offset_update__, name=self.offset_name)
+        #     owner._calibrations[self.name] = getattr(owner., self.offset_name)
         # elif self.role == self.ROLE_VALUE:
         #     observe(owner, self.__offset_update__, name=self.offset_name)
         #     owner._calibrations[self.name] = getattr(owner, self.offset_name)
@@ -1004,7 +1014,7 @@ class OffsetCorrectionMixIn(Trait):
     def _offset_trait(self, owner):
         return owner._traits[self.offset_name]
         # if self.role == self.ROLE_PROPERTY:
-        #     return owner.settings[self.offset_name]
+        #     return owner.[self.offset_name]
         # else:
         #     return owner[self.offset_name]
 
@@ -1115,7 +1125,7 @@ class BoundedNumber(Trait):
         """ generate a new Trait subclass that calibrates values given by
         another trait. their configuration comes from a trait in the owner.
 
-        :param offset_name: the name of a setting trait in the owner containing a numerical offset
+        :param offset_name: the name of a value trait in the owner containing a numerical offset
 
         :param lookup: a table containing calibration data, or None to configure later
         """

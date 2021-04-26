@@ -41,12 +41,12 @@ lb = importlib.reload(lb)
 
 class LaggyInstrument(EmulatedVISADevice):
     """ A mock "instrument"
-    with settings and states to
+    with value traits and property traits to
     demonstrate the process of setting
     up a measurement.
     """
 
-    # Connection and driver settings
+    # Connection and driver value traits
     delay: lb.Float\
         (default=0, min=0, help='connection time')
     fetch_time: lb.Float\

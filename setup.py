@@ -33,8 +33,8 @@ The labbench driver gives a declarative-style abstraction provides several benef
 
 * automatic acquisition logging into an SQLite database,
 * automatically-generated jupyter notebook monitoring widgets,
-* interact with settings and data on remote devices with native python data types (instead of strings),
-* python exceptions on invalid device state settings (instead of silent failure),
+* interact with value traits and data on remote devices with native python data types (instead of strings),
+* python exceptions on invalid device property trait value traits (instead of silent failure),
 * drivers provide consistent style and API conventions for easy scripting (hello, tab completion!),
 * ensure devices disconnect properly when acquisition completes (even on exceptions), and
 * conversion of vector or tabular data to [pandas](pandas.pydata.org) Series or DataFrame objects for rapid exploration of data.

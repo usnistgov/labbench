@@ -1,7 +1,7 @@
 import labbench as lb
 
 class EmulatedVISADevice(lb.Device):
-    """ Act as a VISA device without dispatching any visa commands
+    """ Act as a VISA device without dispatching any visa keys
     """
 
     # Settings
@@ -33,7 +33,7 @@ class EmulatedVISADevice(lb.Device):
                 'operating': True,
                 }
 
-    def get_key(self, name, command):
+    def get_key(self, key, name=None):
         import numpy as np
 
         trait = self[name]
@@ -51,5 +51,5 @@ class EmulatedVISADevice(lb.Device):
         else:
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 
-    def set_key(self, name, command, value):
+    def set_key(self, key, value, name=None):
         pass

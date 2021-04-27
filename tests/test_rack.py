@@ -26,17 +26,18 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
+import sys
+if '..' not in sys.path:
+    sys.path.insert(0, '..')
+
 import unittest
 import importlib
-import sys
+
 import time
 from emulate import EmulatedVISADevice
 from contextlib import contextmanager
-if '..' not in sys.path:
-    sys.path.insert(0, '..')
 import labbench as lb
 import numpy as np
-lb = importlib.reload(lb)
 
 
 class LaggyInstrument(EmulatedVISADevice):
@@ -47,12 +48,9 @@ class LaggyInstrument(EmulatedVISADevice):
     """
 
     # Connection and driver value traits
-    delay: lb.Float\
-        (default=0, min=0, help='connection time')
-    fetch_time: lb.Float\
-        (default=0, min=0, help='fetch time')
-    fail_disconnect: lb.Bool\
-        (default=False, help='True to raise DivideByZero on disconnect')
+    delay = lb.value.float(0, min=0, help='connection time')
+    fetch_time = lb.value.float(0, min=0, help='fetch time')
+    fail_disconnect = lb.value.bool(False, help='True to raise DivideByZero on disconnect')
 
     def open(self):        
         self.perf = {}
@@ -85,16 +83,18 @@ class LaggyInstrument(EmulatedVISADevice):
 
 
 class Rack1(lb.Rack):
-    dev1 = LaggyInstrument
-    dev2 = LaggyInstrument
+    dev1: LaggyInstrument = LaggyInstrument()
+    dev2: LaggyInstrument = LaggyInstrument()
 
-    def setup(self, param1) = pass
+    def setup(self, param1):
+        pass
 
-    def arm(self) = pass
+    def arm(self):
+        pass
 
 
 class Rack2(lb.Rack):
-    dev = LaggyInstrument
+    dev: lb.Device = LaggyInstrument()
 
     def setup(self):
         return 'rack 2 - setup'
@@ -108,9 +108,13 @@ class Rack2(lb.Rack):
 
 
 class Rack3(lb.Rack):
-    dev = LaggyInstrument
+    # this is unset (no =), so it _must_ be passed as an argument to instantiate, i.e.,
+    # 
+    # >>> Rack3(dev=MyDevice)
+    dev: lb.Device
 
-    def acquire(self, *, param2=7, param3) = pass
+    def acquire(self, *, param2=7, param3):
+        pass
 
     def fetch(self, *, param4):
         self.dev.fetch()
@@ -125,7 +129,7 @@ class MyRack(lb.Rack):
     #     key_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
     # )
 
-    db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
+    db = lb.SQLiteLogger(
         path=time.strftime(f"%Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
@@ -161,6 +165,7 @@ if __name__ == '__main__':
 
     # Testbed = lb.Rack.take_module('module_as_testbed')
     Testbed = MyRack
+    Testbed.config.make_templates()
 
     # Testbed.config._rack_defaults(Testbed)
 
@@ -172,7 +177,7 @@ if __name__ == '__main__':
             testbed.inst2.delay = 0.07
             testbed.inst1.delay = 0.12
 
-            testbed.run.from_csv('run.csv')
+            # testbed.run.from_csv('run.csv')
 
             # for i in range(3):
             #     # Run the experiment

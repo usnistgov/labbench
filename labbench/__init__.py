@@ -35,7 +35,7 @@ from ._host import Email
 from ._version import __version__
 
 from ._backends import *
-from ._rack import *
+from ._rack import Rack, Owner, Sequence, Configuration
 
 from . import data
 from . import util

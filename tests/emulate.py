@@ -18,8 +18,8 @@ class EmulatedVISADevice(lb.Device):
     def options(self):
         """ options reported by the instrument """
 
-        return ','.join(((f"{s.name}={repr(self.__previous__[s.name])}" \
-                          for s in self._value_attrs)))
+        param_strs = (f"{s}={getattr(self,s)}" for s in self._value_attrs)
+        return ','.join(param_strs)
 
     @lb.property.dict(key='*STB', settable=False)
     def status_byte(self):
@@ -49,7 +49,7 @@ class EmulatedVISADevice(lb.Device):
 
         elif trait.type is float:
             return str(np.random.uniform(low=trait.min, high=trait.max))
-            
+
         else:
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 

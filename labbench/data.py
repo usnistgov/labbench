@@ -36,6 +36,7 @@ from . import util as util
 import copy
 import inspect
 import io
+import json
 import logging
 from numbers import Number
 import os
@@ -317,19 +318,19 @@ class MungeToDirectory(MungerBase):
 
     def _write_metadata(self, metadata):
         for k, v in metadata.items():
-            df = pd.DataFrame(v)
-            if df.shape[0] == 1:
-                df = df.T
             stream = self._open_metadata(k + '.json')
             if hasattr(stream, 'overwrite'):
                 stream.overwrite = True
 
-            # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
-            try:
-                df.to_json(stream)
-            except TypeError:
-                with io.TextIOWrapper(stream, newline='\n') as buf:
-                    df.to_csv(buf)
+            if isinstance(v, pd.DataFrame):
+                v = v.to_dict()['Value']
+            if isinstance(v,dict):
+                for name, obj in v.items():
+                    if isinstance(obj, Path):
+                        v[name] = str(obj)
+
+            with io.TextIOWrapper(stream, newline='\n') as buf:
+                json.dump(v, buf, indent=True, sort_keys=True)
 
 
 
@@ -438,21 +439,20 @@ class MungeToTar(MungerBase):
                 f'could not remove old file or directory {old_path}')
 
     def _write_metadata(self, metadata):
-        
         for k, v in metadata.items():
-            df = pd.DataFrame(v)
-            if df.shape[0] == 1:
-                df = df.T
             stream = self._open_metadata(k + '.json')
             if hasattr(stream, 'overwrite'):
                 stream.overwrite = True
 
-            # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
-            try:
-                df.to_json(stream)
-            except TypeError:
-                with io.TextIOWrapper(stream, newline='\n') as buf:
-                    df.to_json(buf)
+            if isinstance(v, pd.DataFrame):
+                v = v.to_dict()['Value']
+            if isinstance(v,dict):
+                for name, obj in v.items():
+                    if isinstance(obj, Path):
+                        v[name] = str(obj)
+
+            with io.TextIOWrapper(stream, newline='\n') as buf:
+                json.dump(v, buf, indent=True, sort_keys=True)
 
 
 class Aggregator(util.Ownable):

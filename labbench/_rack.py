@@ -24,8 +24,6 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__all__ = ['Rack', 'Owner', 'Sequence', 'Configuration']
-
 from . import _device as core
 from . import util as util
 
@@ -160,9 +158,6 @@ class Step:
 
 
 class SequencedMethod(util.Ownable):
-    def __init__(self):
-        self.to_template()
-
     @util.hide_in_traceback
     def __call__(self, **kwargs):
         ret = {}
@@ -178,7 +173,7 @@ class SequencedMethod(util.Ownable):
         return ret
 
     @classmethod
-    def to_template(cls, path=None):
+    def to_template(cls, path):
         if path is None:
             path = f"{cls.__objclass__.__qualname__}.{cls.__name__} template.csv"
         util.console.debug(f"writing csv template to {repr(path)}")
@@ -317,14 +312,12 @@ def owner_context_manager(top):
     # # top._setup()
     #
     # the dictionary here is a sequence
-    devices_arg = dict(_devices=devices) if len(devices)>0 else {}
-    seq = dict(first, **devices_arg, **owners)
+    seq = dict(first, _devices=devices, **owners)
 
     desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc)
                       if len(d)>0])
 
     log.debug(f"context order: {desc}")
-    log.debug(f"arguments: name=f'{repr(top)}', **{seq}")
     return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
 
 
@@ -748,14 +741,29 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
 
 class Configuration(util.Ownable):
-    def __init__(self, base_path: Path):
-        self.path = Path(base_path)
+    def __init__(self, root_path: Path):
+        super().__init__()    
+
+        self.path = Path(root_path)
         self.path.mkdir(exist_ok=True, parents=True)
 
     def __owner_subclass__(self, owner_cls):
         super().__owner_subclass__(owner_cls)
         self._rack_defaults(owner_cls)
+
         return self
+
+    def make_templates(self):
+        for name, attr in self.__objclass__.__dict__.items():
+            if name == 'run':
+                print("run! ", attr, type(attr), isinstance(attr, Sequence), isinstance(attr, SequencedMethod))
+            if isinstance(attr, SequencedMethod):
+                method = attr
+
+                print('make a template for ',name)
+                name = f"{type(method).__objclass__.__qualname__}.{type(method).__name__} template.csv"
+                method.to_template(self.path/name)
+
 
     def parameters(self, cls):
         defaults = {}

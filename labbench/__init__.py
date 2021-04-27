@@ -25,29 +25,25 @@
 .. legally bundled with the code in compliance with the conditions of those
 .. licenses.
 """
-from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, console, _force_full_traceback
 
 _force_full_traceback(True)
 
+from ._backends import ShellBackend, DotNetDevice, LabviewSocketInterface, SerialLoggingDevice, TelnetDevice, VISADevice, Win32ComDevice
+from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._device import Device, list_devices, property, value, datareturn
-from .data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._host import Email
+from ._rack import Rack, Owner, Sequence, Configuration
+from ._traits import observe, unobserve
+from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, console, _force_full_traceback
 from ._version import __version__
 
-from ._backends import *
-from ._rack import Rack, Owner, Sequence, Configuration
-
-from . import data
 from . import util
-from ._traits import observe, unobserve
 
-from ._device import Device
-
-# # scrub __module__ for cleaner repr() calls and documentation
-# for _obj in dict(locals()).values():
-#     if getattr(_obj, '__module__', '').startswith('labbench.'):
-#         _obj.__module__ = 'labbench'
-# del _obj
+# scrub __module__ for cleaner repr() and doc
+for _obj in dict(locals()).values():
+    if getattr(_obj, '__module__', '').startswith('labbench.'):
+        _obj.__module__ = 'labbench'
+del _obj
 
 show_messages('info')
 

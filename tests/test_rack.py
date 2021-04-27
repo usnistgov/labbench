@@ -123,7 +123,7 @@ class Rack3(lb.Rack):
 class MyRack(lb.Rack):
     config = lb.Configuration('setup')
 
-    # db: lb.data.RelationalTableLogger = lb.HDFLogger(
+    # db = lb.HDFLogger(
     #     path=time.strftime(f"%Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
     #     append=True,  # `True` --- allow appends to an existing database; `False` --- append
     #     key_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
@@ -141,8 +141,8 @@ class MyRack(lb.Rack):
     )
 
     # Devices
-    inst1: LaggyInstrument = LaggyInstrument(resource='a', delay=.12)
-    inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=.06)
+    inst1 = LaggyInstrument(resource='a', delay=.12)
+    inst2 = LaggyInstrument(resource='b', delay=.06)
 
     # Test procedures
     rack1 = Rack1(dev1=inst1, dev2=inst2)

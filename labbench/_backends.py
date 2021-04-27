@@ -39,15 +39,6 @@ import sys
 from threading import Thread, Event
 import warnings
 
-__all__ = ['ShellBackend',
-           'DotNetDevice',
-           'LabviewSocketInterface',
-           'SerialDevice',
-           'SerialLoggingDevice',
-           'TelnetDevice',
-           'VISADevice',
-           'Win32ComDevice']
-
 
 @util.autocomplete_init
 class ShellBackend(core.Device):

@@ -320,13 +320,13 @@ class MungeToDirectory(MungerBase):
             df = pd.DataFrame(v)
             if df.shape[0] == 1:
                 df = df.T
-            stream = self._open_metadata(k + '.txt')
+            stream = self._open_metadata(k + '.json')
             if hasattr(stream, 'overwrite'):
                 stream.overwrite = True
 
             # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
             try:
-                df.to_csv(stream)
+                df.to_json(stream)
             except TypeError:
                 with io.TextIOWrapper(stream, newline='\n') as buf:
                     df.to_csv(buf)
@@ -443,16 +443,16 @@ class MungeToTar(MungerBase):
             df = pd.DataFrame(v)
             if df.shape[0] == 1:
                 df = df.T
-            stream = self._open_metadata(k + '.txt')
+            stream = self._open_metadata(k + '.json')
             if hasattr(stream, 'overwrite'):
                 stream.overwrite = True
 
             # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
             try:
-                df.to_csv(stream)
+                df.to_json(stream)
             except TypeError:
                 with io.TextIOWrapper(stream, newline='\n') as buf:
-                    df.to_csv(buf)
+                    df.to_json(buf)
 
 
 class Aggregator(util.Ownable):

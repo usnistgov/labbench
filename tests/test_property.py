@@ -215,6 +215,10 @@ class MockReturner(MockBase):
     def fetch_float0(self, a, b,c):
         return a+b+c
 
+    @lb.datareturn.float
+    def fetch_float1(self, a, b,c):
+        return a+b+c
+
 
 class TestProperty:
     # set this in a subclass
@@ -301,6 +305,7 @@ class TestReturner(unittest.TestCase):
     def test_returner_type(self):           
         with MockReturner() as m:
             self.assertEqual(m.fetch_float0(1,2,3), 6.)
+            self.assertEqual(m.fetch_float1(1,2,3), 6.)
 
 if __name__ == '__main__':
     lb.show_messages('debug')

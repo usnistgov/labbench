@@ -188,14 +188,10 @@ class Trait:
 
         if self.role == self.ROLE_VALUE and kws['default'] is Undefined:
             # always go with None when this value is allowed, fallback to self.default
-            kws['default'] = None if self.allow_none else self.default
+            kws['default'] = self.type()
         if self.role == self.ROLE_DATARETURN and kws['func'] is not None:
             # apply a decorator
-            self(func)
-        # elif callable(kws['default']):
-        #     msg = f"trait decorators need to be instantiated - " \
-        #           f"@{self.__class__.__qualname__}() instead of @{self.__class__.__qualname__}"
-        #     raise AttributeError(msg)
+            self(kws['func'])
 
         # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
         if len(kws['remap']) > 0:
@@ -209,6 +205,7 @@ class Trait:
         # set value traits
         for k, v in kws.items():
             setattr(self, k, v)
+
 
     @classmethod
     def __init_subclass__(cls, type=Undefined):
@@ -498,12 +495,12 @@ class Trait:
             else:
                 log = warn
 
-            try:
-                if value != self.validate(value, owner):
-                    raise ValueError
-            except ValueError:
-                log(f"'{self.__repr__(owner_inst=owner)}' {self.role} received the value {repr(value)}, " \
-                    f"which fails {repr(self)}.validate()")
+            # TODO: This broke array-like data. Was it ever necessary?
+            # if value != self.validate(value, owner):
+            #     raise ValueError
+            # except ValueError:
+            #     log(f"'{self.__repr__(owner_inst=owner)}' {self.role} received the value {repr(value)}, " \
+            #         f"which fails {repr(self)}.validate()")
             if value is None and not self.allow_none:
                 log(f"'{self.__repr__(owner_inst=owner)}' {self.role} received value None, which" \
                     f"is not allowed for {repr(self)}")
@@ -603,6 +600,8 @@ class Trait:
 
 
 Trait.__init_subclass__()
+
+VALID_TRAIT_ROLES = Trait.ROLE_VALUE, Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
 
 
 class HasTraits(metaclass=HasTraitsMeta):
@@ -1089,8 +1088,8 @@ class TransformMixIn(Trait):
 @util.autocomplete_init
 class BoundedNumber(Trait):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
-    default: ThisType = 0
-    allow_none: bool = False
+    default: ThisType = None
+    allow_none: bool = True
     min: ThisType = None
     max: ThisType = None
 
@@ -1240,9 +1239,6 @@ class BoundedNumber(Trait):
 
 @util.autocomplete_init
 class NonScalar(Any):
-    title: str = ''  # a name for the data
-    allow_none: bool = True
-
     """ generically non-scalar data, such as a list, array, but not including a string or bytes """
 
     @util.hide_in_traceback
@@ -1323,7 +1319,7 @@ class Unicode(String, type=str):
     @util.hide_in_traceback
     def validate(self, value, owner=None):
         if not isinstance(value, (str, numbers.Number)):
-            raise ValueError(f"'{type(self).__qualname__}' traits accept values of str or numerical type")
+            raise ValueError(f"'{type(self).__qualname__}' traits accept values of str or numerical type, not {type(value).__name__}")
         return value
 
 
@@ -1366,7 +1362,7 @@ class Path(Trait, type=Path):
     """ does the path need to exist when set? """
 
     @util.hide_in_traceback
-    def validate(self, value):
+    def validate(self, value, owner=None):
         path = self.type(value)
 
         if self.must_exist and not path.exists():
@@ -1376,17 +1372,17 @@ class Path(Trait, type=Path):
 
 
 @util.autocomplete_init
-class PandasDataFrame(Trait, type=pd.DataFrame):
+class PandasDataFrame(NonScalar, type=pd.DataFrame):
     pass
 
 
 @util.autocomplete_init
-class PandasSeries(Trait, type=pd.Series):
+class PandasSeries(NonScalar, type=pd.Series):
     pass
 
 
 @util.autocomplete_init
-class NumpyArray(Trait, type=np.ndarray):
+class NumpyArray(NonScalar, type=np.ndarray):
     pass
 
 

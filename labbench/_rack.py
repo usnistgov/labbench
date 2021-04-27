@@ -317,12 +317,14 @@ def owner_context_manager(top):
     # # top._setup()
     #
     # the dictionary here is a sequence
-    seq = dict(first, _devices=devices, **owners)
+    devices_arg = dict(_devices=devices) if len(devices)>0 else {}
+    seq = dict(first, **devices_arg, **owners)
 
     desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc)
                       if len(d)>0])
 
     log.debug(f"context order: {desc}")
+    log.debug(f"arguments: name=f'{repr(top)}', **{seq}")
     return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
 
 

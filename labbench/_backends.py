@@ -662,7 +662,7 @@ class SerialDevice(core.Device):
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):
-        """ Instantiate a new SerialDevice from a `hwid' resource instead
+        """ Instantiate a new SerialDevice from a windows `hwid' string instead
             of a comport resource. A hwid string in windows might look something
             like:
 

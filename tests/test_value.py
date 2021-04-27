@@ -27,6 +27,8 @@
 import unittest
 import importlib
 import sys
+import pandas as pd
+import numpy as np
 if '..' not in sys.path:
     sys.path.insert(0, '..')
 import labbench as lb
@@ -36,7 +38,7 @@ remap = {True: 'ON', False: 'OFF'}
 flag_start = False
 
 
-class Mock(lb.Device):
+class TrialDevice(lb.Device):
     _getter_counts = {}
 
     float0 = lb.value.float()
@@ -52,34 +54,77 @@ class Mock(lb.Device):
     str1 = lb.value.str(default='hello')
     str2 = lb.value.str('moose', only=('moose', 'squirrel'))
     str3 = lb.value.str('moose', only=('MOOSE', 'squirrel'), case=False)
+
+    df0 = lb.value.DataFrame(pd.DataFrame([0,1,2,3,4,5]))
+    series0 = lb.value.Series(pd.Series([0,1,2,3,4,5]))
+    array0 = lb.value.array(np.array([0,1,2,3,4,5]))
     
-class UpdateMock(Mock):
+class UpdateTrialDevice(TrialDevice):
     float0 = 7
 
-class TestSettings(unittest.TestCase):
-    def test_defaults(self):
-        with Mock() as m:
+class TestValueTraits(unittest.TestCase):
+    def test_default_types(self):
+        with TrialDevice() as m:
             for name in m._value_attrs:
                 trait = m._traits[name]
+                value = getattr(m,name)
+
+                if trait.allow_none:
+                    allow_types = (type(None), trait.type)
+                else:
+                    allow_types = trait.type
+
+                self.assertTrue(issubclass(type(value), allow_types), msg=f'trait {name}')
+
+    def test_scalar_defaults(self):
+        with TrialDevice() as m:
+            for name in m._value_attrs:
+                trait = m._traits[name]
+
+                if isinstance(trait, lb._traits.NonScalar):
+                    continue
+
+                value = getattr(m,name)
+
                 self.assertEqual(getattr(m, name),
-                                 trait.default, msg=f'defaults: {name}')
-                
+                                trait.default, msg=f'defaults: {name}')
+
+
+    def assertArrayEqual(self, a1, a2):
+        self.assertEqual(a1.dtype, a2.dtype)
+        self.assertEqual(a1.shape, a2.shape)
+        self.assertTrue(np.allclose(a1,a2))
+
+    def test_nonscalar_defaults(self):
+        with TrialDevice() as m:
+            for name in m._value_attrs:
+                trait = m._traits[name]
+
+                v = getattr(m, name)
+
+                if trait.type in (pd.DataFrame, pd.Series):
+                    self.assertArrayEqual(v.values, trait.default.values)
+                    self.assertArrayEqual(v.index.values, trait.default.index.values)
+                    self.assertEqual(v.index.name, trait.default.index.name)
+                elif trait.type is np.ndarray:
+                    self.assertArrayEqual(v, trait.default)
+
     def test_initialization(self):
         value = 3
         for i in range(4):
-            with Mock(**{f'float{i}': value}) as m:
+            with TrialDevice(**{f'float{i}': value}) as m:
                 self.assertEqual(getattr(m, f'float{i}'), value,
                                  msg=f'float{i}')
                 
         value = 3
         for i in range(2):
-            with Mock(**{f'int{i}': value}) as m:
+            with TrialDevice(**{f'int{i}': value}) as m:
                 self.assertEqual(getattr(m, f'int{i}'), value,
                                  msg=f'int{i}')                
 
         value = 'moose'
         for i in range(4):
-            with Mock(**{f'str{i}': value}) as m:
+            with TrialDevice(**{f'str{i}': value}) as m:
                 self.assertEqual(getattr(m, f'str{i}'), value,
                                  msg=f'str{i}')
 
@@ -87,29 +132,29 @@ class TestSettings(unittest.TestCase):
         value = '3'
         expected = 3
         for i in range(4):
-            with Mock(**{f'float{i}': value}) as m:
+            with TrialDevice(**{f'float{i}': value}) as m:
                 self.assertEqual(getattr(m, f'float{i}'), expected,
                                  msg=f'float{i}')
 
         value = 437
         expected = '437'
         for i in range(2):
-            with Mock(**{f'str{i}': value}) as m:
+            with TrialDevice(**{f'str{i}': value}) as m:
                 self.assertEqual(getattr(m, f'str{i}'), expected,
                                  msg=f'str{i}')
 
     def test_param_case(self):
         with self.assertRaises(ValueError):           
-            with Mock() as m:
+            with TrialDevice() as m:
                 m.str2 = 'MOOSE'
 
-        with Mock() as m:
+        with TrialDevice() as m:
             m.str3 = 'SQUIRREL'
             m.str3 = 'squirrel'
             m.str3 = 'moose'
 
     def test_param_only(self):
-        with Mock() as m:
+        with TrialDevice() as m:
             self.assertEqual(m.float2, 0)
             m.float2 = 3
             self.assertEqual(m.float2, 3)
@@ -120,7 +165,7 @@ class TestSettings(unittest.TestCase):
             self.assertEqual(m.float2, 3)
 
     def test_param_bounds(self):
-        with Mock() as m:
+        with TrialDevice() as m:
             self.assertEqual(m.float1, 0)
             m.float1 = 3
             self.assertEqual(m.float1, 3)
@@ -130,29 +175,29 @@ class TestSettings(unittest.TestCase):
                 m.float1 = 11
 
     def test_param_step(self):
-        with Mock() as m:
+        with TrialDevice() as m:
             # rounding tests
-            self.assertEqual(m.float3, 0)
+            self.assertEqual(m.float3, 0.)
             m.float3 = 3
-            self.assertEqual(m.float3, 3)
+            self.assertEqual(m.float3, 3.)
             m.float3 = 2
-            self.assertEqual(m.float3, 3)
+            self.assertEqual(m.float3, 3.)
             m.float3 = 4
-            self.assertEqual(m.float3, 3)
+            self.assertEqual(m.float3, 3.)
             m.float3 = 1.6
-            self.assertEqual(m.float3, 3)
+            self.assertEqual(m.float3, 3.)
             m.float3 = -2
-            self.assertEqual(m.float3, -3)
+            self.assertEqual(m.float3, -3.)
             m.float3 = -1
             self.assertEqual(m.float3, 0) 
 
     def test_init_docstring(self):
-        self.assertIn('descriptive', Mock.__init__.__doc__)
-        with Mock() as m:
+        self.assertIn('descriptive', TrialDevice.__init__.__doc__)
+        with TrialDevice() as m:
             self.assertIn('descriptive', m.__init__.__doc__)
             
     def test_subclassing(self):
-        with UpdateMock() as m:
+        with UpdateTrialDevice() as m:
             print(m.float0)
             self.assertEqual(m.float0, 7.0)
 

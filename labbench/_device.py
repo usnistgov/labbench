@@ -161,7 +161,7 @@ class AttributeDefinition:
     Path = _traits.Path
     DataFrame = _traits.PandasDataFrame
     Series =_traits.PandasSeries
-    ndarray = _traits.NumpyArray
+    array = ndarray = _traits.NumpyArray
 
     NetworkAddress = _traits.NetworkAddress
 

@@ -621,16 +621,12 @@ class Call(object):
 
     def __init__(self, func, *args, **kws):
         if not callable(func):
-            raise ValueError(
-                '`func` argument is not callable; did you mistakenly add the () and call it?')
+            raise ValueError('`func` argument is not callable')
         self.func = func
         self.name = self.func.__name__
         self.args = args
         self.kws = kws
         self.queue = None
-
-        # This is a means for the main thread to raise an exception
-        # if this is running in a separate thread
 
     def __repr__(self):
         args = ','.join([repr(v) for v in self.args] + \
@@ -665,17 +661,23 @@ class Call(object):
         ret = {}
         # First, generate the list of callables
         for name, func in name_func_pairs:
-            if not isinstance(func, cls):
-                func = cls(func)
-            if name is None:
-                name = func.name
-            else:
-                func.name = name
-            if name in ret:
-                msg = f'another callable is already named {repr(name)} - '\
-                      f'pass as a keyword argument to specify a different name'
-                raise KeyError(msg)
-            ret[name] = func
+            try:
+                if not isinstance(func, cls):
+                    if not hasattr(func, name):
+                        func.__name__  = name
+                    func = cls(func)
+                if name is None:
+                    name = func.name
+                else:
+                    func.name = name
+                if name in ret:
+                    msg = f'another callable is already named {repr(name)} - '\
+                        f'pass as a keyword argument to specify a different name'
+                    raise KeyError(msg)
+                ret[name] = func
+            except:
+                print(name_func_pairs, name, func)
+                raise
 
         return ret
 

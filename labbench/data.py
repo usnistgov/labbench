@@ -26,8 +26,9 @@
 
 
 from contextlib import suppress, ExitStack, contextmanager
+from . import _device, _traits, _rack
 from ._device import Device
-from ._traits import observe
+from ._traits import observe, Trait, VALID_TRAIT_ROLES
 from ._rack import Owner, Rack, Step
 from . import _host
 from . import _device as core
@@ -38,6 +39,7 @@ import io
 import logging
 from numbers import Number
 import os
+import pandas as pd
 from pathlib import Path
 import pickle
 import shutil
@@ -54,10 +56,11 @@ __all__ = ['Aggregator', 'RelationalTableLogger',
 
 EMPTY = inspect._empty
 
+INSPECT_SKIP_FILES = _device.__file__, _traits.__file__, _rack.__file__, __file__
+
 
 class MungerBase(core.Device):
-    """ This is where ugly but necessary sausage making organizes
-        in a file output with a key in the master database.
+    """ Organize file output with a key in the master database.
 
         The following conversions to relational files are attempted in order to
         convert each value in the row dictionary:
@@ -73,23 +76,12 @@ class MungerBase(core.Device):
 
     """
 
-    resource = core.value.str(
-        '', help='base directory for all data')
-
-    text_relational_min = core.value.int(
-        1024, min=0, help='minimum size threshold that triggers storing text in a relational file')
-
-    force_relational = core.value.list(
-        ['host_log'], help='list of column names to always save as relational data')
-
-    dirname_fmt = core.value.str(
-        '{id} {host_time}', help='directory name format for the relational data of each row (keyed on column)')
-
-    nonscalar_file_type = core.value.str(
-        'csv', help='file format for non-scalar numerical data')
-
-    metadata_dirname = core.value.str(
-        'metadata', help='subdirectory name for metadata')
+    resource = core.value.Path(help='base directory for all data')
+    text_relational_min = core.value.int(1024, min=0, help='minimum size threshold that triggers storing text in a relational file')
+    force_relational = core.value.list(['host_log'], help='list of column names to always save as relational data')
+    dirname_fmt = core.value.str('{id} {host_time}', help='directory name format for data in each row keyed on column')
+    nonscalar_file_type = core.value.str('csv', help='file format for non-scalar numerical data')
+    metadata_dirname = core.value.str('metadata', help='subdirectory name for metadata')
 
     def __call__(self, index, row):
         """
@@ -125,8 +117,7 @@ class MungerBase(core.Device):
         return row
 
     def save_metadata(self, name, key_func, **extra):
-        import pandas as pd
-
+        
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 if len(value) > self.text_relational_min:
@@ -143,8 +134,10 @@ class MungerBase(core.Device):
 
         summary = dict(extra)
         for owner, owner_name in name.items():
-            for trait in owner._value_attrs:
-                summary[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
+            
+            for trait_name, trait in owner._traits.items():
+                if trait.role == _traits.Trait.ROLE_VALUE or trait.cache:
+                    summary[key_func(owner_name, trait_name)] = getattr(owner, trait_name)
         summary = {k: process_value(v, k) for k, v in summary.items()}
 
         metadata = dict(summary=pd.DataFrame([summary], index=['Value']).T)
@@ -164,8 +157,7 @@ class MungerBase(core.Device):
         :return: the path to the file, relative to the directory that contains the master database
         """
 
-        import pandas as pd
-
+        
         def write(stream, ext, value):
             if ext == 'csv':
                 value.to_csv(stream)
@@ -324,8 +316,6 @@ class MungeToDirectory(MungerBase):
         return relpath
 
     def _write_metadata(self, metadata):
-        import pandas as pd
-
         for k, v in metadata.items():
             df = pd.DataFrame(v)
             if df.shape[0] == 1:
@@ -448,8 +438,7 @@ class MungeToTar(MungerBase):
                 f'could not remove old file or directory {old_path}')
 
     def _write_metadata(self, metadata):
-        import pandas as pd
-
+        
         for k, v in metadata.items():
             df = pd.DataFrame(v)
             if df.shape[0] == 1:
@@ -503,8 +492,7 @@ class Aggregator(util.Ownable):
         # monitor changes in device property trait on the rack
         if rack is not None:
             for name, obj in rack._devices.items():
-                self.observe_states(obj)
-                self.observe_values(obj)
+                self.observe(obj)
 
     def enable(self):
         # catch return data as well
@@ -514,54 +502,6 @@ class Aggregator(util.Ownable):
     def disable(self):
         Rack._notify.observe_returns(self.__receive_rack_data)
         Rack._notify.observe_calls(self.__receive_rack_data)
-
-    def observe_states(self, devices, changes=True, always=[], never=['connected']):
-        """ Configure Each time a device property trait is set from python,
-            intercept the value to include in the aggregate
-            state.
-
-            Device may be a single device instance, or an
-            several devices in an iterable (such as a list
-            or tuple) to apply to each one.
-
-            Subsequent calls to :func:`observe_states` replace
-            the existing list of observed property traits for each
-            device.
-
-            :param devices: Device instance or iterable of Device instances
-
-            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
-
-            :param always: name (or iterable of multiple names) of property traits to actively update on each call to get()
-
-            :param never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
-        """
-
-        self.__observe__(devices, kind='state', changes=changes, always=always, never=never)
-
-    def observe_values(self, devices, changes=True, always=[], never=[]):
-        """ Configure Each time a value trait is set from python,
-            intercept the value to include in the aggregate
-            state.
-
-            Device may be a single device instance, or an
-            several devices in an iterable (such as a list
-            or tuple) to apply to each one.
-
-            Subsequent calls to :func:`observe_values` replace
-            the existing list of observed property traits for each
-            device.
-
-            :param devices: dictionary of names keyed on Device instances, a Device instance, or an iterable of Device instances
-
-            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
-
-            :param always: name (or iterable of multiple names) of value traits to actively update on each call to get()
-
-            :param never: name (or iterable of multiple names) of value traits to exclude from aggregated result (overrides :param:`always`)
-        """
-
-        self.__observe__(devices, kind='value traits', changes=changes, always=always, never=never)
 
     def get(self) -> dict:
         """ Return a dictionary of observed Device trait data and calls and returns in Rack instances. A get is
@@ -657,7 +597,7 @@ class Aggregator(util.Ownable):
 
     def __update_names__(self, devices):
         """" ensure self.name_map includes entries for each Device instance in devices.values().
-        takes name from devices.keys() when available, otherwise calls self.__whoisthis for introspection.
+        takes name from devices.keys() when available, otherwise calls self._find_object_in_callers for introspection.
         """
 
         for device, name in devices.items():
@@ -679,15 +619,33 @@ class Aggregator(util.Ownable):
                 self.name_map[device] = name = device.__name__
 
             else:
-                self.name_map[device] = name = self.__whoisthis(device)
-                self._console.warning(f"guessing {device} should be named '{name}'")
+                self.name_map[device] = name = self._find_object_in_callers(device)
+                self._console.info(f"{device} named '{name}' by introspection")
 
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
             raise Exception('Could not automatically determine unique names of device instances! '\
                             'Set manually with the set_label method')
 
-    def __observe__(self, devices, kind, changes=True, always=[], never=['connected']):
-        """ apply the request to observe traits """
+    def observe(self, devices, changes=True, always=[], never=['connected']):
+        """ Configure the data to aggregate from value, property, or datareturn traits in the given devices.
+
+            Device may be a single device instance, or an
+            several devices in an iterable (such as a list
+            or tuple) to apply to each one.
+
+            Subsequent calls to :func:`observe_states` replace
+            the existing list of observed property traits for each
+            device.
+
+            :param devices: Device instance or iterable of Device instances
+
+            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
+
+            :param always: name (or iterable of multiple names) of property traits to actively update on each call to get()
+
+            :param never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
+        """
+        
         # parameter checks
         if isinstance(devices, Device):
             devices = {devices: None}
@@ -712,8 +670,11 @@ class Aggregator(util.Ownable):
         else:
             raise ValueError("argument 'never' must be a string, or iterable of strings")
 
-        if kind not in ('state', 'value traits'):
-            raise ValueError(f"value of the 'kind' argument must be either 'state' or 'value traits', not {kind}")
+        # if isinstance(role, (str,bytes)):
+        #     role = [role]
+        # TODO: remove this for good?
+        # if role not in VALID_TRAIT_ROLES:
+        #     raise ValueError(f"the 'role' argument must be one of {str(VALID_TRAIT_ROLES)}, not {role}")
 
         self.__update_names__(devices)
 
@@ -728,11 +689,12 @@ class Aggregator(util.Ownable):
             if never:
                 self.trait_rules['never'][device] = never
 
-    def __whoisthis(self, target, from_depth=2):
+    def _find_object_in_callers(self, target, max_levels=5):
         """ Introspect into the caller to name an object .
 
         :param target: device instance
-        :param from_depth: number of callers outside of the current frame
+        :param min_levels: minimum number of layers of calls to traverse
+        :param max_levels: maximum number of layers to traverse
         :return: name of the Device
         """
 #        # If the context is a function, look in its first argument,
@@ -743,25 +705,40 @@ class Aggregator(util.Ownable):
 #                if isinstance(v, Device):
 #                    ret[k] = v
 
+        def find_value(haystack, needle, reject=['self']):
+            for k, v in haystack.items():
+                if v is needle:
+                    if k in reject:
+                        raise KeyError
+                    else:
+                        return k
+            else:
+                raise KeyError
+
         f = frame = inspect.currentframe()
-        for i in range(from_depth):
-            f = f.f_back
+        
+        ret = None
 
-#        f = inspect.getouterframes(inspect.currentframe())[from_depth].frame
+        try:
+            while f.f_code.co_filename in INSPECT_SKIP_FILES:
+                f = f.f_back
 
-        for k, v in list(f.f_locals.items()):
-            if v is target:
-                return k
+            for i in range(max_levels):
+                # look in the namespace; if nothing
+                try:
+                    ret = find_value(f.f_locals, target)
+                except KeyError:
+                    continue
+                else:
+                    break
 
-        if len(f.f_code.co_varnames) > 0:
-            obj = f.f_locals[f.f_code.co_varnames[0]]
-            for k, v in obj.__dict__.items():
-                if v is target:
-                    return k
-                
-        del f, frame
+                f = f.f_back
+            else:
+                raise Exception(f"failed to automatically label {repr(obj)}")
+        finally:
+            del f, frame
 
-        raise Exception(f"failed to automatically label {repr(obj)}")
+        return ret
 
 
 class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, MungerBase, _host.Host)):
@@ -807,14 +784,14 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
                  # **metadata
                  ):
 
-        super().__init__()
-
         self.aggregator = Aggregator(persistent_state=persistent_state)
+
+        super().__init__()
 
         # log host introspection
         # TODO: smarter
         self.host = _host.Host(git_commit_in=git_commit_in)
-        self.aggregator.observe_states(self.host, always=['time', 'log'])
+        self.observe(self.host, always=['time', 'log'])
 
         # select the backend that dumps relational data
         munge_cls = MungeToTar if tar else MungeToDirectory
@@ -848,6 +825,28 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             path = '<unset path>'
         return f"{self.__class__.__qualname__}({path})"
 
+    def observe(self, devices, changes=True, always=[], never=['connected']):
+        """ Configure the data to aggregate from value, property, or datareturn traits in the given devices.
+
+            Device may be a single device instance, or an
+            several devices in an iterable (such as a list
+            or tuple) to apply to each one.
+
+            Subsequent calls to :func:`observe_states` replace
+            the existing list of observed property traits for each
+            device.
+
+            :param devices: Device instance or iterable of Device instances
+
+            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
+
+            :param always: name (or iterable of multiple names) of property traits to actively update on each call to get()
+
+            :param never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
+        """
+
+        self.aggregator.observe(devices=devices, changes=changes, always=always, never=never)
+
     def set_row_preprocessor(self, func):
         """ Define a function that is called to modify each pending data row
             before it is committed to disk. It should accept a single argument,
@@ -862,44 +861,30 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         else:
             raise ValueError('func argument must be callable or None')
 
-    def append(self, *args, **kwargs):
-        warnings.warn(f"{self.__class__.__qualname__}.append() is deprecated - use {self.__class__.__qualname__}.new_row()")
-        self(*args, **kwargs)
-
     def new_row(self, *args, **kwargs):
-        """ Add a new row of data to the list of data that awaits write
-            to disk.
-
-            This cache of pending data row is in the dictionary `self.pending`.
-            Each row is represented as a dictionary of
-            pairs formatted as {'column_name': 'row_value'}. These
-            pairs come from a combination of 1) keyword arguments passed as
-            `kwargs`, 2) a single dictionary argument, and/or 3) property trait traits
-            configured automatically with `self.aggregator.observe_states`.
-
-            The first pass at forming the row is the single dictionary argument ::
-
-                row = {'name1': value1, 'name2': value2, 'name3': value3}
-                db.append(row)
-
-            The second pass is to update with values as configured with
-            `self.aggregator.observe_states`.
+        """ Add a new row of data to the list of rows that await writes
+            to disk, `self.pending`. This cache of pending data row is in
+            the dictionary `self.pending`.
+            
+            The data row is represented as a dict in the form {'column_name': value}.
+            This dict is formed here with
+            * the most recent value, property, and datareturn traits ({trait_name: latest_value} as configured by `self.observe`);
+            * optional positional dict args[0] (each {key: value});
+            * optional keyword arguments in `kwargs` (each {key: value})
 
             Keyword arguments are passed in as ::
 
-                db.append(name1=value1, name2=value2, nameN=valueN)
+            >>>    db.new_row(dict(name0=value0), name1=value1, name2=value2, nameN=valueN)
 
             Simple "scalar" database types like numbers, booleans, and strings
-            are added
-            directly to the table. Non-scalar or multidimensional values are stored
+            are added directly to the table. Non-scalar or multidimensional values are stored
             in a separate file (as defined in :func:`set_path_format`), and the path
             to this file is stored in the table.
 
-            The row of data is appended to list of rows pending write to
-            disk, `self.pending`. Nothing is written to disk until
-            :func:`write`.
+            In order to write `self.pending` to disk, use :func:`self.write`.
 
-            :param bool copy=True: When `True` (the default), use a deep copy of `data` to avoid problems with overwriting references to data if `data` is reused during test. This takes some extra time; set to `False` to skip this copy operation.
+            :param bool copy=True: When `True` (the default), use a deep copy of `data` to avoid
+            problems with overwriting references to data if `data` is reused during test. This takes some extra time; set to `False` to skip this copy operation.
 
             :return: the dictionary representation of the row added to `self.pending`.
         """
@@ -999,7 +984,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             :return: None
         """
 
-        self.aggregator.observe_values(self.munge, never=self.munge.__traits__)
+        self.observe(self.munge, never=self.munge._traits)
 
         # Do some checks on the relative data directory before we consider overwriting
         # the master db.
@@ -1073,8 +1058,7 @@ class CSVLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-        import pandas as pd
-
+        
         if self.path.exists():
             root = str(self.path.absolute())
             if not self.path.is_dir():
@@ -1112,8 +1096,7 @@ class CSVLogger(RelationalTableLogger):
             If the class was created with overwrite=True, then the first call to _write_master() will overwrite
             the preexisting file; subsequent calls append.
         """
-        import pandas as pd
-
+        
         if len(self.pending) == 0:
             return
         isfirst = self.df is None
@@ -1149,7 +1132,7 @@ class MungeToHDF(Device):
 
     """
 
-    resource = core.value.str('', help='hdf file location')
+    resource = core.value.Path(help='hdf file location')
     key_fmt = core.value.str('{id} {host_time}', help='format for linked data in the master database (keyed on column)')
 
     def open(self):
@@ -1197,8 +1180,7 @@ class MungeToHDF(Device):
         return row
 
     def save_metadata(self, name, key_func, **extra):
-        import pandas as pd
-
+        
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 return value
@@ -1230,8 +1212,7 @@ class MungeToHDF(Device):
         :return: the path to the file, relative to the directory that contains the master database
         """
 
-        import pandas as pd
-
+        
         key = self._get_key(name, index, row)
 
         try:
@@ -1314,8 +1295,7 @@ class HDFLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-        import pandas as pd
-
+        
         # if os.path.exists(self.path):
         #     if self._append:
         #         self.df = pd.read_hdf(self.path, key='master', start=-1)
@@ -1337,8 +1317,7 @@ class HDFLogger(RelationalTableLogger):
             If the class was created with overwrite=True, then the first call to _write_master() will overwrite
             the preexisting file; subsequent calls append.
         """
-        import pandas as pd
-
+        
         if len(self.pending) == 0:
             return
         isfirst = self.df is None
@@ -1398,8 +1377,7 @@ class SQLiteLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-        import pandas as pd
-
+        
         if self.path.exists():
             root = str(self.path.absolute())
             if not self.path.is_dir():
@@ -1456,34 +1434,33 @@ class SQLiteLogger(RelationalTableLogger):
             If the class was created with overwrite=True, then the first call to _write_master() will overwrite
             the preexisting file; subsequent calls append.
         """
-        import pandas as pd
-
+        
         if len(self.pending) == 0:
             return
 
         # Put together a DataFrame from self.pending that is guaranteed
         # to include the columns defined in self._columns
         traits = pd.DataFrame(self.pending)
-        state.index += self.last_index
+        traits.index = traits.index + self.last_index
         blank = pd.DataFrame(columns=self._columns)
 
         # Check for new columns, and insert into the database
         if self._columns is None:
             new_columns = []
         else:
-            state_cols = [c.lower() for c in state.columns]
+            trait_cols = [c.lower() for c in traits.columns]
             blank_cols = [c.lower() for c in blank.columns]
-            new_columns = list(set(state_cols).difference(blank_cols))
+            new_columns = list(set(trait_cols).difference(blank_cols))
 
         for c in new_columns:
             self._console.debug(f"inserting new column '{c}'")
-            column_type = self._sql_type_name(state[c])
+            column_type = self._sql_type_name(traits[c])
             with self._engine.connect() as con:
                 query = f"alter table {self.table_name} add column {c} {column_type} default NULL"
                 con.execute(query)
 
         # Form the new database row
-        df = blank.append(state, sort=True)
+        df = blank.append(traits, sort=True)
         df.sort_index(inplace=True)
         self._columns = df.columns
 
@@ -1538,8 +1515,7 @@ class SQLiteLogger(RelationalTableLogger):
         and it contains NA values, this infers the datatype of the not-NA
         values.  Needed for inserting typed data containing NULLs, GH8778.
         """
-        import pandas as pd
-
+        
         col_for_inference = col
         if col.dtype == 'object':
             notnulldata = col[~pd.isnull(col)]
@@ -1587,7 +1563,6 @@ def read_sqlite(path, table_name='master', columns=None, nrows=None,
     :return: pandas.DataFrame instance containing data loaded from `path`
     """
 
-    import pandas as pd
     from sqlalchemy import create_engine
 
     engine = create_engine(f'sqlite:///{path}')
@@ -1611,7 +1586,6 @@ def read(path_or_buf, columns=None, nrows=None, format='auto', **kws):
     :return: pandas.DataFrame instance containing data read from file
     """
 
-    import pandas as pd
     from pyarrow.feather import read_feather
 
     reader_guess = {'p': pd.read_pickle,
@@ -1730,8 +1704,7 @@ def read_relational(path, expand_col, master_cols=None, target_cols=None,
 
     """
 
-    import pandas as pd
-
+    
     # if not isinstance(master, (pd.DataFrame,pd.Series)):
     #     raise ValueError('expected master to be a DataFrame instance, but it is {} instead'\
     #                      .format(repr(type(master))))

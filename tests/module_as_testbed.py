@@ -12,7 +12,7 @@ from emulate import EmulatedVISADevice
 
 class LaggyInstrument(EmulatedVISADevice):
     """ A mock "instrument"
-    with value traits and states to
+    with value and property traits to
     demonstrate the process of value trait
     up a measurement.
     """

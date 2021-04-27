@@ -5,8 +5,8 @@ class EmulatedVISADevice(lb.Device):
     """
 
     # Settings
-    read_termination = lb.value.str(default='\n', help='end-of-receive termination character')
-    write_termination = lb.value.str(default='\n', help='end-of-transmit termination character')
+    read_termination = lb.value.str('\n', help='end-of-receive termination character')
+    write_termination = lb.value.str('\n', help='end-of-transmit termination character')
 
     # States
     @lb.property.str(key='*IDN', settable=False, cache=True)
@@ -19,7 +19,7 @@ class EmulatedVISADevice(lb.Device):
         """ options reported by the instrument """
 
         return ','.join(((f"{s.name}={repr(self.__previous__[s.name])}" \
-                          for s in self.settings)))
+                          for s in self._value_attrs)))
 
     @lb.property.dict(key='*STB', settable=False)
     def status_byte(self):
@@ -36,18 +36,20 @@ class EmulatedVISADevice(lb.Device):
     def get_key(self, key, name=None):
         import numpy as np
 
-        trait = self[name]
+        trait = self._traits[name]
 
-        if isinstance(trait, lb.Bool):
+        if trait.type is bool:
             if trait.remap:
                 return np.random.choice(trait.remap.values())
             else:
                 return np.random.choice(('TRUE', 'FALSE'))
 
-        elif isinstance(trait, lb.Unicode):
+        elif trait.type is str:
             return 'text'
-        elif isinstance(trait, lb.Float):
+
+        elif trait.type is float:
             return str(np.random.uniform(low=trait.min, high=trait.max))
+            
         else:
             raise TypeError('No emulated values implemented for trait {repr(trait)}')
 

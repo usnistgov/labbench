@@ -26,6 +26,7 @@
 .. licenses.
 """
 
+from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, console, _force_full_traceback
 _force_full_traceback(True)
 
 from ._backends import ShellBackend, DotNetDevice, LabviewSocketInterface, SerialLoggingDevice, TelnetDevice, VISADevice, Win32ComDevice
@@ -34,10 +35,7 @@ from ._device import Device, list_devices, property, value, datareturn
 from ._host import Email
 from ._rack import Rack, Owner, Sequence, Configuration
 from ._traits import observe, unobserve
-from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, console, _force_full_traceback
 from ._version import __version__
-
-from . import util
 
 # scrub __module__ for cleaner repr() and doc
 for _obj in dict(locals()).values():

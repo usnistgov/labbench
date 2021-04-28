@@ -1069,8 +1069,8 @@ class CSVLogger(RelationalTableLogger):
             if ex:
                 raise ex
 
-        if not self.path.lower().endswith('.csv'):
-            self.path += '.csv'
+        if not str(self.path).lower().endswith('.csv'):
+            self.path = f'{self.path}.csv'
         if os.path.exists(self.path):
             if self._append:
                 self.df = pd.read_csv(self.path, nrows=1)

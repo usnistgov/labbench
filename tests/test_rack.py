@@ -41,10 +41,7 @@ import numpy as np
 
 
 class LaggyInstrument(EmulatedVISADevice):
-    """ A mock "instrument"
-    with value traits and property traits to
-    demonstrate the process of setting
-    up a measurement.
+    """ A fake "instrument" with traits and fetch methods
     """
 
     # Connection and driver value traits
@@ -113,7 +110,8 @@ class Rack3(lb.Rack):
     # >>> Rack3(dev=MyDevice)
     dev: lb.Device
 
-    def acquire(self, *, param2=7, param3):
+    # notice this operation requires param2 and param3
+    def acquire(self, *, param3, param2=7):
         pass
 
     def fetch(self, *, param4):
@@ -129,8 +127,8 @@ class MyRack(lb.Rack):
     #     key_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
     # )
 
-    db = lb.SQLiteLogger(
-        path=time.strftime(f"%Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
+    db = lb.CSVLogger(
+        path=time.strftime(f"test db/test-rack %Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
         force_relational=['host_log'],  # Data in these columns will always be relational
@@ -177,7 +175,7 @@ if __name__ == '__main__':
             testbed.inst2.delay = 0.07
             testbed.inst1.delay = 0.12
 
-            # testbed.run.from_csv('run.csv')
+            testbed.run.from_csv('setup/MyRack.run.csv')
 
             # for i in range(3):
             #     # Run the experiment

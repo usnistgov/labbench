@@ -85,7 +85,8 @@ if __name__ == '__main__':
                             'validators'
                             ],
           extras_require={'html': ['sphinx(>=1.6)','recommonmark'],
-                          'notebook': ['notebook', 'ipywidgets']},
+                          'notebook': ['notebook', 'ipywidgets'],
+                          'stubs': ['ast_decompile', 'mypy']},
           long_description=longdescription,
           long_description_content_type="text/markdown",                          
           )

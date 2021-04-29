@@ -43,6 +43,7 @@ for _obj in dict(locals()).values():
         _obj.__module__ = 'labbench'
 del _obj
 
+
 show_messages('info')
 
 _force_full_traceback(False)

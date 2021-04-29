@@ -181,7 +181,22 @@ value = AttributeDefinition(_traits.Trait.ROLE_VALUE)
 datareturn = AttributeDefinition(_traits.Trait.ROLE_DATARETURN)
 
 
-@util.autocomplete_init
+@util.hide_in_traceback
+def __init__():
+    """ Wrapper function to call __init__ with adjusted function signature
+    """
+
+    # The signature has been dynamically replaced and is unknown. Pull it in
+    # via locals() instead. We assume we're inside a __init__(self, ...) call.
+    items = dict(locals())
+    self = items.pop(next(iter(items.keys())))
+    self.__init___wrapped(**items)
+
+
+class AdjustStub:
+    pass
+
+
 class Device(_traits.HasTraits, util.Ownable):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
@@ -269,7 +284,13 @@ class Device(_traits.HasTraits, util.Ownable):
 
     @classmethod
     def __init_subclass__(cls):
-        super().__init_subclass__()
+        
+        # defaults = {k: v.default for k,v in value_traits.items() if v.gettable}
+        # types = {k: v.type for k, v in value_traits.items() if v.gettable}
+
+        # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
+
+        
 
         # Update __doc__ with value traits
         if cls.__doc__:
@@ -283,9 +304,11 @@ class Device(_traits.HasTraits, util.Ownable):
             cls.__init__.__doc__ = ''
 
         # Update cls.__doc__
-        values = {name: cls._traits[name] for name in cls._value_attrs}
-        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in values.items()))
+        value_traits = {name: cls._traits[name] for name in cls._value_attrs}
+        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in value_traits.items()))
         cls.__doc__ += '\n\n' + txt
+
+        super().__init_subclass__()
 
         # TODO: @autocomplete_init seems to make this unecessary - validate
         # defaults = {k: v.default for k, v in settings.items() if v.gettable}
@@ -295,7 +318,7 @@ class Device(_traits.HasTraits, util.Ownable):
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 
 
-    def __init__(self, resource=Undefined, **values):
+    def __init__(self, resource=None, **values):
         """ Update default values with these arguments on instantiation.
         """
         # initialize property trait traits last so that calibration behaviors can use values and self._console

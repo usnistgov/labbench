@@ -601,8 +601,6 @@ class Trait:
 
 Trait.__init_subclass__()
 
-VALID_TRAIT_ROLES = Trait.ROLE_VALUE, Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
-
 
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
@@ -1422,3 +1420,6 @@ class NetworkAddress(Unicode):
             raise ValueError(f'"{value}" is an invalid host address')
         
         return value
+
+
+VALID_TRAIT_ROLES = Trait.ROLE_VALUE, Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN

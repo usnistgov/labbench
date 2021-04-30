@@ -31,8 +31,6 @@ import pandas as pd
 import numpy as np
 if '..' not in sys.path:
     sys.path.insert(0, '..')
-import labbench as lb
-lb = importlib.reload(lb)
 
 remap = {True: 'ON', False: 'OFF'}
 flag_start = False

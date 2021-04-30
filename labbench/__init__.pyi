@@ -1,3 +1,4 @@
+from . import datareturn as datareturn, property as property, value as value
 from ._backends import (
     DotNetDevice as DotNetDevice,
     LabviewSocketInterface as LabviewSocketInterface,
@@ -13,13 +14,7 @@ from ._data import (
     SQLiteLogger as SQLiteLogger,
     read as read,
 )
-from ._device import (
-    Device as Device,
-    datareturn as datareturn,
-    list_devices as list_devices,
-    property as property,
-    value as value,
-)
+from ._device import Device as Device, list_devices as list_devices
 from ._host import Email as Email
 from ._rack import (
     Configuration as Configuration,

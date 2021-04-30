@@ -1,5 +1,5 @@
 import io
-from . import _device as core, datareturn as datareturn, util as util, value as value
+from . import _device as core, util as util
 from ._device import Device as Device
 from ._rack import Owner as Owner, Rack as Rack, Step as Step
 from ._traits import Trait as Trait, VALID_TRAIT_ROLES as VALID_TRAIT_ROLES, observe as observe
@@ -178,7 +178,6 @@ class RelationalTableLogger(Owner, util.Ownable):
 
 class CSVLogger(RelationalTableLogger):
     nonscalar_file_type: str = ...
-    path: Any = ...
     df: Any = ...
 
     def open(self) -> None:

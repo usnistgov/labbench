@@ -26,6 +26,9 @@
 
 from . import _device as core
 from . import util
+from . import property as property_
+from . import value
+from . import datareturn
 
 import datetime
 import io
@@ -88,33 +91,33 @@ class Email(core.Device):
         subject line. Stderr is also sent.
     """
 
-    resource = core.value.NetworkAddress(
+    resource = value.NetworkAddress(
         default='smtp.nist.gov',
         help='smtp server to use'
     )
 
-    port = core.value.int(
+    port = value.int(
         default=25,
         min=1,
         help='TCP/IP port'
     )
     
-    sender = core.value.str(
+    sender = value.str(
         default='myemail@nist.gov',
         help='email address of the sender'
     )
 
-    recipients = core.value.list(
+    recipients = value.list(
         default=['myemail@nist.gov'],
         help='list of email addresses of recipients'
     )
 
-    success_message = core.value.str(
+    success_message = value.str(
         default='Test finished normally',
         help='subject line for test success emails (None to suppress the emails)'
     )
 
-    failure_message = core.value.str(
+    failure_message = value.str(
         default='Exception ended test early',
         help='subject line for test failure emails (None to suppress the emails)'
     )
@@ -225,7 +228,7 @@ class YAMLFormatter(logging.Formatter):
 
 class Host(core.Device):
     # Settings
-    git_commit_in = core.value.str(
+    git_commit_in = value.str(
         default=None,
         allow_none=True,
          help='git commit on open() if run inside a git repo with this branch name'
@@ -303,21 +306,21 @@ class Host(core.Device):
                                for k in sys.modules.keys() if k in versions]))
         return pd.Series(running).sort_index()
    
-    @core.property.str()
+    @property_.str()
     def time(self):
         """ Get a timestamp of the current time
         """
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
-    @core.property.str()
+    @property_.str()
     def log(self):
         """ Get the current host log contents.
         """
         self.backend['log_handler'].flush()
         return self.backend['log_stream'].read().replace('\n', '\r\n')
     
-    @core.property.str(cache=True)
+    @property_.str(cache=True)
     def git_commit_id(self):
         """ Try to determine the current commit hash of the current git repo
         """
@@ -327,7 +330,7 @@ class Host(core.Device):
         except git.NoSuchPathError:
             return ''
 
-    @core.property.str(cache=True)
+    @property_.str(cache=True)
     def git_remote_url(self):
         """ Try to identify the remote URL of the repository of the current git repo
         """
@@ -336,19 +339,19 @@ class Host(core.Device):
         except BaseException:
             return ''
 
-    @core.property.str(cache=True)
+    @property_.str(cache=True)
     def hostname(self):
         """ Get the name of the current host
         """
         return socket.gethostname()
 
-    @core.property.str(cache=True)
+    @property_.str(cache=True)
     def git_browse_url(self):
         """ URL for browsing the current git repository
         """
         return f'{self.git_remote_url}/tree/{self.git_commit_id}'
 
-    @core.property.str(cache=True)
+    @property_.str(cache=True)
     def git_pending_changes(self):
         if self.backend['repo'] is not None:
             diffs = self.backend['repo'].index.diff(None)

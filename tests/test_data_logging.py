@@ -37,7 +37,6 @@ import hashlib
 
 lb._force_full_traceback(True)
 
-
 FREQUENCIES = 10e6,100e6,1e9,10e9
 METADATA = dict(power=1.21e9, potato=7)
 

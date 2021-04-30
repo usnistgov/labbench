@@ -30,16 +30,18 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-from . import util
-from . import _traits
-from ._traits import Undefined
-
 from functools import wraps
 from inspect import isclass
-
 import logging
 import sys
 import traceback
+
+from . import util
+from . import property as property_
+from . import value
+from . import datareturn
+
+from ._traits import HasTraits
 
 
 __all__ = ['Device', 'list_devices', 'property', 'value', 'datareturn']
@@ -145,42 +147,6 @@ class DisconnectedBackend(object):
     str = __repr__
 
 
-class AttributeDefinition:
-    bool = _traits.Bool
-    float = _traits.Float
-    int = _traits.Int
-    complex = _traits.Complex
-
-    str = _traits.Unicode
-    bytes = _traits.Bytes
-
-    list = _traits.List
-    tuple = _traits.Tuple
-    dict = _traits.Dict
-
-    Path = _traits.Path
-    DataFrame = _traits.PandasDataFrame
-    Series =_traits.PandasSeries
-    array = ndarray = _traits.NumpyArray
-
-    NetworkAddress = _traits.NetworkAddress
-
-    def __init__(self, role):
-        self._role = role
-        
-        for name, attr in dict(self.__class__.__dict__).items():
-            if isclass(attr) and issubclass(attr, _traits.Trait):
-                new_attr = type(name, (attr,), dict(role=role))
-
-                # subclass our traits with the given role
-                setattr(self, name, new_attr)
-
-
-property = AttributeDefinition(_traits.Trait.ROLE_PROPERTY)
-value = AttributeDefinition(_traits.Trait.ROLE_VALUE)
-datareturn = AttributeDefinition(_traits.Trait.ROLE_DATARETURN)
-
-
 @util.hide_in_traceback
 def __init__():
     """ Wrapper function to call __init__ with adjusted function signature
@@ -197,7 +163,7 @@ class AdjustStub:
     pass
 
 
-class Device(_traits.HasTraits, util.Ownable):
+class Device(HasTraits, util.Ownable):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
         driver.
@@ -324,8 +290,7 @@ class Device(_traits.HasTraits, util.Ownable):
         # initialize property trait traits last so that calibration behaviors can use values and self._console
         super().__init__()
 
-        if resource is not Undefined:
-            values['resource'] = resource
+        values['resource'] = resource
 
         for name, init_value in values.items():
             if init_value != self._traits[name].default:
@@ -460,7 +425,7 @@ class Device(_traits.HasTraits, util.Ownable):
             # In case an exception has occurred before __init__
             return f'{name}()'
 
-    @property.bool()
+    @property_.bool()
     def connected(self):
         """ are we connected? """
         try:

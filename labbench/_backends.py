@@ -26,6 +26,10 @@
 
 from . import _device as core
 from . import util
+from . import property as property_
+from . import value
+from . import datareturn
+
 from collections import OrderedDict
 import contextlib
 import inspect
@@ -62,24 +66,24 @@ class ShellBackend(core.Device):
         or left as `lb.Undefined` to be ignored in forming a command line.
     """
 
-    binary_path = core.value.str(
+    binary_path = value.str(
         default=None,
         allow_none=True,
         help='path to the file to run'
     )
 
-    timeout = core.value.float(
+    timeout = value.float(
         default=1,
         min=0,
         help='wait time after close before killing the process',
         label='s'
     )
 
-    # arguments = core.value.list(
+    # arguments = value.list(
     #     default=[], help='list of command line arguments to pass into the executable'
     # )
     #
-    # arguments_min = core.value.int(
+    # arguments_min = value.int(
     #     default=0, min=0,
     #     settable=False, help='minimum extra command line arguments needed to run'
     # )
@@ -468,6 +472,7 @@ class DotNetDevice(core.Device):
             raise Exception(
                 'Need the python module that shares the library path')
         try:
+            # static code editors really don't like this, since seems to be created dynamically 
             import clr
         except ImportError as err:
             if str(err) == 'No module named clr':
@@ -530,12 +535,12 @@ class LabviewSocketInterface(core.Device):
         TCP/IP ports where communication is to take place.
     """
 
-    resource = core.value.NetworkAddress('127.0.0.1', accept_port=False, help='LabView VI host address')
-    tx_port = core.value.int(61551, help='TX port to send to the LabView VI')
-    rx_port = core.value.int(61552, help='TX port to send to the LabView VI')
-    delay = core.value.float(1, help='time to wait after each property trait write or query')
-    timeout = core.value.float(2, help='maximum wait replies before raising TimeoutError')
-    rx_buffer_size = core.value.int(1024, min=1)
+    resource = value.NetworkAddress('127.0.0.1', accept_port=False, help='LabView VI host address')
+    tx_port = value.int(61551, help='TX port to send to the LabView VI')
+    rx_port = value.int(61552, help='TX port to send to the LabView VI')
+    delay = value.float(1, help='time to wait after each property trait write or query')
+    timeout = value.float(2, help='maximum wait replies before raising TimeoutError')
+    rx_buffer_size = value.int(1024, min=1)
 
     def open(self):
         self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
@@ -620,14 +625,14 @@ class SerialDevice(core.Device):
     """
 
     # Connection value traits
-    timeout = core.value.float(2, min=0, help='Max time to wait for a connection before raising TimeoutError.')
-    write_termination = core.value.bytes(b'\n', help='Termination character to send after a write.')
-    baud_rate:int = core.value.int(9600, min=1, help='Data rate of the physical serial connection.')
-    parity = core.value.bytes(b'N', help='Parity in the physical serial connection.')
-    stopbits = core.value.float(1, min=1, max=2, step=0.5, help='Number of stop bits, one of `[1, 1.5, or 2.]`.')
-    xonxoff = core.value.bool(False, help='`True` to enable software flow control.')
-    rtscts = core.value.bool(False, help='`True` to enable hardware (RTS/CTS) flow control.')
-    dsrdtr = core.value.bool(False, help='`True` to enable hardware (DSR/DTR) flow control.')
+    timeout = value.float(2, min=0, help='Max time to wait for a connection before raising TimeoutError.')
+    write_termination = value.bytes(b'\n', help='Termination character to send after a write.')
+    baud_rate:int = value.int(9600, min=1, help='Data rate of the physical serial connection.')
+    parity = value.bytes(b'N', help='Parity in the physical serial connection.')
+    stopbits = value.float(1, min=1, max=2, step=0.5, help='Number of stop bits, one of `[1, 1.5, or 2.]`.')
+    xonxoff = value.bool(False, help='`True` to enable software flow control.')
+    rtscts = value.bool(False, help='`True` to enable hardware (RTS/CTS) flow control.')
+    dsrdtr = value.bool(False, help='`True` to enable hardware (DSR/DTR) flow control.')
 
     def __imports__(self):
         global serial
@@ -718,10 +723,10 @@ class SerialLoggingDevice(SerialDevice):
         from the serial port.
     """
 
-    poll_rate = core.value.float(0.1, min=0, help='Data retreival rate from the device (in seconds)')
-    data_format = core.value.bytes(b'', help='Data format metadata')
-    stop_timeout = core.value.float(0.5, min=0, help='delay after `stop` before terminating run thread')
-    max_queue_size = core.value.int(100000, min=1, help='bytes to allocate in the data retreival buffer')
+    poll_rate = value.float(0.1, min=0, help='Data retreival rate from the device (in seconds)')
+    data_format = value.bytes(b'', help='Data format metadata')
+    stop_timeout = value.float(0.5, min=0, help='delay after `stop` before terminating run thread')
+    max_queue_size = value.int(100000, min=1, help='bytes to allocate in the data retreival buffer')
 
     def configure(self):
         """ This is called at the beginning of the logging thread that runs
@@ -828,8 +833,8 @@ class TelnetDevice(core.Device):
     """
 
     # Connection value traits
-    timeout= core.value.float(2, min=0, label='s', help='connection timeout')
-    port = core.value.int(23, min=1)
+    timeout= value.float(2, min=0, label='s', help='connection timeout')
+    port = value.int(23, min=1)
 
     def __imports__(self):
         global Telnet
@@ -874,22 +879,22 @@ class VISADevice(core.Device):
     """
 
     # Settings
-    read_termination = core.value.str('\n')
+    read_termination = value.str('\n')
 
-    write_termination = core.value.str('\n')
+    write_termination = value.str('\n')
 
     # States
-    identity = core.property.str(
+    identity = property_.str(
         key='*IDN', settable=False, cache=True,
         help='identity string reported by the instrument'
     )
 
-    options = core.property.str(
+    options = property_.str(
         key='*OPT', settable=False, cache=True,
         help='options reported by the instrument'
     )
 
-    @core.property.dict(settable=False)
+    @property_.dict(settable=False)
     def status_byte(self):
         """ VISA status byte reported by the instrument """
         code = int(self.query('*STB?'))
@@ -1119,8 +1124,8 @@ class Win32ComDevice(core.Device):
         this thread support wrapper is applied to the dispatched Win32Com object.
     """
 
-    com_object = core.value.str(default='', help='the win32com object string')  # Must be a module
-    concurrency = core.value.bool(default=True, help='whether this implementation supports threading')
+    com_object = value.str(default='', help='the win32com object string')  # Must be a module
+    concurrency = value.bool(default=True, help='whether this implementation supports threading')
 
     def __imports__(self):
         global win32com

@@ -32,7 +32,10 @@ from ._traits import observe, Trait, VALID_TRAIT_ROLES
 from ._rack import Owner, Rack, Step
 from . import _host
 from . import _device as core
-from . import util as util
+from . import property as property_
+from . import value
+from . import datareturn
+from . import util
 import copy
 import inspect
 import io
@@ -71,12 +74,12 @@ class MungerBase(core.Device):
 
     """
 
-    resource = core.value.Path(help='base directory for all data')
-    text_relational_min = core.value.int(1024, min=0, help='minimum size threshold that triggers storing text in a relational file')
-    force_relational = core.value.list(['host_log'], help='list of column names to always save as relational data')
-    dirname_fmt = core.value.str('{id} {host_time}', help='directory name format for data in each row keyed on column')
-    nonscalar_file_type = core.value.str('csv', help='file format for non-scalar numerical data')
-    metadata_dirname = core.value.str('metadata', help='subdirectory name for metadata')
+    resource = value.Path(help='base directory for all data')
+    text_relational_min = value.int(1024, min=0, help='minimum size threshold that triggers storing text in a relational file')
+    force_relational = value.list(['host_log'], help='list of column names to always save as relational data')
+    dirname_fmt = value.str('{id} {host_time}', help='directory name format for data in each row keyed on column')
+    nonscalar_file_type = value.str('csv', help='file format for non-scalar numerical data')
+    metadata_dirname = value.str('metadata', help='subdirectory name for metadata')
 
     def __call__(self, index, row):
         """
@@ -1126,8 +1129,8 @@ class MungeToHDF(Device):
 
     """
 
-    resource = core.value.Path(help='hdf file location')
-    key_fmt = core.value.str('{id} {host_time}', help='format for linked data in the master database (keyed on column)')
+    resource = value.Path(help='hdf file location')
+    key_fmt = value.str('{id} {host_time}', help='format for linked data in the master database (keyed on column)')
 
     def open(self):
         import h5py

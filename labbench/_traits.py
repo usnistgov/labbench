@@ -32,7 +32,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 
 from . import util
 
-from typing import Generic, T, Callable
+import typing
 from warnings import warn
 from functools import wraps
 import validators as _val
@@ -54,7 +54,7 @@ TRAIT_TYPE_REGISTRY = {}
 Undefined = type(None)
 
 
-class ThisType(Generic[T]):
+class ThisType(typing.Generic[typing.T]):
     pass
 
 
@@ -133,7 +133,7 @@ class Trait:
     # keyword argument types and default values
     default: ThisType = Undefined
     key: Undefined = Undefined
-    func: Callable = None
+    func: typing.Callable = None
     # role: str = ROLE_UNSET
     help: str = ''
     label: str = ''
@@ -179,7 +179,8 @@ class Trait:
         elif self.role == self.ROLE_DATARETURN:
             invalid_args = 'default', 'key', 'settable', 'gettable'
         else:
-            raise ValueError(f"{self.__class__.__qualname__}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}")
+            clsname = self.__class__.__qualname__
+            raise ValueError(f"{clsname}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}, not {repr(self.role)}")
 
         for k in invalid_args:
             if self._arg_defaults[k] is not Undefined and self._arg_defaults[k] != kws[k]:
@@ -1423,3 +1424,17 @@ class NetworkAddress(Unicode):
 
 
 VALID_TRAIT_ROLES = Trait.ROLE_VALUE, Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
+
+def subclass_namespace_traits(namespace_dict, role, omit_trait_attrs):
+    for name, attr in dict(namespace_dict).items():
+        if isclass(attr) and issubclass(attr, Trait):
+            # subclass our traits with the given role
+            new_trait = type(name, (attr,), dict(role=role))
+            new_trait.role = role
+
+            # clean out annotations for stub generation
+            new_trait.__annotations__ = dict(new_trait.__annotations__)
+            for drop_attr in omit_trait_attrs:
+                new_trait.__annotations__.pop(drop_attr)
+
+            namespace_dict[name] = new_trait

@@ -31,11 +31,15 @@ _force_full_traceback(True)
 
 from ._backends import ShellBackend, DotNetDevice, LabviewSocketInterface, SerialLoggingDevice, TelnetDevice, VISADevice, Win32ComDevice
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
-from ._device import Device, list_devices, property, value, datareturn
+from ._device import Device, list_devices
 from ._host import Email
 from ._rack import Rack, Owner, Sequence, Configuration
 from ._traits import observe, unobserve
 from ._version import __version__
+
+from . import value
+from . import property
+from . import datareturn
 
 # scrub __module__ for cleaner repr() and doc
 for _obj in dict(locals()).values():

@@ -62,7 +62,7 @@ class HasTraitsMeta(type):
     __pending__ = []
 
     @classmethod
-    def __prepare__(cls, names, bases):
+    def __prepare__(cls, names, bases, **kws):
         """ Prepare copies of cls._traits, to ensure that any traits defined
             in the definition don't clobber parents' traits.
         """

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `lb.ShellBackend` replaces `lb.CommandLineWrapper`, and is defined by settings annotations
 
 ### Changed
+- Default values of Device value traits can now be set by passing keyword arguments when subclassing
 - Show warnings on trait assignment typos like `device.frequency = 5` instead of `device.state.frequency = 5`
 - `state` or `settings` traits can be defined directly in a `labbench.Device` class. Settings are defined as annotations ('`:`') and states are defined with assignment ('`=`')
 - Add first 40 lines of CommandLineWrapper output to debug logs

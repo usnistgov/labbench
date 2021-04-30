@@ -41,7 +41,7 @@ from . import property as property_
 from . import value
 from . import datareturn
 
-from ._traits import HasTraits
+from ._traits import HasTraits, Trait
 
 
 __all__ = ['Device', 'list_devices', 'property', 'value', 'datareturn']
@@ -159,10 +159,6 @@ def __init__():
     self.__init___wrapped(**items)
 
 
-class AdjustStub:
-    pass
-
-
 class Device(HasTraits, util.Ownable):
     r"""`Device` is the base class common to all labbench
         drivers. Inherit it to implement a backend, or a specialized type of
@@ -210,7 +206,7 @@ class Device(HasTraits, util.Ownable):
             Device.resource = 'insert-your-address-string-here'
     """
 
-    resource = value.str(help='device address or URI')
+    resource = value.str(allow_none=True, help='device address or URI')
     concurrency= value.bool(True, settable=False, help='True if the device supports threading')
 
     """ Container for property trait traits in a Device. Getting or setting property trait traits
@@ -249,7 +245,7 @@ class Device(HasTraits, util.Ownable):
     __children__ = {}
 
     @classmethod
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, **value_defaults):
         
         # defaults = {k: v.default for k,v in value_traits.items() if v.gettable}
         # types = {k: v.type for k, v in value_traits.items() if v.gettable}
@@ -276,6 +272,15 @@ class Device(HasTraits, util.Ownable):
 
         super().__init_subclass__()
 
+        for trait_name, new_default in value_defaults.items():
+            trait = getattr(cls, trait_name, None)
+
+            if trait is None or trait.role != Trait.ROLE_VALUE:
+                clsname = cls.__qualname__
+                raise AttributeError(f"there is no value trait {clsname}.{trait_name} - cannot update its default")
+
+            trait.default = new_default
+
         # TODO: @autocomplete_init seems to make this unecessary - validate
         # defaults = {k: v.default for k, v in settings.items() if v.gettable}
         # types = {k: v.type for k, v in settings.items() if v.gettable}
@@ -284,6 +289,7 @@ class Device(HasTraits, util.Ownable):
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 
 
+    @util.hide_in_traceback
     def __init__(self, resource=None, **values):
         """ Update default values with these arguments on instantiation.
         """

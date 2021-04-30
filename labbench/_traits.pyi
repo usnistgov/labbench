@@ -368,6 +368,7 @@ class Int(BoundedNumber):
         max: int=None
     ):
         ...
+    ...
 
 
 class Float(BoundedNumber):

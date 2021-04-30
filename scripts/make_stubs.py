@@ -47,8 +47,6 @@ def ast_arg(name, annotation=None):
 
 def ast_signature(args, defaults, annotations):
     annotations = {k:nameit(v) for k,v in annotations.items() if v is not Undefined}
-    if 'key' in annotations:
-        print(annotations)
 
     return ast.arguments(
         args=[ast_arg(a, annotations.get(a, None)) for a in args],
@@ -83,7 +81,10 @@ def update_stubs(path, mod_name, sub_name):
         if isclass(obj) and issubclass(obj, (Trait, Rack, Device))
     ]
 
-    print(f'{namespace.__name__}: update {target_names}')
+    if len(target_names) > 0:
+        print(f'{namespace.__name__}: update {target_names}')
+    else:
+        return
 
     # find their definitions in the parsed ast tree
     target_cls_defs = [
@@ -128,20 +129,20 @@ def update_stubs(path, mod_name, sub_name):
 
 
 if __name__ == '__main__':
-    from mypy import stubgen
-
     root = Path('labbench')
     mod_name = 'labbench'
 
-    import sys
-    sys.argv = [sys.argv[0],str(root), '-o', str(root/'..'), '-v']
+    # clear out previous files
+    for path in glob(str(root/'*.pyi')):
+        Path(path).unlink()
 
+    # stubgen is the first stab
+    from mypy import stubgen
+    sys.argv = [sys.argv[0],str(root), '-o', str(root/'..'), '-v']
     stubgen.main()
 
-    print(str(root/'*.pyi'))
-
+    # now step through to replace __init__ keyword arguments
     for path in glob(str(root/'*.pyi')):
-        print(path)
         path = Path(path)
 
         if path.stem == 'notebooks':

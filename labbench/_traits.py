@@ -751,7 +751,6 @@ class HasTraits(metaclass=HasTraitsMeta):
         pass
 
 
-@util.autocomplete_init
 class Any(Trait, type=None):
     """ allows any value """
 
@@ -823,7 +822,6 @@ def unobserve(obj, handler):
         raise TypeError('object to unobserve must be an instance of Device')
 
 
-@util.autocomplete_init
 class LookupCorrectionMixIn(Trait):
     """ act as another BoundedNumber trait calibrated with a lookup table
     """
@@ -951,7 +949,6 @@ class LookupCorrectionMixIn(Trait):
             self._other.__set__(owner, uncal)
 
 
-@util.autocomplete_init
 class OffsetCorrectionMixIn(Trait):
     """ act as another BoundedNumber trait, calibrated with an additive offset
     """
@@ -1040,7 +1037,6 @@ class OffsetCorrectionMixIn(Trait):
         self._other.__set__(owner, value - owner._calibrations[self.name])
 
 
-@util.autocomplete_init
 class TransformMixIn(Trait):
     """ act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber trait
     """
@@ -1084,7 +1080,6 @@ class TransformMixIn(Trait):
         self._other.__set__(owner, self._reverse(value))
 
 
-@util.autocomplete_init
 class BoundedNumber(Trait):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
     default: ThisType = None
@@ -1236,7 +1231,6 @@ class BoundedNumber(Trait):
         return self.transform(div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}")
 
 
-@util.autocomplete_init
 class NonScalar(Any):
     """ generically non-scalar data, such as a list, array, but not including a string or bytes """
 
@@ -1249,12 +1243,10 @@ class NonScalar(Any):
         return value
 
 
-@util.autocomplete_init
 class Int(BoundedNumber, type=int):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
 
 
-@util.autocomplete_init
 class Float(BoundedNumber, type=float):
     """ accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking) """
     step: ThisType = None
@@ -1271,13 +1263,11 @@ class Float(BoundedNumber, type=float):
         return value
 
 
-@util.autocomplete_init
 class Complex(Trait, type=complex):
     """ accepts numerical or str values, following normal python casting procedures (with bounds checking) """
     allow_none: bool = False
 
 
-@util.autocomplete_init
 class Bool(Trait, type=bool):
     """ accepts boolean or numeric values, or a case-insensitive match to one of ('true',b'true','false',b'false') """
     allow_none: bool = False
@@ -1296,7 +1286,6 @@ class Bool(Trait, type=bool):
                          "or one of ('true',b'true','false',b'false'), case-insensitive")
 
 
-@util.autocomplete_init
 class String(Trait):
     """ base class for string types, which adds support for case sensitivity arguments """
     case: bool = True
@@ -1310,7 +1299,6 @@ class String(Trait):
         return value in iterable
 
 
-@util.autocomplete_init
 class Unicode(String, type=str):
     """ accepts strings or numeric values only; convert others explicitly before assignment """
     default: ThisType = ''
@@ -1322,13 +1310,11 @@ class Unicode(String, type=str):
         return value
 
 
-@util.autocomplete_init
 class Bytes(String, type=bytes):
     """ accepts bytes objects only - encode str (unicode) explicitly before assignment """
     default: ThisType = b''
 
 
-@util.autocomplete_init
 class Iterable(Trait):
     """ accepts any iterable """
 
@@ -1339,23 +1325,19 @@ class Iterable(Trait):
         return value
 
 
-@util.autocomplete_init
 class Dict(Iterable, type=dict):
     """ accepts any type of iterable value accepted by python `dict()` """
 
 
-@util.autocomplete_init
 class List(Iterable, type=list):
     """ accepts any type of iterable value accepted by python `list()` """
 
 
-@util.autocomplete_init
 class Tuple(Iterable, type=tuple):
     """ accepts any type of iterable value accepted by python `tuple()` """
     settable: bool = False
 
 
-@util.autocomplete_init
 class Path(Trait, type=Path):
     must_exist:bool = False
     """ does the path need to exist when set? """
@@ -1370,22 +1352,18 @@ class Path(Trait, type=Path):
         return path
 
 
-@util.autocomplete_init
 class PandasDataFrame(NonScalar, type=pd.DataFrame):
     pass
 
 
-@util.autocomplete_init
 class PandasSeries(NonScalar, type=pd.Series):
     pass
 
 
-@util.autocomplete_init
 class NumpyArray(NonScalar, type=np.ndarray):
     pass
 
 
-@util.autocomplete_init
 class NetworkAddress(Unicode):
     """ a IDN-compatible network address string, such as an IP address or DNS hostname """
 

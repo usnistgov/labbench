@@ -44,7 +44,6 @@ from threading import Thread, Event
 import warnings
 
 
-@util.autocomplete_init
 class ShellBackend(core.Device):
     """ Virtual device controlled by a shell command in another process. It supports
         threaded data logging through standard
@@ -431,7 +430,6 @@ class ShellBackend(core.Device):
             pass
 
 
-@util.autocomplete_init
 class DotNetDevice(core.Device):
     """ This Device backend represents a wrapper around a .NET library. It is implemented
         with pythonnet, and handlesimports.
@@ -518,7 +516,6 @@ class DotNetDevice(core.Device):
         pass
 
 
-@util.autocomplete_init
 class LabviewSocketInterface(core.Device):
     """ Implement the basic sockets-based control interface for labview.
         This implementation uses a transmit and receive socket.
@@ -543,11 +540,12 @@ class LabviewSocketInterface(core.Device):
     rx_buffer_size = value.int(1024, min=1)
 
     def open(self):
-        self.backend = {'tx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
-                        'rx': socket.socket(socket.AF_INET, socket.SOCK_DGRAM)}
+        self.backend = dict(
+            tx=socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
+            rx=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        )
 
-        self.backend['rx'].bind((self.resource,
-                                 self.rx_port))
+        self.backend['rx'].bind((self.resource, self.rx_port))
         self.backend['rx'].settimeout(self.timeout)
         self.clear()
 
@@ -605,7 +603,6 @@ class LabviewSocketInterface(core.Device):
                     continue
 
 
-@util.autocomplete_init
 class SerialDevice(core.Device):
     """ A general base class for communication with serial devices.
         Unlike (for example) VISA instruments, there is no
@@ -711,7 +708,6 @@ class SerialDevice(core.Device):
                             for port in list_ports.comports()])
 
 
-@util.autocomplete_init
 class SerialLoggingDevice(SerialDevice):
     """ Manage connection, acquisition, and data retreival on a single GPS device.
         The goal is to make GPS devices controllable somewhat like instruments:
@@ -813,7 +809,6 @@ class SerialLoggingDevice(SerialDevice):
         self.stop()
 
 
-@util.autocomplete_init
 class TelnetDevice(core.Device):
     """ A general base class for communication devices via telnet.
         Unlike (for example) VISA instruments, there is no
@@ -833,8 +828,8 @@ class TelnetDevice(core.Device):
     """
 
     # Connection value traits
+    resource = value.NetworkAddress('127.0.0.1:23', help='remote address of the telnet server (default port is 23)')
     timeout= value.float(2, min=0, label='s', help='connection timeout')
-    port = value.int(23, min=1)
 
     def __imports__(self):
         global Telnet
@@ -844,7 +839,14 @@ class TelnetDevice(core.Device):
         """ Open a telnet connection to the host defined
             by the string in self.resource
         """
-        self.backend = Telnet(self.resource, port=self.port,
+        host, *port = self.resource.split(':')
+
+        if len(port) > 0:
+            port = int(port[0])
+        else:
+            port = 23
+
+        self.backend = Telnet(self.resource, port=port,
                               timeout=self.timeout)
 
     def close(self):
@@ -853,7 +855,6 @@ class TelnetDevice(core.Device):
         self.backend.close()
 
 
-@util.autocomplete_init
 class VISADevice(core.Device):
     r""" .. class:: VISADevice(resource, read_termination='\\n', write_termination='\\n')
 
@@ -1110,7 +1111,6 @@ class VISADevice(core.Device):
                    and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
 
 
-@util.autocomplete_init
 class Win32ComDevice(core.Device):
     """ Basic support for calling win32 COM APIs.
 

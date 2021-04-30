@@ -26,7 +26,7 @@
 
 __all__ = [# "misc"
            'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages',
-           'console', 'autocomplete_init', 'LabbenchDeprecationWarning', 't0',
+           'console', 'LabbenchDeprecationWarning', 'import_t0',
 
 
            # concurrency and sequencing
@@ -70,18 +70,6 @@ console = logging.LoggerAdapter(
     logging.getLogger('labbench'),
     dict(origin='') # description of origin within labbench (for screen logs only)
 )
-
-
-def _autocomplete_init(callable):
-    """ Use as a decorator to trick text editors that use static code introspection
-        into autocompleting an init function based on class annotations.
-
-        In order for this to work, subclasses must be decorated separately to work.
-    """
-    return callable
-
-from dataclasses import dataclass as autocomplete_init
-locals()['autocomplete_init'] = _autocomplete_init
 
 
 # show deprecation warnings only once

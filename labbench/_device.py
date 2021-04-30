@@ -39,9 +39,8 @@ import traceback
 from . import util
 from . import property as property_
 from . import value
-from . import datareturn
 
-from ._traits import HasTraits, Trait
+from ._traits import HasTraits, Trait, Undefined
 
 
 __all__ = ['Device', 'list_devices', 'property', 'value', 'datareturn']
@@ -245,8 +244,8 @@ class Device(HasTraits, util.Ownable):
     __children__ = {}
 
     @classmethod
+    @util.hide_in_traceback
     def __init_subclass__(cls, **value_defaults):
-        
         # defaults = {k: v.default for k,v in value_traits.items() if v.gettable}
         # types = {k: v.type for k, v in value_traits.items() if v.gettable}
 
@@ -276,8 +275,8 @@ class Device(HasTraits, util.Ownable):
             trait = getattr(cls, trait_name, None)
 
             if trait is None or trait.role != Trait.ROLE_VALUE:
-                clsname = cls.__qualname__
-                raise AttributeError(f"there is no value trait {clsname}.{trait_name} - cannot update its default")
+                parent_name = cls.__mro__[1].__qualname__
+                raise AttributeError(f"there is no value trait {parent_name}.{trait_name}, cannot update its default")
 
             trait.default = new_default
 
@@ -290,13 +289,14 @@ class Device(HasTraits, util.Ownable):
 
 
     @util.hide_in_traceback
-    def __init__(self, resource=None, **values):
+    def __init__(self, resource=Undefined, **values):
         """ Update default values with these arguments on instantiation.
         """
         # initialize property trait traits last so that calibration behaviors can use values and self._console
         super().__init__()
 
-        values['resource'] = resource
+        if resource is not Undefined:
+            values['resource'] = resource
 
         for name, init_value in values.items():
             if init_value != self._traits[name].default:

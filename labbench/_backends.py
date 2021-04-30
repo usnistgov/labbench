@@ -78,6 +78,8 @@ class ShellBackend(core.Device):
         label='s'
     )
 
+    flags = value.dict({}, help="e.g., dict(force='-f') to connect the class value trait 'force' to '-f'")
+
     # arguments = value.list(
     #     default=[], help='list of command line arguments to pass into the executable'
     # )
@@ -124,7 +126,7 @@ class ShellBackend(core.Device):
     # @property
     # @contextlib.contextmanager
     # def no_state_arguments(self):
-    #     """ disable automatic use of property trait traits in generating argument strings
+    #     """ disable automatic use of property trait in generating argument strings
     #     """
     #     self.__contexts['use_state_arguments'] = False
     #     yield
@@ -296,30 +298,28 @@ class ShellBackend(core.Device):
         self.__kill = False
         spawn(cmdl)
 
-    def _flag_names(self):
-        return (name for name in self._value_attrs
-                if self._traits[name].key is not core.Undefined)
-
-    def _commandline(self, **flags):
+    def _commandline(self, **values):
         """ Form a list of commandline argument strings for foreground
             or background calls.
+
+            :values: {trait_name: value} mapping that updates value traits in `self`
 
             :returns: tuple of string
         """
 
         # validate the set of flags
-        unsupported = set(flags).difference(self._flag_names())
+        unsupported = set(values).difference(self.flags.keys())
         if len(unsupported) > 1:
             raise KeyError(f"flags {unsupported} are unsupported")
 
         # apply flags
-        for name, value in flags.items():
+        for name, value in values.items():
             setattr(self, name, value)
 
         cmd = (self.binary_path,)
 
-        # Update property trait traits with the flags
-        for name in self._flag_names():
+        # Update trait with the flags
+        for name, flag_str in self.flags.items():
             trait = self._traits[name]
             value = getattr(self, name)
 
@@ -330,11 +330,11 @@ class ShellBackend(core.Device):
             elif trait.key is None:
                 cmd = cmd + (value,)
             elif isinstance(trait, core.Bool) and value is True:
-                cmd = cmd + (trait.key,)
-            elif not isinstance(trait.key, str) and trait.key is not core.Undefined:
+                cmd = cmd + (flag_str,)
+            elif not isinstance(flag_str, str) and flag_str is not core.Undefined:
                 raise TypeError(f"keys defined in {self} must be strings")
             else:
-                cmd = cmd + (trait.key, value)
+                cmd = cmd + (flag_str, value)
         return cmd
 
     def read_stdout(self, wait_for=0):
@@ -983,9 +983,9 @@ class VISADevice(core.Device):
         try:
             cls._rm = pyvisa.ResourceManager(backend_name)
         except OSError as e:
-            e.args = e.args + \
-                     (
-                         'labbench VISA support requires NI VISA; is it installed?\nhttp://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe',)
+            msg = 'could not connect to NI VISA resource manager. to install, '\
+                  'see e.g. http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe'
+            e.args = e.args + (msg,)
             raise e
 
     @classmethod

@@ -34,7 +34,7 @@ from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._device import Device, list_devices
 from ._host import Email
 from ._rack import Rack, Owner, Sequence, Configuration
-from ._traits import observe, unobserve
+from ._traits import observe, unobserve, Undefined
 from ._version import __version__
 
 from . import value

@@ -622,6 +622,7 @@ class HasTraits(metaclass=HasTraitsMeta):
                 self.__cache__[name] = trait.default
 
 
+    @util.hide_in_traceback
     def __init_subclass__(cls):
         cls._traits = dict(getattr(cls, '_traits', {}))
         cls._property_attrs = []
@@ -629,7 +630,7 @@ class HasTraits(metaclass=HasTraitsMeta):
         cls._datareturn_attrs = []
         parent_traits = getattr(cls.__mro__[1],'_traits',{})
         
-        annotations = getattr(cls, '__annotations__', {})
+        # annotations = getattr(cls, '__annotations__', {})
 
         for name, trait in dict(cls._traits).items():
             # Apply the trait decorator to the object if it is "part 2" of a decorator
@@ -648,24 +649,30 @@ class HasTraits(metaclass=HasTraitsMeta):
                     # otherwise enforce "once a Trait, always a Trait" in subclasses
                     raise AttributeError(f"datareturn or property attributes can only be overridden in subclasses by Traits")
 
-            # Update the trait type using annotations, if appropriate
-            if name in annotations:
-                annot_type = annotations[name]
+            # # Update the trait type using annotations, if appropriate
+            # if name in annotations:
+            #     annot_type = annotations[name]
 
-                if not isclass(annot_type):
-                    annot_str = f"in annotation '{name}: {annot_type}'"
-                    raise AttributeError(f'specify a type in the annotation "{name}:{repr(annot_type)}" instead of {repr(annot_type)}')
+            #     if not isclass(annot_type):
+            #         annot_str = f"in annotation '{name}: {annot_type}'"
+            #         raise AttributeError(f'specify a type in the annotation "{name}:{repr(annot_type)}" instead of {repr(annot_type)}')
 
-                if annot_type != trait.type:
-                    if trait.type not in (None, Undefined):
-                        trait_str = f"{cls.__qualname__}.{name}"
-                        warn(f'{trait_str} type annotation {annot_type.__name__} overrides its prior type={trait.type.__qualname__}')
+            #     if annot_type != trait.type:
+            #         if trait.type not in (None, Undefined):
+            #             trait_str = f"{cls.__qualname__}.{name}"
+            #             warn(f'{trait_str} type annotation {annot_type.__name__} overrides its prior type={trait.type.__qualname__}')
 
-                    # update the trait type
-                    trait = trait.copy(TRAIT_TYPE_REGISTRY.get(annot_type, Any))
+            #         # update the trait type
+            #         trait = trait.copy(TRAIT_TYPE_REGISTRY.get(annot_type, Any))
 
             setattr(cls, name, trait)
             cls._traits[name] = trait
+
+            for name, trait in cls._traits.items():
+                if not isinstance(trait, Trait):
+                    thisclsname = cls.__qualname__
+                    parentclsname = cls.__mro__[1].__qualname__
+                    warn(f"'{name}' in {thisclsname} is not a trait, but replaces one in parent class {parentclsname}")
             # else:
             #     clsname = cls.__qualname__
             #     raise AttributeError(f"the '{clsname}' setting annotation '{name}' " \
@@ -1390,14 +1397,7 @@ class NetworkAddress(Unicode):
                 break
         else:
             raise ValueError('invalid host address')
-
-        host = value.encode('idna').lower()
-        pattern = re.compile(br'^([0-9a-z][-\w]*[0-9a-z]\.)+[a-z0-9\-]{2,15}$')
-        m = pattern.match(host)
-
-        if m is None:
-            raise ValueError(f'"{value}" is an invalid host address')
-        
+       
         return value
 
 

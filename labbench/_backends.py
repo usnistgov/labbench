@@ -124,7 +124,7 @@ class ShellBackend(Device):
 
         observe(self, check_state_change, name=tuple(properties))
 
-    def run(self, *argv, pipe=False, background=False, check_return=True, check_stderr=False, respawn=False, timeout=None):
+    def run(self, *argv, pipe=True, background=False, check_return=True, check_stderr=False, respawn=False, timeout=None):
         if pipe and background:
             return self._background_piped(*argv, check_return=check_return, check_stderr=check_stderr, timeout=timeout, respawn=respawn)
     

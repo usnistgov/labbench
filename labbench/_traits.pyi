@@ -13,7 +13,7 @@ class HasTraitsMeta(type):
     __pending__: _Any = ...
 
     @classmethod
-    def __prepare__(cls, names: _Any, bases: _Any):
+    def __prepare__(cls, names: _Any, bases: _Any, **kws: _Any):
         ...
 
 

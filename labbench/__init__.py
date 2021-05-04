@@ -40,6 +40,7 @@ from ._version import __version__
 from . import value
 from . import property
 from . import datareturn
+from . import util
 
 # scrub __module__ for cleaner repr() and doc
 for _obj in dict(locals()).values():

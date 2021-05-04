@@ -1,6 +1,6 @@
-from . import datareturn as datareturn, util, value as value
+from . import util, value as value
 from ._traits import HasTraits
-from typing import Any, Optional
+from typing import Any
 
 def list_devices(depth: int=...):
     ...
@@ -15,10 +15,6 @@ class DisconnectedBackend():
     def __getattr__(self, key: Any) -> None:
         ...
     str: Any = ...
-
-
-class AdjustStub():
-    ...
 
 
 class Device(HasTraits, util.Ownable):
@@ -37,7 +33,7 @@ class Device(HasTraits, util.Ownable):
     __children__: Any = ...
 
     @classmethod
-    def __init_subclass__(cls) -> None:
+    def __init_subclass__(cls, **value_defaults: Any) -> None:
         ...
 
     def __open_wrapper__(self) -> None:
@@ -61,5 +57,5 @@ class Device(HasTraits, util.Ownable):
     def __del__(self) -> None:
         ...
 
-    def connected(self):
+    def isopen(self):
         ...

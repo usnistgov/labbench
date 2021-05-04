@@ -59,7 +59,7 @@ class ThisType(typing.Generic[typing.T]):
 
 
 class HasTraitsMeta(type):
-    __pending__ = []
+    __cls_namespace__ = []
 
     @classmethod
     def __prepare__(cls, names, bases, **kws):
@@ -73,11 +73,11 @@ class HasTraitsMeta(type):
             traits = {k: v.copy() for k, v in bases[0]._traits.items()}
             ns.update(traits)
             ns['_traits'] = traits
-            HasTraitsMeta.__pending__.append(traits)
+            HasTraitsMeta.__cls_namespace__.append(traits)
             return ns
         else:
-            HasTraitsMeta.__pending__.append({})
-            return dict(_traits=HasTraitsMeta.__pending__[-1])
+            HasTraitsMeta.__cls_namespace__.append({})
+            return dict(_traits=HasTraitsMeta.__cls_namespace__[-1])
 
 
 class Trait:
@@ -169,7 +169,15 @@ class Trait:
         self.metadata = {}
         self._decorated_funcs = []
 
-        kws = dict(self._arg_defaults, **kws)
+        cls_defaults = {
+            k:getattr(self,k)
+            for k in self.__annotations__.keys()
+        }
+
+        if 'default' in cls_defaults:
+            cls_defaults['default'] = Undefined
+
+        kws = dict(cls_defaults, **kws)
 
         # check role and related parameter dependencies
         if self.role == self.ROLE_VALUE:
@@ -183,8 +191,7 @@ class Trait:
             raise ValueError(f"{clsname}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}, not {repr(self.role)}")
 
         for k in invalid_args:
-            if self._arg_defaults[k] is not Undefined and self._arg_defaults[k] != kws[k]:
-
+            if k in cls_defaults and cls_defaults[k] != kws[k]:
                 raise AttributeError(f"keyword argument '{k}' is not allowed with {self.role}")
 
         if self.role == self.ROLE_VALUE and kws['default'] is Undefined:
@@ -225,15 +232,15 @@ class Trait:
 
         cls.__annotations__ = dict(annots)
 
-        # apply an explicit signature to cls.__init__
-        annots = {k: cls.type if v is ThisType else (k, v) \
-                  for k, v in annots.items()}
+        # # apply an explicit signature to cls.__init__
+        # annots = {k: cls.type if v is ThisType else (k, v) \
+        #           for k, v in annots.items()}
 
-        cls._arg_defaults = {k: getattr(cls, k)
-                            for k in annots if hasattr(cls, k)}
+        # cls._arg_defaults = {k: getattr(cls, k)
+        #                     for k in annots if hasattr(cls, k)}
 
-        if 'default' in cls._arg_defaults:
-            cls._arg_defaults['default'] = Undefined
+        # if 'default' in cls._arg_defaults:
+        #     cls._arg_defaults['default'] = Undefined
 
         # TODO: remove this
         # util.wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls._arg_defaults, 1, annots)
@@ -556,38 +563,42 @@ class Trait:
         # overloading function
         if getattr(self, 'name', None) is None:
             self.name = func.__name__
-        if len(HasTraitsMeta.__pending__) > 0:
-            HasTraitsMeta.__pending__[-1][func.__name__] = self
+        if len(HasTraitsMeta.__cls_namespace__) > 0:
+            HasTraitsMeta.__cls_namespace__[-1][func.__name__] = self
 
         # return self to ensure `self` is the value assigned in the class definition
         return self
 
     ### Object protocol boilerplate methods
     def __repr__(self, omit=[], owner_inst=None):
+        pairs = []
+
+        cls_defaults = ((k,getattr(self,k)) for k in self.__annotations__.keys() if hasattr(self, k))
+
+        for name in self.__annotations__.keys():
+            default = getattr(type(self), name)
+            v = getattr(self, name)
+            
+            # skip uninformative debug info
+            if name.startswith('_') or name in ('help',):
+                continue
+
+            # only show non-defaults
+            v = getattr(self, name)
+            if v == default:
+                continue
+            
+            pairs.append(f'{name}={repr(v)}')
+
+        declaration = f"{self.__class__.__qualname__}({','.join(pairs)})"
+
         owner_cls = getattr(self, '__objclass__', None)
-
         if owner_inst is not None:
-            return str(owner_inst)+'.'+self.name
-        elif owner_cls is None:
-            # revert to the class definition if the owning class
-            # hasn't claimed us yet
-            pairs = []
-            for k, default in self._arg_defaults.items():
-                # skip uninformative debug info
-                if k.startswith('_') or k in ('help',):
-                    continue
-
-                # only show keywords set by the user
-                v = getattr(self, k)
-                if v != default:
-                    continue
-                
-                pairs.append(f'{k}={repr(v)}')
-            name = self.__class__.__qualname__
-            return f"{name}({','.join(pairs)})"
+            return f'<trait {declaration} as {owner_inst}.{self.name}>'
+        elif owner_cls is not None:
+            return f'<trait {declaration} as {owner_cls.__qualname__}.{self.name}>'
         else:
-            # otherwise, this is more descriptive
-            return f"{owner_cls.__qualname__}.{self.name}"
+            return f'<unowned trait {declaration}>'
 
     __str__ = __repr__
 
@@ -605,7 +616,7 @@ Trait.__init_subclass__()
 
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
-    __pending__ = {}
+    __cls_namespace__ = {}
 
     def __init__(self):
         # who is informed on new get or set values
@@ -639,57 +650,20 @@ class HasTraits(metaclass=HasTraitsMeta):
             if not isinstance(obj, Trait):
                 if trait.role in (Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN) and callable(obj):
                     # if it's a method, decorate it
-                    trait = trait(obj)
-                
-                elif trait.role == Trait.ROLE_VALUE:
-                    # an inherited value trait receives a new default value
-                    trait = trait.copy(default=obj)
-
+                    cls._traits[name] = trait(obj)
                 else:
-                    # otherwise enforce "once a Trait, always a Trait" in subclasses
-                    raise AttributeError(f"datareturn or property attributes can only be overridden in subclasses by Traits")
-
-            # # Update the trait type using annotations, if appropriate
-            # if name in annotations:
-            #     annot_type = annotations[name]
-
-            #     if not isclass(annot_type):
-            #         annot_str = f"in annotation '{name}: {annot_type}'"
-            #         raise AttributeError(f'specify a type in the annotation "{name}:{repr(annot_type)}" instead of {repr(annot_type)}')
-
-            #     if annot_type != trait.type:
-            #         if trait.type not in (None, Undefined):
-            #             trait_str = f"{cls.__qualname__}.{name}"
-            #             warn(f'{trait_str} type annotation {annot_type.__name__} overrides its prior type={trait.type.__qualname__}')
-
-            #         # update the trait type
-            #         trait = trait.copy(TRAIT_TYPE_REGISTRY.get(annot_type, Any))
-
-            setattr(cls, name, trait)
-            cls._traits[name] = trait
-
-            for name, trait in cls._traits.items():
-                if not isinstance(trait, Trait):
+                    # if not decorating, clear from the traits dict, and emit a warning at runtime
                     thisclsname = cls.__qualname__
                     parentclsname = cls.__mro__[1].__qualname__
                     warn(f"'{name}' in {thisclsname} is not a trait, but replaces one in parent class {parentclsname}")
-            # else:
-            #     clsname = cls.__qualname__
-            #     raise AttributeError(f"the '{clsname}' setting annotation '{name}' " \
-            #                          f"must be a Trait or an updated default value")
-        # value traits = type('value traits', (cls.,),
-        #                 dict(cls..__dict__,
-        #                      _traits=dict(cls.._traits),
-        #                      **annotations))
-        # value traits.__qualname__ = cls.__qualname__ + '.'
-        # cls. = value traits
+                    del cls._traits[name]
 
-        # if annotations:
-        #     cls.__annotations__ = dict(getattr(cls.__base__, '__annotations__', {}),
-        #                                **annotations)
+                    continue
 
-        if cls._traits in HasTraitsMeta.__pending__:
-            HasTraitsMeta.__pending__.remove(cls._traits)
+            setattr(cls, name, cls._traits[name])
+
+        if cls._traits in HasTraitsMeta.__cls_namespace__:
+            HasTraitsMeta.__cls_namespace__.remove(cls._traits)
 
         # finalize trait setup
         for name, trait in dict(cls._traits).items():

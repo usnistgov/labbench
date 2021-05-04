@@ -137,7 +137,7 @@ class DisconnectedBackend(object):
 
     @util.hide_in_traceback
     def __getattr__(self, key):
-        msg = f"{self.name} must be connected to access {self.name}.backend"
+        msg = f"open {self} first to access its backend"
         raise ConnectionError(msg)
 
     def __repr__(self):
@@ -239,7 +239,7 @@ class Device(HasTraits, util.Ownable):
             existing connection to the resource encapsulated in the object.
         """
         self.backend = DisconnectedBackend(self)
-        self.connected
+        self.isopen
 
     __children__ = {}
 
@@ -251,9 +251,34 @@ class Device(HasTraits, util.Ownable):
 
         # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
 
-        
+        super().__init_subclass__()
 
+        # Update cls.__doc__
+        value_traits = {name: cls._traits[name] for name in cls._value_attrs}
+        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in value_traits.items()))
+        if cls.__doc__ is None:
+            cls.__doc__ = ''
+        cls.__doc__ += '\n\n' + txt
+
+        for trait_name, new_default in value_defaults.items():
+            trait = getattr(cls, trait_name, None)
+
+            if trait is None or trait.role != Trait.ROLE_VALUE:
+                parent_name = cls.__mro__[1].__qualname__
+                raise AttributeError(f"there is no value trait {parent_name}.{trait_name}, cannot update its default")
+
+            cls._traits[trait_name] = trait.copy(default=new_default)
+            setattr(cls, trait_name, cls._traits[trait_name])
+
+        if len(value_defaults)>0:
+            super().__init_subclass__()
+
+        # TODO: @autocomplete_init seems to make this unecessary - validate
+        # defaults = {k: v.default for k, v in settings.items() if v.gettable}
+        # types = {k: v.type for k, v in settings.items() if v.gettable}
+        # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
         # Update __doc__ with value traits
+        
         if cls.__doc__:
             cls.__doc__ = trim(cls.__doc__)
         else:
@@ -263,27 +288,6 @@ class Device(HasTraits, util.Ownable):
             cls.__init__.__doc__ = trim(cls.__init__.__doc__)
         else:
             cls.__init__.__doc__ = ''
-
-        # Update cls.__doc__
-        value_traits = {name: cls._traits[name] for name in cls._value_attrs}
-        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in value_traits.items()))
-        cls.__doc__ += '\n\n' + txt
-
-        super().__init_subclass__()
-
-        for trait_name, new_default in value_defaults.items():
-            trait = getattr(cls, trait_name, None)
-
-            if trait is None or trait.role != Trait.ROLE_VALUE:
-                parent_name = cls.__mro__[1].__qualname__
-                raise AttributeError(f"there is no value trait {parent_name}.{trait_name}, cannot update its default")
-
-            trait.default = new_default
-
-        # TODO: @autocomplete_init seems to make this unecessary - validate
-        # defaults = {k: v.default for k, v in settings.items() if v.gettable}
-        # types = {k: v.type for k, v in settings.items() if v.gettable}
-        # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
 
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 
@@ -340,7 +344,7 @@ class Device(HasTraits, util.Ownable):
             method resolution order of self.__class__ and invokes each open()
             method, starting with labbench.Device and working down
         """
-        if self.connected:
+        if self.isopen:
             self._console.debug(f'attempt to open {self}, which is already open')
             return
 
@@ -350,8 +354,8 @@ class Device(HasTraits, util.Ownable):
             opener(self)
 
         self._console.debug(f"opened")
-        # Force an update to self.connected
-        self.connected
+        # Force an update to self.isopen
+        self.isopen
 
     def __owner_init__(self, owner):
         super().__owner_init__(owner)
@@ -369,7 +373,7 @@ class Device(HasTraits, util.Ownable):
         """
         # Try to run cleanup(), but make sure to run
         # close() even if it fails
-        if not self.connected:
+        if not self.isopen:
             return
 
         methods = trace_methods(self.__class__, 'close', Device)
@@ -390,7 +394,7 @@ class Device(HasTraits, util.Ownable):
                 traceback.print_exception(*ex, limit=-(depth - 1))
                 sys.stderr.write('(Exception suppressed to continue close)\n\n')
 
-        self.connected
+        self.isopen
 
         self._console.debug('closed')
 
@@ -432,8 +436,8 @@ class Device(HasTraits, util.Ownable):
             return f'{name}()'
 
     @property_.bool()
-    def connected(self):
-        """ are we connected? """
+    def isopen(self):
+        """ is the backend ready? """
         try:
             return DisconnectedBackend not in self.backend.__class__.__mro__
         except:

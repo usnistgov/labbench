@@ -623,7 +623,7 @@ class Aggregator(util.Ownable):
             raise Exception('Could not automatically determine unique names of device instances! '\
                             'Set manually with the set_label method')
 
-    def observe(self, devices, changes=True, always=[], never=['connected']):
+    def observe(self, devices, changes=True, always=[], never=['isopen']):
         """ Configure the data to aggregate from value, property, or datareturn traits in the given devices.
 
             Device may be a single device instance, or an
@@ -822,7 +822,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             path = '<unset path>'
         return f"{self.__class__.__qualname__}({path})"
 
-    def observe(self, devices, changes=True, always=[], never=['connected']):
+    def observe(self, devices, changes=True, always=[], never=['isopen']):
         """ Configure the data to aggregate from value, property, or datareturn traits in the given devices.
 
             Device may be a single device instance, or an

@@ -31,6 +31,10 @@ import pandas as pd
 import numpy as np
 if '..' not in sys.path:
     sys.path.insert(0, '..')
+import labbench as lb
+
+lb._force_full_traceback(True)
+
 
 remap = {True: 'ON', False: 'OFF'}
 flag_start = False
@@ -53,12 +57,13 @@ class TrialDevice(lb.Device):
     str2 = lb.value.str('moose', only=('moose', 'squirrel'))
     str3 = lb.value.str('moose', only=('MOOSE', 'squirrel'), case=False)
 
-    df0 = lb.value.DataFrame(pd.DataFrame([0,1,2,3,4,5]))
-    series0 = lb.value.Series(pd.Series([0,1,2,3,4,5]))
-    array0 = lb.value.array(np.array([0,1,2,3,4,5]))
-    
-class UpdateTrialDevice(TrialDevice):
-    float0 = 7
+    # df0 = lb.value.DataFrame(pd.DataFrame([0,1,2,3,4,5]))
+    # series0 = lb.value.Series(pd.Series([0,1,2,3,4,5]))
+    # array0 = lb.value.ndarray(np.array([0,1,2,3,4,5]))
+
+class UpdateTrialDevice(TrialDevice, float0=7):
+    float1 = 63.
+    pass
 
 class TestValueTraits(unittest.TestCase):
     def test_default_types(self):
@@ -196,8 +201,8 @@ class TestValueTraits(unittest.TestCase):
             
     def test_subclassing(self):
         with UpdateTrialDevice() as m:
-            print(m.float0)
             self.assertEqual(m.float0, 7.0)
+        self.assertEqual(UpdateTrialDevice.float1, 63.)
 
 if __name__ == '__main__':
     lb.show_messages('debug')

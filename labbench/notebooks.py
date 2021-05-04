@@ -48,7 +48,7 @@ __all__ = ['panel', 'log_progress']
 
 skip_state_by_type = {VISADevice: ['identity'],
                       Host: ['log'],
-                      core.Device: ['connected']
+                      core.Device: ['isopen']
                       }
 
 __wrapped__ = dict(range=builtins.range,
@@ -77,7 +77,7 @@ def single(inst, inst_name):
     def _on_change(change):
         obj, name, value = change['owner'], change['name'], change['new']
 
-        # if name == 'connected':
+        # if name == 'isopen':
         #     if value:
         #         html.layout.visibility = 'visible'
         #     else:
@@ -86,7 +86,7 @@ def single(inst, inst_name):
         if name in skip_attrs:
             return
 
-        if hasattr(obj, 'connected') and name != 'connected' and not obj.connected:
+        if hasattr(obj, 'isopen') and name != 'isopen' and not obj.isopen:
             if name in _df.index:
                 _df.drop(name, inplace=True)
             return

@@ -67,7 +67,7 @@ class LogStderr(core.Device):
         self._stderr, self._buf, sys.stderr = sys.stderr, io.StringIO(), self
 
     def close(self):
-        if self.connected:
+        if self.isopen:
             sys.stderr = self._stderr
             self.log = self._buf.getvalue()
             self._buf.close()
@@ -146,7 +146,7 @@ class Email(core.Device):
         self.backend.open()
 
     def close(self):
-        if self.connected:
+        if self.isopen:
             self.backend.close()
             util.sleep(1)
             self.send_summary()

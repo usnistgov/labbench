@@ -115,7 +115,7 @@ class Step:
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # ensure that required devices are connected
-        closed = [repr(dev) for dev in self.dependencies if not dev.connected]
+        closed = [repr(dev) for dev in self.dependencies if not dev.isopen]
         if len(closed) > 0:
             closed = ', '.join(closed)
             label = self.__class__.__qualname__ + '.' + self.__name__

@@ -2,6 +2,7 @@ from . import datareturn as datareturn, property as property, value as value
 from ._backends import (
     DotNetDevice as DotNetDevice,
     LabviewSocketInterface as LabviewSocketInterface,
+    SerialDevice as SerialDevice,
     SerialLoggingDevice as SerialLoggingDevice,
     ShellBackend as ShellBackend,
     TelnetDevice as TelnetDevice,
@@ -22,7 +23,7 @@ from ._rack import (
     Rack as Rack,
     Sequence as Sequence,
 )
-from ._traits import observe as observe, unobserve as unobserve
+from ._traits import Undefined as Undefined, observe as observe, unobserve as unobserve
 from .util import (
     Call as Call,
     concurrently as concurrently,

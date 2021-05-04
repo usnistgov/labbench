@@ -24,11 +24,13 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _device as core
-from . import util
+from ._device import Device
 from . import property as property_
 from . import value
-from . import datareturn
+from ._traits import observe
+from ._traits import unobserve
+from . import util
+
 
 from collections import OrderedDict
 import contextlib
@@ -44,7 +46,7 @@ from threading import Thread, Event
 import warnings
 
 
-class ShellBackend(core.Device):
+class ShellBackend(Device):
     """ Virtual device controlled by a shell command in another process. It supports
         threaded data logging through standard
         input, standard output, and standard error pipes.
@@ -65,20 +67,22 @@ class ShellBackend(core.Device):
         or left as `lb.Undefined` to be ignored in forming a command line.
     """
 
-    binary_path = value.str(
+    binary_path = value.Path(
         default=None,
         allow_none=True,
-        help='path to the file to run'
+        help='path to the file to run',
+        cache=True
     )
 
     timeout = value.float(
         default=1,
         min=0,
         help='wait time after close before killing the process',
-        label='s'
+        label='s',
+        cache=True
     )
 
-    flags = value.dict({}, help="e.g., dict(force='-f') to connect the class value trait 'force' to '-f'")
+    # flags = value.dict({}, help="flag map, e.g., dict(force='-f') to connect the class value trait 'force' to '-f'")
 
     # arguments = value.list(
     #     default=[], help='list of command line arguments to pass into the executable'
@@ -89,12 +93,10 @@ class ShellBackend(core.Device):
     #     settable=False, help='minimum extra command line arguments needed to run'
     # )
 
-    def __imports__(self):
+    @classmethod
+    def __imports__(cls):
         global sp
-        try:
-            import subprocess32 as sp
-        except BaseException:
-            import subprocess as sp
+        import subprocess as sp
 
     def open(self):
         """ The :meth:`open` method implements opening in the
@@ -102,73 +104,81 @@ class ShellBackend(core.Device):
             :meth:`execute` method when open to
             execute the binary.
         """
-        self.__contexts = {}
-
         def check_state_change(change={}):
             if self.running():
-                raise ValueError(
-                    'cannot change command line property trait traits during execution')
+                raise ValueError('cannot change command line property trait traits during execution')
 
         if not os.path.exists(self.binary_path):
             raise OSError(
                 f'executable does not exist at resource=r"{self.binary_path}"')
 
+        # a Queue for stdout
         self.backend = None
-
-        self._stdout_queue = Queue()
+        
+        self._stdout = Queue()
+        self._stderr = Queue()
 
         # Monitor property trait changes
         properties = set(self._value_attrs) \
             .difference(dir(ShellBackend))
 
-        core.observe(self, check_state_change, name=tuple(properties))
+        observe(self, check_state_change, name=tuple(properties))
 
-    # @property
-    # @contextlib.contextmanager
-    # def no_state_arguments(self):
-    #     """ disable automatic use of property trait in generating argument strings
-    #     """
-    #     self.__contexts['use_state_arguments'] = False
-    #     yield
-    #     self.__contexts['use_state_arguments'] = True
+    def run(self, *argv, pipe=False, background=False, check_return=True, check_stderr=False, respawn=False, timeout=None):
+        if pipe and background:
+            return self._background_piped(*argv, check_return=check_return, check_stderr=check_stderr, timeout=timeout, respawn=respawn)
+    
+        if respawn:
+            raise ValueError(f'respawn argument requires pipe=True and background=True')
 
-    @property
-    @contextlib.contextmanager
-    def respawn(self):
-        """ respawn a background process when it quits
+        if pipe and not background:
+            return self._run_piped(*argv, check_return=check_return, check_stderr=check_stderr, timeout=timeout)
+        else:
+            if background:
+                raise ValueError(f'background argument requires pipe=True')
+            if check_stderr:
+                raise ValueError(f'check_stderr requires pipe=True')
+
+            return self._run_simple(*argv, check_return=check_return, timeout=timeout)
+
+
+    def _run_simple(self, *argv, check_return=False, timeout=None):
+        """ Blocking execution of the binary at `self.binary_path`. If check=True, raise an exception
+            on non-zero return code.
+
+            Each command line argument in argv is either
+            * a string, which is passed to the binary as is, or
+            * list-like sequence ('name0', 'name1', ...) that names value traits to insert as flag arguments
+            
+            Flag arguments are converted into a sequence of strings by (1) identifying the command line flag
+            for each name as `self.flags[name]` (e.g., "-f"), (2) retrieving the value as getattr(self, name), and
+            (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
+
+            :returns: None?
         """
-        self.__contexts['respawn'] = True
-        yield
-        self.__contexts['respawn'] = False
+        if timeout is None:
+            timeout = self.timeout
 
-    @property
-    @contextlib.contextmanager
-    def exception_on_stderr(self):
-        """ Use this context manager to raise exceptions if a process outputs
-            to standard error during background execution.
+        return sp.run(self._commandline(argv), check=check_return, timeout=timeout)
+
+    def _run_piped(self, *argv, check_return=False, check_stderr=False, timeout=None):
+        """ Blocking execution of the binary at `self.binary_path`, with a pipe to collect
+            stdout.
+
+            Each command line argument in argv is either
+            * a string, which is passed to the binary as is, or
+            * list-like sequence ('name0', 'name1', ...) that names value traits to insert as flag arguments
+            
+            Flag arguments are converted into a sequence of strings by (1) identifying the command line flag
+            for each name as `self.flags[name]` (e.g., "-f"), (2) retrieving the value as getattr(self, name), and
+            (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
+
+            :returns: stdout
         """
-        self.__contexts['exception_on_stderr'] = True
-        yield
-        self.__contexts['exception_on_stderr'] = False
+        if timeout is None:
+            timeout = self.timeout
 
-    def foreground(self, **flags):
-        """ Blocking execution of the binary at the file location
-            `self.binary_path`.
-
-            Normally, the command line arguments are determined by
-            * appending extra_arguments to the global arguments in self.arguments, and
-            * appending pairs of [key,value] from the `flags` dictionary to the
-              global flags defined with value traits
-
-            Use the self.no_state_arguments context manager to skip these
-            global arguments like this::
-
-                with self.no_state_arguments:
-                    self.foreground(...)
-
-            :returns: the return code of the process after its completion
-        """
-        cmdl = self._commandline(**flags)
+        cmdl = self._commandline(*argv)
         path = cmdl[0]
         try:
             rel = os.path.relpath(path)
@@ -177,9 +187,13 @@ class ShellBackend(core.Device):
         except ValueError:
             pass
 
-        self._console.debug(f"shell execute '{repr(' '.join((path,) + cmdl[1:]))}'")
-        cp = sp.run(cmdl, timeout=self.timeout, stdout=sp.PIPE)
+        self._console.debug(f"shell execute '{repr(' '.join(cmdl))}'")
+        cp = sp.run(cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return)
         ret = cp.stdout
+
+        err = cp.stderr.strip().rstrip().decode()
+        if check_stderr and len(err) > 0:
+            raise ChildProcessError(err)
 
         if ret:
             lines = ret.decode().splitlines()
@@ -193,7 +207,7 @@ class ShellBackend(core.Device):
                 self._console.debug(f'► {line}')
         return ret
 
-    def background(self, **flags):
+    def _background_piped(self, *argv, check_return=False, check_stderr=False, respawn=False, timeout=None):
         """ Run the executable in the background (returning immediately while
             the executable continues running).
 
@@ -207,19 +221,13 @@ class ShellBackend(core.Device):
 
             * Check whether the process is running with self.running
 
-            Normally, the command line arguments are determined by
-
-            * appending extra_arguments to the global arguments in self.arguments, and
-
-            * appending pairs of [key,value] from the `flags` dictionary to the
-              global flags defined with command flags in local property trait traits in
-              `self.`
-
-            Use the self.no_state_arguments context manager to skip these
-            global arguments like this::
-
-                with self.no_state_arguments:
-                    self.background(...)
+            Each command line argument in argv is either
+            * a string, which is passed to the binary as is, or
+            * list-like sequence ('name0', 'name1', ...) that names value traits to insert as flag arguments
+            
+            Flag arguments are converted into a sequence of strings by (1) identifying the command line flag
+            for each name as `self.flags[name]` (e.g., "-f"), (2) retrieving the value as getattr(self, name), and
+            (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
 
             :returns: None
         """
@@ -229,7 +237,7 @@ class ShellBackend(core.Device):
             """
 
             pid = self.backend.pid
-            q = self._stdout_queue
+            q = self._stdout
             for line in iter(fd.readline, ''):
                 line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
@@ -239,8 +247,7 @@ class ShellBackend(core.Device):
             self.backend = None
 
             # Respawn (or don't)
-            if self.__contexts.setdefault(
-                    'respawn', False) and not self.__kill:
+            if respawn and not self.__kill:
                 self._console.debug('respawning')
                 self._kill_proc_tree(pid)
                 spawn(cmdl)
@@ -250,11 +257,13 @@ class ShellBackend(core.Device):
         def stderr_to_exception(fd, cmdl):
             """ Thread worker to raise exceptions on standard error output
             """
+            q = self._stderr
             for line in iter(fd.readline, ''):
                 if self.backend is None:
-                    break
+                    break                
                 line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
+                    q.put(line)
                     self._console.debug(f'stderr {repr(line)}')
                 #                    raise Exception(line)
                 else:
@@ -282,81 +291,106 @@ class ShellBackend(core.Device):
 
             self.backend = proc
             Thread(target=lambda: stdout_to_queue(proc.stdout, cmdl)).start()
-            if self.__contexts.setdefault('exception_on_stderr', False):
+            if check_stderr:
                 Thread(target=lambda: stderr_to_exception(
                     proc.stderr, cmdl)).start()
 
-        # Generate the commandline and spawn
-        cmdl = self._commandline(**flags)
-        try:
-            path = os.path.relpath(cmdl[0])
-        except ValueError:
-            path = cmdl[0]
+        if not self.isopen:
+            raise ConnectionError(f"{self} needs to be opened ({self}.open() or in a 'with' block) manage a background process")
 
-        self._console.debug(
-            f"background execute: {repr(' '.join((path,) + cmdl[1:]))}")
+        # Generate the commandline and spawn
+        cmdl = self._commandline(*argv)
+        self._console.debug(f"background execute: {repr(' '.join(cmdl))}")
         self.__kill = False
         spawn(cmdl)
 
-    def _commandline(self, **values):
-        """ Form a list of commandline argument strings for foreground
-            or background calls.
+    def _flags_to_argv(self, flags):
+        # find keys in flags that do not exist as value traits
+        unsupported = set(flags.keys()).difference(self._value_attrs)
+        if len(unsupported) > 1:
+            raise KeyError(f"flags point to value traits {unsupported} that do not exist in {self}")
 
-            :values: {trait_name: value} mapping that updates value traits in `self`
+        argv = []
+        for name, flag_str in flags.items():
+            trait = self._traits[name]
+            trait_value = getattr(self, name)
+
+            if not isinstance(flag_str, str) and flag_str is not None:
+                raise TypeError(f"keys defined in {self} must be str (for a flag) or None (for no flag")
+
+            if trait_value is None:
+                continue
+
+            elif trait.type is bool:
+                if flag_str is None:
+                    # this would require a remap parameter in value traits, which are not supported (should they be?)
+                    # (better to use string?)
+                    raise ValueError(f"don't know how to map a Bool onto a string argument as specified by None mapping")
+
+                elif trait_value:
+                    # trait_value is truey
+                    argv += [flag_str]
+                    continue
+
+                else:
+                    # trait_value is falsey 
+                    continue
+
+            elif flag_str is None:
+                # do not add a flag
+
+                if trait_value is None:
+                    # when trait_value is 'None', don't include this flag
+                    continue
+                else:
+                    argv += [str(trait_value)]
+
+            elif isinstance(flag_str, str):
+                argv += [flag_str, str(trait_value)]
+
+            else:
+                raise ValueError('unexpected error condition (this should not be possible)')
+
+        return argv
+
+    def _commandline(self, *argv_in):
+        """ return a new argv list in which dict instances have been replaced by additional
+            strings based on the traits in `self`. these dict instances should map {trait_name: cmdline_flag},
+            for example dict(force='-f') to map a boolean `self.force` trait value to the -f switch, or
+            dict(extra_arg=None) to indicate that `self.extra_arg` will be inserted without a switch if
+            `self.extra_arg` is not None.
 
             :returns: tuple of string
         """
 
-        # validate the set of flags
-        unsupported = set(values).difference(self.flags.keys())
-        if len(unsupported) > 1:
-            raise KeyError(f"flags {unsupported} are unsupported")
+        argv = [self.binary_path,]
 
-        # apply flags
-        for name, value in values.items():
-            setattr(self, name, value)
-
-        cmd = (self.binary_path,)
-
-        # Update trait with the flags
-        for name, flag_str in self.flags.items():
-            trait = self._traits[name]
-            value = getattr(self, name)
-
-            if value is None:
-                continue
-            elif isinstance(trait, core.Bool) and value is False:
-                continue
-            elif trait.key is None:
-                cmd = cmd + (value,)
-            elif isinstance(trait, core.Bool) and value is True:
-                cmd = cmd + (flag_str,)
-            elif not isinstance(flag_str, str) and flag_str is not core.Undefined:
-                raise TypeError(f"keys defined in {self} must be strings")
+        # Update trait with the flags        
+        for item in argv_in:
+            if isinstance(item, str):
+                argv += [item]
+            elif isinstance(item, dict):
+                argv += self._flags_to_argv(item)
             else:
-                cmd = cmd + (flag_str, value)
-        return cmd
+                raise TypeError(f"command line list item {item} has unsupported type")
+
+        return argv
 
     def read_stdout(self, wait_for=0):
-        """ Return string output queued from stdout for a process running
-            in the background. This clears the queue.
-
-            Returns an empty string if the command line program has not been
-            executed or is empty. Running the command line multiple times overwrites the queue.
+        """ Pop any standard output that has been queued by a background run (see `run`).
+            Afterward, the queue is cleared. Starting another background run also clears the queue.
 
             :returns: stdout
         """
         result = ''
-        try:
-            self._stdout_queue
-        except BaseException:
-            return result
+        
+        if not self.isopen:
+            raise ConnectionError(f"an open connection is necessary to read stdout from the background process")
 
         try:
             n = 0
             while True:
-                line = self._stdout_queue.get(
-                    wait_for > 0, timeout=self.timeout)
+                line = self._stdout.get(wait_for > 0, timeout=self.timeout)
                 if isinstance(line, Exception):
                     raise line
 
@@ -376,7 +410,7 @@ class ShellBackend(core.Device):
         """
         try:
             self.backend.stdin.write(text)
-        except core.ConnectionError:
+        except ConnectionError:
             raise Exception("process not running, could not write no stdin")
 
     def kill(self):
@@ -390,20 +424,28 @@ class ShellBackend(core.Device):
             self._kill_proc_tree(backend.pid)
 
     def running(self):
-        """ Return whether the executable is currently running
+        """ Check whether a background process is running.
 
             :returns: True if running, otherwise False
         """
         # Cache the current running one for a second in case the backend "closes"
-        backend = self.backend
-        return self.connected \
-               and backend is not None \
-               and backend.poll() is None
+        return self.isopen and self.backend is not None and self.backend.poll() is None
 
-    def clear(self):
-        """ Clear queued standard output, discarding any contents
+    def clear_stdout(self):
+        """ Clear queued standard output. Subsequent calls to `self.read_stdout()` will return
+            ''.
         """
         self.read_stdout()
+
+    # def update_flags(self, **flags):
+    #     """ update and validate value traits
+    #     """
+
+    #     bad_flags = set(flags.keys()).difference(self._value_attrs)
+    #     if len(bad_flags) > 0:
+    #         raise AttributeError(f"{self} cannot set flag(s) '{tuple(bad_flags)}' with no corresponding value trait")
+
+    #     self.__dict__.update(flags)
 
     def close(self):
         self.kill()
@@ -430,7 +472,7 @@ class ShellBackend(core.Device):
             pass
 
 
-class DotNetDevice(core.Device):
+class DotNetDevice(Device):
     """ This Device backend represents a wrapper around a .NET library. It is implemented
         with pythonnet, and handlesimports.
 
@@ -516,7 +558,7 @@ class DotNetDevice(core.Device):
         pass
 
 
-class LabviewSocketInterface(core.Device):
+class LabviewSocketInterface(Device):
     """ Implement the basic sockets-based control interface for labview.
         This implementation uses a transmit and receive socket.
 
@@ -603,7 +645,7 @@ class LabviewSocketInterface(core.Device):
                     continue
 
 
-class SerialDevice(core.Device):
+class SerialDevice(Device):
     """ A general base class for communication with serial devices.
         Unlike (for example) VISA instruments, there is no
         standardized command format like SCPI. The implementation is
@@ -743,7 +785,7 @@ class SerialLoggingDevice(SerialDevice):
 
         def accumulate():
             timeout, self.backend.timeout = self.backend.timeout, 0
-            q = self._queue
+            q = self._stdout
             stop_event = self._stop
             self._console.debug(f'{repr(self)}: configuring log acquisition')
             self.configure()
@@ -766,7 +808,7 @@ class SerialLoggingDevice(SerialDevice):
         if self.running():
             raise Exception('already running')
 
-        self._queue = Queue()
+        self._stdout = Queue()
         self._stop = Event()
         Thread(target=accumulate).start()
 
@@ -795,7 +837,7 @@ class SerialLoggingDevice(SerialDevice):
         ret = b''
         try:
             while True:
-                ret += self._queue.get_nowait()
+                ret += self._stdout.get_nowait()
         except Empty:
             pass
         return ret
@@ -809,7 +851,7 @@ class SerialLoggingDevice(SerialDevice):
         self.stop()
 
 
-class TelnetDevice(core.Device):
+class TelnetDevice(Device):
     """ A general base class for communication devices via telnet.
         Unlike (for example) VISA instruments, there is no
         standardized command format like SCPI. The implementation is
@@ -855,7 +897,7 @@ class TelnetDevice(core.Device):
         self.backend.close()
 
 
-class VISADevice(core.Device):
+class VISADevice(Device):
     r""" .. class:: VISADevice(resource, read_termination='\\n', write_termination='\\n')
 
         VISADevice instances control VISA instruments using a
@@ -1111,7 +1153,7 @@ class VISADevice(core.Device):
                    and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
 
 
-class Win32ComDevice(core.Device):
+class Win32ComDevice(Device):
     """ Basic support for calling win32 COM APIs.
 
         The python wrappers for COM drivers still basically require that

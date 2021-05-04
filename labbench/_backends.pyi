@@ -1,34 +1,35 @@
 import contextlib
-from . import _device as core, datareturn as datareturn, util as util, value as value
+from . import util as util, value as value
+from ._device import Device as Device
+from ._traits import observe as observe, unobserve as unobserve
 from typing import Any, Optional
 
 
-class ShellBackend(core.Device):
+class ShellBackend(Device):
 
     def __init__(self, resource: str='str', binary_path: str='NoneType', timeout: str='int'):
         ...
     binary_path: Any = ...
     timeout: Any = ...
 
-    def __imports__(self) -> None:
+    @classmethod
+    def __imports__(cls) -> None:
         ...
     backend: Any = ...
 
     def open(self) -> None:
         ...
 
-    @property
-    def respawn(self) -> None:
-        ...
-
-    @property
-    def exception_on_stderr(self) -> None:
-        ...
-
-    def foreground(self, **flags: Any):
-        ...
-
-    def background(self, **flags: Any):
+    def run(
+        self,
+        *argv: Any,
+        pipe: bool=...,
+        background: bool=...,
+        check_return: bool=...,
+        check_stderr: bool=...,
+        respawn: bool=...,
+        timeout: Optional[Any]=...
+    ):
         ...
 
     def read_stdout(self, wait_for: int=...):
@@ -43,14 +44,14 @@ class ShellBackend(core.Device):
     def running(self):
         ...
 
-    def clear(self) -> None:
+    def clear_stdout(self) -> None:
         ...
 
     def close(self) -> None:
         ...
 
 
-class DotNetDevice(core.Device):
+class DotNetDevice(Device):
 
     def __init__(self, resource: str='str'):
         ...
@@ -65,7 +66,7 @@ class DotNetDevice(core.Device):
         ...
 
 
-class LabviewSocketInterface(core.Device):
+class LabviewSocketInterface(Device):
 
     def __init__(
         self,
@@ -104,7 +105,7 @@ class LabviewSocketInterface(core.Device):
         ...
 
 
-class SerialDevice(core.Device):
+class SerialDevice(Device):
 
     def __init__(
         self,
@@ -193,7 +194,7 @@ class SerialLoggingDevice(SerialDevice):
         ...
 
 
-class TelnetDevice(core.Device):
+class TelnetDevice(Device):
 
     def __init__(self, resource: str='str', timeout: str='int'):
         ...
@@ -211,7 +212,7 @@ class TelnetDevice(core.Device):
         ...
 
 
-class VISADevice(core.Device):
+class VISADevice(Device):
 
     def __init__(
         self,
@@ -275,7 +276,7 @@ class VISADevice(core.Device):
             ...
 
 
-class Win32ComDevice(core.Device):
+class Win32ComDevice(Device):
 
     def __init__(self, resource: str='str', concurrency: str='bool', com_object: str='str'):
         ...

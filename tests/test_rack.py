@@ -26,6 +26,7 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
+from labbench.util import sequentially
 import sys
 if '..' not in sys.path:
     sys.path.insert(0, '..')
@@ -83,7 +84,7 @@ class Rack1(lb.Rack):
     dev1: LaggyInstrument = LaggyInstrument()
     dev2: LaggyInstrument = LaggyInstrument()
 
-    def setup(self, param1):
+    def setup(self, param1: float):
         pass
 
     def arm(self):
@@ -100,7 +101,7 @@ class Rack2(lb.Rack):
     def acquire(self, *, param1):
         return 'rack 3 - acquire'
 
-    def fetch(self, *, param2=7):
+    def fetch(self, *, param2:int=7):
         return self.dev.fetch()
 
 
@@ -115,11 +116,11 @@ class Rack3(lb.Rack):
         pass
 
     def fetch(self, *, param4):
-        self.dev.fetch()
+        return self.dev.fetch()
 
 
 class MyRack(lb.Rack):
-    config = lb.Configuration('setup')
+    # config = lb.Configuration('test-config')
 
     # db = lb.HDFLogger(
     #     path=time.strftime(f"%Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
@@ -139,8 +140,8 @@ class MyRack(lb.Rack):
     )
 
     # Devices
-    inst1 = LaggyInstrument(resource='a', delay=.12)
-    inst2 = LaggyInstrument(resource='b', delay=.06)
+    inst1: LaggyInstrument = LaggyInstrument(resource='a', delay=.12)
+    inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=.06)
 
     # Test procedures
     rack1 = Rack1(dev1=inst1, dev2=inst2)
@@ -148,7 +149,7 @@ class MyRack(lb.Rack):
     rack3 = Rack3(dev=inst2)
 
     run = lb.Sequence(
-        setup=(rack1.setup, rack2.setup),  # executes these 2 methods concurrently
+        setup=(rack1.setup, rack2.setup),  # 2 methods run concurrently
         arm=rack1.arm,
         acquire1=rack2.acquire,
         acquire2=rack3.acquire,
@@ -156,33 +157,77 @@ class MyRack(lb.Rack):
         finish=db.new_row,
     )
 
+import inspect
 
 if __name__ == '__main__':
     lb.show_messages('debug')
     lb.util._force_full_traceback(True)
 
-    # Testbed = lb.Rack.take_module('module_as_testbed')
+    # # Testbed = lb.Rack.take_module('module_as_testbed')
     Testbed = MyRack
-    Testbed.config.make_templates()
+    
+    setup = lb._rack.Setup(Testbed)
+    setup.make('test-config3')
 
-    # Testbed.config._rack_defaults(Testbed)
+    NewTestbed = setup.apply('test-config2')
 
-    with lb.stopwatch('test connection'):
-        with Testbed() as testbed:
+    setup.make('test-config4')
 
+    # lst = CommentedSeq(['a', 'b'])
+    # lst.yaml_add_eol_comment("foo", 0, 0)
+    # lst.yaml_add_eol_comment("bar\n\n", 1)
+    # data["list_of_elements_side_comment"] = lst
+    # data.yaml_set_comment_before_after_key("list_of_elements_side_comment", "\n")
 
-            # with MyRack() as testbed:
-            testbed.inst2.delay = 0.07
-            testbed.inst1.delay = 0.12
+    # lst = CS(['a', 'b'])
+    # lst.yaml_set_comment_before_after_key(0, "comment 1", 2)
+    # lst.yaml_set_comment_before_after_key(1, "comment 2", 2)
+    # data["list_of_elements_top_comment"] = lst
 
-            testbed.run.from_csv('setup/MyRack.run.csv')
+    # Testbed.config.make_templates()
 
-            # for i in range(3):
-            #     # Run the experiment
-            #     ret = testbed.run(rack1_param1=1, rack2_param1=2, rack3_param2=3,
-            #                       rack3_param3=4, rack2_param2=5, rack3_param4=6)
-            #
-            #     testbed.db()
+    # # Testbed.config._rack_defaults(Testbed)
+
+    # with lb.stopwatch('test connection'):
+    #     with Testbed() as testbed:
+    #         # with MyRack() as testbed:
+    #         testbed.inst2.delay = 0.07
+    #         testbed.inst1.delay = 0.12
+
+    #         testbed.run.from_csv('setup/MyRack.run.csv')
+
+    #         # for i in range(3):
+    #         #     # Run the experiment
+    #         #     ret = testbed.run(rack1_param1=1, rack2_param1=2, rack3_param2=3,
+    #         #                       rack3_param3=4, rack2_param2=5, rack3_param4=6)
+    #         #
+    #         #     testbed.db()
 
     # df = lb.read(testbed.db.path/'master.db')
     # df.to_csv(testbed.db.path/'master.csv')
+
+
+    # config_root = Path('test-config')
+    # config_root.mkdir(parents=True, exist_ok=True)
+
+    # # default devices
+    # defaults = {
+    #     dev_name: {k:getattr(dev, k) for k in dev._value_attrs}
+    #     for dev_name, dev in MyRack._devices.items()
+    # }
+    # with open(config_root/'devices.yaml', 'w') as f:
+    #     yaml.dump(defaults, f)
+
+    # defaults, annots, methods, names = MyRack.config.parameters(MyRack)
+
+    # with open(config_root/'rack arguments.yaml', 'w') as f:
+    #     f.write('## Comment or remove lines to add as columns in sequence tables\n\n')
+    #     for k, default in defaults.items():
+    #         if default is lb._rack.EMPTY:
+    #             s = f'# {k}: \n'
+    #             f.write(s)
+    #         else:
+    #             s = yaml.dump({k: default}, f)
+    #         if annots[k] is not lb._rack.EMPTY:
+    #             before, *after = s.split(b'\n', 1)
+    #             s = b'\n'.join([before+f" # {annots[k].__qualname__}"] + after)

@@ -276,4 +276,4 @@ def log_progress(sequence, every=None, size=None, title=None):
         label.value = f'{title}Finished {index}'
 
 np.linspace = linspace
-__builtins__.range = range
+builtins.range = range

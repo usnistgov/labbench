@@ -133,7 +133,7 @@ if __name__ == '__main__':
     mod_name = 'labbench'
 
     # clear out previous files
-    for path in glob(str(root/'*.pyi')):
+    for path in root.rglob('*.pyi'):
         Path(path).unlink()
 
     # stubgen is the first stab
@@ -142,10 +142,14 @@ if __name__ == '__main__':
     stubgen.main()
 
     # now step through to replace __init__ keyword arguments
-    for path in glob(str(root/'*.pyi')):
-        path = Path(path)
+    for path in root.rglob('*.pyi'):
 
-        if path.stem == 'notebooks':
+        if str(path).endswith('notebook.py'):
             continue
 
-        update_stubs(path, mod_name=mod_name, sub_name=path.stem)
+        path = Path(path)
+
+        # convert python path to an importable module name
+        sub_name = '.'.join(path.with_suffix('').parts[1:])
+
+        update_stubs(path, mod_name=mod_name, sub_name=sub_name)

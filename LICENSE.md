@@ -42,7 +42,7 @@ These are not provided as installable packages, so they were included here.
 
 ##### log-progress
 [log-progress](https://github.com/alexanderkuk/log-progress) is included here
-with modifications. It is provided by its offer under
+with modifications. Its author has made it available under
 [the following license](https://github.com/alexanderkuk/log-progress/blob/master/LICENSE):
 
 > MIT License

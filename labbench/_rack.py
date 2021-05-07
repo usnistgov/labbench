@@ -34,7 +34,11 @@ import contextlib
 import inspect
 import logging
 import time
-import yaml
+
+from ruamel_yaml import YAML, round_trip_dump, round_trip_load
+from ruamel_yaml.comments import CommentedMap
+yaml = YAML()
+yaml.indent(mapping=4, sequence=4)
 
 
 EMPTY = inspect._empty
@@ -95,12 +99,12 @@ class Step:
             EMPTY is a sentinel value for "does not exist"
         """
         ext_args = self.extended_args()
-        signature = dict([(k, [v.default, EMPTY]) for k, v in zip(ext_args, self.parameters)])
+        annots = getattr(self.__wrapped__, '__annotations__', {})
 
-        for k, v in getattr(self.__wrapped__, '__annotations__', {}).items():
-            signature[k][1] = v
-
-        return signature
+        return {
+            k:[v.default, annots.get(k, EMPTY)]
+            for k, v in zip(ext_args, self.parameters)
+        }
 
     def extended_args(self):
         return [(self.owner.__name__ + '_' + name) for name in self.args]
@@ -175,7 +179,7 @@ class SequencedMethod(util.Ownable):
     @classmethod
     def to_template(cls, path):
         if path is None:
-            path = f"{cls.__objclass__.__qualname__}.{cls.__name__} template.csv"
+            path = f"{cls.__name__} template.csv"
         util.console.debug(f"writing csv template to {repr(path)}")
         import pandas as pd
         df = pd.DataFrame(columns=cls.params)
@@ -451,6 +455,8 @@ class Sequence(util.Ownable):
     def __owner_subclass__(self, testbed_cls):
         # initialization on the parent class definition
         # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
+
+        print(self, id(testbed_cls))
 
         # determine the call signature for the new Sequence procedure
         signatures = self._collect_signatures()
@@ -739,92 +745,55 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
     def __repr__(self):
         return f'{self.__class__.__qualname__}()'
 
+def _note_before(cm, key, text, indent=0):
+    cm.yaml_set_comment_before_after_key(key, before=text, indent=indent)
 
-class Configuration(util.Ownable):
-    def __init__(self, root_path: Path):
-        super().__init__()    
-
-        self.path = Path(root_path)
-        self.path.mkdir(exist_ok=True, parents=True)
-
-    def __owner_subclass__(self, owner_cls):
-        super().__owner_subclass__(owner_cls)
-        self._rack_defaults(owner_cls)
-
-        return self
-
-    def make_templates(self):
-        for name, attr in self.__objclass__.__dict__.items():
-            if name == 'run':
-                print("run! ", attr, type(attr), isinstance(attr, Sequence), isinstance(attr, SequencedMethod))
-            if isinstance(attr, SequencedMethod):
-                method = attr
-
-                print('make a template for ',name)
-                name = f"{type(method).__objclass__.__qualname__}.{type(method).__name__} template.csv"
-                method.to_template(self.path/name)
+def _note_eol(cm, key, text):
+    cm.yaml_add_eol_comment(comment=text, key=key)
 
 
-    def parameters(self, cls):
-        defaults = {}
-        annots = {}
-        methods = {}
-        names = {}
+class Setup:
+    def __init__(self, rack_cls):
+        self.rack_cls = rack_cls
+        self.RACK_SETUP_FILE = f'{rack_cls.__name__}.yaml'
 
-        for owner in cls._owners.values():
-            if isinstance(owner, Rack):
-                d, a, m, n = self.parameters(owner)
-                defaults.update({owner.__name__+'_'+k: v for k, v in d.items()})
-                annots.update({owner.__name__+'_'+k: v for k, v in a.items()})
-                methods.update({owner.__name__ + '_' + k: v for k, v in m.items()})
-                names.update({owner.__name__ + '_' + k: k for k, v in m.items()})
+    def apply(self, root_path):
+        with open(Path(root_path)/self.RACK_SETUP_FILE,'r') as f:
+            config = yaml.load(f)
+            util.console.debug(f"loaded configuration from {repr(str(root_path))}")
 
-        for step in cls._steps.values():
-            params = iter(inspect.signature(step).parameters.items())
-            next(params) # skip 'self'
+        # subclass the Rack so that we don't change its values
+        self._apply_device_values(config['devices'])
+        self._apply_sequence_defaults(config['method_defaults'])
 
-            for k, p in params:
-                methods[k] = step
-                if annots.setdefault(k, p.annotation) is EMPTY:
-                    annots[k] = p.annotation
-                elif EMPTY not in (p.annotation, annots[k]) and p.annotation != annots[k]:
-                    raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {cls.__qualname__} methods")
-                if not inspect.isclass(annots[k]):
-                    raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{cls.__qualname__}' is not a class")
+    def _apply_device_values(self, device_kwargs):
+        """ make a dictionary of new device instances using the supplied
+            mapping of keyword argument dictionarys, keyed on {device_name: kwargs_dict}
+        """
+        
+        for dev_name, dev in self.rack_cls._devices.items():
+            for trait_name, value in device_kwargs[dev_name].items():
+                setattr(dev, trait_name, value)
 
-                if defaults.setdefault(k, p.default) is EMPTY:
-                    defaults[k] = p.default
-                elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
-                    raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {cls.__qualname__} methods")
-
-            for k in defaults:
-                if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
-                    raise TypeError(f"default '{defaults[k]}' does not match type annotation "
-                                    f"'{annots[k]}' in '{cls.__qualname__}' is not a class")
-
-        return defaults, annots, methods, names
-
-    def _rack_defaults(self, cls):
+    def _apply_sequence_defaults(self, defaults_in):
         """ adjust the method argument parameters in the Rack subclass `cls` according to config file
         """
-        path = Path(self.path)/f"{cls.__qualname__}.defaults.yaml"
+        # path = Path(root_path)/self.RACK_SETUP_FILE
 
-        if getattr(cls, '__config_path__', None) == str(path):
-            util.console.debug(f"already have {path}")
-            util.console.debug(f"already have {cls.__config_path__}")
-            return
-        else:
-            cls.__config_path__ = str(path)
+        # # if getattr(self.rack_cls, '__config_path__', None) == str(path):
+        # #     util.console.debug(f"already have {path}")
+        # #     util.console.debug(f"already have {cls.__config_path__}")
+        # #     return
+        # # else:
+        # #     cls.__config_path__ = str(path)
 
-        defaults, annots, methods, names = self.parameters(cls)
+        defaults, annots, methods, names = self._get_sequence_parameters(self.rack_cls)
 
-        # read the existing defaults
-        defaults_in = {}
-        if path.exists():
-            with open(path, 'rb') as f:
-                defaults_in = yaml.safe_load(f) or {}
-
-        util.console.debug(f"read {defaults_in.keys()} from {path}")
+        # # read the existing defaults
+        # defaults_in = {}
+        # if path.exists():
+        #     with open(path, 'rb') as f:
+        #         defaults_in = yaml.safe_load(f) or {}
 
         for k, v in dict(defaults_in).items():
             if v == defaults[k]:
@@ -832,9 +801,9 @@ class Configuration(util.Ownable):
                 continue
 
             if k not in methods:
-                raise KeyError(f"'{k}' in '{str(path)}' is not a parameter in any method of '{cls.__qualname__}'")
+                raise KeyError(f"method_defaults configuration key '{k}' is not a parameter in any method of '{self.rack_cls.__qualname__}'")
             elif annots[k] is not EMPTY and not isinstance(v, annots[k]):
-                raise TypeError(f"the parameter '{k}' with value '{v}' in '{str(path)}' conflicts "
+                raise TypeError(f"the method_defaults configuration at key '{k}' with value '{v}' conflicts "
                                 f"with type annotation '{annots[k]}'")
 
             # update the call signature
@@ -861,20 +830,261 @@ class Configuration(util.Ownable):
         # take the updated defaults
         defaults.update(defaults_in)
 
-        # update the defaults on disk
-        with open(path, 'wb') as f:
-            for k, default in defaults.items():
-                if default is EMPTY:
-                    s = f'# {k}: \n'.encode('utf-8')
-                else:
-                    s = yaml.dump({k: default}, encoding='utf-8', allow_unicode=True)
-                if annots[k] is not EMPTY:
-                    before, *after = s.split(b'\n', 1)
-                    s = b'\n'.join([before+f" # {annots[k].__qualname__}".encode('utf-8')] + after)
-                f.write(s)
-
         # reinitialize the subclass to propagate changes to the keyword signature
-        for name, obj in dict(cls.__dict__).items():
+        for name, obj in dict(self.rack_cls.__dict__).items():
             if isinstance(obj, util.Ownable):
-                obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
-                obj = obj.__owner_subclass__(cls)
+                obj.__set_name__(self.rack_cls, name)  # in case it was originally instantiated outside cls
+                obj = obj.__owner_subclass__(self.rack_cls)        
+
+    def make(self, path):
+        path = Path(path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        with open(path/self.RACK_SETUP_FILE, 'w') as stream:
+            cm = CommentedMap(
+                method_defaults=self._template_sequence_parameters(),
+                devices=self._template_devices(),
+            )
+
+            _note_before(
+                cm,
+                'sequence_defaults',
+                '\nparameter defaults for sequences in rack:'
+                '\nthese parameters can be omitted from sequence table columns'
+            )
+
+            _note_before(
+                cm,
+                'devices',
+                '\ndevice settings: initial values for value traits'
+            )
+
+            yaml.dump(cm, stream)
+
+            self._template_sequence_tables(path)
+
+    def _template_sequence_parameters(self):
+        defaults, annots, *_ = self._get_sequence_parameters(self.rack_cls)
+        cm = CommentedMap({k:(None if v is EMPTY else v) for k,v in defaults.items()})
+
+        keys = list(cm.keys())
+        for i,k in enumerate(keys):
+            if defaults[k] is EMPTY:
+                d = {k: None}
+
+                if i < len(keys)-1:
+                    note_key = keys[i+1]
+                else:
+                    note_key = list(cm.keys())[-2]
+
+                _note_before(cm, note_key, f'{round_trip_dump(d)}', 4)
+                del cm[k]
+            elif annots[k] is not EMPTY:
+                _note_eol(cm, k, f'{annots[k].__name__}')
+
+        return cm
+
+        # yaml.dump(cm, stream)
+        # stream.write('\n\n')
+
+    def _template_sequence_tables(self, root_path):
+        root_path = Path(root_path)
+        # sequence tables
+        for name, attr in self.rack_cls.__dict__.items():
+            if isinstance(attr, SequencedMethod):
+                import pandas as pd
+                df = pd.DataFrame(columns=attr.params)
+                df.index.name = 'Condition name'
+                path = root_path/f'{self.rack_cls.__name__}.{type(attr).__name__}.csv'
+                df.to_csv(path)
+                util.console.debug(f"writing csv template to {repr(path)}")
+
+    def _template_devices(self):
+        defaults = {
+            dev_name: {k:getattr(dev, k) for k in dev._value_attrs if dev._traits[k].settable}
+            for dev_name, dev in self.rack_cls._devices.items()
+        }
+
+        return CommentedMap(defaults)
+
+    @classmethod
+    def _get_sequence_parameters(cls, rack_cls):
+        """ introspect the arguments used in a sequence. cls is the Rack class or a subclass
+        """
+        defaults = {}
+        annots = {}
+        methods = {}
+        names = {}
+
+        for owner in rack_cls._owners.values():
+            if isinstance(owner, Rack):
+                d, a, m, n = cls._get_sequence_parameters(owner)
+                defaults.update({owner.__name__+'_'+k: v for k, v in d.items()})
+                annots.update({owner.__name__+'_'+k: v for k, v in a.items()})
+                methods.update({owner.__name__ + '_' + k: v for k, v in m.items()})
+                names.update({owner.__name__ + '_' + k: k for k, v in m.items()})
+
+        for step in rack_cls._steps.values():
+            params = iter(inspect.signature(step).parameters.items())
+            next(params) # skip 'self'
+
+            for k, p in params:
+                methods[k] = step
+                if annots.setdefault(k, p.annotation) is EMPTY:
+                    annots[k] = p.annotation
+                elif EMPTY not in (p.annotation, annots[k]) and p.annotation != annots[k]:
+                    raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {cls.__qualname__} methods")
+                if not inspect.isclass(annots[k]):
+                    raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{rack_cls.__qualname__}' is not a class")
+
+                if defaults.setdefault(k, p.default) is EMPTY:
+                    defaults[k] = p.default
+                elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
+                    raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {cls.__qualname__} methods")
+
+            for k in defaults:
+                if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
+                    raise TypeError(f"default '{defaults[k]}' does not match type annotation "
+                                    f"'{annots[k]}' in '{rack_cls.__qualname__}' is not a class")
+
+        return defaults, annots, methods, names
+
+
+# class Configuration(util.Ownable):
+#     def __init__(self, root_path: Path):
+#         super().__init__()    
+
+#         self.path = Path(root_path)
+#         self.path.mkdir(exist_ok=True, parents=True)
+
+#     def __owner_subclass__(self, owner_cls):
+#         super().__owner_subclass__(owner_cls)
+#         self._rack_defaults(owner_cls)
+
+#         return self
+
+#     def make_templates(self):
+#         for name, attr in self.__objclass__.__dict__.items():
+#             if not isinstance(attr, SequencedMethod):
+#                 continue
+
+#             method = attr
+
+#             print('make a template for ',name)
+#             name = f"{type(method).__objclass__.__qualname__}.{type(method).__name__} template.csv"
+#             method.to_template(self.path/name)
+
+
+#     def parameters(self, cls):
+#         defaults = {}
+#         annots = {}
+#         methods = {}
+#         names = {}
+
+#         for owner in cls._owners.values():
+#             if isinstance(owner, Rack):
+#                 d, a, m, n = self.parameters(owner)
+#                 defaults.update({owner.__name__+'_'+k: v for k, v in d.items()})
+#                 annots.update({owner.__name__+'_'+k: v for k, v in a.items()})
+#                 methods.update({owner.__name__ + '_' + k: v for k, v in m.items()})
+#                 names.update({owner.__name__ + '_' + k: k for k, v in m.items()})
+
+#         for step in cls._steps.values():
+#             params = iter(inspect.signature(step).parameters.items())
+#             next(params) # skip 'self'
+
+#             for k, p in params:
+#                 methods[k] = step
+#                 if annots.setdefault(k, p.annotation) is EMPTY:
+#                     annots[k] = p.annotation
+#                 elif EMPTY not in (p.annotation, annots[k]) and p.annotation != annots[k]:
+#                     raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {cls.__qualname__} methods")
+#                 if not inspect.isclass(annots[k]):
+#                     raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{cls.__qualname__}' is not a class")
+
+#                 if defaults.setdefault(k, p.default) is EMPTY:
+#                     defaults[k] = p.default
+#                 elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
+#                     raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {cls.__qualname__} methods")
+
+#             for k in defaults:
+#                 if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
+#                     raise TypeError(f"default '{defaults[k]}' does not match type annotation "
+#                                     f"'{annots[k]}' in '{cls.__qualname__}' is not a class")
+
+#         return defaults, annots, methods, names
+
+#     def _rack_defaults(self, cls):
+#         """ adjust the method argument parameters in the Rack subclass `cls` according to config file
+#         """
+#         path = Path(self.path)/f"{cls.__qualname__}.defaults.yaml"
+
+#         if getattr(cls, '__config_path__', None) == str(path):
+#             util.console.debug(f"already have {path}")
+#             util.console.debug(f"already have {cls.__config_path__}")
+#             return
+#         else:
+#             cls.__config_path__ = str(path)
+
+#         defaults, annots, methods, names = self.parameters(cls)
+
+#         # read the existing defaults
+#         defaults_in = {}
+#         if path.exists():
+#             with open(path, 'rb') as f:
+#                 defaults_in = yaml.safe_load(f) or {}
+
+#         util.console.debug(f"read {defaults_in.keys()} from {path}")
+
+#         for k, v in dict(defaults_in).items():
+#             if v == defaults[k]:
+#                 del defaults_in[k]
+#                 continue
+
+#             if k not in methods:
+#                 raise KeyError(f"'{k}' in '{str(path)}' is not a parameter in any method of '{cls.__qualname__}'")
+#             elif annots[k] is not EMPTY and not isinstance(v, annots[k]):
+#                 raise TypeError(f"the parameter '{k}' with value '{v}' in '{str(path)}' conflicts "
+#                                 f"with type annotation '{annots[k]}'")
+
+#             # update the call signature
+#             method = methods[k]
+
+#             if isinstance(method, Step):
+#                 if method.__wrapped__.__kwdefaults__ is None:
+#                     method.__wrapped__.__kwdefaults__ = {}
+#                 method.__wrapped__.__kwdefaults__[names[k]] = v
+#                 method.introspect()
+#                 # step = Step(method.owner, method.__name__)
+#                 # print(method.__name__, step.parameters[0].default)
+#                 # setattr(method.owner, method.__name__, step)
+#                 #
+#                 # print(getattr(method.owner, method.__name__).parameters[0].default, step.parameters[0].default, getattr(method.owner, method.__name__)==step)
+#             else:
+#                 if method.__kwdefaults__ is None:
+#                     method.__kwdefaults__ = {}
+#                 method.__kwdefaults__[names[k]] = v
+
+#         if len(defaults_in) > 0:
+#             util.console.debug(f"applied defaults {defaults_in}")
+
+#         # take the updated defaults
+#         defaults.update(defaults_in)
+
+#         # update the defaults on disk
+#         with open(path, 'wb') as f:
+#             for k, default in defaults.items():
+#                 if default is EMPTY:
+#                     s = f'# {k}: \n'.encode('utf-8')
+#                 else:
+#                     s = yaml.dump({k: default}, encoding='utf-8', allow_unicode=True)
+#                 if annots[k] is not EMPTY:
+#                     before, *after = s.split(b'\n', 1)
+#                     s = b'\n'.join([before+f" # {annots[k].__qualname__}".encode('utf-8')] + after)
+#                 f.write(s)
+
+#         # reinitialize the subclass to propagate changes to the keyword signature
+#         for name, obj in dict(cls.__dict__).items():
+#             if isinstance(obj, util.Ownable):
+#                 obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
+#                 obj = obj.__owner_subclass__(cls)

@@ -60,37 +60,36 @@ if __name__ == '__main__':
         raise ValueError(
             f"python version is {sys.version} but install requires >={'.'.join([str(v) for v in py_version_req])}")
 
-    setup(name='labbench',
-          version=__version__,
-          description='scripting tools for streamlined laboratory automation',
-          author='Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma',
-          author_email='daniel.kuester@nist.gov',
-          url='https://github.com/usnistgov/labbench',
-          packages=setuptools.find_packages(),
-          package_data=dict(
-              labbench=['*.pyi','py.typed'], # py.typed indicates there are type annotations
-          ),
-          license='NIST',
-          install_requires=[
-              'pandas(>=0.23)',
-              'pyserial(>=3.0)',
-              'pyvisa(>=1.8)',
-              'coloredlogs(>=7.0)',
-              "feather-format(>=0.4.0)",
-              'numpy(>=1.0)',
-              'scipy(>=0.9)',
-              'sortedcontainers(>=1.4)',
-              'psutil(>=5.0)',
-              'sqlalchemy',
-              'GitPython(>=2.0)',
-              'pyarrow',
-              'pyyaml',
-              'validators'
-            ],
-          extras_require=dict(
-              notebook=['notebook', 'ipywidgets'],
-              src=['ast_decompile', 'mypy','sphinx(>=1.6)','recommonmark'], # build and maintenance not needed to use labbench
-          ),
-          long_description=longdescription,
-          long_description_content_type="text/markdown",                          
-          )
+    setup(
+        name='labbench',
+        version=__version__,
+        description='scripting tools for streamlined laboratory automation',
+        author='Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma',
+        author_email='daniel.kuester@nist.gov',
+        url='https://github.com/usnistgov/labbench',
+        packages=setuptools.find_packages(),
+        package_data=dict(
+            labbench=['*.pyi','py.typed'], # py.typed indicates there are type annotations
+        ),
+        license='NIST',
+        install_requires=[
+            'coloredlogs(>=7.0)',
+            "feather-format(>=0.4.0)",
+            'GitPython(>=2.0)',
+            'numpy(>=1.0)',
+            'pandas(>=1.00)',
+            'psutil(>=5.0)',
+            'pyserial(>=3.0)',
+            'pyvisa(>=1.8)',
+            'sqlalchemy',
+            'pyarrow',
+            'pyyaml',
+            'validators'
+        ],
+        extras_require=dict(
+            notebook=['notebook', 'ipywidgets'],
+            maintenance=['ast_decompile', 'mypy','sphinx(>=1.6)','recommonmark'], # build and maintenance not needed to use labbench
+        ),
+        long_description=longdescription,
+        long_description_content_type="text/markdown",
+    )

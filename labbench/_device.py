@@ -101,16 +101,15 @@ def list_devices(depth=1):
         a method in a class.
     """
     from inspect import getouterframes, currentframe
-    from sortedcontainers import sorteddict
 
     f = frame = currentframe()
     for i in range(depth):
         f = f.f_back
     try:
-        ret = sorteddict.SortedDict()
-        for k, v in list(f.frame.f_locals.items()):
-            if isinstance(v, Device):
-                ret[k] = v
+        ret = {
+            k:v for k,v in list(f.frame.f_locals.items())
+            if isinstance(v, Device)
+        }
 
         # If the context is a function, look in its first argument,
         # in case it is a method. Search its class instance.

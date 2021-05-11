@@ -26,15 +26,14 @@
 
 
 from contextlib import suppress, ExitStack, contextmanager
+from re import L
 from . import _device, _traits, _rack
 from ._device import Device
-from ._traits import observe, Trait, VALID_TRAIT_ROLES
-from ._rack import Owner, Rack, Step
+from ._traits import observe, Trait
+from ._rack import Owner, Rack
 from . import _host
 from . import _device as core
-from . import property as property_
 from . import value
-from . import datareturn
 from . import util
 import copy
 import inspect
@@ -809,6 +808,9 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
 
         self._console = util.console.logger.getChild(str(self))
         self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - " + str(self)))
+
+    def __copy__(self):
+        return copy.deepcopy(self)
 
     def __owner_init__ (self, owner):
         super().__owner_init__(owner)

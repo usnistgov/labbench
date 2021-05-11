@@ -78,11 +78,11 @@ class LabbenchDeprecationWarning(DeprecationWarning):
 
 simplefilter('once', LabbenchDeprecationWarning)
 
-
 class Ownable:
     """ Subclass to pull in name from an owning class
     """
     __objclass__ = None
+    __get_owned_name__ = None
 
     def __set_name__(self, owner_cls, name):
         self.__objclass__ = owner_cls
@@ -92,9 +92,15 @@ class Ownable:
         return self
 
     def __owner_init__(self, owner):
-        """ Called when the owner is instantiated
+        """ Called when the owner is instantiated. Ownable instances are meant
+            to be used as singletons --- an Ownable instance may be jointly
+            owned by multiple Owner classes. As a result, this may be called
+            called multiple times if it is an attribute in multiple classes.
+
+            The final call sets __get_owned_name__ to the top-level owning
+            class.
         """
-        self.__owner_instname__ = lambda: (str(owner) if hasattr(owner, '__name__') else '')
+        self.__get_owned_name__ = lambda: (str(owner) if hasattr(owner, '__name__') else '')
 
     def __owner_subclass__(self, owner_cls):
         """ Called after the owner class is instantiated; returns an object to be used in the Rack namespace
@@ -104,7 +110,7 @@ class Ownable:
     def __str__(self):
         if hasattr(self, '__owner_instname__') and hasattr(self, '__name__'):
             name = self.__name__
-            owner_name = self.__owner_instname__()
+            owner_name = self.__get_owned_name__()
             if owner_name:
                 name = owner_name + '.' + name
             return name

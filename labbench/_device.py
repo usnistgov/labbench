@@ -132,7 +132,10 @@ class DisconnectedBackend(object):
     def __init__(self, dev):
         """ dev may be a class or an object for error feedback
         """
-        self.name = dev.__class__.__qualname__
+        if isinstance(dev, str):
+            self.name = dev
+        else:
+            self.name = dev.__class__.__qualname__
 
     @util.hide_in_traceback
     def __getattr__(self, key):
@@ -142,7 +145,11 @@ class DisconnectedBackend(object):
     def __repr__(self):
         return 'DisconnectedBackend()'
 
+    def __copy__ (self, memo=None):
+        return DisconnectedBackend(self.name)
+
     str = __repr__
+    __deepcopy__ = __copy__
 
 
 @util.hide_in_traceback

@@ -36,6 +36,7 @@ import typing
 from warnings import warn
 from functools import wraps
 import validators as _val
+from contextlib import contextmanager
 
 from inspect import isclass
 import numbers
@@ -45,10 +46,6 @@ import re
 from pathlib import Path
 import numpy as np
 import pandas as pd
-
-
-# TODO: dynamically create trait subclasses for arbitrary types?
-TRAIT_TYPE_REGISTRY = {}
 
 
 Undefined = type(None)
@@ -224,7 +221,6 @@ class Trait:
         """
         if type is not Undefined:
             cls.type = type
-            TRAIT_TYPE_REGISTRY[type] = cls
 
         # complete the annotation dictionary with the parent
         annots = dict(getattr(cls.__mro__[1], '__annotations__', {}),
@@ -625,6 +621,7 @@ class HasTraits(metaclass=HasTraitsMeta):
         # for cached properties and values in this instance
         self.__cache__ = {}
         self._calibrations = {}
+        self._holds = []
 
         for name, trait in self._traits.items():
             trait.__init_owner_instance__(self)
@@ -678,8 +675,25 @@ class HasTraits(metaclass=HasTraitsMeta):
             elif trait.role == Trait.ROLE_PROPERTY:
                 cls._property_attrs.append(name)
 
+
+    @contextmanager
+    def _hold_notifications(self, names=Undefined):
+        """ pause notifications for the specified traits
+            inside this context. names is a list of trait
+            names, or Undefined (default) to pause all traits. 
+        """
+        if names is Any:
+            names = list(self._traits.keys())
+
+        pre,self._holds=self._holds, names
+        yield
+        self._holds=pre
+
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache):
+        if name in self._holds:
+            return
+
         old = self.__cache__.setdefault(name, Undefined)
 
         msg = dict(new=value, old=old, owner=self,

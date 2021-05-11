@@ -31,6 +31,7 @@ from functools import wraps
 from pathlib import Path
 
 import contextlib
+import copy
 import inspect
 import logging
 import pandas as pd
@@ -836,7 +837,7 @@ class FileRackMapping:
     """
     def __init__(self, rack_cls):
         self.rack_cls = rack_cls
-        self.RACK_SETUP_FILE = f'{rack_cls.__name__}.yaml'
+        self.RACK_SETUP_FILE = f'rack.yaml'
 
     def load_rack(self, root_path):
         with open(Path(root_path)/self.RACK_SETUP_FILE,'r') as f:
@@ -922,12 +923,22 @@ class FileRackMapping:
 
     def init(self, path):
         path = Path(path)
-        path.mkdir(exist_ok=True, parents=True)
+        path.mkdir(exist_ok=False, parents=True)
 
         with open(path/self.RACK_SETUP_FILE, 'w') as stream:
             cm = CommentedMap(
+                source=dict(
+                    name=self.rack_cls.__name__,
+                    module=self.rack_cls.__module__
+                ),
                 method_defaults=self._template_sequence_parameters(),
                 devices=self._template_devices(),
+            )
+
+            _note_before(
+                cm,
+                'source',
+                'Rack class source import strings for the python interpreter'
             )
 
             _note_before(
@@ -946,20 +957,26 @@ class FileRackMapping:
             yaml.dump(cm, stream)
 
         for name, attr in self.rack_cls.__dict__.items():
-            if isinstance(attr, SequencedMethod):
-                self.init_sequence_table(path, name)
+            
+            if isinstance(attr, Sequence):
+                self.init_sequence_table(path, attr)
 
-    def init_sequence_table(self, root_path, name):
+    def init_sequence_table(self, root_path, seq, with_defaults=False):
         # TODO: configure whether/which defaults are included as columns
         root_path = Path(root_path)
         
-        attr = getattr(self.rack_cls, name)
-        if not isinstance(attr, SequencedMethod):
-            raise TypeError(f"{name} name of a Sequence attribute of the rack definition")
+        if not isinstance(seq, Sequence):
+            raise TypeError(f"{seq} is not a Sequence")
 
-        df = pd.DataFrame(columns=attr.params)
+        sigs = [
+            name
+            for name,(default,annot) in seq._collect_signatures().items()
+            if with_defaults or default is EMPTY
+        ]
+
+        df = pd.DataFrame(columns=sigs)
         df.index.name = 'Condition name'
-        path = root_path/f'{self.rack_cls.__name__}.{type(attr).__name__}.csv'
+        path = root_path/f'{seq.__name__}.csv'
         df.to_csv(path)
         util.console.debug(f"writing csv template to {repr(path)}")
 

@@ -35,7 +35,10 @@ import unittest
 import importlib
 
 import time
-from emulate import EmulatedVISADevice
+try:
+    from .emulate import EmulatedVISADevice
+except:
+    from emulate import EmulatedVISADevice
 from contextlib import contextmanager
 import labbench as lb
 import numpy as np

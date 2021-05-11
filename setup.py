@@ -49,6 +49,7 @@ and heterogeneous datasets.
 
 if __name__ == '__main__':
     from distutils.core import setup, Extension
+    import platform
     import setuptools
     import sys
     from glob import glob
@@ -85,6 +86,10 @@ if __name__ == '__main__':
             'pyarrow',
             'pyyaml',
             'validators'
+        ],
+        scripts=[
+            'scripts/labbench-rack-script.py',
+            'scripts/labbench-rack.bat' if 'windows' in platform.system().lower() else 'scripts/labbench-rack',
         ],
         extras_require=dict(
             notebook=['notebook', 'ipywidgets'],

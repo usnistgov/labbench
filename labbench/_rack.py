@@ -831,7 +831,7 @@ def _note_eol(cm, key, text):
     cm.yaml_add_eol_comment(comment=text, key=key)
 
 
-class FileRackMap:
+class FileRackMapping:
     """ load or dump Rack object config from config files
     """
     def __init__(self, rack_cls):

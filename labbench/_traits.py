@@ -682,8 +682,10 @@ class HasTraits(metaclass=HasTraitsMeta):
             inside this context. names is a list of trait
             names, or Undefined (default) to pause all traits. 
         """
-        if names is Any:
+        if names is Undefined:
             names = list(self._traits.keys())
+        elif isinstance(names, str):
+            names = [names]
 
         pre,self._holds=self._holds, names
         yield

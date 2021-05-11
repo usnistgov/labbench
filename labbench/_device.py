@@ -360,6 +360,7 @@ class Device(HasTraits, util.Ownable):
             opener(self)
 
         self._console.debug(f"opened")
+
         # Force an update to self.isopen
         self.isopen
 

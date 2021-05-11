@@ -11,11 +11,13 @@ from numbers import Number
 # import shutil
 import labbench as lb
 lb._force_full_traceback(True)
-from labbench._rack import FileRackMapping
+import labbench as lb
 import importlib
 
+# the Rack metaclass is where the configs live
+rack_factory = type(lb.Rack)
 
-@click.group(help="configure a rack and run sequences")
+@click.group(help="configure and run labbench Rack objects")
 def cli():
     pass
 
@@ -33,10 +35,8 @@ def cli():
 @click.argument('class-name', type=str)#, help='name of the rack class to import, e.g., "modulename.MyRack"')
 @click.argument('config-dir', type=click.Path(exists=False))#, help='path to the output directory')
 def init(module, class_name, config_dir):
-    module = importlib.import_module(module)
-    cls = getattr(module, class_name)
-    file_map = FileRackMapping(cls)
-    file_map.init(Path(config_dir))
+    cls = rack_factory.from_module(module, class_name)
+    rack_factory.to_config(cls, config_dir)
 
 
 @cli.command(name='rewrite', help="""
@@ -51,8 +51,12 @@ def init(module, class_name, config_dir):
 @click.argument('config-dir', type=click.Path(exists=True))#, help='path to the config directory')
 @click.argument('sequence-name', type=str)#, help='name of the sequence to update')
 @click.option('--with-defaults', is_flag=True, help='include sequence parameters that have defaults')
-def init_table(config_dir, sequence_name, with_defaults=False):
-    pass
+def rewrite(config_dir, sequence_name, with_defaults=False):
+    if with_defaults:
+        raise NotImplementedError
+
+    cls = rack_factory.from_config(config_dir, apply=True)
+    rack_factory.to_sequence_table(cls, sequence_name, config_dir, with_defaults)
 
 
 @cli.command(name='run', help="""
@@ -65,7 +69,15 @@ def init_table(config_dir, sequence_name, with_defaults=False):
 @click.argument('config-dir', type=click.Path(exists=True))
 @click.argument('sequence-name', type=str)
 def run(config_dir, sequence_name):
-    pass
+    rack_cls = rack_factory.from_config(config_dir, apply=True)
+
+    # instantiate the rack, binding the Sequence method
+    with rack_cls() as rack:
+
+        # ...and run the sequence object
+        bound_seq = getattr(rack, sequence_name)
+        print(dir(bound_seq))
+        bound_seq.from_csv(Path(config_dir)/f'{sequence_name}.csv')
 
 
 if __name__ == '__main__':

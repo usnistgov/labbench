@@ -32,6 +32,7 @@ from pathlib import Path
 
 import contextlib
 import copy
+import importlib
 import inspect
 import logging
 import pandas as pd
@@ -209,7 +210,7 @@ class Method:
     __str__ = __repr__
 
 
-class SequencedMethod(util.Ownable):
+class BoundSequence(util.Ownable):
     @util.hide_in_traceback
     def __call__(self, **kwargs):
         ret = {}
@@ -532,7 +533,7 @@ class Sequence(util.Ownable):
             __owner_subclass__=self.__owner_subclass__ # in case the owner changes and calls this again
         )
 
-        cls = type(self.__name__, (SequencedMethod,), ns)
+        cls = type(self.__name__, (BoundSequence,), ns)
 
         util.wrap_attribute(
             cls, '__call__', __call__, fields=params, defaults=defaults,
@@ -540,7 +541,7 @@ class Sequence(util.Ownable):
         )
 
 
-        # the testbed gets this SequencedMethod instance in place of self
+        # the testbed gets this BoundSequence instance in place of self
         obj = object.__new__(cls)
         obj.__init__()
         return obj
@@ -555,7 +556,7 @@ class Sequence(util.Ownable):
 
         for spec in self.spec.values():
             for func in spec:
-                if not isinstance(func, (Method, SequencedMethod)):
+                if not isinstance(func, (Method, BoundSequence)):
                     raise TypeError(f"expected Method instance, but got '{type(func).__qualname__}' instead")
 
                 # race condition check
@@ -651,7 +652,14 @@ class notify:
 
 
 class RackMeta(type):
-    def take_module(cls, module):
+    CONFIG_FILENAME = f'rack.yaml'
+
+    @classmethod
+    def from_module(metacls, module_str, cls_name):
+        module = importlib.import_module(module_str)
+        return getattr(module, cls_name)
+
+    def wrap_module(cls, module):
         """
         Return a new Rack subclass composed of any instances of Device, Rack, data loggers, or dicts contained
         in a python module namespace.
@@ -678,6 +686,235 @@ class RackMeta(type):
 
         # subclass into a new Rack
         return type(module.__name__.rsplit('.')[-1], (cls,), dict(cls.__dict__, **namespace))
+
+    @classmethod
+    def from_config(metacls, config_path, apply=True):
+        """ read a
+        """
+        with open(Path(config_path)/metacls.CONFIG_FILENAME,'r') as f:
+            config = yaml.load(f)
+            util.console.debug(f"loaded configuration from {repr(str(config_path))}")
+
+        rack_cls = metacls.from_module(
+            config['source']['module'],
+            config['source']['name']
+        )
+
+        # subclass the Rack so that we don't change its values
+        if apply:
+            # prepare a subclassed copy to avoid changing the actual class definition
+            new_cls = type(rack_cls.__name__, (rack_cls,), {})
+            new_cls.__qualname__ = rack_cls.__qualname__
+            new_cls.__module__ = rack_cls.__module__
+
+            metacls._apply_device_values(new_cls, config['devices'])
+            metacls._apply_sequence_defaults(new_cls, config['method_defaults'])
+
+            return new_cls
+        else:
+            return rack_cls
+
+    def _apply_device_values(rack_cls, device_kwargs):
+        """ make a dictionary of new device instances using the supplied
+            mapping of keyword argument dictionarys, keyed on {device_name: kwargs_dict}
+        """
+        
+        for dev_name, dev in rack_cls._devices.items():
+            for trait_name, value in device_kwargs[dev_name].items():
+                setattr(dev, trait_name, value)
+
+    @classmethod
+    def _apply_sequence_defaults(metacls, rack_cls, defaults_in):
+        """ adjust the method argument parameters in the Rack subclass `cls` according to config file
+        """
+        # path = Path(root_path)/self.CONFIG_FILENAME
+
+        # # if getattr(self.rack_cls, '__config_path__', None) == str(path):
+        # #     util.console.debug(f"already have {path}")
+        # #     util.console.debug(f"already have {cls.__config_path__}")
+        # #     return
+        # # else:
+        # #     cls.__config_path__ = str(path)
+
+        defaults, annots, methods, names = metacls._get_sequence_parameters(rack_cls)
+
+        # # read the existing defaults
+        # defaults_in = {}
+        # if path.exists():
+        #     with open(path, 'rb') as f:
+        #         defaults_in = yaml.safe_load(f) or {}
+
+        for k, v in dict(defaults_in).items():
+            if v == defaults[k]:
+                del defaults_in[k]
+                continue
+
+            if k not in methods:
+                raise KeyError(f"method_defaults configuration key '{k}' is not a parameter in any method of '{rack_cls.__qualname__}'")
+            elif annots[k] is not EMPTY and not isinstance(v, annots[k]):
+                raise TypeError(f"the method_defaults configuration at key '{k}' with value '{v}' conflicts "
+                                f"with type annotation '{annots[k]}'")
+
+            # update the call signature
+            method = methods[k]
+
+            if isinstance(method, Method):
+                method.set_kwdefault(names[k], v)
+            else:
+                if method.__kwdefaults__ is None:
+                    method.__kwdefaults__ = {}
+                method.__kwdefaults__[names[k]] = v
+
+        if len(defaults_in) > 0:
+            util.console.debug(f"applied defaults {defaults_in}")
+
+        # take the updated defaults
+        defaults.update(defaults_in)
+        metacls._repropagate_ownership(rack_cls)
+
+    def _repropagate_ownership(rack_cls):
+        # reinitialize the subclass to propagate changes to Sequence keyword signatures
+        for name, obj in dict(rack_cls.__dict__).items():
+            if isinstance(obj, util.Ownable):
+                obj.__set_name__(rack_cls, name)  # in case it was originally instantiated outside cls
+                obj = obj.__owner_subclass__(rack_cls)
+                setattr(rack_cls, name, obj)
+
+    @classmethod
+    def to_config(metacls, cls, path, with_defaults=False):
+        path = Path(path)
+        path.mkdir(exist_ok=False, parents=True)
+
+        with open(path/metacls.CONFIG_FILENAME, 'w') as stream:
+            cm = CommentedMap(
+                source=dict(
+                    name=cls.__name__,
+                    module=cls.__module__
+                ),
+                method_defaults=metacls._serialize_sequence_parameters(cls),
+                devices=metacls._serialize_devices(cls),
+            )
+
+            _note_before(
+                cm,
+                'source',
+                'Rack class source import strings for the python interpreter'
+            )
+
+            _note_before(
+                cm,
+                'sequence_defaults',
+                '\nparameter defaults for sequences in rack:'
+                '\nthese parameters can be omitted from sequence table columns'
+            )
+
+            _note_before(
+                cm,
+                'devices',
+                '\ndevice settings: initial values for value traits'
+            )
+
+            yaml.dump(cm, stream)
+
+        for name, attr in cls.__dict__.items():
+            if isinstance(attr, Sequence):
+                metacls.to_sequence_table(attr, path, with_defaults=with_defaults)
+
+    def to_sequence_table(cls, name, path, with_defaults=False):
+        # TODO: configure whether/which defaults are included as columns
+        root_path = Path(path)
+        
+        seq = getattr(cls, name)
+        if not isinstance(seq, Sequence):
+            raise TypeError(f"{seq} is not a Sequence")
+
+        sigs = [
+            name
+            for name,(default,annot) in seq._collect_signatures().items()
+            if with_defaults or default is EMPTY
+        ]
+
+        df = pd.DataFrame(columns=sigs)
+        df.index.name = 'Condition name'
+        path = root_path/f'{seq.__name__}.csv'
+        df.to_csv(path)
+        util.console.debug(f"writing csv template to {repr(path)}")
+
+    @classmethod
+    def _serialize_sequence_parameters(metacls, cls):
+        defaults, annots, *_ = metacls._get_sequence_parameters(cls)
+
+        cm = CommentedMap({
+            k:(None if v is EMPTY else v)
+            for k,v in defaults.items()
+        })
+
+        keys = list(cm.keys())
+        for i,k in enumerate(keys):
+            if defaults[k] is EMPTY:
+                d = {k: None}
+
+                if i < len(keys)-1:
+                    note_key = keys[i+1]
+                else:
+                    note_key = list(cm.keys())[-2]
+
+                _note_before(cm, note_key, f'{round_trip_dump(d)}', 4)
+                del cm[k]
+            elif annots[k] is not EMPTY:
+                _note_eol(cm, k, f'{annots[k].__name__}')
+
+        return cm
+
+    def _serialize_devices(cls):
+        defaults = {
+            dev_name: {k:getattr(dev, k) for k in dev._value_attrs if dev._traits[k].settable}
+            for dev_name, dev in cls._devices.items()
+        }
+
+        return CommentedMap(defaults)
+
+    @classmethod
+    def _get_sequence_parameters(metacls, rack_cls):
+        """ introspect the arguments used in a sequence. cls is the Rack class or a subclass
+        """
+        defaults = {}
+        annots = {}
+        methods = {}
+        names = {}
+
+        for owner in rack_cls._owners.values():
+            if isinstance(owner, Rack):
+                d, a, m, n = metacls._get_sequence_parameters(owner)
+                defaults.update({owner.__name__+'_'+k: v for k, v in d.items()})
+                annots.update({owner.__name__+'_'+k: v for k, v in a.items()})
+                methods.update({owner.__name__ + '_' + k: v for k, v in m.items()})
+                names.update({owner.__name__ + '_' + k: k for k, v in m.items()})
+
+        for step in rack_cls._steps.values():
+            params = iter(inspect.signature(step).parameters.items())
+            next(params) # skip 'self'
+
+            for k, p in params:
+                methods[k] = step
+                if annots.setdefault(k, p.annotation) is EMPTY:
+                    annots[k] = p.annotation
+                elif EMPTY not in (p.annotation, annots[k]) and p.annotation != annots[k]:
+                    raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {cls.__qualname__} methods")
+                if not inspect.isclass(annots[k]):
+                    raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{rack_cls.__qualname__}' is not a class")
+
+                if defaults.setdefault(k, p.default) is EMPTY:
+                    defaults[k] = p.default
+                elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
+                    raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {cls.__qualname__} methods")
+
+            for k in defaults:
+                if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
+                    raise TypeError(f"default '{defaults[k]}' does not match type annotation "
+                                    f"'{annots[k]}' in '{rack_cls.__qualname__}' is not a class")
+
+        return defaults, annots, methods, names        
 
     def __enter__(cls):
         raise RuntimeError(f"the `with` block needs an instance - 'with {cls.__qualname__}():' instead of 'with {cls.__qualname__}:'")
@@ -778,7 +1015,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
             raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
 
         # replace self._steps with new mapping of wrappers
-        self._steps = {k: obj if isinstance(obj, SequencedMethod) else Method(self, k)
+        self._steps = {k: obj if isinstance(obj, BoundSequence) else Method(self, k)
                        for k, obj in self._steps.items()}
 
     def __deepcopy__(self, memo=None):
@@ -832,224 +1069,5 @@ def _note_eol(cm, key, text):
     cm.yaml_add_eol_comment(comment=text, key=key)
 
 
-class FileRackMapping:
-    """ load or dump Rack object config from config files
-    """
-    def __init__(self, rack_cls):
-        self.rack_cls = rack_cls
-        self.RACK_SETUP_FILE = f'rack.yaml'
-
-    def load_rack(self, root_path):
-        with open(Path(root_path)/self.RACK_SETUP_FILE,'r') as f:
-            config = yaml.load(f)
-            util.console.debug(f"loaded configuration from {repr(str(root_path))}")
-
-        # work on a subclassed copy
-        new_cls = type(self.rack_cls.__name__, (self.rack_cls,), {})
-        new_cls.__qualname__ = self.rack_cls.__qualname__
-        new_cls.__module__ = self.rack_cls.__module__
-
-        # subclass the Rack so that we don't change its values
-        self._apply_device_values(new_cls, config['devices'])
-        self._apply_sequence_defaults(new_cls, config['method_defaults'])
-
-        return new_cls
-
-    def _apply_device_values(self, rack_cls, device_kwargs):
-        """ make a dictionary of new device instances using the supplied
-            mapping of keyword argument dictionarys, keyed on {device_name: kwargs_dict}
-        """
-        
-        for dev_name, dev in rack_cls._devices.items():
-            for trait_name, value in device_kwargs[dev_name].items():
-                setattr(dev, trait_name, value)
-
-    def _apply_sequence_defaults(self, rack_cls, defaults_in):
-        """ adjust the method argument parameters in the Rack subclass `cls` according to config file
-        """
-        # path = Path(root_path)/self.RACK_SETUP_FILE
-
-        # # if getattr(self.rack_cls, '__config_path__', None) == str(path):
-        # #     util.console.debug(f"already have {path}")
-        # #     util.console.debug(f"already have {cls.__config_path__}")
-        # #     return
-        # # else:
-        # #     cls.__config_path__ = str(path)
-
-        defaults, annots, methods, names = self._get_sequence_parameters(rack_cls)
-
-        # # read the existing defaults
-        # defaults_in = {}
-        # if path.exists():
-        #     with open(path, 'rb') as f:
-        #         defaults_in = yaml.safe_load(f) or {}
-
-        for k, v in dict(defaults_in).items():
-            if v == defaults[k]:
-                del defaults_in[k]
-                continue
-
-            if k not in methods:
-                raise KeyError(f"method_defaults configuration key '{k}' is not a parameter in any method of '{rack_cls.__qualname__}'")
-            elif annots[k] is not EMPTY and not isinstance(v, annots[k]):
-                raise TypeError(f"the method_defaults configuration at key '{k}' with value '{v}' conflicts "
-                                f"with type annotation '{annots[k]}'")
-
-            # update the call signature
-            method = methods[k]
-
-            if isinstance(method, Method):
-                method.set_kwdefault(names[k], v)
-            else:
-                if method.__kwdefaults__ is None:
-                    method.__kwdefaults__ = {}
-                method.__kwdefaults__[names[k]] = v
-
-        if len(defaults_in) > 0:
-            util.console.debug(f"applied defaults {defaults_in}")
-
-        # take the updated defaults
-        defaults.update(defaults_in)
-        self._repropagate_ownership(rack_cls)
-
-    @staticmethod
-    def _repropagate_ownership(rack_cls):
-        # reinitialize the subclass to propagate changes to Sequence keyword signatures
-        for name, obj in dict(rack_cls.__dict__).items():
-            if isinstance(obj, util.Ownable):
-                obj.__set_name__(rack_cls, name)  # in case it was originally instantiated outside cls
-                obj = obj.__owner_subclass__(rack_cls)
-                setattr(rack_cls, name, obj)
-
-    def init(self, path):
-        path = Path(path)
-        path.mkdir(exist_ok=False, parents=True)
-
-        with open(path/self.RACK_SETUP_FILE, 'w') as stream:
-            cm = CommentedMap(
-                source=dict(
-                    name=self.rack_cls.__name__,
-                    module=self.rack_cls.__module__
-                ),
-                method_defaults=self._template_sequence_parameters(),
-                devices=self._template_devices(),
-            )
-
-            _note_before(
-                cm,
-                'source',
-                'Rack class source import strings for the python interpreter'
-            )
-
-            _note_before(
-                cm,
-                'sequence_defaults',
-                '\nparameter defaults for sequences in rack:'
-                '\nthese parameters can be omitted from sequence table columns'
-            )
-
-            _note_before(
-                cm,
-                'devices',
-                '\ndevice settings: initial values for value traits'
-            )
-
-            yaml.dump(cm, stream)
-
-        for name, attr in self.rack_cls.__dict__.items():
-            
-            if isinstance(attr, Sequence):
-                self.init_sequence_table(path, attr)
-
-    def init_sequence_table(self, root_path, seq, with_defaults=False):
-        # TODO: configure whether/which defaults are included as columns
-        root_path = Path(root_path)
-        
-        if not isinstance(seq, Sequence):
-            raise TypeError(f"{seq} is not a Sequence")
-
-        sigs = [
-            name
-            for name,(default,annot) in seq._collect_signatures().items()
-            if with_defaults or default is EMPTY
-        ]
-
-        df = pd.DataFrame(columns=sigs)
-        df.index.name = 'Condition name'
-        path = root_path/f'{seq.__name__}.csv'
-        df.to_csv(path)
-        util.console.debug(f"writing csv template to {repr(path)}")
-
-    def _template_sequence_parameters(self):
-        defaults, annots, *_ = self._get_sequence_parameters(self.rack_cls)
-        cm = CommentedMap({k:(None if v is EMPTY else v) for k,v in defaults.items()})
-
-        keys = list(cm.keys())
-        for i,k in enumerate(keys):
-            if defaults[k] is EMPTY:
-                d = {k: None}
-
-                if i < len(keys)-1:
-                    note_key = keys[i+1]
-                else:
-                    note_key = list(cm.keys())[-2]
-
-                _note_before(cm, note_key, f'{round_trip_dump(d)}', 4)
-                del cm[k]
-            elif annots[k] is not EMPTY:
-                _note_eol(cm, k, f'{annots[k].__name__}')
-
-        return cm
-
-        # yaml.dump(cm, stream)
-        # stream.write('\n\n')
-
-    def _template_devices(self):
-        defaults = {
-            dev_name: {k:getattr(dev, k) for k in dev._value_attrs if dev._traits[k].settable}
-            for dev_name, dev in self.rack_cls._devices.items()
-        }
-
-        return CommentedMap(defaults)
-
-    @classmethod
-    def _get_sequence_parameters(cls, rack_cls):
-        """ introspect the arguments used in a sequence. cls is the Rack class or a subclass
-        """
-        defaults = {}
-        annots = {}
-        methods = {}
-        names = {}
-
-        for owner in rack_cls._owners.values():
-            if isinstance(owner, Rack):
-                d, a, m, n = cls._get_sequence_parameters(owner)
-                defaults.update({owner.__name__+'_'+k: v for k, v in d.items()})
-                annots.update({owner.__name__+'_'+k: v for k, v in a.items()})
-                methods.update({owner.__name__ + '_' + k: v for k, v in m.items()})
-                names.update({owner.__name__ + '_' + k: k for k, v in m.items()})
-
-        for step in rack_cls._steps.values():
-            params = iter(inspect.signature(step).parameters.items())
-            next(params) # skip 'self'
-
-            for k, p in params:
-                methods[k] = step
-                if annots.setdefault(k, p.annotation) is EMPTY:
-                    annots[k] = p.annotation
-                elif EMPTY not in (p.annotation, annots[k]) and p.annotation != annots[k]:
-                    raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {cls.__qualname__} methods")
-                if not inspect.isclass(annots[k]):
-                    raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{rack_cls.__qualname__}' is not a class")
-
-                if defaults.setdefault(k, p.default) is EMPTY:
-                    defaults[k] = p.default
-                elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
-                    raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {cls.__qualname__} methods")
-
-            for k in defaults:
-                if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
-                    raise TypeError(f"default '{defaults[k]}' does not match type annotation "
-                                    f"'{annots[k]}' in '{rack_cls.__qualname__}' is not a class")
-
-        return defaults, annots, methods, names
+CONFIG_FILENAME = f'rack.yaml'
+from importlib import import_module

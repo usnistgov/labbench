@@ -787,7 +787,6 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         # log host introspection
         # TODO: smarter
         self.host = _host.Host(git_commit_in=git_commit_in)
-        self.observe(self.host, always=['time', 'log'])
 
         # select the backend that dumps relational data
         munge_cls = MungeToTar if tar else MungeToDirectory
@@ -1011,7 +1010,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
     def open(self, path=None):
         """ This must be implemented by a subclass to open the data storage resource.
         """
-        raise NotImplementedError
+        self.observe(self.host, always=['time', 'log'])
 
     def close(self):
         """ Close the file or database connection.
@@ -1019,7 +1018,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
 
             :return: None
         """
-        raise NotImplementedError
+        pass
 
 
 class CSVLogger(RelationalTableLogger):
@@ -1075,7 +1074,7 @@ class CSVLogger(RelationalTableLogger):
                 raise ex
 
         if not str(self.path).lower().endswith('.csv'):
-            self.path = f'{self.path}.csv'
+            self.path = Path(f'{self.path}.csv')
         if os.path.exists(self.path):
             if self._append:
                 self.df = pd.read_csv(self.path, nrows=1)
@@ -1656,7 +1655,7 @@ class MungeTarReader:
 
 class MungeDirectoryReader:
     def __init__(self, path):
-        self.path = path
+        self.path = Path(path)
 
     def __call__(self, key, *args, **kws):
         return read(os.path.join(self.path, key), *args, **kws)

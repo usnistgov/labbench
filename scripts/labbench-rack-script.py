@@ -73,7 +73,6 @@ def run(config_dir, sequence_name):
 
     # instantiate the rack, binding the Sequence method
     with rack_cls() as rack:
-
         # ...and run the sequence object
         bound_seq = getattr(rack, sequence_name)
         print(dir(bound_seq))

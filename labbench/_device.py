@@ -380,9 +380,9 @@ class Device(HasTraits, util.Ownable):
         """
         # Try to run cleanup(), but make sure to run
         # close() even if it fails
-        with self._hold_notifications('isopen'):
-            if not self.isopen:
-                return
+        # with self._hold_notifications('isopen'):
+        if not self.isopen:
+            return
 
         methods = trace_methods(self.__class__, 'close', Device)
 

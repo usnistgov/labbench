@@ -52,22 +52,26 @@ def null_context(owner):
     yield owner
 
 
-class Method:
+class Method(util.Ownable):
     """
     Wraps class methods to support use with Sequence
     """
-    def __init__(self, owner, name):
+    def __init__(self, owner, name, kwdefaults={}):
+        super().__init__()
+
         def ownable(obj, name):
             return isinstance(getattr(self._owner, name), util.Ownable)
+
+        self._owner = owner
         cls = owner.__class__
         obj = getattr(cls, name)
-        if isinstance(obj, Method):
-            obj = obj._wrapped
-        self._wrapped = obj
-        self._owner = owner
-        self._kwdefaults = {}
 
-        self._introspect()
+        if isinstance(obj, Method):
+            self._wrapped = obj._wrapped
+            self._kwdefaults = dict(obj._kwdefaults)
+        else:
+            self._wrapped = obj
+            self._kwdefaults = kwdefaults
 
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
@@ -75,7 +79,11 @@ class Method:
         self.__name__ = name
         self.__qualname__ = getattr(obj, '__qualname__', obj.__class__.__qualname__)
 
-        self.__repr__ = obj.__repr__
+        self._introspect()
+
+    @classmethod
+    def from_method(self, method):
+        return Method(method._owner, method.__name__, method._kwdefaults)
 
     def __copy__(self):
         return type(self)(self._owner, self.__name__)
@@ -192,22 +200,10 @@ class Method:
 
         return {} if ret is None else ret
 
-    # implement the "&" operator to define concurrent steps for Sequence
-    def __and__(self, other):
-        # python objects call this when the left side of '&' is not a tuple
-        return 'concurrent', self, other
-
-    def __rand__(self, other):
-        # python objects call this when the left side of '&' is already a tuple
-        return other + (self,)
-
     def __repr__(self):
-        if hasattr(self, '__wrapped__'):
-            return f"<method {repr(self._wrapped)[1:-1]}>"
-        else:
-            return object.__repr__(self)
+        wrapped = repr(self._wrapped)[1:-1]
+        return f'<{wrapped} wrapped by {type(self).__module__}.{type(self).__name__} object>'
 
-    __str__ = __repr__
 
 
 class BoundSequence(util.Ownable):
@@ -265,9 +261,9 @@ class BoundSequence(util.Ownable):
 
         return kws_out
 
-    def __repr__(self):
-        name = f'{self.__objclass__.__qualname__}.{self.__name__}'
-        return f'<method function {name} from Sequence at {hex(id(self))}>'
+    # def __repr__(self):
+    #     name = f'{self.__objclass__.__qualname__}.{self.__name__}'
+    #     return f'<method function {name} from Sequence at {hex(id(self))}>'
 
 
 class OwnerContextAdapter:
@@ -383,6 +379,7 @@ class Owner:
         # registries that will be context managed
         cls._devices = {} # each of cls._devices.values() these will be context managed
         cls._owners = {} # each of these will get courtesy calls to _setup and _cleanup between _device entry and exit
+        cls._ownables = {}
 
         if ordered_entry is not None:
             for e in ordered_entry:
@@ -390,7 +387,11 @@ class Owner:
                     raise TypeError(f"ordered_entry item {e} is not a Device subclass")
             cls._ordered_entry = ordered_entry
 
-        ownable = {}
+        cls._propagate_ownership()
+
+    @classmethod
+    def _propagate_ownership(cls):
+        cls._ownables = {}
 
         # prepare and register owned attributes
         attr_names = set(dir(cls)).difference(dir(Owner))
@@ -398,41 +399,50 @@ class Owner:
         for name in attr_names:
             obj = getattr(cls, name)
 
-            # prepare these first, so they are available to owned classes on __owner_subclass__
-            if isinstance(obj, core.Device):
-                obj = copy.deepcopy(obj)
-                cls._devices[name] = obj
-            elif isinstance(obj, Owner):
-                obj = copy.deepcopy(obj)
-                cls._owners[name] = obj
-            else:
+            if not isinstance(obj, util.Ownable):
                 continue
 
-            setattr(cls, name, obj)
-            ownable[name] = obj
+            need_copy = isinstance(
+                getattr(super(), name, None),
+                util.Ownable
+            )
+
+            # prepare these first, so they are available to owned classes on __owner_subclass__
+            if isinstance(obj, core.Device):
+                if need_copy:
+                    obj = copy.deepcopy(obj)
+                cls._devices[name] = obj
+                setattr(cls, name, obj)
+            elif isinstance(obj, Owner):
+                if need_copy:
+                    obj = copy.deepcopy(obj)
+                cls._owners[name] = obj
+                setattr(cls, name, obj)
+
+            cls._ownables[name] = obj
 
         # run the hooks in owned classes, now that cls._devices and cls._owners are ready for them
-        for name, obj in ownable.items():
-            if isinstance(obj, util.Ownable):
-                obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
-                obj = obj.__owner_subclass__(cls)
+        for name, obj in cls._ownables.items():
+            obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
+            obj = obj.__owner_subclass__(cls)
 
             setattr(cls, name, obj)
 
     def __init__(self, **devices):
         # initialize everything before we cull the dictionary to limit context management scope
         self._owners = dict(self._owners)
+        self._ownables = dict(self._ownables)
         self._devices = dict(self._devices, **devices)
 
         super().__init__()
 
-        for lookup in self._devices, self._owners:
-            for name, obj in lookup.items():
-                obj.__owner_init__(self)
+        for name, obj in self._ownables.items():
+            obj.__owner_init__(self)
 
     def __setattr__(self, key, obj):
         # update naming for any util.Ownable instances
         if isinstance(obj, util.Ownable):
+            self._ownables[key] = obj
             if getattr(obj, '__objclass__', None) is not type(self):
                 obj.__set_name__(type(self), key)
                 obj.__owner_init__(self)
@@ -440,7 +450,7 @@ class Owner:
         if isinstance(obj, core.Device):
             self._devices[key] = obj
 
-        elif isinstance(obj, Owner):
+        if isinstance(obj, Owner):
             self._owners[key] = obj
 
         object.__setattr__(self, key, obj)
@@ -495,10 +505,9 @@ class Sequence(util.Ownable):
                 # a Method method that is already packaged for use
                 sequence = [sequence]
 
-            elif isinstance(getattr(sequence, '__self__', sequence), util.Ownable) and \
-                    callable(sequence):
+            elif hasattr(sequence, '__self__') and callable(sequence):
                 # some other kind of callable function that seems reasonable to adopt as a Method method
-                sequence = [Method(sequence, '__call__')]
+                sequence = [Method(sequence.__self__, sequence.__name__)]
 
             else:
                 typename = type(sequence).__qualname__
@@ -507,13 +516,103 @@ class Sequence(util.Ownable):
             return sequence
 
         self.spec = {k: spec_entry(spec) for k, spec in specification.items()}
+        self.access_spec = None
 
-    def __owner_subclass__(self, testbed_cls):
+    def __owner_subclass__(self, owner_cls):
+        # method_remap = self._subclass_method_remap(owner_cls)
+
+        # for name in list(self.spec.keys()):
+        #     self.spec[name] = [
+        #         Method(method_remap.get(method._wrapped,method._wrapped))
+        #         for method in list(self.spec[name])
+        #     ]
+
+        def owner_getattr_chains(owner):
+            ret = {owner: tuple()}
+
+            for name, sub_owner in owner._owners.items():
+                # add only new changes (overwrite redundant keys with prior values)
+                ret = {
+                    **{
+                        obj: (name,)+chain
+                        for obj, chain in owner_getattr_chains(sub_owner).items()
+                    },
+                    **ret
+                }
+
+            return ret
+
+        if self.access_spec is None:
+            # transform the objects in self.spec
+            # into attribute names for dynamic access
+            # in case of later copying and subclassing
+            chain = owner_getattr_chains(owner_cls)
+            self.access_spec = {
+                k: [chain[s._owner]+(s.__name__,) for s in spec]
+                for k, spec in self.spec.items()
+            }
+
+        return self
+
+    @staticmethod
+    def _subclass_method_remap(cls):
+        return {}
+        if hasattr(cls, '__mro__'):
+            cls = cls
+        else:
+            cls = type(cls)
+
+        parent = cls.__mro__[1]
+
+        ret = {}
+        for owner in cls._owners.values():
+            ret.update(Sequence._subclass_method_remap(owner))
+
+        if hasattr(cls, '_methods'):
+            ret.update({
+                obj: getattr(cls, name)
+                for name, obj in parent._methods.items()
+            })
+        # ret.update(cls_or_obj._ownables)
+        return ret
+
+
+    def __owner_init__(self, owner):
+        """ make a bound sequence for the owner when it is instantiated,
+            which can be called.
+        """
+
+        def attr_chain_to_method(root_obj, chain):
+            """ follow the chain with nested getattr
+                calls to access the chain object
+            """
+            obj = root_obj
+
+            for name in chain[:-1]:
+                obj = getattr(obj, name)
+            
+            if hasattr(obj, '_methods'):
+                return Method.from_method(obj._methods[chain[-1]])
+            
+            attr = getattr(obj, chain[-1])
+            if isinstance(attr, Method):
+                return Method.from_method(attr)
+
+            else:
+                return Method(obj, chain[-1])
+
+        super().__owner_init__(owner)
+
         # initialization on the parent class definition
         # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
+        spec = {
+            k: [attr_chain_to_method(owner,c) for c in chain]
+            for k, chain in self.access_spec.items()
+        }
+        self.last_spec = spec
 
         # determine the call signature for the new Sequence procedure
-        signatures = self._collect_signatures()
+        signatures = self._collect_signatures(spec)
         params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default ones
         defaults = dict([(arg, sig[0]) for arg, sig in signatures.items() if sig[0] is not EMPTY])
         annots = dict([(arg, sig[1]) for arg, sig in signatures.items() if sig[1] is not EMPTY])
@@ -521,33 +620,32 @@ class Sequence(util.Ownable):
         # build the callable object with a newly-defined subclass.
         # tricks ipython/jupyter into showing the call signature.
         ns = dict(
-            sequence=self.spec,
+            sequence=spec,
             params=params,
             defaults=defaults,
             annotations=annots,
             signatures=signatures,
             dependencies=self._dependency_map(),
             __name__=self.__name__,
-            __qualname__=testbed_cls.__name__+'.'+self.__name__,
+            __qualname__=type(owner).__qualname__+'.'+self.__name__,
             __objclass__=self.__objclass__,
             __owner_subclass__=self.__owner_subclass__ # in case the owner changes and calls this again
         )
 
-        cls = type(self.__name__, (BoundSequence,), ns)
+        cls = type(BoundSequence.__name__, (BoundSequence,), ns)
 
         util.wrap_attribute(
             cls, '__call__', __call__, fields=params, defaults=defaults,
             annotations=annots, positional=0
         )
 
-
         # the testbed gets this BoundSequence instance in place of self
         obj = object.__new__(cls)
         obj.__init__()
-        return obj
+        setattr(owner, self.__name__, obj)
 
     def _dependency_map(self, owner_deps={}) -> dict:
-        """ generate a list of Device dependencies in each Method.
+        """ list of Device dependencies of each Method.
 
         :returns: {Device instance: reference to method that uses Device instance}
         """
@@ -569,7 +667,7 @@ class Sequence(util.Ownable):
 
         return deps
 
-    def _collect_signatures(self):
+    def _collect_signatures(self, spec):
         """ collect a dictionary of parameter default values
 
         :param tree: nested list of calls that contains the parsed call tree
@@ -580,7 +678,7 @@ class Sequence(util.Ownable):
         signatures = {}
 
         # collect the defaults
-        for funcs in self.spec.values():
+        for funcs in spec.values():
             for func in funcs:
                 # pull a dictionary of signature values (default, annotation) with EMPTY as a null sentinel value
                 for argname, (def_, annot) in func.long_kwarg_signature().items():
@@ -710,9 +808,10 @@ class RackMeta(type):
             metacls._apply_device_values(new_cls, config['devices'])
             metacls._apply_sequence_defaults(new_cls, config['method_defaults'])
 
-            return new_cls
-        else:
-            return rack_cls
+            rack_cls._propagate_ownership()
+            rack_cls = new_cls
+        
+        return rack_cls
 
     def _apply_device_values(rack_cls, device_kwargs):
         """ make a dictionary of new device instances using the supplied
@@ -770,15 +869,16 @@ class RackMeta(type):
 
         # take the updated defaults
         defaults.update(defaults_in)
-        metacls._repropagate_ownership(rack_cls)
 
-    def _repropagate_ownership(rack_cls):
-        # reinitialize the subclass to propagate changes to Sequence keyword signatures
-        for name, obj in dict(rack_cls.__dict__).items():
-            if isinstance(obj, util.Ownable):
-                obj.__set_name__(rack_cls, name)  # in case it was originally instantiated outside cls
-                obj = obj.__owner_subclass__(rack_cls)
-                setattr(rack_cls, name, obj)
+    # def _repropagate_ownership(rack_cls):
+    #     # reinitialize the subclass to propagate changes to Sequence keyword signatures
+    #     for name in dir(rack_cls):
+    #         obj = getattr(rack_cls, name)
+    #         if isinstance(obj, util.Ownable):
+    #             obj.__set_name__(rack_cls, name)  # in case it was originally instantiated outside cls
+    #             new_obj = obj.__owner_subclass__(rack_cls)
+
+    #             setattr(rack_cls, name, new_obj)
 
     @classmethod
     def to_config(metacls, cls, path, with_defaults=False):
@@ -891,7 +991,7 @@ class RackMeta(type):
                 methods.update({owner.__name__ + '_' + k: v for k, v in m.items()})
                 names.update({owner.__name__ + '_' + k: k for k, v in m.items()})
 
-        for step in rack_cls._steps.values():
+        for step in rack_cls._methods.values():
             params = iter(inspect.signature(step).parameters.items())
             next(params) # skip 'self'
 
@@ -960,15 +1060,22 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         cls._ordered_entry = ordered_entry
 
         # register step methods
-        cls._steps = {}
-        attr_names = set(dir(cls)).difference(dir(Owner))
+        cls._methods = {}
+        attr_names = sorted(set(dir(cls)).difference(dir(Owner)))
+        # attrs = ((name, getattr(cls, name)) for name in attr_names)
+        # cls._methods = {
+        #     name: obj
+        #     for name, obj in attrs
+        #     if name[0] != '_' and (inspect.ismethod(obj) or isinstance(obj, Method))
+        # }
+
         # not using cls.__dict__ because it neglects parent classes
         for name in attr_names:
             obj = getattr(cls, name)
-            if isinstance(obj, (core.Device, Owner)):
+            if isinstance(obj, (core.Device, Owner, Sequence, BoundSequence)):
                 continue
             if not name.startswith('_') and callable(obj):
-                cls._steps[name] = obj
+                cls._methods[name] = obj
 
         # include annotations from parent classes
         cls.__annotations__ = dict(getattr(super(), '__annotations__', {}),
@@ -979,7 +1086,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
         # # sentinel values for each annotations (largely to support IDE introspection)
         # for name, annot_cls in cls.__annotations__.items():
-        #     if name in cls._steps:
+        #     if name in cls._methods:
         #         clsname = cls.__qualname__
         #         raise AttributeError(f"'{clsname}' device annotation and method conflict for attribute '{name}'")
         #     else:
@@ -1014,9 +1121,11 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
             kwargs = [f"{repr(k)}: {v}" for k, v in annotations.items()]
             raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
 
-        # replace self._steps with new mapping of wrappers
-        self._steps = {k: obj if isinstance(obj, BoundSequence) else Method(self, k)
-                       for k, obj in self._steps.items()}
+        # wrap self._methods as necessary
+        self._methods = {
+            k: (obj if isinstance(obj, Method) else Method(self, k))
+            for k, obj in self._methods.items()
+        }
 
     def __deepcopy__(self, memo=None):
         """ Called when an owning class is subclassed
@@ -1026,7 +1135,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
             for name, obj in self._owners.items()
         }
 
-        # steps = {name: copy.deepcopy(obj) for name, obj in type(self)._steps.items()}
+        # steps = {name: copy.deepcopy(obj) for name, obj in type(self)._methods.items()}
         namespace = dict(
             __annotations__=type(self).__annotations__,
             __module__ = type(self).__module__,
@@ -1045,22 +1154,19 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - "+str(self)))
 
     def __getattribute__(self, item):
-        if item != '_steps' and item in self._steps:
-            return self._steps[item]
+        if item != '_methods' and item in self._methods:
+            return self._methods[item]
         else:
             return super().__getattribute__(item)
 
     def __getitem__(self, item):
-        return self._steps[item]
+        return self._methods[item]
 
     def __len__(self):
-        return len(self._steps)
+        return len(self._methods)
 
     def __iter__(self):
-        return (getattr(self, k) for k in self._steps)
-
-    def __repr__(self):
-        return f'{self.__class__.__qualname__}()'
+        return (getattr(self, k) for k in self._methods)
 
 def _note_before(cm, key, text, indent=0):
     cm.yaml_set_comment_before_after_key(key, before=text, indent=indent)

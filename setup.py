@@ -56,6 +56,8 @@ if __name__ == '__main__':
     sys.path.insert(0, './labbench')
     from _version import __version__
 
+    is_windows = 'windows' in platform.system().lower()
+
     py_version_req = (3, 7)
     if sys.version_info < py_version_req:
         raise ValueError(
@@ -70,10 +72,13 @@ if __name__ == '__main__':
         url='https://github.com/usnistgov/labbench',
         packages=setuptools.find_packages(),
         package_data=dict(
-            labbench=['*.pyi','py.typed'], # py.typed indicates there are type annotations
+            # these type stubs provide clean call signatures for IDEs
+            labbench=['*.pyi','py.typed'],
         ),
         license='NIST',
         install_requires=[
+            # TODO: tighten these requirements a little - perhaps
+            # specify ==major version instead of >=
             'coloredlogs(>=7.0)',
             "feather-format(>=0.4.0)",
             'GitPython(>=2.0)',
@@ -88,12 +93,27 @@ if __name__ == '__main__':
             'validators'
         ],
         scripts=[
+            # CLI tools installed into the python scripts directory, likely to 
+            # be in PATH
             'scripts/labbench-rack-script.py',
-            'scripts/labbench-rack.bat' if 'windows' in platform.system().lower() else 'scripts/labbench-rack',
+            'scripts/labbench-rack.bat' if is_windows else 'scripts/labbench-rack',
         ],
         extras_require=dict(
-            notebook=['notebook', 'ipywidgets'],
-            maintenance=['ast_decompile', 'mypy','sphinx(>=1.6)','recommonmark'], # build and maintenance not needed to use labbench
+            notebook=[
+                # optional (for now) to reduce dependencies
+                # on embedded platforms
+                'notebook',
+                'ipywidgets'
+            ],
+
+            maintenance=[
+                # these packages are needed for build and maintenance,
+                # but not to import or use labbench
+                'ast_decompile',
+                'mypy',
+                'sphinx(>=1.6)',
+                'recommonmark'
+            ], 
         ),
         long_description=longdescription,
         long_description_content_type="text/markdown",

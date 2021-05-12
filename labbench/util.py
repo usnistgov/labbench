@@ -79,7 +79,7 @@ class LabbenchDeprecationWarning(DeprecationWarning):
 simplefilter('once', LabbenchDeprecationWarning)
 
 class Ownable:
-    """ Subclass to pull in name from an owning class
+    """ Subclass to pull in name from an owning class.
     """
     __objclass__ = None
     __get_owned_name__ = None
@@ -100,23 +100,25 @@ class Ownable:
             The final call sets __get_owned_name__ to the top-level owning
             class.
         """
+        self.__get_owned_name__ = lambda: (str(owner) if hasattr(owner, '__name__') else '')
         pass
 
     def __owner_subclass__(self, owner_cls):
         """ Called after the owner class is instantiated; returns an object to be used in the Rack namespace
         """
-        self.__get_owned_name__ = lambda: (str(owner_cls) if hasattr(owner, '__name__') else '')
         return self
 
-    def __str__(self):
-        if hasattr(self, '__owner_instname__') and hasattr(self, '__name__'):
-            name = self.__name__
-            owner_name = self.__get_owned_name__()
-            if owner_name:
-                name = owner_name + '.' + name
-            return name
+    def __repr__(self):
+        if self.__objclass__ is not None:
+            cls = type(self)
+            ownercls = self.__objclass__
+
+            typename = cls.__module__ + '.' + cls.__name__
+            ownedname = ownercls.__qualname__
+            return f"<{typename} object at {hex(id(self))} bound to {ownedname} class at {hex(id(ownercls))}>"
+
         else:
-            return repr(self)
+            return object.__repr__(self)
 
 
 class ConcurrentException(Exception):

@@ -621,7 +621,6 @@ class HasTraits(metaclass=HasTraitsMeta):
         # for cached properties and values in this instance
         self.__cache__ = {}
         self._calibrations = {}
-        self._holds = []
 
         for name, trait in self._traits.items():
             trait.__init_owner_instance__(self)
@@ -676,26 +675,23 @@ class HasTraits(metaclass=HasTraitsMeta):
                 cls._property_attrs.append(name)
 
 
-    @contextmanager
-    def _hold_notifications(self, names=Undefined):
-        """ pause notifications for the specified traits
-            inside this context. names is a list of trait
-            names, or Undefined (default) to pause all traits. 
-        """
-        if names is Undefined:
-            names = list(self._traits.keys())
-        elif isinstance(names, str):
-            names = [names]
+    # @contextmanager
+    # def _hold_notifications(self, names=Undefined):
+    #     """ pause notifications for the specified traits
+    #         inside this context. names is a list of trait
+    #         names, or Undefined (default) to pause all traits. 
+    #     """
+    #     if names is Undefined:
+    #         names = list(self._traits.keys())
+    #     elif isinstance(names, str):
+    #         names = [names]
 
-        pre,self._holds=self._holds, names
-        yield
-        self._holds=pre
+    #     pre,self._holds=self._holds, names
+    #     yield
+    #     self._holds=pre
 
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache):
-        if name in self._holds:
-            return
-
         old = self.__cache__.setdefault(name, Undefined)
 
         msg = dict(new=value, old=old, owner=self,

@@ -59,7 +59,7 @@ def rewrite(config_dir, sequence_name, with_defaults=False):
     rack_factory.to_sequence_table(cls, sequence_name, config_dir, with_defaults)
 
 
-@cli.command(name='run', help="""
+@cli.command(name='run-csv', help="""
     Run a test sequence.
 
     The rack class specified in "<CONFIG-DIR>/rack.yaml" will be imported in the context
@@ -68,7 +68,7 @@ def rewrite(config_dir, sequence_name, with_defaults=False):
 """)
 @click.argument('config-dir', type=click.Path(exists=True))
 @click.argument('sequence-name', type=str)
-def run(config_dir, sequence_name):
+def run_csv(config_dir, sequence_name):
     rack_cls = rack_factory.from_config(config_dir, apply=True)
 
     # instantiate the rack, binding the Sequence method
@@ -76,7 +76,7 @@ def run(config_dir, sequence_name):
         # ...and run the sequence object
         bound_seq = getattr(rack, sequence_name)
         print(dir(bound_seq))
-        bound_seq.from_csv(Path(config_dir)/f'{sequence_name}.csv')
+        bound_seq.iterate_from_csv(Path(config_dir)/f'{sequence_name}.csv')
 
 
 if __name__ == '__main__':

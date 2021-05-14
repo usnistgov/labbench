@@ -31,7 +31,7 @@ __all__ = [# "misc"
 
            # concurrency and sequencing
            'concurrently', 'sequentially', 'Call', 'ConcurrentException',
-           'check_master', 'ThreadSandbox', 'ThreadEndedByMaster',
+           'check_hanging_thread', 'ThreadSandbox', 'ThreadEndedByMaster',
 
            # timing and flow management
            'retry', 'until_timeout', 'sleep', 'stopwatch',
@@ -77,12 +77,14 @@ class LabbenchDeprecationWarning(DeprecationWarning):
     pass
 
 simplefilter('once', LabbenchDeprecationWarning)
+import weakref
 
 class Ownable:
     """ Subclass to pull in name from an owning class.
     """
     __objclass__ = None
     __get_owned_name__ = None
+    _instname = None
 
     def __set_name__(self, owner_cls, name):
         self.__objclass__ = owner_cls
@@ -92,13 +94,7 @@ class Ownable:
         return self
 
     def __owner_init__(self, owner):
-        """ Called when the owner is instantiated. Ownable instances are meant
-            to be used as singletons --- an Ownable instance may be jointly
-            owned by multiple Owner classes. As a result, this may be called
-            called multiple times if it is an attribute in multiple classes.
-
-            The final call sets __get_owned_name__ to the top-level owning
-            class.
+        """ called when the owner is instantiated
         """
         self.__get_owned_name__ = lambda: (str(owner) if hasattr(owner, '__name__') else '')
         pass
@@ -120,19 +116,22 @@ class Ownable:
         else:
             return object.__repr__(self)
 
+    def __str__(self):
+        return self._instname or repr(self)
+
 
 class ConcurrentException(Exception):
     """ Raised on concurrency errors in `labbench.concurrently`
     """
 
 
-class MasterThreadException(ThreadError):
-    """ Raised to encapsulate a thread raised by the master thread during calls to `labbench.concurrently`
+class OwnerThreadException(ThreadError):
+    """ Raised to encapsulate a thread raised by the owning thread during calls to `labbench.concurrently`
     """
 
 
 class ThreadEndedByMaster(ThreadError):
-    """ Raised in a thread to indicate the master thread requested termination
+    """ Raised in a thread to indicate the owning thread requested termination
     """
 
 
@@ -339,8 +338,8 @@ def sleep(seconds, tick=1.):
             return
 
 
-def check_master():
-    """ Raise ThreadEndedByMaster if the master thread as requested this
+def check_hanging_thread():
+    """ Raise ThreadEndedByMaster if the process has requested this
         thread to end.
     """
     sleep(0.)
@@ -976,7 +975,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
     # As each thread ends, collect the return value and any exceptions
     tracebacks = []
-    master_exception = None
+    parent_exception = None
 
     t0 = time.perf_counter()
 
@@ -990,7 +989,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 t0 = time.perf_counter()
             continue
         except BaseException as e:
-            master_exception = e
+            parent_exception = e
             stop_request_event.set()
             called = None
 
@@ -998,10 +997,10 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             continue
 
         # Below only happens when called is not none
-        if master_exception is not None:
+        if parent_exception is not None:
             names = ', '.join(list(threads.keys()))
             console.error(
-                f'raising {master_exception.__class__.__name__} in main thread after child threads {names} return')
+                f'raising {parent_exception.__class__.__name__} in main thread after child threads {names} return')
 
         # if there was an exception that wasn't us ending the thread,
         # show messages
@@ -1035,7 +1034,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         stop_request_event.clear()
 
     # Raise exceptions as necessary
-    if master_exception is not None:
+    if parent_exception is not None:
         for h in console.logger.handlers:
             h.flush()
 
@@ -1046,7 +1045,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 sys.stderr.write('\nthread error (fixme to print message)')
                 sys.stderr.write('\n')
 
-        raise master_exception
+        raise parent_exception
 
     elif len(tracebacks) > 0 and not catch:
         for h in console.logger.handlers:

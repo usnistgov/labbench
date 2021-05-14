@@ -33,7 +33,7 @@ from ._backends import ShellBackend, DotNetDevice, LabviewSocketInterface, Seria
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._device import Device, list_devices
 from ._host import Email
-from ._rack import Rack, Owner, Sequence
+from ._rack import Rack, Sequence
 from ._traits import observe, unobserve, Undefined
 from ._version import __version__
 

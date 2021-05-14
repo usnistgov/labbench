@@ -52,6 +52,57 @@ def null_context(owner):
     yield owner
 
 
+class notify:
+    """
+    Singleton notification handler shared globally by all Rack instances.
+    """
+
+    # the global mapping of references to notification callbacks
+    _handlers = dict(returns=set(), calls=set())
+
+    @classmethod
+    def clear(cls):
+        cls._handlers = dict(returns=set(), calls=set())
+
+    @classmethod
+    def return_event(cls, returned: dict):
+        if not isinstance(returned, dict):
+            raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
+        for handler in cls._handlers['returns']:
+            handler(returned)
+
+    @classmethod
+    def call_event(cls, parameters: dict):
+        if not isinstance(parameters, dict):
+            raise TypeError(f"parameters data was {repr(parameters)}, which is not a dict")
+        for handler in cls._handlers['calls']:
+            handler(parameters)
+
+    @classmethod
+    def observe_returns(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['returns'].add(handler)
+
+    @classmethod
+    def observe_calls(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['calls'].add(handler)
+
+    @classmethod
+    def unobserve_returns(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['returns'].remove(handler)
+
+    @classmethod
+    def unobserve_calls(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers['calls'].remove(handler)
+
+
 class Method(util.Ownable):
     """
     Wraps class methods to support use with Sequence
@@ -81,18 +132,22 @@ class Method(util.Ownable):
 
         self._introspect()
 
+        setattr(owner, name, self)
+
     @classmethod
     def from_method(self, method):
+        """ make a new Method instance by copying another
+        """
         return Method(method._owner, method.__name__, method._kwdefaults)
 
     def __copy__(self):
-        return type(self)(self._owner, self.__name__)
+        return self.from_method(self)
 
     def __deepcopy__(self, memo=None):
-        return self.__copy__()
+        return self.from_method(self)
 
     def _introspect(self):
-        """ update self.__signature__, self.
+        """ update self.__signature__
         """
         # note the devices needed to execute this function
         if isinstance(self._owner, Rack):
@@ -173,30 +228,31 @@ class Method(util.Ownable):
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # ensure that required devices are connected
-        closed = [repr(dev) for dev in self.dependencies if not dev.isopen]
+        closed = [dev._instname for dev in self.dependencies if not dev.isopen]
         if len(closed) > 0:
             closed = ', '.join(closed)
             label = self.__class__.__qualname__ + '.' + self.__name__
             raise ConnectionError(f"devices {closed} must be connected to invoke {self.__qualname__}")
 
-        # notify owner about the parameters passed
-        name_prefix = str(self._owner).replace('.', '_') + '_'
+        # notify observers about the parameters passed
+        name_prefix = '_'.join(self._owner._instname.split('.')[1:])+'_'
         if len(kws) > 0:
-            notify_params = {name_prefix + k: v for k, v in kws.items()}
-            Rack._notify.call_event(notify_params)
+            notify_params = {
+                name_prefix + k: v for k, v in kws.items()
+            }
+            notify.call_event(notify_params)
 
         # invoke the wrapped function
-        owner_name = getattr(self._owner, '__qualname__', str(self._owner))
         t0 = time.perf_counter()
         ret = self._wrapped(self._owner, *args, **kws)
         elapsed = time.perf_counter()-t0
         if elapsed > 0.1:
-            util.console.debug(f"{owner_name} completed in {elapsed:0.2f}s")
+            util.console.debug(f"{self._instname} completed in {elapsed:0.2f}s")
 
-        # notify owner of return value
+        # notify observers about the returned value
         if ret is not None:
-            notify = ret if isinstance(ret, dict) else {name_prefix + self.__name__: ret}
-            Rack._notify.return_event(notify)
+            need_notify = ret if isinstance(ret, dict) else {name_prefix + self.__name__: ret}
+            notify.return_event(need_notify)
 
         return {} if ret is None else ret
 
@@ -205,14 +261,18 @@ class Method(util.Ownable):
         return f'<{wrapped} wrapped by {type(self).__module__}.{type(self).__name__} object>'
 
 
-
 class BoundSequence(util.Ownable):
+    """ callable realization of a test sequence definition which
+        takes the place of Sequence objects on instantiation of
+        a new Rack object. its keyword arguments are aggregated
+        from all of the methods called by the Sequence.
+    """
     @util.hide_in_traceback
     def __call__(self, **kwargs):
         ret = {}
 
         for i, (name, sequence) in enumerate(self.sequence.items()):
-            step_kws = self._call_step(sequence, kwargs)
+            step_kws = self._step(sequence, kwargs)
 
             util.console.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
             ret.update(util.concurrently(**step_kws) or {})
@@ -230,14 +290,22 @@ class BoundSequence(util.Ownable):
         df.index.name = 'Condition name'
         df.to_csv(path)
 
-    def from_csv(self, path):
+    def iterate_from_csv(self, path):
+        """ call the BoundSequence for each row in a csv table.
+            keyword argument names are taken from the column header
+            (0th row). keyword values are taken from corresponding column in
+            each row.
+        """
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.console.info(f"{self.__objclass__.__qualname__}.{self.__name__} from '{str(path)}' "
+            util.console.info(f"{self._instname} from '{str(path)}' "
                              f"- '{row}' ({i+1}/{len(table.index)})")
             self.results = self(**table.loc[row].to_dict())
 
-    def _call_step(self, spec, kwargs):
+    def _step(self, spec, kwargs):
+        """ 
+        """
+
         available = set(kwargs.keys())
 
         def call(func):
@@ -253,7 +321,7 @@ class BoundSequence(util.Ownable):
                 name = item._owner.__class__.__qualname__ + '_' + item.__name__
                 kws_out[name] = call(item)
             elif isinstance(item, list):
-                kws_out[name] = self._call_step(item, kwargs)
+                kws_out[name] = self._step(item, kwargs)
             else:
                 msg = f"unsupported type '{type(item).__qualname__}' " \
                       f"in call sequence specification"
@@ -261,26 +329,52 @@ class BoundSequence(util.Ownable):
 
         return kws_out
 
-    # def __repr__(self):
-    #     name = f'{self.__objclass__.__qualname__}.{self.__name__}'
-    #     return f'<method function {name} from Sequence at {hex(id(self))}>'
-
+import sys, traceback
 
 class OwnerContextAdapter:
-    """ transform calls to __enter__ -> _setup and __exit__ -> _cleanup
+    """ transform calls to __enter__ -> open and __exit__ -> close.
+        each will be called 
 
     """
     def __init__(self, owner):
         self._owner = owner
+        self._instname = getattr(owner, '_instname', repr(owner))
 
     def __enter__(self):
-        self._owner._setup()
+        cls = type(self._owner)
+        for opener in core.trace_methods(cls, 'open', Owner)[::-1]:
+            opener(self._owner)
+
+        self._owner.open()
+        self._owner._console.debug('opened')
 
     def __exit__(self, *exc_info):
-        self._owner._cleanup()
+        cls = type(self._owner)
+        methods = core.trace_methods(cls, 'close', Owner)
+
+        all_ex = []
+        for closer in methods:
+            try:
+                closer(self._owner)
+            except BaseException:
+                all_ex.append(sys.exc_info())
+
+        # Print tracebacks for any suppressed exceptions
+        for ex in all_ex[::-1]:
+            # If ThreadEndedByMaster was raised, assume the error handling in
+            # util.concurrently will print the error message
+            if ex[0] is not util.ThreadEndedByMaster:
+                depth = len(tuple(traceback.walk_tb(ex[2])))
+                traceback.print_exception(*ex, limit=-(depth - 1))
+                sys.stderr.write('(Exception suppressed to continue close)\n\n')
+
+        self._owner._console.debug('closed')
 
     def __repr__(self):
         return repr(self._owner)
+
+    def __str__(self):
+        return getattr(self._owner, '_instname', None) or repr(self)
 
 
 def recursive_devices(top):
@@ -306,10 +400,12 @@ def recursive_devices(top):
 def recursive_owner_managers(top):
     managers = {}
     for name, owner in top._owners.items():
-        managers.update({"{name}_{k}": cm
-                         for k, cm in recursive_owner_managers(owner).items()})
-        managers[name] = OwnerContextAdapter(owner)
-    managers[repr(top)] = OwnerContextAdapter(top)
+        managers.update(recursive_owner_managers(owner))
+        # managers[name] = OwnerContextAdapter(owner)
+
+    if getattr(top, '_instname', None) is not None:
+        name = '_'.join(top._instname.split('.')[1:])
+        managers[name] = OwnerContextAdapter(top)
     return managers
 
 
@@ -340,33 +436,77 @@ def owner_context_manager(top):
         for attr, obj in contexts.items():
             if isinstance(obj, cls):
                 first[attr] = remaining.pop(attr)
-    firsts_desc = '->'.join([repr(c) for c in first.values()])
+    firsts_desc = '->'.join([str(c) for c in first.values()])
 
     # then, other devices, which need to be ready before we start into Rack setup methods
     devices = {attr: remaining.pop(attr)
                for attr, obj in dict(remaining).items()
                if isinstance(obj, core.Device)}
-    devices_desc = f"({', '.join([repr(c) for c in devices.values()])})"
+    devices_desc = f"({', '.join([str(c) for c in devices.values()])})"
     devices = util.concurrently(name='', **devices)
 
-    # what remain are instances of Rack and other Owner types
+    # what remain are instances of Rack and other Owner types    
     owners = recursive_owner_managers(top)
-    owners_desc = f"({'->'.join([repr(c) for c in owners.values()])})"
+    owners_desc = f"({','.join([str(c) for c in owners.values()])})"
+
+    # TODO: concurrent rack entry. This would mean device dependency
+    # checking to ensure avoid race conditions
+    # owners = util.concurrently(name='', **owners) # <- something like this
 
     # top._recursive_owners()
-    # top.__context_manager.__enter__()
+    # top._context.__enter__()
     # for child in top._owners.values():
-    #     child._setup()
-    # # top._setup()
+    #     child.open()
+    # # top.open()
     #
     # the dictionary here is a sequence
-    seq = dict(first, _devices=devices, **owners)
+    seq = dict(first)
+    if devices != {}:
+        seq['_devices'] = devices
+    seq.update(owners)
 
-    desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc)
-                      if len(d)>0])
+    desc = '->'.join([
+        d for d in (firsts_desc, devices_desc, owners_desc)
+        if len(d)>0]
+    )
 
     log.debug(f"context order: {desc}")
     return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
+
+
+def propagate_instnames(parent_obj, parent_name=None):
+    """ recursively update _instname in child instances of Owner
+        classes or instances
+    """
+    if parent_name is None:
+        parent_name = parent_obj.__name__
+
+    for name, obj in parent_obj._owners.items():
+        propagate_instnames(obj, parent_name+'.'+name)
+
+    # some objects may be reused by children. apply
+    # our own namespace last to ensure the highest-level
+    # ownership is attributed
+    for name, obj in parent_obj._ownables.items():
+        obj._instname = parent_name+'.'+name
+
+
+def owner_getattr_chains(owner):
+    """ recursively perform getattr on the given sequence of names
+    """
+    ret = {owner: tuple()}
+
+    for name, sub_owner in owner._owners.items():
+        # add only new changes (overwrite redundant keys with prior values)
+        ret = {
+            **{
+                obj: (name,)+chain
+                for obj, chain in owner_getattr_chains(sub_owner).items()
+            },
+            **ret
+        }
+
+    return ret
 
 
 class Owner:
@@ -378,7 +518,7 @@ class Owner:
     def __init_subclass__(cls, ordered_entry: list = None):
         # registries that will be context managed
         cls._devices = {} # each of cls._devices.values() these will be context managed
-        cls._owners = {} # each of these will get courtesy calls to _setup and _cleanup between _device entry and exit
+        cls._owners = {} # each of these will get courtesy calls to open and close between _device entry and exit
         cls._ownables = {}
 
         if ordered_entry is not None:
@@ -389,23 +529,27 @@ class Owner:
 
         cls._propagate_ownership()
 
+    def __meta_owner_init__(self, parent_name):
+        """ called recursively on initialization of any owner above the
+            scope of this owner
+        """
+        self._instname = parent_name+'.'+self.__name__
+
     @classmethod
     def _propagate_ownership(cls):
         cls._ownables = {}
 
         # prepare and register owned attributes
         attr_names = set(dir(cls)).difference(dir(Owner))
-        # not using cls.__dict__ because it neglects parent classes
+
+        # don't use cls.__dict__ here since we also need parent attributes
         for name in attr_names:
             obj = getattr(cls, name)
 
             if not isinstance(obj, util.Ownable):
                 continue
 
-            need_copy = isinstance(
-                getattr(super(), name, None),
-                util.Ownable
-            )
+            need_copy = isinstance(getattr(super(), name, None), util.Ownable)
 
             # prepare these first, so they are available to owned classes on __owner_subclass__
             if isinstance(obj, core.Device):
@@ -413,6 +557,7 @@ class Owner:
                     obj = copy.deepcopy(obj)
                 cls._devices[name] = obj
                 setattr(cls, name, obj)
+
             elif isinstance(obj, Owner):
                 if need_copy:
                     obj = copy.deepcopy(obj)
@@ -428,16 +573,20 @@ class Owner:
 
             setattr(cls, name, obj)
 
+        propagate_instnames(cls, cls.__name__)
+
     def __init__(self, **devices):
-        # initialize everything before we cull the dictionary to limit context management scope
         self._owners = dict(self._owners)
         self._ownables = dict(self._ownables)
         self._devices = dict(self._devices, **devices)
 
         super().__init__()
 
+        propagate_instnames(self, type(self).__name__)
+
         for name, obj in self._ownables.items():
             obj.__owner_init__(self)
+        
 
     def __setattr__(self, key, obj):
         # update naming for any util.Ownable instances
@@ -455,30 +604,27 @@ class Owner:
 
         object.__setattr__(self, key, obj)
 
-    def _cleanup(self):
+    def close(self):
         pass
 
-    def _setup(self):
+    def open(self):
         pass
 
     @property
     def __enter__(self):
-        # Rack._notify.clear()
-        self.__context_manager = owner_context_manager(self)
-        # self.__context_manager.__enter__()
-        # return self
+        self._context = owner_context_manager(self)
 
         @wraps(type(self).__enter__.fget)
         def __enter__():
-            self.__context_manager.__enter__()
+            self._context.__enter__()
             return self
 
         return __enter__
 
     @property
     def __exit__(self):
-        # pass along from self.__context_manager
-        return self.__context_manager.__exit__
+        # pass along from self._context
+        return self._context.__exit__
 
 
 @util.hide_in_traceback
@@ -492,11 +638,13 @@ def __call__():
 class Sequence(util.Ownable):
     """ Define an experiment built from methods in Rack instances. The input is a specification for sequencing these
     steps, including support for threading. The output is a callable function that can be assigned as a method
-    to a top-level "master" Rack.
+    to a top-level "root" Rack.
     """
 
     def __init__(self, **specification):
-        def spec_entry(sequence):
+        def spec_step(sequence):
+            """ standardize the specification dict to  {name: [methods]}
+            """
             if isinstance(sequence, (list, tuple)):
                 # specification for a concurrent and/or sequential calls to Method methods
                 sequence = list(sequence)
@@ -505,8 +653,7 @@ class Sequence(util.Ownable):
                 # a Method method that is already packaged for use
                 sequence = [sequence]
 
-            elif hasattr(sequence, '__self__') and callable(sequence):
-                # some other kind of callable function that seems reasonable to adopt as a Method method
+            elif inspect.ismethod(sequence):
                 sequence = [Method(sequence.__self__, sequence.__name__)]
 
             else:
@@ -515,33 +662,14 @@ class Sequence(util.Ownable):
 
             return sequence
 
-        self.spec = {k: spec_entry(spec) for k, spec in specification.items()}
+        self.spec = {
+            k: spec_step(spec)
+            for k, spec in specification.items()
+        }
+
         self.access_spec = None
 
     def __owner_subclass__(self, owner_cls):
-        # method_remap = self._subclass_method_remap(owner_cls)
-
-        # for name in list(self.spec.keys()):
-        #     self.spec[name] = [
-        #         Method(method_remap.get(method._wrapped,method._wrapped))
-        #         for method in list(self.spec[name])
-        #     ]
-
-        def owner_getattr_chains(owner):
-            ret = {owner: tuple()}
-
-            for name, sub_owner in owner._owners.items():
-                # add only new changes (overwrite redundant keys with prior values)
-                ret = {
-                    **{
-                        obj: (name,)+chain
-                        for obj, chain in owner_getattr_chains(sub_owner).items()
-                    },
-                    **ret
-                }
-
-            return ret
-
         if self.access_spec is None:
             # transform the objects in self.spec
             # into attribute names for dynamic access
@@ -625,7 +753,7 @@ class Sequence(util.Ownable):
             defaults=defaults,
             annotations=annots,
             signatures=signatures,
-            dependencies=self._dependency_map(),
+            dependencies=self._dependency_map(spec),
             __name__=self.__name__,
             __qualname__=type(owner).__qualname__+'.'+self.__name__,
             __objclass__=self.__objclass__,
@@ -644,7 +772,7 @@ class Sequence(util.Ownable):
         obj.__init__()
         setattr(owner, self.__name__, obj)
 
-    def _dependency_map(self, owner_deps={}) -> dict:
+    def _dependency_map(self, spec, owner_deps={}) -> dict:
         """ list of Device dependencies of each Method.
 
         :returns: {Device instance: reference to method that uses Device instance}
@@ -652,7 +780,7 @@ class Sequence(util.Ownable):
 
         deps = dict(owner_deps)
 
-        for spec in self.spec.values():
+        for spec in spec.values():
             for func in spec:
                 if not isinstance(func, (Method, BoundSequence)):
                     raise TypeError(f"expected Method instance, but got '{type(func).__qualname__}' instead")
@@ -698,55 +826,6 @@ class Sequence(util.Ownable):
                         signatures[argname][0] = def_
 
         return signatures
-
-
-class notify:
-    """
-    Singleton notification handler shared by all Rack instances.
-    """
-    _handlers = dict(returns=set(), calls=set())
-
-    @classmethod
-    def clear(cls):
-        cls._handlers = dict(returns=set(), calls=set())
-
-    @classmethod
-    def return_event(cls, returned: dict):
-        if not isinstance(returned, dict):
-            raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
-        for handler in cls._handlers['returns']:
-            handler(returned)
-
-    @classmethod
-    def call_event(cls, parameters: dict):
-        if not isinstance(parameters, dict):
-            raise TypeError(f"parameters data was {repr(parameters)}, which is not a dict")
-        for handler in cls._handlers['calls']:
-            handler(parameters)
-
-    @classmethod
-    def observe_returns(cls, handler):
-        if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers['returns'].add(handler)
-
-    @classmethod
-    def observe_calls(cls, handler):
-        if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers['calls'].add(handler)
-
-    @classmethod
-    def unobserve_returns(cls, handler):
-        if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers['returns'].remove(handler)
-
-    @classmethod
-    def unobserve_calls(cls, handler):
-        if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers['calls'].remove(handler)
 
 
 class RackMeta(type):
@@ -1054,8 +1133,6 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     """
 
-    _notify = notify
-
     def __init_subclass__(cls, ordered_entry=[]):
         cls._ordered_entry = ordered_entry
 
@@ -1093,10 +1170,11 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         #         setattr(cls, name, annot_cls())
 
     def __init__(self, **devices):
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - " + str(self)))
-
         super().__init__(**devices)
+
+        display_name = getattr(self, '_instname', type(self).__name__)
+        self._console = util.console.logger.getChild(str(self))
+        self._console = logging.LoggerAdapter(self._console, dict(rack=display_name, origin=f" - " + str(self)))
 
         # match the device arguments to annotations
         devices = dict(devices)

@@ -53,6 +53,8 @@ class LaggyInstrument(EmulatedVISADevice):
     fetch_time = lb.value.float(0, min=0, help='fetch time')
     fail_disconnect = lb.value.bool(False, help='True to raise DivideByZero on disconnect')
 
+    variable_setting = lb.value.int(0)
+
     def open(self):        
         self.perf = {}
         t0 = time.perf_counter()
@@ -68,7 +70,6 @@ class LaggyInstrument(EmulatedVISADevice):
         lb.sleep(self.fetch_time)
         self.perf['fetch'] = time.perf_counter() - t0
         return pd.Series([1,2,3,4,5,6])
-        # return self.fetch_time
     
     def dict(self):
         return {self.resource: self.resource}
@@ -91,7 +92,10 @@ class Rack1(lb.Rack):
         pass
 
     def arm(self):
-        pass
+        self.dev1.variable_setting = self.dev1.variable_setting + 2
+
+    def open(self):
+        time.sleep(.25)
 
 
 class Rack2(lb.Rack):
@@ -107,6 +111,8 @@ class Rack2(lb.Rack):
     def fetch(self, *, param2:int=7):
         return self.dev.fetch()
 
+    def open(self):
+        time.sleep(.25)
 
 class Rack3(lb.Rack):
     # this is unset (no =), so it _must_ be passed as an argument to instantiate, i.e.,
@@ -121,6 +127,8 @@ class Rack3(lb.Rack):
     def fetch(self, *, param4):
         return self.dev.fetch()
 
+    def open(self):
+        time.sleep(.25)
 
 class MyRack(lb.Rack):
     # config = lb.Configuration('test-config')
@@ -197,7 +205,7 @@ if __name__ == '__main__':
     #         testbed.inst2.delay = 0.07
     #         testbed.inst1.delay = 0.12
 
-    #         testbed.run.from_csv('setup/MyRack.run.csv')
+    #         testbed.run.iterate_from_csv('setup/MyRack.run.csv')
 
     #         # for i in range(3):
     #         #     # Run the experiment

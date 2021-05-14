@@ -946,7 +946,7 @@ class VISADevice(Device):
                 'message available': bool(code & 0b00010000),
                 'event status flag': bool(code & 0b00100000),
                 'service request': bool(code & 0b01000000),
-                'master status summary': bool(code & 0b01000000),
+                'top level status summary': bool(code & 0b01000000),
                 'operating': bool(code & 0b10000000),
                 }
 

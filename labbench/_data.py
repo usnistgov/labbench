@@ -57,7 +57,7 @@ INSPECT_SKIP_FILES = _device.__file__, _traits.__file__, _rack.__file__, __file_
 
 
 class MungerBase(core.Device):
-    """ Organize file output with a key in the master database.
+    """ Organize file output with a key in the root database.
 
         The following conversions to relational files are attempted in order to
         convert each value in the row dictionary:
@@ -151,7 +151,7 @@ class MungerBase(core.Device):
         :param name: name of the entry to write, used as the filename
         :param value: the object containing array-like data
         :param row: row dictionary, or None (the default) to write to the metadata folder
-        :return: the path to the file, relative to the directory that contains the master database
+        :return: the path to the file, relative to the directory that contains the root database
         """
 
         
@@ -218,7 +218,7 @@ class MungerBase(core.Device):
         :param value: the string to write to file
         :param row: the row to infer timestamp, or None to write to metadata
         :param ext: file extension
-        :return: the path to the file, relative to the directory that contains the master database
+        :return: the path to the file, relative to the directory that contains the root database
         """
         with self._open_relational(name + ext, index, row) as f:
             f.write(bytes(value, encoding='utf-8'))
@@ -226,7 +226,7 @@ class MungerBase(core.Device):
 
     # The following methods need to be implemented in subclasses.
     def _get_key(self, buf):
-        """ Key to use for the relative data in the master database?
+        """ Key to use for the relative data in the root database?
 
         :param stream: stream for writing to the relational data file
         :return: the key
@@ -235,10 +235,10 @@ class MungerBase(core.Device):
 
     def _open_relational(self, name, index, row):
         """ Open a stream / IO buffer for writing relational data, given
-            the master database column, index, and the row dictionary.
+            the root database column, index, and the row dictionary.
 
-            :param name: the column name of the relational data in the master db
-            :param index: the index name of of the data in the master db
+            :param name: the column name of the relational data in the root db
+            :param index: the index name of of the data in the root db
             :param row: the dictionary containing the row of data at `index`
 
             :returns: an open buffer object for writing data
@@ -259,8 +259,7 @@ class MungerBase(core.Device):
 
 
 class MungeToDirectory(MungerBase):
-    """ Implement data munging into subdirectories. This is fast but can produce
-        an unweildy number of subdirectories if there are many runs.
+    """ Implement data munging into subdirectories.
     """
 
     def _open_relational(self, name, index, row):
@@ -281,7 +280,7 @@ class MungeToDirectory(MungerBase):
         return open(os.path.join(dirpath, name), 'wb+')
 
     def _get_key(self, stream):
-        """ Key to use for the relative data in the master database?
+        """ Key to use for the relative data in the root database?
 
         :param stream: stream for writing to the relational data file
         :return: the key
@@ -327,7 +326,6 @@ class MungeToDirectory(MungerBase):
 
             with io.TextIOWrapper(stream, newline='\n') as buf:
                 json.dump(v, buf, indent=True, sort_keys=True)
-
 
 
 class TarFileIO(io.BytesIO):
@@ -397,7 +395,7 @@ class MungeToTar(MungerBase):
         dirpath = os.path.join(self.metadata_dirname, name)
         return TarFileIO(self.tarfile, dirpath)
 
-    def open(self):
+    def open(self):       
         if not os.path.exists(self.resource):
             with suppress(FileExistsError):
                 os.makedirs(self.resource)
@@ -408,10 +406,10 @@ class MungeToTar(MungerBase):
         self.tarfile.close()
 
     def _get_key(self, buf):
-        """ Where is the file relative to the master database?
+        """ Where is the file relative to the root database?
 
         :param path: path of the file
-        :return: path to the file relative to the master database
+        :return: path to the file relative to the root database
         """
         return buf.name
 
@@ -477,27 +475,14 @@ class Aggregator(util.Ownable):
     def __repr__(self):
         return f"{self.__class__.__qualname__}()"
 
-    def __owner_init__(self, rack):
-        # this is called when `self` lives in a Rack after that instance is instantiated
-        super().__owner_init__(rack)
-
-        # observe changes in its Device instances
-        self.set_device_labels(**rack._devices)
-        self.set_device_labels(**{n+'_values': d.get_values() for n, d in rack._devices.items()})
-
-        # monitor changes in device property trait on the rack
-        if rack is not None:
-            for name, obj in rack._devices.items():
-                self.observe(obj)
-
     def enable(self):
         # catch return data as well
-        Rack._notify.observe_returns(self.__receive_rack_data)
-        Rack._notify.observe_calls(self.__receive_rack_data)
+        _rack.notify.observe_returns(self.__receive_rack_data)
+        _rack.notify.observe_calls(self.__receive_rack_data)
 
     def disable(self):
-        Rack._notify.observe_returns(self.__receive_rack_data)
-        Rack._notify.observe_calls(self.__receive_rack_data)
+        _rack.notify.observe_returns(self.__receive_rack_data)
+        _rack.notify.observe_calls(self.__receive_rack_data)
 
     def get(self) -> dict:
         """ Return a dictionary of observed Device trait data and calls and returns in Rack instances. A get is
@@ -601,7 +586,7 @@ class Aggregator(util.Ownable):
                 raise ValueError(f'{device} is not an instance of Device')
 
             if name:
-                if device in name and name != self.name_map[device]:
+                if device in self.name_map and name != self.name_map[device]:
                     # a rename is an odd case, make a note of it
                     self._console.warning(f"renaming {device} from {self.name_map[device]} to {name}")
                 self.name_map[device] = name
@@ -633,7 +618,7 @@ class Aggregator(util.Ownable):
             the existing list of observed property traits for each
             device.
 
-            :param devices: Device instance or iterable of Device instances
+            :param devices: Device instance, iterable of Devices, or {device:name} mapping
 
             :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
 
@@ -745,9 +730,9 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the master database
+        :param str path: Base path to use for the root database
 
-        :param bool overwrite: Whether to overwrite the master database if it exists (otherwise, append)
+        :param bool overwrite: Whether to overwrite the root database if it exists (otherwise, append)
 
         :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
 
@@ -813,8 +798,14 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
 
     def __owner_init__ (self, owner):
         super().__owner_init__(owner)
+
         self._console = util.console.logger.getChild(str(self))
         self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - " + str(self)))
+
+        devices, _ = _rack.recursive_devices(owner)
+        devices = {v:k for k,v in devices.items()}
+
+        self.observe(devices)
 
     def __repr__(self):
         if hasattr(self, 'path'):
@@ -900,17 +891,22 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         aggregated = dict(self.aggregator.get())
         if do_copy:
             aggregated = copy.deepcopy(aggregated)
+        # print('agg: ', aggregated)
         row.update(aggregated)
 
         # Pull in keyword arguments
-        row.update(copy.deepcopy(dict(kwargs)) if do_copy else dict(kwargs))
+        if do_copy:
+            kwargs = copy.deepcopy(dict(kwargs))
+        else:
+            kwargs = dict(kwargs)
+        row.update(kwargs)
 
         self._console.debug(f"new data row has {len(row)} columns")
 
         self.pending.append(row)
 
     def write(self):
-        """ Commit any pending rows to the master database, converting
+        """ Commit any pending rows to the root database, converting
             non-scalar data to data files, and replacing their dictionary value
             with the relative path to the data file.
 
@@ -921,12 +917,14 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         if count > 0:
             proc = self._row_preprocessor
             pending = enumerate(self.pending)
-            self.pending = [self.munge(self.last_index + i, proc(row))
-                            for i, row in pending]
-            self._write_master()
+            self.pending = [
+                self.munge(self.last_index + i, proc(row))
+                for i, row in pending
+            ]
+            self._write_root()
             self.clear()
 
-    def _write_master(self):
+    def _write_root(self):
         """ Write pending data. This is an abstract base method (must be
             implemented by inheriting classes)
 
@@ -975,7 +973,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
 
         self.munge.dirname_fmt = format
 
-    def _setup(self):
+    def open(self):
         """ Open the file or database connection.
             This is an abstract base method (to be overridden by inheriting classes)
 
@@ -983,9 +981,10 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         """
 
         self.observe(self.munge, never=self.munge._traits)
+        self.observe(self.host, always=['time','log'])
 
         # Do some checks on the relative data directory before we consider overwriting
-        # the master db.
+        # the root db.
         self.aggregator.enable()
 
         self.open()
@@ -994,7 +993,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         self.last_index = 0
         self._console.debug(f'{self} is open')
 
-    def _cleanup(self):
+    def close(self):
         self.aggregator.disable()
         try:
             self.write()
@@ -1007,22 +1006,9 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
 
         self._console.debug(f'{self} is closed')
 
-    def open(self, path=None):
-        """ This must be implemented by a subclass to open the data storage resource.
-        """
-        self.observe(self.host, always=['time', 'log'])
-
-    def close(self):
-        """ Close the file or database connection.
-            This is an abstract base method (to be overridden by inheriting classes)
-
-            :return: None
-        """
-        pass
-
 
 class CSVLogger(RelationalTableLogger):
-    """ Store data, value traits, and property traits to disk into a master database formatted as a comma-separated value (CSV) file.
+    """ Store data, value traits, and property traits to disk into a root database formatted as a comma-separated value (CSV) file.
 
         This extends :class:`Aggregator` to support
 
@@ -1030,8 +1016,8 @@ class CSVLogger(RelationalTableLogger):
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the master database
-        :param bool overwrite: Whether to overwrite the master database if it exists (otherwise, append)
+        :param str path: Base path to use for the root database
+        :param bool overwrite: Whether to overwrite the root database if it exists (otherwise, append)
         :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
         :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
         :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
@@ -1039,6 +1025,7 @@ class CSVLogger(RelationalTableLogger):
         :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
+    root_file = 'root.csv'
     nonscalar_file_type = 'csv'
 
     def open(self):
@@ -1056,42 +1043,31 @@ class CSVLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-        
-        if self.path.exists():
-            root = str(self.path.absolute())
-            if not self.path.is_dir():
-                raise IOError(f"the root data directory path '{root}' already exists, and is not a directory.")
 
-            try:
-                # test writes
-                with open(self.path/'_', 'wb'):
-                    pass
-                (self.path/'_').unlink()
-                ex = None
-            except IOError as e:
-                ex = e
-            if ex:
-                raise ex
+        self.path.mkdir(parents=True, exist_ok=self._append)
 
-        if not str(self.path).lower().endswith('.csv'):
-            self.path = Path(f'{self.path}.csv')
-        if os.path.exists(self.path):
-            if self._append:
-                self.df = pd.read_csv(self.path, nrows=1)
-                self.df.index.name = self.index_label
-            else:
-                raise IOError(f"master table already exists at '{self.path}', but append=False")
+        file_path = self.path/self.root_file
+        try:
+            # test access by starting the root table
+            file_path.touch(exist_ok=self._append)
+        except FileExistsError:
+            raise IOError(f"root table already exists at '{file_path}', while append=False")
+
+        if self._append and file_path.stat().st_size > 0:
+            # there's something here and we plan to append
+            self.df = pd.read_csv(file_path, nrows=1)
+            self.df.index.name = self.index_label
         else:
             self.df = None
 
     def close(self):
-        self._write_master()
+        self._write_root()
 
-    def _write_master(self):
+    def _write_root(self):
         """ Write queued rows of data to csv. This is called automatically on :func:`close`, or when
             exiting a `with` block.
 
-            If the class was created with overwrite=True, then the first call to _write_master() will overwrite
+            If the class was created with overwrite=True, then the first call to _write_root() will overwrite
             the preexisting file; subsequent calls append.
         """
         
@@ -1108,13 +1084,13 @@ class CSVLogger(RelationalTableLogger):
         self.df.sort_index(inplace=True)
         self.last_index = self.df.index[-1]
 
-        with open(self.path, 'a') as f:
+        with open(self.path/self.root_file, 'a') as f:
             self.df.to_csv(f, header=isfirst, index=False)
 
 
 class MungeToHDF(Device):
     """ This is where ugly but necessary sausage making organizes
-        in a file output with a key in the master database.
+        in a file output with a key in the root database.
 
         The following conversions to relational files are attempted in order to
         convert each value in the row dictionary:
@@ -1131,7 +1107,7 @@ class MungeToHDF(Device):
     """
 
     resource = value.Path(help='hdf file location')
-    key_fmt = value.str('{id} {host_time}', help='format for linked data in the master database (keyed on column)')
+    key_fmt = value.str('{id} {host_time}', help='format for linked data in the root database (keyed on column)')
 
     def open(self):
         import h5py
@@ -1207,7 +1183,7 @@ class MungeToHDF(Device):
         :param name: name of the entry to write, used as the filename
         :param value: the object containing array-like data
         :param row: row dictionary, or None (the default) to write to the metadata folder
-        :return: the path to the file, relative to the directory that contains the master database
+        :return: the path to the file, relative to the directory that contains the root database
         """
 
         
@@ -1243,7 +1219,7 @@ class MungeToHDF(Device):
 
 class HDFLogger(RelationalTableLogger):
     """ Store data and activity from value and property sets and gets to disk
-        into a master database formatted as an HDF file.
+        into a root database formatted as an HDF file.
 
         This extends :class:`Aggregator` to support
 
@@ -1251,8 +1227,8 @@ class HDFLogger(RelationalTableLogger):
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the master database
-        :param bool append: Whether to append to the master database if it already exists (otherwise, raise IOError)
+        :param str path: Base path to use for the root database
+        :param bool append: Whether to append to the root database if it already exists (otherwise, raise IOError)
         :param str key_fmt: format to use for keys in the h5
 
     """
@@ -1284,7 +1260,7 @@ class HDFLogger(RelationalTableLogger):
             if there is an error. For example, the following
             sets up a connected instance::
 
-                with CSVLogger('my.csv') as db:
+                with HDFLogger('my.csv') as db:
                     ### do the data acquisition here
                     pass
 
@@ -1294,25 +1270,16 @@ class HDFLogger(RelationalTableLogger):
             is an exception.
         """
         
-        # if os.path.exists(self.path):
-        #     if self._append:
-        #         self.df = pd.read_hdf(self.path, key='master', start=-1)
-        #         self.df.index.name = self.index_label
-        #     else:
-        #         raise IOError(f"master table already exists at '{self.path}', but append=False")
-        # else:
-        #     self.df = None
-
         self.df = None
 
     def close(self):
-        self._write_master()
+        self._write_root()
 
-    def _write_master(self):
+    def _write_root(self):
         """ Write queued rows of data to csv. This is called automatically on :func:`close`, or when
             exiting a `with` block.
 
-            If the class was created with overwrite=True, then the first call to _write_master() will overwrite
+            If the class was created with overwrite=True, then the first call to _write_root() will overwrite
             the preexisting file; subsequent calls append.
         """
         
@@ -1329,12 +1296,12 @@ class HDFLogger(RelationalTableLogger):
         self.df.sort_index(inplace=True)
         self.last_index = self.df.index[-1]
 
-        self.df.to_hdf(self.path, key='master', append=self._append)
+        self.df.to_hdf(self.path, key='root', append=self._append)
 
 
 
 class SQLiteLogger(RelationalTableLogger):
-    """ Store data and property traits to disk into an an sqlite master database.
+    """ Store data and property traits to disk into an an sqlite database.
 
         This extends :class:`Aggregator` to support
 
@@ -1342,8 +1309,8 @@ class SQLiteLogger(RelationalTableLogger):
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the master database
-        :param bool overwrite: Whether to overwrite the master database if it exists (otherwise, append)
+        :param str path: Base path to use for the root database
+        :param bool overwrite: Whether to overwrite the root database if it exists (otherwise, append)
         :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
         :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
         :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
@@ -1352,8 +1319,8 @@ class SQLiteLogger(RelationalTableLogger):
     """
 
     index_label = 'id'  # Don't change this or sqlite breaks :(
-    master_filename = 'master.db'
-    table_name = 'master'
+    root_filename = 'root.db'
+    table_name = 'root'
     _columns = None
     inprogress = {}
     committed = {}
@@ -1370,12 +1337,12 @@ class SQLiteLogger(RelationalTableLogger):
                     ### do the data acquisition here
                     pass
 
-            would instantiate a `CSVLogger` instance, and also guarantee
+            would instantiate a `SQLiteLogger` instance, and also guarantee
             a final attempt to write unwritten data is written, and that
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-        
+
         if self.path.exists():
             root = str(self.path.absolute())
             if not self.path.is_dir():
@@ -1395,7 +1362,7 @@ class SQLiteLogger(RelationalTableLogger):
     #        if not self.path.lower().endswith('.db'):
     #            self.path += '.db'
         os.makedirs(self.path, exist_ok=True)
-        path = os.path.join(self.path, self.master_filename)
+        path = os.path.join(self.path, self.root_filename)
 
         # Create an engine via sqlalchemy
         from sqlalchemy import create_engine  # database connection
@@ -1410,7 +1377,7 @@ class SQLiteLogger(RelationalTableLogger):
                 self._columns = df.columns
                 self.last_index = df.index[-1] + 1
             else:
-                raise IOError(f"master table already exists at '{path}', but append=False")
+                raise IOError(f"root table already exists at '{path}', but append=False")
         else:
             self._columns = None
         self.inprogress = {}
@@ -1418,18 +1385,18 @@ class SQLiteLogger(RelationalTableLogger):
 
     def close(self):
         try:
-            self._write_master()
+            self._write_root()
         finally:
             try:
                 self._engine.dispose()
             except BaseException:
                 pass
 
-    def _write_master(self):
+    def _write_root(self):
         """ Write queued rows of data to the database. This also is called automatically on :func:`close`, or when
             exiting a `with` block.
 
-            If the class was created with overwrite=True, then the first call to _write_master() will overwrite
+            If the class was created with overwrite=True, then the first call to _write_root() will overwrite
             the preexisting file; subsequent calls append.
         """
         
@@ -1549,7 +1516,7 @@ def to_feather(data, path):
         data.columns.name = cname
 
 
-def read_sqlite(path, table_name='master', columns=None, nrows=None,
+def read_sqlite(path, table_name='root', columns=None, nrows=None,
                 index_col=RelationalTableLogger.index_label):
     """ Wrapper to that uses pandas.read_sql_table to load a table from an sqlite database at the specified path.
 
@@ -1667,7 +1634,7 @@ class MungeReader:
 
     """
     """ TODO: Make this smarter, perhaps by trying to read an entry from
-        the master database
+        the root database
     """
     def __new__(cls, path):
         dirname = os.path.dirname(path)
@@ -1678,13 +1645,13 @@ class MungeReader:
         return MungeDirectoryReader(dirname)
 
 
-def read_relational(path, expand_col, master_cols=None, target_cols=None,
-                    master_nrows=None, master_format='auto', prepend_column_name=True):
+def read_relational(path, expand_col, root_cols=None, target_cols=None,
+                    root_nrows=None, root_format='auto', prepend_column_name=True):
     """ Flatten a relational database table by loading the table located each row of
-        `master[expand_col]`. The value of each column in this row
+        `root[expand_col]`. The value of each column in this row
         is copied to the loaded table. The columns in the resulting table generated
         on each row are downselected
-        according to `master_cols` and `target_cols`. Each of the resulting tables
+        according to `root_cols` and `target_cols`. Each of the resulting tables
         is concatenated and returned.
 
         The expanded dataframe may be very large, making downselecting a practical
@@ -1692,31 +1659,31 @@ def read_relational(path, expand_col, master_cols=None, target_cols=None,
 
         TODO: Support for a list of expand_col?
 
-        :param pandas.DataFrame master: the master database, consisting of columns containing data and columns containing paths to data files
-        :param str expand_col: the column in the master database containing paths to    data files that should be expanded
-        :param master_cols: a column (or array-like iterable of multiple columns) listing the master columns to include in the expanded dataframe, or None (the default) pass all columns from `master`
-        :param target_cols: a column (or array-like iterable of multiple columns) listing the master columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each master[expand_col]
-        :param master_path: a string containing the full path to the master database (to help find the relational files)
-        :param bool prepend_column_name: whether to prepend the name of the expanded column from the master database
+        :param pandas.DataFrame root: the root database, consisting of columns containing data and columns containing paths to data files
+        :param str expand_col: the column in the root database containing paths to    data files that should be expanded
+        :param root_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) pass all columns from `root`
+        :param target_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each root[expand_col]
+        :param root_path: a string containing the full path to the root database (to help find the relational files)
+        :param bool prepend_column_name: whether to prepend the name of the expanded column from the root database
         :returns: the expanded dataframe
 
     """
 
     
-    # if not isinstance(master, (pd.DataFrame,pd.Series)):
-    #     raise ValueError('expected master to be a DataFrame instance, but it is {} instead'\
-    #                      .format(repr(type(master))))
+    # if not isinstance(root, (pd.DataFrame,pd.Series)):
+    #     raise ValueError('expected root to be a DataFrame instance, but it is {} instead'\
+    #                      .format(repr(type(root))))
     if not isinstance(expand_col, str):
         raise ValueError(f'expand_col must a str, not {type(expand_col)}')
 
-    if master_cols is not None:
-        master_cols = list(master_cols) + [expand_col]
-    master = read(path, columns=master_cols,
-                  nrows=master_nrows, format=master_format)
+    if root_cols is not None:
+        root_cols = list(root_cols) + [expand_col]
+    root = read(path, columns=root_cols,
+                  nrows=root_nrows, format=root_format)
     reader = MungeReader(path)
 
     def generate():
-        for i, row in master.iterrows():
+        for i, row in root.iterrows():
             if row[expand_col] is None or len(row[expand_col]) == 0:
                 continue
 
@@ -1731,11 +1698,11 @@ def read_relational(path, expand_col, master_cols=None, target_cols=None,
             sub.columns = [prepend + c for c in sub.columns]
             sub[prepend + 'id'] = sub.index
 
-            # # Downselect master columns
-            # if master_cols is not None:
-            #     row = row[master_cols]
+            # # Downselect root columns
+            # if root_cols is not None:
+            #     row = row[root_cols]
 
-            # Add in columns from the master
+            # Add in columns from the root
             for c, v in row.iteritems():
                 sub[c] = v
 

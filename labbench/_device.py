@@ -297,11 +297,33 @@ class Device(HasTraits, util.Ownable):
 
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 
+    @property
+    def _instname(self):
+        if hasattr(self, '_console'):
+            return self._console.extra['device']
+        else:
+            return None
+
+    @_instname.setter
+    def _instname(self, value):
+        if value is not None:
+            self._console.extra['device'] = value
+            self._console.extra['origin'] = ' - '+value
 
     @util.hide_in_traceback
     def __init__(self, resource=Undefined, **values):
         """ Update default values with these arguments on instantiation.
         """
+        # gotta have a console logger
+        self._console = util.console.logger.getChild(str(self))
+        self._console = logging.LoggerAdapter(
+            self._console,
+            dict(
+                device=type(self).__qualname__+'()',
+                origin=f" - " + type(self).__qualname__+'()'
+            )
+        )
+
         # initialize property trait traits last so that calibration behaviors can use values and self._console
         super().__init__()
 
@@ -321,12 +343,6 @@ class Device(HasTraits, util.Ownable):
         setattr(self, 'open', self.__open_wrapper__)
         setattr(self, 'close', self.__close_wrapper__)
 
-        # gotta have a console logger
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(
-            self._console,
-            dict(device=repr(self), origin=f" - " + str(self))
-        )
 
     # TODO: Remove this? May be unecessary now that .state and . have been removed
     # @util.hide_in_traceback
@@ -364,12 +380,12 @@ class Device(HasTraits, util.Ownable):
         # Force an update to self.isopen
         self.isopen
 
-    def __owner_init__(self, owner):
-        super().__owner_init__(owner)
+    # def __owner_init__(self, owner):
+    #     super().__owner_init__(owner)
 
-        # update the name of the logger to match the context within owner
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - " + str(self)))
+    #     # update the name of the logger to match the context within owner
+    #     self._console = util.console.logger.getChild(str(self))
+    #     self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - " + str(self)))
 
     @util.hide_in_traceback
     @wraps(close)
@@ -437,7 +453,7 @@ class Device(HasTraits, util.Ownable):
 
     def __repr__(self):
         name = self.__class__.__qualname__
-        if 'resource' in self._traits:
+        if hasattr(self, 'resource'):
             return f'{name}({repr(self.resource)})'
         else:
             # In case an exception has occurred before __init__

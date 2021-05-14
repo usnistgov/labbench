@@ -17,12 +17,7 @@ from ._data import (
 )
 from ._device import Device as Device, list_devices as list_devices
 from ._host import Email as Email
-from ._rack import (
-    Configuration as Configuration,
-    Owner as Owner,
-    Rack as Rack,
-    Sequence as Sequence,
-)
+from ._rack import Rack as Rack, Sequence as Sequence
 from ._traits import Undefined as Undefined, observe as observe, unobserve as unobserve
 from .util import (
     Call as Call,

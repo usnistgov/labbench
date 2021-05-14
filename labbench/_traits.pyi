@@ -1,7 +1,7 @@
 import typing
 from . import util as util
+from contextlib import contextmanager as contextmanager
 from typing import Any as _Any, Optional
-TRAIT_TYPE_REGISTRY: _Any
 Undefined: _Any
 
 

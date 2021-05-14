@@ -1,9 +1,10 @@
 import io
-from . import _device as core, datareturn as datareturn, util as util, value as value
+from . import _device as core, util as util, value as value
 from ._device import Device as Device
-from ._rack import Owner as Owner, Rack as Rack, Step as Step
-from ._traits import Trait as Trait, VALID_TRAIT_ROLES as VALID_TRAIT_ROLES, observe as observe
+from ._rack import Owner as Owner, Rack as Rack
+from ._traits import Trait as Trait, observe as observe
 from contextlib import ExitStack as ExitStack, contextmanager as contextmanager
+from re import L as L
 from typing import Any, Optional
 EMPTY: Any
 INSPECT_SKIP_FILES: Any
@@ -96,9 +97,6 @@ class Aggregator(util.Ownable):
     def __init__(self, persistent_state: bool=...) -> None:
         ...
 
-    def __owner_init__(self, rack: Any) -> None:
-        ...
-
     def enable(self) -> None:
         ...
 
@@ -145,6 +143,9 @@ class RelationalTableLogger(Owner, util.Ownable):
     ) -> None:
         ...
 
+    def __copy__(self):
+        ...
+
     def __owner_init__(self, owner: Any) -> None:
         ...
 
@@ -168,8 +169,9 @@ class RelationalTableLogger(Owner, util.Ownable):
 
     def set_path_format(self, format: Any) -> None:
         ...
+    last_index: int = ...
 
-    def open(self, path: Optional[Any]=...) -> None:
+    def open(self) -> None:
         ...
 
     def close(self) -> None:
@@ -177,8 +179,8 @@ class RelationalTableLogger(Owner, util.Ownable):
 
 
 class CSVLogger(RelationalTableLogger):
+    root_file: str = ...
     nonscalar_file_type: str = ...
-    path: Any = ...
     df: Any = ...
 
     def open(self) -> None:
@@ -234,7 +236,7 @@ class HDFLogger(RelationalTableLogger):
 
 class SQLiteLogger(RelationalTableLogger):
     index_label: str = ...
-    master_filename: str = ...
+    root_filename: str = ...
     table_name: str = ...
     inprogress: Any = ...
     committed: Any = ...
@@ -300,10 +302,10 @@ class MungeReader():
 def read_relational(
     path: Any,
     expand_col: Any,
-    master_cols: Optional[Any]=...,
+    root_cols: Optional[Any]=...,
     target_cols: Optional[Any]=...,
-    master_nrows: Optional[Any]=...,
-    master_format: str=...,
+    root_nrows: Optional[Any]=...,
+    root_format: str=...,
     prepend_column_name: bool=...
 ):
     ...

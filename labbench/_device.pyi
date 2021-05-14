@@ -1,6 +1,6 @@
 from . import util, value as value
 from ._traits import HasTraits
-from typing import Any
+from typing import Any, Optional
 
 def list_devices(depth: int=...):
     ...
@@ -14,7 +14,11 @@ class DisconnectedBackend():
 
     def __getattr__(self, key: Any) -> None:
         ...
+
+    def __copy__(self, memo: Optional[Any]=...):
+        ...
     str: Any = ...
+    __deepcopy__: Any = ...
 
 
 class Device(HasTraits, util.Ownable):
@@ -37,9 +41,6 @@ class Device(HasTraits, util.Ownable):
         ...
 
     def __open_wrapper__(self) -> None:
-        ...
-
-    def __owner_init__(self, owner: Any) -> None:
         ...
 
     def __close_wrapper__(self) -> None:

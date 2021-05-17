@@ -5,7 +5,7 @@ import pandas as pd
 
 yaml = Path(__file__).with_name('sim_visa.yaml')
 
-class SimulatedPowerSupply(lb._backends.SimulatedVISADevice, yaml_source=yaml):
+class PowerSupply(lb._backends.SimulatedVISADevice, yaml_source=yaml):
     voltage = lb.property.float(
         key=':VOLT:IMM:AMPL',
         min=1,
@@ -25,23 +25,41 @@ class SimulatedPowerSupply(lb._backends.SimulatedVISADevice, yaml_source=yaml):
 
     output_enabled = lb.property.bool(
         key='OUTP',
-        remap={True: '1', False: 0}
+        remap={True: '1', False: '0'}
     )
 
     def fetch_trace(self):
         trace = self.query_ascii_values('TRACE?', float, container=pd.DataFrame)
-        trace.columns.name = 'Trace'
+        trace.columns = ['Trace']
         return trace
+
+
+class SpectrumAnalyzer(lb._backends.SimulatedVISADevice, yaml_source=yaml):
+    frequency = lb.property.float(
+        key=':FREQ',
+        min=10e6,
+        max=18e9
+    )
+
+    def fetch_trace(self):
+        trace = self.query_ascii_values('TRACE?', float, container=pd.DataFrame)
+        trace.columns = ['Trace']
+        return trace
+
 
 if __name__ == '__main__':
     lb.show_messages('debug')
 
-    s = SimulatedPowerSupply(r'USB::0x1111::0x2222::0x2468::INSTR')
+    ps = PowerSupply(r'USB::0x1111::0x2222::0x2468::INSTR')
+    sa = SpectrumAnalyzer(r'GPIB::15::INSTR')
 
-    with s:
-        print(f'Python value: {repr(s.identity)}')
-        print(f'Python value: {repr(s.options)}')
-        print(f'Python value: {repr(s.current)}')
-        print(f'Python value: {repr(s.rail)}')
-        print(f'Python value: {repr(s.output_enabled)}')
-        print(f'Python value:\n{s.fetch_trace()}')
+    with ps,sa:
+        print(f'Python value: {repr(ps.identity)}')
+        print(f'Python value: {repr(ps.options)}')
+        print(f'Python value: {repr(ps.current)}')
+        print(f'Python value: {repr(ps.rail)}')
+        print(f'Python value: {repr(ps.output_enabled)}')
+        print(f'Python value:\n{ps.fetch_trace()}')
+
+        print(f'Python value: {repr(sa.frequency)}')
+        print(f'Python value:\n{sa.fetch_trace()}')

@@ -1008,7 +1008,10 @@ class VISADevice(Device):
             with contextlib.suppress(pyvisa.Error):
                 self.backend.clear()
         except BaseException as e:
-            self._console.warning('unhandled close error: ' + str(e))
+            e = str(e)
+            if len(e.strip()) > 0:
+                # some emulated backends raise empty errors
+                self._console.warning('unhandled close error: ' + e)
         finally:
             self.backend.close()
 
@@ -1084,8 +1087,33 @@ class VISADevice(Device):
         self._console.debug(f'      -> {msg_out}')
         return ret
 
-    def query_ascii_values(self, message: str, type, separator=',', container=list, delay=None):
-        return self.backend.query_ascii_values(message, type, separator, container, delay)
+    def query_ascii_values(self, msg: str, type_, separator=',', container=list, delay=None, timeout=None):
+        # pre debug
+        if timeout is not None:
+            _to, self.backend.timeout = self.backend.timeout, timeout
+        msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
+        self._console.debug(f'query_ascii_values {msg_out}')
+
+        try:
+            ret = self.backend.query_ascii_values(msg, type_, separator, container, delay)
+        finally:
+            if timeout is not None:
+                self.backend.timeout = _to
+
+        # post debug
+        if len(ret) < 80 and len(repr(ret)) < 80:
+            logmsg = repr(ret)
+        elif hasattr(ret, 'shape'):
+            print(ret,ret.shape)
+            logmsg = f'({type(ret).__qualname__} with shape {ret.shape})'
+        elif hasattr(ret, '__len__'):
+            logmsg = f'({type(ret).__qualname__} with length {len(ret)})'
+        else:
+            logmsg = f'(iterable sequence of type {type(ret)})'
+
+        self._console.debug(f'      -> {logmsg}')
+
+        return ret
 
     def get_key(self, scpi_key, name=None):
         """ Send an SCPI command to get a property trait value from the

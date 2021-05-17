@@ -128,9 +128,6 @@ class SerialDevice(Device):
     xonxoff: Any = ...
     rtscts: Any = ...
     dsrdtr: Any = ...
-
-    def __imports__(self) -> None:
-        ...
     backend: Any = ...
 
     def open(self) -> None:
@@ -254,6 +251,16 @@ class VISADevice(Device):
     def query(self, msg: Any, timeout: Any=...) -> str:
         ...
 
+    def query_ascii_values(
+        self,
+        message: str,
+        type: Any,
+        separator: Any=...,
+        container: Any=...,
+        delay: Any=...
+    ) -> Any:
+        ...
+
     def get_key(self, scpi_key: Any, name: Optional[Any]=...):
         ...
 
@@ -271,19 +278,37 @@ class VISADevice(Device):
 
 
     class suppress_timeout(contextlib.suppress):
+        EXC: Any = ...
+        CODE: Any = ...
 
         def __exit__(self, exctype: Any, excinst: Any, exctb: Any):
             ...
 
 
+class SimulatedVISADevice(VISADevice):
+
+    def __init__(
+        self,
+        resource: str='str',
+        read_termination: str='str',
+        write_termination: str='str'
+    ):
+        ...
+    yaml_source: Any = ...
+
+    @classmethod
+    def __imports__(cls) -> None:
+        ...
+
+
 class Win32ComDevice(Device):
 
-    def __init__(self, resource: str='str', concurrency: str='bool', com_object: str='str'):
+    def __init__(self, resource: str='str', com_object: str='str'):
         ...
     com_object: Any = ...
-    concurrency: Any = ...
 
-    def __imports__(self) -> None:
+    @classmethod
+    def __imports__(cls) -> None:
         ...
     backend: Any = ...
 

@@ -9,19 +9,19 @@ class EmulatedVISADevice(lb.Device):
     write_termination = lb.value.str('\n', help='end-of-transmit termination character')
 
     # States
-    @lb.property.str(key='*IDN', settable=False, cache=True)
+    @lb.property.str(key='*IDN', sets=False, cache=True)
     def identity(self):
         """ identity string reported by the instrument """
         return self.__class__.__qualname__
 
-    @lb.property.str(key='*OPT', settable=False, cache=True)
+    @lb.property.str(key='*OPT', sets=False, cache=True)
     def options(self):
         """ options reported by the instrument """
 
         param_strs = (f"{s}={getattr(self,s)}" for s in self._value_attrs)
         return ','.join(param_strs)
 
-    @lb.property.dict(key='*STB', settable=False)
+    @lb.property.dict(key='*STB', sets=False)
     def status_byte(self):
         """ VISA status byte reported by the instrument """
         return {'error queue not empty': False,

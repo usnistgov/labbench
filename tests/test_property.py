@@ -163,7 +163,7 @@ class MockDecoratedProperty(MockBase):
         self.add_get_count('str1')
         return self.remote_values['str1']
 
-    @lb.property.str(key='str2', settable=False)
+    @lb.property.str(key='str2', sets=False)
     def str2(self, value):
         self.remote_values['str2'] = value
 
@@ -198,7 +198,7 @@ class MockKeyedProperty(MockBase):
     bool0 = lb.property.bool(key='bool0', remap=REMAP['bool0'])
     str0 = lb.property.str(key='str0', cache=True)
     str1 = lb.property.str(key='str1', cache=True, remap={'python value': 'device value'})
-    str2 = lb.property.str(key='str2', settable=False)
+    str2 = lb.property.str(key='str2', sets=False)
 
     def get_key(self, key, name=None):
         print('get ', name, key)
@@ -232,7 +232,7 @@ class TestProperty:
                 msg = f'property "{trait_name}"'
                 trait = m._traits[trait_name]
 
-                if not (trait.settable and trait.gets):
+                if not (trait.sets and trait.gets):
                     # this test is only for traits that support both set and get
                     continue
 
@@ -260,7 +260,7 @@ class TestProperty:
                 trait = m._traits[trait_name]
                 msg = f'property "{trait_name}"'
 
-                if not trait.settable:
+                if not trait.sets:
                     with self.assertRaises(AttributeError, msg=msg):
                         setattr(m, trait_name, new_value)
 

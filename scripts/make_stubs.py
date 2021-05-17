@@ -103,7 +103,7 @@ def update_stubs(path, mod_name, sub_name):
         cls = getattr(namespace, cls_def.name)
 
         if issubclass(cls, Device):
-            traits = {name: cls._traits[name] for name in cls._value_attrs if cls._traits[name].settable}
+            traits = {name: cls._traits[name] for name in cls._value_attrs if cls._traits[name].sets}
 
             args = ['self']+list(traits.keys())
             defaults = [nameit(trait.default) for trait in traits.values()]

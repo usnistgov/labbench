@@ -1047,7 +1047,7 @@ class RackMeta(type):
 
     def _serialize_devices(cls):
         defaults = {
-            dev_name: {k:getattr(dev, k) for k in dev._value_attrs if dev._traits[k].settable}
+            dev_name: {k:getattr(dev, k) for k in dev._value_attrs if dev._traits[k].sets}
             for dev_name, dev in cls._devices.items()
         }
 

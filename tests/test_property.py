@@ -232,7 +232,7 @@ class TestProperty:
                 msg = f'property "{trait_name}"'
                 trait = m._traits[trait_name]
 
-                if not (trait.settable and trait.gettable):
+                if not (trait.settable and trait.gets):
                     # this test is only for traits that support both set and get
                     continue
 

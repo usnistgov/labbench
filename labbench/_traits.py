@@ -78,20 +78,18 @@ class HasTraitsMeta(type):
 
 
 class Trait:
-    """ This type of Trait is a swiss army knife object for typing checking,
-        casting, decorators, and callbacks in Device classes. Together, these
-        help reduce code errors that result from "copy and paste" boilerplate,
-        and help to clarify the intent of the code.
+    """ implement typing checking, casting, decorators, and callback
+        features in Device classes. These help reduce code errors that
+        result from "copy and paste" boilerplate, and help to clarify
+        the intent of the code.
 
         A Device instance supports two types of Traits:
 
-        * A _value trait_ just performs type checking and notifies callback functions
-          for locally-cached variables.
+        * A _value trait_ acts as an attribute variable in instantiated
+          classes
 
-        * A _property trait_ triggers set and get operations that are implemented by the
-          owning class. Implement the get and set operations in the owning class;
-          hook them to this trait by decorating with this trait, or through
-          get_key and set_key in the owning class.
+        * A _property trait_ exposes set and get operations for a
+          parameter in the API wrapped by the owning Device class.
 
         The trait behavior is determined by whether its owner is a Device or HasSettings
         instance.
@@ -104,9 +102,9 @@ class Trait:
 
         :param label: a label for the quantity, such as units
 
-        :param settable: True if the trait supports writes
+        :param sets: True if the trait supports writes
 
-        :param gettable: True if the trait supports reads
+        :param gets: True if the trait supports reads
 
         :param cache: if True, interact with the device only once, then return copies (state traits only)
 
@@ -134,8 +132,8 @@ class Trait:
     # role: str = ROLE_UNSET
     help: str = ''
     label: str = ''
-    settable: bool = True
-    gettable: bool = True
+    sets: bool = True
+    gets: bool = True
     cache: bool = False
     only: tuple = tuple()
     allow_none: bool = False
@@ -182,7 +180,7 @@ class Trait:
         elif self.role == self.ROLE_PROPERTY:
             invalid_args = ('default', 'func')
         elif self.role == self.ROLE_DATARETURN:
-            invalid_args = 'default', 'key', 'settable', 'gettable'
+            invalid_args = 'default', 'key', 'sets', 'gets'
         else:
             clsname = self.__class__.__qualname__
             raise ValueError(f"{clsname}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}, not {repr(self.role)}")
@@ -194,9 +192,15 @@ class Trait:
         if self.role == self.ROLE_VALUE and kws['default'] is Undefined:
             # always go with None when this value is allowed, fallback to self.default
             kws['default'] = self.type()
-        if self.role == self.ROLE_DATARETURN and kws['func'] is not None:
-            # apply a decorator
-            self(kws['func'])
+
+        if self.role == self.ROLE_DATARETURN:
+            if kws['func'] is not None:
+                # apply a decorator
+                self(kws['func'])
+
+        if self.role in (self.ROLE_DATARETURN, self.ROLE_PROPERTY):
+            # default Undefined so that cache will fill them in
+            self.default = Undefined
 
         # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
         if len(kws['remap']) > 0:
@@ -361,8 +365,8 @@ class Trait:
     @util.hide_in_traceback
     def __set__(self, owner, value):
         # First, validate the pythonic types
-        if not self.settable:
-            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not settable")
+        if not self.sets:
+            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not sets")
 
         # Validate the pythonic value
         if value is not None:
@@ -444,9 +448,9 @@ class Trait:
 
             return method
 
-        elif not self.gettable:
-            # stop now if this is not a gettable Trait
-            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not gettable")
+        elif not self.gets:
+            # stop now if this is not a gets Trait
+            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not gets")
 
         elif self.role == self.ROLE_VALUE:
             return owner.__get_value__(self.name)
@@ -1136,7 +1140,7 @@ class BoundedNumber(Trait):
         ttype = type(name, (mixin, type(self)), dict(_other=self))
 
         return ttype(help=help, label=self.label,
-                     settable=self.settable, gettable=self.gettable,
+                     sets=self.sets, gets=self.gets,
                      allow_none=allow_none, **params)
 
     def transform(self, forward, reverse, help='',
@@ -1155,7 +1159,7 @@ class BoundedNumber(Trait):
         ttype = type(name, (TransformMixIn, type(self)), dict(_other=self))
 
         return ttype(help=help, label=self.label,
-                     settable=self.settable, gettable=self.gettable,
+                     sets=self.sets, gets=self.gets,
                      allow_none=allow_none, _forward=forward,
                      _reverse=reverse)
 
@@ -1328,7 +1332,7 @@ class List(Iterable, type=list):
 
 class Tuple(Iterable, type=tuple):
     """ accepts any type of iterable value accepted by python `tuple()` """
-    settable: bool = False
+    sets: bool = False
 
 
 class Path(Trait, type=Path):

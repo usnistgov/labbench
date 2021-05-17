@@ -37,6 +37,9 @@ import contextlib
 import inspect
 import os
 import psutil
+import serial
+import pyvisa
+import pyvisa.constants
 from queue import Queue, Empty
 import re
 import socket
@@ -90,7 +93,7 @@ class ShellBackend(Device):
     #
     # arguments_min = value.int(
     #     default=0, min=0,
-    #     settable=False, help='minimum extra command line arguments needed to run'
+    #     sets=False, help='minimum extra command line arguments needed to run'
     # )
 
     @classmethod
@@ -673,10 +676,6 @@ class SerialDevice(Device):
     rtscts = value.bool(False, help='`True` to enable hardware (RTS/CTS) flow control.')
     dsrdtr = value.bool(False, help='`True` to enable hardware (DSR/DTR) flow control.')
 
-    def __imports__(self):
-        global serial
-        import serial
-
     # Overload methods as needed to implement the Device object protocol
     def open(self):
         """ Connect to the serial device with the VISA resource string defined
@@ -903,7 +902,7 @@ class VISADevice(Device):
         VISADevice instances control VISA instruments using a
         pyvisa backend. Compared to direct use of pyvisa, this
         style of use permits use of labbench device `state`
-        goodies for compact, gettable code, as well as type checking.
+        goodies for compact, gets code, as well as type checking.
 
         For example, the following fetches the
         identity string from the remote instrument::
@@ -928,16 +927,16 @@ class VISADevice(Device):
 
     # States
     identity = property_.str(
-        key='*IDN', settable=False, cache=True,
+        key='*IDN', sets=False, cache=True,
         help='identity string reported by the instrument'
     )
 
     options = property_.str(
-        key='*OPT', settable=False, cache=True,
+        key='*OPT', sets=False, cache=True,
         help='options reported by the instrument'
     )
 
-    @property_.dict(settable=False)
+    @property_.dict(sets=False)
     def status_byte(self):
         """ VISA status byte reported by the instrument """
         code = int(self.query('*STB?'))
@@ -954,14 +953,11 @@ class VISADevice(Device):
 
     @classmethod
     def __imports__(cls):
-        global pyvisa
-        import pyvisa
-        import pyvisa.constants
         if cls._rm is None:
-            cls.set_backend('@ni')
+            cls.set_backend('@ivi')
 
-    def __release_remote_control(self):
-        # Found this in a mixture of R&S documentation and goofle-fu on pyvisa
+    def _release_remote_control(self):
+        # From instrument and pyvisa docs
         self.backend.visalib.viGpibControlREN(self.backend.session,
                                               pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL)
 
@@ -988,15 +984,13 @@ class VISADevice(Device):
             of the `with` block, or if there is any exception.
         """
 
-        # The resource manager is "global" at the class level here
-        if VISADevice._rm is None:
-            VISADevice.set_backend('@ni')
-
         self.__opc = False
 
-        self.backend = VISADevice._rm.open_resource(self.resource,
-                                                    read_termination=self.read_termination,
-                                                    write_termination=self.write_termination)
+        self.backend = self._rm.open_resource(
+            self.resource,
+            read_termination=self.read_termination,
+            write_termination=self.write_termination
+        )
 
     def close(self):
         """ Disconnect the VISA instrument. If you use a `with` block
@@ -1005,9 +999,12 @@ class VISADevice(Device):
 
             :returns: None
         """
+        if not self.isopen or self.backend is None:
+            return
+
         try:
             with contextlib.suppress(pyvisa.errors.VisaIOError):
-                self.__release_remote_control()
+                self._release_remote_control()
             with contextlib.suppress(pyvisa.Error):
                 self.backend.clear()
         except BaseException as e:
@@ -1022,12 +1019,24 @@ class VISADevice(Device):
             :param backend_name str: '@ni' (the default) or '@py'
             :returns: None
         """
+
+        if backend_name in ('@ivi','@ni'):
+            is_ivi = True
+            # compatibility layer for changes in pyvisa 1.12
+            if 'ivi' in pyvisa.highlevel.list_backends():
+                backend_name = '@ivi'
+            else:
+                backend_name = '@ni'
+        else:
+            is_ivi = False
+
         try:
             cls._rm = pyvisa.ResourceManager(backend_name)
         except OSError as e:
-            msg = 'could not connect to NI VISA resource manager. to install, '\
-                  'see e.g. http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe'
-            e.args = e.args + (msg,)
+            if is_ivi:
+                url = r'https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa'
+                msg = f'could not connect to NI VISA resource manager - see {url}'
+                e.args = e.args + (msg,)
             raise e
 
     @classmethod
@@ -1075,6 +1084,9 @@ class VISADevice(Device):
         self._console.debug(f'      -> {msg_out}')
         return ret
 
+    def query_ascii_values(self, message: str, type, separator=',', container=list, delay=None):
+        return self.backend.query_ascii_values(message, type, separator, container, delay)
+
     def get_key(self, scpi_key, name=None):
         """ Send an SCPI command to get a property trait value from the
             device. This function
@@ -1085,6 +1097,12 @@ class VISADevice(Device):
             :param str key: The SCPI command to send
             :param trait: The trait property trait corresponding with the command (ignored)
         """
+        if name is not None:
+            trait = self._traits[name]
+
+            if not all(isinstance(v,str) for v in trait.remap.values()):
+                raise TypeError('VISADevice requires remap values to have type str')
+
         return self.query(scpi_key + '?').rstrip()
 
     def set_key(self, scpi_key, value, name=None):
@@ -1148,28 +1166,48 @@ class VISADevice(Device):
 
         """
 
+        EXC = pyvisa.errors.VisaIOError
+        CODE = pyvisa.errors.StatusCode.error_timeout
+
         def __exit__(self, exctype, excinst, exctb):
-            return exctype == pyvisa.errors.VisaIOError \
-                   and excinst.error_code == pyvisa.errors.StatusCode.error_timeout
+            return exctype == self.EXC and excinst.error_code == self.CODE
 
 
-class Win32ComDevice(Device):
+class SimulatedVISADevice(VISADevice):
+    """ wrap the pyvisa-sim resource manager (resource '@sim')
+        for emulated instruments for the purposes of software testing
+        and demo 
+    """
+
+    # can only set this when the class is defined
+    yaml_source = value.Path('', sets=False, exists=True)
+
+    @classmethod
+    def __imports__(cls):
+        cls.set_backend(f'{cls.yaml_source.default}@sim')
+
+    def _release_remote_control(self):
+        pass
+
+
+class Win32ComDevice(Device, concurrency=True):
     """ Basic support for calling win32 COM APIs.
 
-        The python wrappers for COM drivers still basically require that
-        threading is performed using the windows COM API, and not the python
-        threading. Figuring this out with win32com calls within python is
-        not for the faint of heart. Threading support is instead realized
-        with util.ThreadSandbox, which ensures that all calls to the dispatched
-        COM object block until the previous calls are completed from within
-        a background thread. Set concurrency=True to decide whether
+        a dedicated background thread. Set concurrency=True to decide whether
         this thread support wrapper is applied to the dispatched Win32Com object.
     """
 
-    com_object = value.str(default='', help='the win32com object string')  # Must be a module
-    concurrency = value.bool(default=True, help='whether this implementation supports threading')
+    # The python wrappers for COM drivers still basically require that
+    # threading is performed using the windows COM API. Compatibility with
+    # the python GIL is not for the faint of heart. Threading support is
+    # instead realized with util.ThreadSandbox, which ensures that all calls
+    # to the dispatched COM object block until the previous calls are completed
+    # from within.
 
-    def __imports__(self):
+    com_object = value.str(default='', help='the win32com object string')  # Must be a module
+
+    @classmethod
+    def __imports__(cls):
         global win32com
         import win32com
         import win32com.client

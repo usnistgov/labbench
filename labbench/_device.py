@@ -165,54 +165,53 @@ def __init__():
 
 
 class Device(HasTraits, util.Ownable):
-    r"""`Device` is the base class common to all labbench
-        drivers. Inherit it to implement a backend, or a specialized type of
-        driver.
+    r"""Base class for labbench driver wrappers in labbench. Subclass to
+        implement driver APIs. """
 
-        Drivers that subclass `Device` get
+    #     Drivers that subclass `Device` get
 
-        * device connection management via context management (the `with` statement)
-        * test property trait management for easy test logging and extension to UI
-        * a degree automatic stylistic consistency between drivers
+    #     * device connection management via context management (the `with` statement)
+    #     * test property trait management for easy test logging and extension to UI
+    #     * a degree automatic stylistic consistency between drivers
 
-        .. note::
-            This `Device` base class is a boilerplate object. It has convenience
-            functions for device control, but no implementation.
+    #     .. note::
+    #         This `Device` base class is a boilerplate object. It has convenience
+    #         functions for device control, but no implementation.
 
-            Implementation of protocols with general support for broad classes
-            of devices are provided by other labbench Device subclasses:
+    #         Implementation of protocols with general support for broad classes
+    #         of devices are provided by other labbench Device subclasses:
 
-                * VISADevice exposes a pyvisa backend for VISA Instruments
-                * ShellBackend exposes a threaded pipes backend for command line tools
-                * Serial exposes a pyserial backend for serial port communication
-                * DotNetDevice exposes a pythonnet for wrapping dotnet libraries
+    #             * VISADevice exposes a pyvisa backend for VISA Instruments
+    #             * ShellBackend exposes a threaded pipes backend for command line tools
+    #             * Serial exposes a pyserial backend for serial port communication
+    #             * DotNetDevice exposes a pythonnet for wrapping dotnet libraries
 
-            (and others). If you are implementing a driver that uses one of
-            these backends, inherit from the corresponding class above, not
-            `Device`.
+    #         (and others). If you are implementing a driver that uses one of
+    #         these backends, inherit from the corresponding class above, not
+    #         `Device`.
 
 
-        Value attributes
-        ************************
-    """
+    #     Value attributes
+    #     ************************
+    # """
 
-    """ Value traits.
+    # """ Value traits.
 
-        These are stored only within this class - accessing these traits in
-        a Device instance do not trigger interaction with the device. These
-        define connection addressing information, communication value traits,
-        and options that only apply to implementing python support for the
-        device.
+    #     These are stored only within this class - accessing these traits in
+    #     a Device instance do not trigger interaction with the device. These
+    #     define connection addressing information, communication value traits,
+    #     and options that only apply to implementing python support for the
+    #     device.
 
-        The device uses this container to define the keyword options supported
-        by its __init__ function. These are applied when you instantiate the device.
-        After you instantiate the device, you can still change the value trait with::
+    #     The device uses this container to define the keyword options supported
+    #     by its __init__ function. These are applied when you instantiate the device.
+    #     After you instantiate the device, you can still change the value trait with::
 
-            Device.resource = 'insert-your-address-string-here'
-    """
+    #         Device.resource = 'insert-your-address-string-here'
+    # """
 
     resource = value.str(allow_none=True, help='device address or URI')
-    concurrency= value.bool(True, settable=False, help='True if the device supports threading')
+    concurrency= value.bool(True, sets=False, help='True if the device supports threading')
 
     """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
@@ -252,8 +251,8 @@ class Device(HasTraits, util.Ownable):
     @classmethod
     @util.hide_in_traceback
     def __init_subclass__(cls, **value_defaults):
-        # defaults = {k: v.default for k,v in value_traits.items() if v.gettable}
-        # types = {k: v.type for k, v in value_traits.items() if v.gettable}
+        # defaults = {k: v.default for k,v in value_traits.items() if v.gets}
+        # types = {k: v.type for k, v in value_traits.items() if v.gets}
 
         # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
 
@@ -280,8 +279,8 @@ class Device(HasTraits, util.Ownable):
             super().__init_subclass__()
 
         # TODO: @autocomplete_init seems to make this unecessary - validate
-        # defaults = {k: v.default for k, v in settings.items() if v.gettable}
-        # types = {k: v.type for k, v in settings.items() if v.gettable}
+        # defaults = {k: v.default for k, v in settings.items() if v.gets}
+        # types = {k: v.type for k, v in settings.items() if v.gets}
         # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
         # Update __doc__ with value traits
         
@@ -372,8 +371,12 @@ class Device(HasTraits, util.Ownable):
 
         self.backend = None
 
-        for opener in trace_methods(self.__class__, 'open', Device)[::-1]:
-            opener(self)
+        try:
+            for opener in trace_methods(self.__class__, 'open', Device)[::-1]:
+                opener(self)
+        except:
+            self.backend = DisconnectedBackend(self)
+            raise
 
         self._console.debug(f"opened")
 

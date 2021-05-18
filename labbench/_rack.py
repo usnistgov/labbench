@@ -1118,14 +1118,14 @@ class RackMeta(type):
                 if annots.setdefault(k, p.annotation) is EMPTY:
                     annots[k] = p.annotation
                 elif EMPTY not in (p.annotation, annots[k]) and p.annotation != annots[k]:
-                    raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {cls.__qualname__} methods")
+                    raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {rack_cls.__qualname__} methods")
                 if not inspect.isclass(annots[k]):
                     raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{rack_cls.__qualname__}' is not a class")
 
                 if defaults.setdefault(k, p.default) is EMPTY:
                     defaults[k] = p.default
                 elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
-                    raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {cls.__qualname__} methods")
+                    raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {rack_cls.__qualname__} methods")
 
             for k in defaults:
                 if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
@@ -1284,6 +1284,3 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __iter__(self):
         return (getattr(self, k) for k in self._methods)
-
-CONFIG_FILENAME = f'rack.yaml'
-from importlib import import_module

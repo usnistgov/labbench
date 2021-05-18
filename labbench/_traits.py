@@ -50,8 +50,8 @@ import pandas as pd
 
 Undefined = type(None)
 
-
-class ThisType(typing.Generic[typing.T]):
+T = typing.TypeVar('T')      
+class ThisType(typing.Generic[T]):
     pass
 
 
@@ -470,7 +470,7 @@ class Trait:
                 # otherwise, 'get'
                 objname = owner.__class__.__qualname__
                 ownername = self.__repr__(owner_inst=owner)
-                raise AttributeError(f"to set the property {name}, decorate a method in {objname} or use the function key argument")
+                raise AttributeError(f"to set the property {self.name}, decorate a method in {objname} or use the function key argument")
             value = owner.get_key(self.key, self.name)
 
         # apply remapping as appropriate for the trait

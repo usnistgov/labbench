@@ -502,15 +502,14 @@ class DotNetDevice(Device):
     _dlls = {}
 
     def open(self):
-        """ dynamically import a .net CLR as a python module
+        """ dynamically import a .net CLR as a python module at self.dll
         """
         library = type(self).library.default
         dll_name = type(self).dll_name.default
-
         dll_path = Path(library.__path__[0])/dll_name
 
         try:
-            # static code editors really don't like this, since it's created dynamically 
+            # static linters really don't like this, since it's created dynamically 
             import clr
         except ImportError:
             raise ImportError('pythonnet module is required to use dotnet drivers')
@@ -518,22 +517,16 @@ class DotNetDevice(Device):
         # base dotnet libraries needed to identify what we're working with
         clr.setPreload(False)
         clr.AddReference('System.Reflection')
+
+        # more frustration for static linters
         from System.Reflection import Assembly
         import System
 
-        # if hasattr(self.library, '__loader__'):
-        #     """ If the python module is packaged as a .egg file,
-        #         then use some introspection and the module's
-        #         __loader__ to load the contents of the dll
-        #     """
-        #     #            relpath = module.__name__.replace('.', os.path.sep)
-        #     self.dll_name = os.path.join(
-        #         self.library.__path__[0], self.dll_name)
-        #     contents = self.library.__loader__.getdata(self.dll_name)
-        # else:
-        #     path = os.path.join(self.library.__path__[0], self.dll_name)
-        #     with open(path, 'rb') as f:
-        #         contents = f.read()
+        try:
+            contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))
+        except:
+            with open(dll_path, 'rb') as f:
+                contents = f.read()
 
         # binary file contents
         contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))

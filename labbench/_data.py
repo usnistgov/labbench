@@ -715,7 +715,7 @@ class Aggregator(util.Ownable):
 
                 f = f.f_back
             else:
-                raise Exception(f"failed to automatically label {repr(obj)}")
+                raise Exception(f"failed to automatically label {repr(target)}")
         finally:
             del f, frame
 

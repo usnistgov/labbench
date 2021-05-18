@@ -27,6 +27,10 @@
 from . import _traits
 
 
+class any(_traits.Any):
+    pass
+
+
 class bool(_traits.Bool):
     pass
 

@@ -114,11 +114,13 @@ class Email(core.Device):
 
     success_message = value.str(
         default='Test finished normally',
+        allow_none=True,
         help='subject line for test success emails (None to suppress the emails)'
     )
 
     failure_message = value.str(
         default='Exception ended test early',
+        allow_none=True,
         help='subject line for test failure emails (None to suppress the emails)'
     )
 

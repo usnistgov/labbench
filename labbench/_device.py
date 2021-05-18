@@ -266,6 +266,7 @@ class Device(HasTraits, util.Ownable):
         cls.__doc__ += '\n\n' + txt
 
         for trait_name, new_default in value_defaults.items():
+            
             trait = getattr(cls, trait_name, None)
 
             if trait is None or trait.role != Trait.ROLE_VALUE:
@@ -295,6 +296,8 @@ class Device(HasTraits, util.Ownable):
             cls.__init__.__doc__ = ''
 
         cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
+
+        cls.__imports__()
 
     @property
     def _instname(self):
@@ -332,8 +335,6 @@ class Device(HasTraits, util.Ownable):
         for name, init_value in values.items():
             if init_value != self._traits[name].default:
                 setattr(self, name, init_value)
-
-        self.__imports__()
 
         self.backend = DisconnectedBackend(self)
 
@@ -425,7 +426,9 @@ class Device(HasTraits, util.Ownable):
 
         self._console.debug('closed')
 
-    def __imports__(self):
+    
+    @classmethod
+    def __imports__(cls):
         pass
 
     @util.hide_in_traceback

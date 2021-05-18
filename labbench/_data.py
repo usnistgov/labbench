@@ -751,7 +751,7 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
     index_label = 'id'
 
     def __init__(self,
-                 path,
+                 path=None,
                  *,
                  append=False,
                  text_relational_min=1024,
@@ -979,6 +979,9 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
 
             :return: None
         """
+
+        if self.path is None:
+            raise TypeError(f"cannot open dB while path is None")
 
         self.observe(self.munge, never=self.munge._traits)
         self.observe(self.host, always=['time','log'])

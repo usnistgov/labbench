@@ -159,7 +159,7 @@ class Method(util.Ownable):
             accessed = {
                 getattr(self._owner, name)
                 for name in util.accessed_attributes(self._wrapped)
-                if not name.startswith('_')
+                if not name.startswith('_') and hasattr(self._owner, name)
             }
 
             self.dependencies = available.intersection(accessed)
@@ -575,10 +575,38 @@ class Owner:
 
         propagate_instnames(cls, cls.__name__)
 
-    def __init__(self, **devices):
+    def __init__(self, **update_ownables):
         self._owners = dict(self._owners)
-        self._ownables = dict(self._ownables)
-        self._devices = dict(self._devices, **devices)
+
+        # are the given objects ownable        
+        unownable = {
+            name: obj
+            for name, obj in update_ownables.items()
+            if not isinstance(obj, util.Ownable)
+        }
+        if len(unownable) > 0:
+            raise TypeError(f"keyword arguments {unownable} are not ownable objects")            
+
+        # update ownables
+        unrecognized = set(update_ownables.keys()).difference(self._ownables.keys())
+        if len(unrecognized) > 0:
+            clsname = type(self).__qualname__
+            unrecognized = tuple(unrecognized)
+            raise TypeError(f"cannot update unrecognized attributes {unrecognized} of {clsname}")
+        self._ownables = dict(self._ownables, **update_ownables)
+
+        # update devices
+        update_devices = {
+            name: obj
+            for name, obj in update_ownables.items()
+            if isinstance(obj, core.Device)
+        }
+        unrecognized = set(update_devices.keys()).difference(self._devices.keys())
+        if len(unrecognized) > 0:
+            clsname = type(self).__qualname__
+            unrecognized = tuple(unrecognized)
+            raise TypeError(f"{clsname} Device attributes {unrecognized} can only be instantiated with Device objects")
+        self._devices = dict(self._devices, **update_devices)
 
         super().__init__()
 
@@ -828,6 +856,13 @@ class Sequence(util.Ownable):
         return signatures
 
 
+def _note_before(cm, key, text, indent=0):
+    cm.yaml_set_comment_before_after_key(key, before=text, indent=indent)
+
+def _note_eol(cm, key, text):
+    cm.yaml_add_eol_comment(comment=text, key=key)
+
+
 class RackMeta(type):
     CONFIG_FILENAME = f'rack.yaml'
 
@@ -885,7 +920,7 @@ class RackMeta(type):
             new_cls.__module__ = rack_cls.__module__
 
             metacls._apply_device_values(new_cls, config['devices'])
-            metacls._apply_sequence_defaults(new_cls, config['method_defaults'])
+            metacls._apply_sequence_defaults(new_cls, config['sequence_kwdefaults'])
 
             rack_cls._propagate_ownership()
             rack_cls = new_cls
@@ -928,9 +963,9 @@ class RackMeta(type):
                 continue
 
             if k not in methods:
-                raise KeyError(f"method_defaults configuration key '{k}' is not a parameter in any method of '{rack_cls.__qualname__}'")
+                raise KeyError(f"sequence_kwdefaults configuration key '{k}' is not a parameter in any method of '{rack_cls.__qualname__}'")
             elif annots[k] is not EMPTY and not isinstance(v, annots[k]):
-                raise TypeError(f"the method_defaults configuration at key '{k}' with value '{v}' conflicts "
+                raise TypeError(f"the sequence_kwdefaults configuration at key '{k}' with value '{v}' conflicts "
                                 f"with type annotation '{annots[k]}'")
 
             # update the call signature
@@ -970,7 +1005,7 @@ class RackMeta(type):
                     name=cls.__name__,
                     module=cls.__module__
                 ),
-                method_defaults=metacls._serialize_sequence_parameters(cls),
+                sequence_kwdefaults=metacls._serialize_sequence_parameters(cls),
                 devices=metacls._serialize_devices(cls),
             )
 
@@ -997,7 +1032,7 @@ class RackMeta(type):
 
         for name, attr in cls.__dict__.items():
             if isinstance(attr, Sequence):
-                metacls.to_sequence_table(attr, path, with_defaults=with_defaults)
+                metacls.to_sequence_table(cls, name, path, with_defaults=with_defaults)
 
     def to_sequence_table(cls, name, path, with_defaults=False):
         # TODO: configure whether/which defaults are included as columns
@@ -1009,7 +1044,7 @@ class RackMeta(type):
 
         sigs = [
             name
-            for name,(default,annot) in seq._collect_signatures().items()
+            for name,(default,annot) in seq._collect_signatures(seq.spec).items()
             if with_defaults or default is EMPTY
         ]
 
@@ -1029,19 +1064,23 @@ class RackMeta(type):
         })
 
         keys = list(cm.keys())
-        for i,k in enumerate(keys):
+
+        # find the last key for a non-default entry, which we'll need to comment out lines before the last one
+        for k in keys[::-1]:
+            if defaults[k] is not EMPTY:
+                last_default_key = k
+                break
+        else:
+            raise ValueError(f"currently require a default keyword from least 1 parameter (TODO: fix this)")
+
+        for i,k in enumerate(keys[::-1]):
             if defaults[k] is EMPTY:
-                d = {k: None}
-
-                if i < len(keys)-1:
-                    note_key = keys[i+1]
-                else:
-                    note_key = list(cm.keys())[-2]
-
-                _note_before(cm, note_key, f'{round_trip_dump(d)}', 4)
+                _note_before(cm, last_default_key, round_trip_dump({k: None}))
                 del cm[k]
-            elif annots[k] is not EMPTY:
-                _note_eol(cm, k, f'{annots[k].__name__}')
+            else:
+                last_default_key = k
+                if annots[k] is not EMPTY:
+                    _note_eol(cm, k, f'{annots[k].__name__}')
 
         return cm
 
@@ -1245,13 +1284,6 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __iter__(self):
         return (getattr(self, k) for k in self._methods)
-
-def _note_before(cm, key, text, indent=0):
-    cm.yaml_set_comment_before_after_key(key, before=text, indent=indent)
-
-def _note_eol(cm, key, text):
-    cm.yaml_add_eol_comment(comment=text, key=key)
-
 
 CONFIG_FILENAME = f'rack.yaml'
 from importlib import import_module

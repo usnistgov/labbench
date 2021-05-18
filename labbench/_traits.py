@@ -1382,7 +1382,7 @@ class NetworkAddress(Unicode):
             if not self.accept_port:
                 raise ValueError(f'{self} does not accept a port number (accept_port=False)')
 
-        for validate in _val.ipv4, _val.ipv6, _val.domain:
+        for validate in _val.ipv4, _val.ipv6, _val.domain, _val.slug:
             if validate(host):
                 break
         else:

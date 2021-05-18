@@ -474,6 +474,8 @@ class ShellBackend(Device):
         except psutil.NoSuchProcess:
             pass
 
+import importlib
+from pathlib import Path
 
 class DotNetDevice(Device):
     """ This Device backend represents a wrapper around a .NET library. It is implemented
@@ -492,70 +494,55 @@ class DotNetDevice(Device):
         * `backend` may be set by a subclass `open` method (otherwise it is left as None)
 
     """
-    library = None  # Must be a module
-    dll_name = None
+
+    # these can only be set as arguments to a subclass definition
+    library = value.any(None, allow_none=True, sets=False)  # Must be a module
+    dll_name = value.str(None, allow_none=True, sets=False)
+
     _dlls = {}
 
-    def __imports__(self):
-        """ DotNetDevice loads the DLL; importing in the
-            class definition tries to load a lot of DLLs
-            on import
-            of ssmdevices, which would 1) break platforms
-            that do not support the DLL, and 2) waste
-            memory, and 3)
+    def open(self):
+        """ dynamically import a .net CLR as a python module
         """
+        library = type(self).library.default
+        dll_name = type(self).dll_name.default
 
-        if hasattr(self.__class__, '__dll__') and not hasattr(self, 'dll'):
-            self.dll = self.__class__.__dll__
-            return
+        dll_path = Path(library.__path__[0])/dll_name
 
-        if self.dll_name is None:
-            raise Exception('Need file name of a dll binary')
-        if self.library is None:
-            raise Exception(
-                'Need the python module that shares the library path')
         try:
-            # static code editors really don't like this, since seems to be created dynamically 
+            # static code editors really don't like this, since it's created dynamically 
             import clr
-        except ImportError as err:
-            if str(err) == 'No module named clr':
-                warnings.warn(
-                    'could not import pythonnet support via clr module; no support for .NET drivers')
-                return None
-            else:
-                raise err
+        except ImportError:
+            raise ImportError('pythonnet module is required to use dotnet drivers')
 
-        import os
+        # base dotnet libraries needed to identify what we're working with
         clr.setPreload(False)
-        # CPython and .NET libraries: Are they friends?
         clr.AddReference('System.Reflection')
         from System.Reflection import Assembly
         import System
 
-        #        if libname is None:
-        libname = os.path.splitext(os.path.basename(self.dll_name))[0]
+        # if hasattr(self.library, '__loader__'):
+        #     """ If the python module is packaged as a .egg file,
+        #         then use some introspection and the module's
+        #         __loader__ to load the contents of the dll
+        #     """
+        #     #            relpath = module.__name__.replace('.', os.path.sep)
+        #     self.dll_name = os.path.join(
+        #         self.library.__path__[0], self.dll_name)
+        #     contents = self.library.__loader__.getdata(self.dll_name)
+        # else:
+        #     path = os.path.join(self.library.__path__[0], self.dll_name)
+        #     with open(path, 'rb') as f:
+        #         contents = f.read()
 
-        if hasattr(self.library, '__loader__'):
-            """ If the python module is packaged as a .egg file,
-                then use some introspection and the module's
-                __loader__ to load the contents of the dll
-            """
-            #            relpath = module.__name__.replace('.', os.path.sep)
-            self.dll_name = os.path.join(
-                self.library.__path__[0], self.dll_name)
-            contents = self.library.__loader__.getdata(self.dll_name)
-        else:
-            path = os.path.join(self.library.__path__[0], self.dll_name)
-            with open(path, 'rb') as f:
-                contents = f.read()
+        # binary file contents
+        contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))
 
-        name = System.Array[System.Byte](contents)
-        self._dlls[self.dll_name] = Assembly.Load(name)
-        self.dll = __import__(libname)
-        try:
-            self.__class__.__dll__ = self.dll
-        except AttributeError:  # Race condition =/
-            pass
+        # dump that into dotnet
+        Assembly.Load(System.Array[System.Byte](contents))
+
+        # do the actual import
+        self.dll = importlib.import_module(dll_path.stem)
 
     def open(self):
         pass
@@ -872,7 +859,8 @@ class TelnetDevice(Device):
     resource = value.NetworkAddress('127.0.0.1:23', help='remote address of the telnet server (default port is 23)')
     timeout= value.float(2, min=0, label='s', help='connection timeout')
 
-    def __imports__(self):
+    @classmethod
+    def __imports__(cls):
         global Telnet
         from telnetlib import Telnet
 
@@ -1007,11 +995,13 @@ class VISADevice(Device):
                 self._release_remote_control()
             with contextlib.suppress(pyvisa.Error):
                 self.backend.clear()
+
         except BaseException as e:
             e = str(e)
             if len(e.strip()) > 0:
                 # some emulated backends raise empty errors
                 self._console.warning('unhandled close error: ' + e)
+
         finally:
             self.backend.close()
 
@@ -1104,7 +1094,6 @@ class VISADevice(Device):
         if len(ret) < 80 and len(repr(ret)) < 80:
             logmsg = repr(ret)
         elif hasattr(ret, 'shape'):
-            print(ret,ret.shape)
             logmsg = f'({type(ret).__qualname__} with shape {ret.shape})'
         elif hasattr(ret, '__len__'):
             logmsg = f'({type(ret).__qualname__} with length {len(ret)})'

@@ -41,9 +41,19 @@ class SpectrumAnalyzer(lb._backends.SimulatedVISADevice, yaml_source=yaml):
         max=18e9
     )
 
+    sweeps = lb.value.int(
+        1, 
+        min=1,
+        help="number of traces to acquire"
+    )
+
     def fetch_trace(self):
         trace = self.query_ascii_values('TRACE?', float, container=pd.DataFrame)
-        trace.columns = ['Trace']
+        trace.columns = ['Trace0']
+
+        for i in range(self.sweeps-1):
+            # 'sweep'
+            trace[f'Trace{i}'] = trace['Trace0']
         return trace
 
 

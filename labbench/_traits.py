@@ -39,6 +39,7 @@ import validators as _val
 from contextlib import contextmanager
 
 from inspect import isclass
+import inspect
 import numbers
 import re
 
@@ -48,7 +49,7 @@ import numpy as np
 import pandas as pd
 
 
-Undefined = type(None)
+Undefined = inspect.Parameter.empty
 
 T = typing.TypeVar('T')      
 class ThisType(typing.Generic[T]):
@@ -215,7 +216,6 @@ class Trait:
         for k, v in kws.items():
             setattr(self, k, v)
 
-
     @classmethod
     def __init_subclass__(cls, type=Undefined):
         """ python triggers this call immediately after a Trait subclass
@@ -320,46 +320,8 @@ class Trait:
                 else:
                     self._setter = func
 
-        # # finalize decorator behavior
-        # elif self.role == self.ROLE_PROPERTY:
-        #     # were there any decorator requests?
-        #     if len(self._decorated_funcs) == 0:
-        #         if self.__decorator_action__ is not None:
-        #             raise AttributeError(f"requested a decorator action but decorated no functions!")
-        #         else:
-        #             return
-
-        # otherwise, set to work
-
-        # if there have been no hints, try to guess at the intent of the decorated methods
-        # if self.__decorator_action__ is None:
-        #     if set(positional_argcounts) in ({1}, {1, 2}, {2}):
-        #         self.__decorator_action__ = 'property'
-        #     else:
-        #         if len(self._decorated_funcs) > 1:
-        #             raise AttributeError(
-        #                 f"can only decorate one function with 2 or more arguments to use as a method, "
-        #                 f"but {len(self._decorated_funcs)} methods have been decorated"
-        #             )
-
-        #         self.__decorator_action__ = 'method'
-
-        # if self.__decorator_action__ == 'property':
-        #     # adopt the properties!
-        #     if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
-        #         raise AttributeError(f"a decorator implementation with @{self} must apply to a getter " \
-        #                                 f"(above `def func(self)`) and/or setter (above `def func(self, value):`)")
-        #     for func, argcount in zip(self._decorated_funcs, positional_argcounts):
-        #         if len(self.help.rstrip().strip()) == 0:
-        #             # take func docstring as default self.help
-        #             self.help = (func.__doc__ or '').rstrip().strip()
-
-        #         if argcount == 1:
-        #             self._getter = func
-        #         else:
-        #             self._setter = func
-
     def __init_owner_instance__(self, owner):
+        # called by owner.__init__
         pass
 
     @util.hide_in_traceback
@@ -569,18 +531,18 @@ class Trait:
         # return self to ensure `self` is the value assigned in the class definition
         return self
 
-    ### Object protocol boilerplate methods
-    def __repr__(self, omit=[], owner_inst=None):
-        pairs = []
+    ### standard python object dunder methods
+    ###
 
-        cls_defaults = ((k,getattr(self,k)) for k in self.__annotations__.keys() if hasattr(self, k))
+    def _init_parameters(self, omit=['help']):
+        pairs = []
 
         for name in self.__annotations__.keys():
             default = getattr(type(self), name)
             v = getattr(self, name)
-            
+
             # skip uninformative debug info
-            if name.startswith('_') or name in ('help',):
+            if name.startswith('_') or name in omit:
                 continue
 
             # only show non-defaults
@@ -590,21 +552,20 @@ class Trait:
             
             pairs.append(f'{name}={repr(v)}')
 
-        declaration = f"{self.__class__.__qualname__}({','.join(pairs)})"
+        return ','.join(pairs)
 
-        owner_cls = getattr(self, '__objclass__', None)
-        if owner_inst is not None:
-            return f'<trait {declaration} as {owner_inst}.{self.name}>'
-        elif owner_cls is not None:
-            return f'<trait {declaration} as {owner_cls.__qualname__}.{self.name}>'
+    def __repr__(self, omit=['help'], owner_inst=None):
+        declaration = f"{self.role}.{type(self).__qualname__}({self._init_parameters(omit)})"
+
+        if owner_inst is None:
+            return declaration
         else:
-            return f'<unowned trait {declaration}>'
+            return f'<{declaration} as {owner_inst}.{self.name}>'
 
     __str__ = __repr__
 
     def doc(self):
-        traitdoc = self.__repr__(omit=["help"])
-        return f"`{traitdoc}` {self.help}"
+        return f"{self.help} ({self._init_parameters(omit=['help','default'])})"
 
     def tag(self, **kws):
         self.metadata.update(kws)
@@ -1404,5 +1365,6 @@ def subclass_namespace_traits(namespace_dict, role, omit_trait_attrs):
             new_trait.__annotations__ = dict(new_trait.__annotations__)
             for drop_attr in omit_trait_attrs:
                 new_trait.__annotations__.pop(drop_attr)
+            new_trait.__module__ = namespace_dict['__name__']
 
             namespace_dict[name] = new_trait

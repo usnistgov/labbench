@@ -31,7 +31,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from functools import wraps
-from inspect import isclass
+import inspect
 import logging
 import sys
 import traceback
@@ -258,13 +258,6 @@ class Device(HasTraits, util.Ownable):
 
         super().__init_subclass__()
 
-        # Update cls.__doc__
-        value_traits = {name: cls._traits[name] for name in cls._value_attrs}
-        txt = '\n\n'.join((f":{t.name}: {t.doc()}" for k, t in value_traits.items()))
-        if cls.__doc__ is None:
-            cls.__doc__ = ''
-        cls.__doc__ += '\n\n' + txt
-
         for trait_name, new_default in value_defaults.items():
             
             trait = getattr(cls, trait_name, None)
@@ -284,18 +277,46 @@ class Device(HasTraits, util.Ownable):
         # types = {k: v.type for k, v in settings.items() if v.gets}
         # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
         # Update __doc__ with value traits
-        
-        if cls.__doc__:
+
+        params = [
+            inspect.Parameter(
+                'self',
+                kind=inspect.Parameter.POSITIONAL_ONLY
+            ),
+            inspect.Parameter(
+                'resource',
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                default=cls.resource.default,
+                annotation=cls.resource.type
+            )
+        ]
+
+        settable_values = {
+            name: cls._traits[name]
+            for name in cls._value_attrs
+            if cls._traits[name].sets
+        }
+
+        params += [
+            inspect.Parameter(
+                name,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                default=trait.default,
+                annotation=trait.type
+            )
+            for name, trait in settable_values.items()
+            if name != 'resource'
+        ]
+
+        # apply signature and generate doc for each acceptable value
+        cls.__init__.__signature__ = inspect.Signature(params)
+        cls.__init__.__doc__ = '\n\n'.join((
+            f":{t.name}: {t.doc()}"
+            for t in settable_values.values()
+        ))
+
+        if cls.__doc__ is not None:
             cls.__doc__ = trim(cls.__doc__)
-        else:
-            cls.__doc__ = ''
-
-        if cls.__init__.__doc__:
-            cls.__init__.__doc__ = trim(cls.__init__.__doc__)
-        else:
-            cls.__init__.__doc__ = ''
-
-        cls.__init__.__doc__ = cls.__init__.__doc__ + '\n\n' + txt
 
         cls.__imports__()
 

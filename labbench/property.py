@@ -83,8 +83,6 @@ class NetworkAddress(_traits.NetworkAddress):
     pass
 
 
-
-
 # mutate these traits into the right role
 _traits.subclass_namespace_traits(
     locals(),

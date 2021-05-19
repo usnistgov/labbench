@@ -292,6 +292,38 @@ class Device(HasTraits, util.Ownable):
         
         cls.__imports__()
 
+    @classmethod
+    def info(cls):
+        clsname = cls.__qualname__
+
+        ret = f"attributes of Device subclass {clsname}\n"
+
+        unique_attrs = set(dir(cls)).difference(dir(Device))
+        ret += "\nmethods:\n" + ''.join((
+            f"\t{clsname}.{name}(...):\n\t{getattr(cls, name).__doc__}\n"
+            for name in unique_attrs
+            if not name.startswith('_') and inspect.ismethod(getattr(cls,name))
+        ))
+
+        ret += "value traits:\n" + ''.join((
+            f"\t{clsname}.{getattr(cls, name).doc()}\n"
+            for name in cls._value_attrs
+        ))
+
+        ret += "\nproperty traits:\n" + ''.join((
+            f"\t{clsname}.{getattr(cls, name).doc()}\n"
+            for name in cls._property_attrs
+        ))
+
+        if len(cls._datareturn_attrs) > 0:
+            ret += "\ndatareturn traits:\n" + ''.join((
+                f"\t{clsname}.{getattr(cls, name).doc()}\n"
+                for name in cls._property_attrs
+            ))
+
+        return ret
+
+
     @property
     def _instname(self):
         if hasattr(self, '_console'):

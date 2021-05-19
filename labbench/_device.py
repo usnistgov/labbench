@@ -66,32 +66,6 @@ def trace_methods(cls, name, until_cls=None):
     return methods
 
 
-def trim(docstring):
-    if not docstring:
-        return ''
-    # Convert tabs to spaces (following the normal Python rules)
-    # and split into a list of lines:
-    lines = docstring.expandtabs().splitlines()
-    # Determine minimum indentation (first line doesn't count):
-    indent = sys.maxsize
-    for line in lines[1:]:
-        stripped = line.lstrip()
-        if stripped:
-            indent = min(indent, len(line) - len(stripped))
-    # Remove indentation (first line is special):
-    trimmed = [lines[0].strip()]
-    if indent < sys.maxsize:
-        for line in lines[1:]:
-            trimmed.append(line[indent:].rstrip())
-    # Strip off trailing and leading blank lines:
-    while trimmed and not trimmed[-1]:
-        trimmed.pop()
-    while trimmed and not trimmed[0]:
-        trimmed.pop(0)
-    # Return a single string:
-    return '\n'.join(trimmed)
-
-
 def list_devices(depth=1):
     """ Look for Device instances, and their names, in the calling
         code context (depth == 1) or its callers (if depth in (2,3,...)).
@@ -251,11 +225,6 @@ class Device(HasTraits, util.Ownable):
     @classmethod
     @util.hide_in_traceback
     def __init_subclass__(cls, **value_defaults):
-        # defaults = {k: v.default for k,v in value_traits.items() if v.gets}
-        # types = {k: v.type for k, v in value_traits.items() if v.gets}
-
-        # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
-
         super().__init_subclass__()
 
         for trait_name, new_default in value_defaults.items():
@@ -272,12 +241,7 @@ class Device(HasTraits, util.Ownable):
         if len(value_defaults)>0:
             super().__init_subclass__()
 
-        # TODO: @autocomplete_init seems to make this unecessary - validate
-        # defaults = {k: v.default for k, v in settings.items() if v.gets}
-        # types = {k: v.type for k, v in settings.items() if v.gets}
-        # util.wrap_attribute(cls, '__init__', __init__, tuple(defaults.keys()), defaults, 1, types)
-        # Update __doc__ with value traits
-
+        # Generate a signature for documentation and code autocomplete
         params = [
             inspect.Parameter(
                 'self',
@@ -308,16 +272,24 @@ class Device(HasTraits, util.Ownable):
             if name != 'resource'
         ]
 
+        cls.__doc__,cls.__doc_bare__ = getattr(cls, '__doc_bare__', cls.__doc__), cls.__doc__
+
         # apply signature and generate doc for each acceptable value
         cls.__init__.__signature__ = inspect.Signature(params)
-        cls.__init__.__doc__ = '\n\n'.join((
-            f":{t.name}: {t.doc()}"
+
+        value_docs = ''.join((
+            f"\t{t.doc()}\n"
             for t in settable_values.values()
         ))
 
-        if cls.__doc__ is not None:
-            cls.__doc__ = trim(cls.__doc__)
+        cls.__init__.__doc__ = f"Args:\n{value_docs}"
 
+        properties = {
+            name: cls._traits[name]
+            for name in cls._property_attrs
+            if cls._traits[name].sets
+        }
+        
         cls.__imports__()
 
     @property
@@ -364,21 +336,6 @@ class Device(HasTraits, util.Ownable):
         setattr(self, 'open', self.__open_wrapper__)
         setattr(self, 'close', self.__close_wrapper__)
 
-
-    # TODO: Remove this? May be unecessary now that .state and . have been removed
-    # @util.hide_in_traceback
-    # def __setattr__(self, name, value):
-    #     """ Throw warnings if we suspect a typo on an attempt to assign to a state
-    #         or value trait
-    #     """
-    #     # if self.__warn_state_names__ and not hasattr(self, name):
-    #     #     if name in self.__warn_state_names__:
-    #     #         msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait state.{name} instead?'
-    #     #         warn(msg)
-    #     #     if name in self._trait_roles[Trait.ROLE_VALUE]:
-    #     #         msg = f'{self}: assigning to a new attribute {name} -- did you mean to assign to the trait value traits.{name} instead?'
-    #     #         warn(msg)
-    #     super().__setattr__(name, value)
 
     @util.hide_in_traceback
     @wraps(open)
@@ -511,7 +468,6 @@ class Device(HasTraits, util.Ownable):
 #         contexts = dict(first_contexts, **other_contexts)
 #     self.__cm = util.sequentially(name=f'{repr(self)} connections',
 #                                   **contexts)
-
 
 
 Device.__init_subclass__()

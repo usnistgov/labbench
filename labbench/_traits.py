@@ -531,10 +531,19 @@ class Trait:
         # return self to ensure `self` is the value assigned in the class definition
         return self
 
-    ### standard python object dunder methods
+    ### introspection
     ###
+    def doc(self):
+        params = self.doc_params(omit=['help','default'])
+        typename = 'Any' if self.type is None else self.type.__qualname__
 
-    def _init_parameters(self, omit=['help']):
+        doc = f"{self.name} ({typename}): {self.help}"
+        if len(params)>0:
+            doc +=  f" ({params})"
+
+        return doc
+
+    def doc_params(self, omit=['help']):
         pairs = []
 
         for name in self.__annotations__.keys():
@@ -555,7 +564,7 @@ class Trait:
         return ','.join(pairs)
 
     def __repr__(self, omit=['help'], owner_inst=None):
-        declaration = f"{self.role}.{type(self).__qualname__}({self._init_parameters(omit)})"
+        declaration = f"{self.role}.{type(self).__qualname__}({self.doc_params(omit)})"
 
         if owner_inst is None:
             return declaration
@@ -563,13 +572,6 @@ class Trait:
             return f'<{declaration} as {owner_inst}.{self.name}>'
 
     __str__ = __repr__
-
-    def doc(self):
-        return f"{self.help} ({self._init_parameters(omit=['help','default'])})"
-
-    def tag(self, **kws):
-        self.metadata.update(kws)
-        return self
 
 
 Trait.__init_subclass__()

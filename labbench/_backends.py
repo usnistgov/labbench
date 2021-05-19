@@ -902,9 +902,9 @@ class VISADevice(Device):
     """
 
     # Settings
-    read_termination = value.str('\n')
+    read_termination = value.str('\n', help='end of line string for reads')
 
-    write_termination = value.str('\n')
+    write_termination = value.str('\n', help='end of line string for writes')
 
     # States
     identity = property_.str(

@@ -35,6 +35,8 @@ class PowerSupply(lb._backends.SimulatedVISADevice, yaml_source=yaml):
 
 
 class SpectrumAnalyzer(lb._backends.SimulatedVISADevice, yaml_source=yaml):
+    """ a fake Spectrum Analyzer that returns fixed trace data
+    """
     frequency = lb.property.float(
         key=':FREQ',
         min=10e6,

@@ -415,8 +415,10 @@ def owner_context_manager(top):
     (recursively).
     Entry into this context will manage all of these.
 
-    :param top: Owner instance
-    :returns: Context manager
+    Args:
+        top: Owner instance
+    Returns:
+        Context manager
     """
 
     log = getattr(top, '_console', util.console)
@@ -826,7 +828,8 @@ class Sequence(util.Ownable):
     def _collect_signatures(self, spec):
         """ collect a dictionary of parameter default values
 
-        :param tree: nested list of calls that contains the parsed call tree
+        Args:
+            tree: nested list of calls that contains the parsed call tree
         :return: dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
             default_value is `EMPTY` if there is no default.
         """
@@ -876,7 +879,8 @@ class RackMeta(type):
         Return a new Rack subclass composed of any instances of Device, Rack, data loggers, or dicts contained
         in a python module namespace.
 
-        :param name_or_module: a string containing the module to import, or a module object that is already imported
+        Args:
+            name_or_module: a string containing the module to import, or a module object that is already imported
         :return: class that is a subclass of Rack
         """
         if isinstance(module, str):

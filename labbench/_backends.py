@@ -157,7 +157,9 @@ class ShellBackend(Device):
             for each name as `self.flags[name]` (e.g., "-f"), (2) retrieving the value as getattr(self, name), and
             (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
 
-            :returns: None?
+            Returns:
+
+                None?
         """
         if timeout is None:
             timeout = self.timeout
@@ -176,7 +178,9 @@ class ShellBackend(Device):
             for each name as `self.flags[name]` (e.g., "-f"), (2) retrieving the value as getattr(self, name), and
             (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
 
-            :returns: stdout
+            Returns:
+
+                stdout
         """
         if timeout is None:
             timeout = self.timeout
@@ -232,7 +236,9 @@ class ShellBackend(Device):
             for each name as `self.flags[name]` (e.g., "-f"), (2) retrieving the value as getattr(self, name), and
             (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
 
-            :returns: None
+            Returns:
+
+                None
         """
 
         def stdout_to_queue(fd, cmdl):
@@ -276,10 +282,13 @@ class ShellBackend(Device):
             """ Execute the binary in the background (nonblocking),
                 while funneling its standard output to a queue in a thread.
 
-                :param cmd: iterable containing the binary path, then
+                Args:
+                    cmd: iterable containing the binary path, then
                             each argument to be passed to the binary.
 
-                :returns: None
+                Returns:
+
+                    None
             """
             if self.running():
                 raise Exception('already running')
@@ -363,7 +372,9 @@ class ShellBackend(Device):
             dict(extra_arg=None) to indicate that `self.extra_arg` will be inserted without a switch if
             `self.extra_arg` is not None.
 
-            :returns: tuple of string
+            Returns:
+
+                tuple of string
         """
 
         argv = [self.binary_path,]
@@ -383,7 +394,9 @@ class ShellBackend(Device):
         """ Pop any standard output that has been queued by a background run (see `run`).
             Afterward, the queue is cleared. Starting another background run also clears the queue.
 
-            :returns: stdout
+            Returns:
+
+                stdout
         """
         result = ''
         
@@ -429,7 +442,9 @@ class ShellBackend(Device):
     def running(self):
         """ Check whether a background process is running.
 
-            :returns: True if running, otherwise False
+            Returns:
+
+                True if running, otherwise False
         """
         # Cache the current running one for a second in case the backend "closes"
         return self.isopen and self.backend is not None and self.backend.poll() is None
@@ -758,7 +773,9 @@ class SerialLoggingDevice(SerialDevice):
     def start(self):
         """ Start a background thread that acquires log data into a queue.
 
-            :returns: None
+            Returns:
+
+                None
         """
         from serial import SerialException
 
@@ -794,7 +811,9 @@ class SerialLoggingDevice(SerialDevice):
     def stop(self):
         """ Stops the logger acquisition if it is running. Returns silently otherwise.
 
-            :returns: None
+            Returns:
+
+                None
         """
         try:
             self._stop.set()
@@ -811,7 +830,9 @@ class SerialLoggingDevice(SerialDevice):
     def fetch(self):
         """ Retrieve and return any log data in the buffer.
 
-            :returns: any bytes in the buffer
+            Returns:
+
+                any bytes in the buffer
         """
         ret = b''
         try:
@@ -948,7 +969,9 @@ class VISADevice(Device):
             set by `self.resource`. The pyvisa backend object is assigned
             to `self.backend`.
 
-            :returns: None
+            Returns:
+
+                None
 
             Instead of calling `open` directly, consider using
             `with` statements to guarantee a call to `close`
@@ -978,7 +1001,9 @@ class VISADevice(Device):
             this is handled automatically and you do not need to
             call this method.
 
-            :returns: None
+            Returns:
+
+                None
         """
         if not self.isopen or self.backend is None:
             return
@@ -1002,8 +1027,10 @@ class VISADevice(Device):
     def set_backend(cls, backend_name):
         """ Set the pyvisa resource manager for all VISA objects.
 
-            :param backend_name str: '@ni' (the default) or '@py'
-            :returns: None
+            Args:
+                str (backend_name): '@ni' (the default) or '@py'
+            Returns:
+                None
         """
 
         if backend_name in ('@ivi','@ni'):
@@ -1038,8 +1065,10 @@ class VISADevice(Device):
             Handles debug logging and adjustments when in overlap_and_block
             contexts as appropriate.
 
-            :param str msg: the SCPI command to send by VISA
-            :returns: None
+            Args:
+                msg (str): the SCPI command to send by VISA
+            Returns:
+                None
         """
         if self.__opc:
             msg = msg + ';*OPC'
@@ -1054,8 +1083,10 @@ class VISADevice(Device):
             Handles debug logging and adjustments when in overlap_and_block
             contexts as appropriate.
 
-            :param str msg: the SCPI command to send by VISA
-            :returns: the response to the query from the device
+            Args:
+                msg (str): the SCPI command to send by VISA
+            Returns:
+                the response to the query from the device
         """
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
@@ -1104,8 +1135,9 @@ class VISADevice(Device):
             
             This is automatically called for property traits defined with 'key='.
 
-            :param str key: The SCPI command to send
-            :param trait: The trait property trait corresponding with the command (ignored)
+            Args:
+                key (str): The SCPI command to send
+                trait: The trait property trait corresponding with the command (ignored)
         """
         if name is not None:
             trait = self._traits[name]
@@ -1122,9 +1154,10 @@ class VISADevice(Device):
 
             This is automatically called for property traits defined with 'key='.
 
-            :param str key: The key string to use to  to send
-            :param trait: The trait property trait corresponding with the command (ignored)
-            :param str value: The value to assign to the parameter
+            Args:
+                key (str): The key string to use to  to send
+                trait: The trait property trait corresponding with the command (ignored)
+                value (str): The value to assign to the parameter
         """
         self.write(f'{scpi_key} {value}')
 
@@ -1154,8 +1187,9 @@ class VISADevice(Device):
 
             The wait happens on leaving the `with` block.
 
-            :param timeout: delay (in milliseconds) on waiting for the instrument to finish the overlapped commands before a TimeoutError after leaving the `with` block. If `None`, use self.backend.timeout.
-            :param quiet: Suppress timeout exceptions if this evaluates as True
+            Args:
+                timeout: delay (in milliseconds) on waiting for the instrument to finish the overlapped commands before a TimeoutError after leaving the `with` block. If `None`, use self.backend.timeout.
+                quiet: Suppress timeout exceptions if this evaluates as True
         """
         self.__opc = True
         yield
@@ -1190,7 +1224,7 @@ class SimulatedVISADevice(VISADevice):
     """
 
     # can only set this when the class is defined
-    yaml_source = value.Path('', sets=False, exists=True)
+    yaml_source = value.Path('', sets=False, exists=True, help='definition of the simulated instrument')
 
     @classmethod
     def __imports__(cls):

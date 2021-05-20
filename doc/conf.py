@@ -33,7 +33,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import traitlets as tl
+# import traitlets as tl
 import sys
 import os
 import shutil
@@ -61,6 +61,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.graphviz',
+    'sphinxcontrib.napoleon', # support for numpy- and google-style docstrings
     # 'nbsphinx',
     # 'sphinx.ext.mathjax',  
     'recommonmark'  
@@ -78,7 +79,7 @@ source_suffix = ['.rst', '.md']
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 
-autodoc_mock_imports = ["traitlets", 'sortedcontainers']
+autodoc_mock_imports = []
 
 # The master toctree document.
 master_doc = 'labbench'
@@ -204,7 +205,7 @@ def move_private_folders(app, e):
             shutil.move(join(item), join(item[1:]))
 
 def setup(app):
-    app.connect('autodoc-skip-member', maybe_skip_member)
+    # app.connect('autodoc-skip-member', maybe_skip_member)
     app.connect('html-page-context', change_pathto)
     app.connect('build-finished', move_private_folders)
     # app.connect('autodoc-process-signature', resignature)

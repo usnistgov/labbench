@@ -86,7 +86,8 @@ class MungerBase(core.Device):
         relational files. The row valueis replaced in-place with the relative
         path to the data saved on disk.
 
-        :param row: dictionary of {'entry_name': "entry_value"} pairs
+        Args:
+            row: dictionary of {'entry_name': "entry_value"} pairs
         :return: the row dictionary, replacing special entries with the relative path to the saved data file
         """
         def is_path(v):
@@ -148,9 +149,10 @@ class MungerBase(core.Device):
         """ Write nonscalar (potentially array-like, or a python object) data
         to a file, and return a path to the file
 
-        :param name: name of the entry to write, used as the filename
-        :param value: the object containing array-like data
-        :param row: row dictionary, or None (the default) to write to the metadata folder
+        Args:
+            name: name of the entry to write, used as the filename
+            value: the object containing array-like data
+            row: row dictionary, or None (the default) to write to the metadata folder
         :return: the path to the file, relative to the directory that contains the root database
         """
 
@@ -214,10 +216,11 @@ class MungerBase(core.Device):
     def _from_text(self, name, value, index=0, row=None, ext='.txt'):
         """ Write a string data to a file
 
-        :param name: name of the parameter (helps to determine file path)
-        :param value: the string to write to file
-        :param row: the row to infer timestamp, or None to write to metadata
-        :param ext: file extension
+        Args:
+            name: name of the parameter (helps to determine file path)
+            value: the string to write to file
+            row: the row to infer timestamp, or None to write to metadata
+            ext: file extension
         :return: the path to the file, relative to the directory that contains the root database
         """
         with self._open_relational(name + ext, index, row) as f:
@@ -228,7 +231,8 @@ class MungerBase(core.Device):
     def _get_key(self, buf):
         """ Key to use for the relative data in the root database?
 
-        :param stream: stream for writing to the relational data file
+        Args:
+            stream: stream for writing to the relational data file
         :return: the key
         """
         raise NotImplementedError
@@ -237,11 +241,14 @@ class MungerBase(core.Device):
         """ Open a stream / IO buffer for writing relational data, given
             the root database column, index, and the row dictionary.
 
-            :param name: the column name of the relational data in the root db
-            :param index: the index name of of the data in the root db
-            :param row: the dictionary containing the row of data at `index`
+            Args:
+                name: the column name of the relational data in the root db
+                index: the index name of of the data in the root db
+                row: the dictionary containing the row of data at `index`
 
-            :returns: an open buffer object for writing data
+            Returns:
+
+                an open buffer object for writing data
         """
         raise NotImplementedError
 
@@ -249,7 +256,9 @@ class MungerBase(core.Device):
         """ Open a stream / IO buffer for writing metadata, given
             the name of the metadata.
 
-            :returns: an open buffer object for writing metadata to the file
+            Returns:
+
+                an open buffer object for writing metadata to the file
         """
 
         raise NotImplementedError
@@ -282,7 +291,8 @@ class MungeToDirectory(MungerBase):
     def _get_key(self, stream):
         """ Key to use for the relative data in the root database?
 
-        :param stream: stream for writing to the relational data file
+        Args:
+            stream: stream for writing to the relational data file
         :return: the key
         """
         return os.path.relpath(stream.name, self.resource)
@@ -408,7 +418,8 @@ class MungeToTar(MungerBase):
     def _get_key(self, buf):
         """ Where is the file relative to the root database?
 
-        :param path: path of the file
+        Args:
+            path: path of the file
         :return: path to the file relative to the root database
         """
         return buf.name
@@ -489,7 +500,9 @@ class Aggregator(util.Ownable):
             also performed on each Device trait that is configured as "always" with `self.observe`, and any traits
             labeled "never" are removed.
 
-            :returns: dictionary keyed on :func:`key` (defaults '{device name}_{state name}')
+            Returns:
+
+                dictionary keyed on :func:`key` (defaults '{device name}_{state name}')
         """
 
         for device, name in list(self.name_map.items()):
@@ -535,8 +548,10 @@ class Aggregator(util.Ownable):
     def set_device_labels(self, **mapping):
         """ Manually choose device name for a device instance.
 
-            :param dict mapping: name mapping, formatted as {device_object: 'device name'}
-            :returns: None
+            Args:
+                mapping (dict): name mapping, formatted as {device_object: 'device name'}
+            Returns:
+                None
         """
         for label, device in list(mapping.items()):
             if isinstance(device, Aggregator):
@@ -558,7 +573,8 @@ class Aggregator(util.Ownable):
     def __receive_trait_update(self, msg: dict):
         """ called by trait owners on changes observed
 
-        :param dict change: callback info dictionary generated by traitlets
+        Args:
+            change (dict): callback info dictionary generated by traitlets
         :return: None
         """
 
@@ -618,13 +634,11 @@ class Aggregator(util.Ownable):
             the existing list of observed property traits for each
             device.
 
-            :param devices: Device instance, iterable of Devices, or {device:name} mapping
-
-            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
-
-            :param always: name (or iterable of multiple names) of property traits to actively update on each call to get()
-
-            :param never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
+            Args:
+                devices: Device instance, iterable of Devices, or {device:name} mapping
+                changes (bool): Whether to automatically log each time a property trait is set for the supplied device(s)
+                always: name (or iterable of multiple names) of property traits to actively update on each call to get()
+                never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
         """
         
         # parameter checks
@@ -673,9 +687,10 @@ class Aggregator(util.Ownable):
     def _find_object_in_callers(self, target, max_levels=5):
         """ Introspect into the caller to name an object .
 
-        :param target: device instance
-        :param min_levels: minimum number of layers of calls to traverse
-        :param max_levels: maximum number of layers to traverse
+        Args:
+            target: device instance
+            min_levels: minimum number of layers of calls to traverse
+            max_levels: maximum number of layers to traverse
         :return: name of the Device
         """
 #        # If the context is a function, look in its first argument,
@@ -730,21 +745,19 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the root database
+        Args:
+            path (str): Base path to use for the root database
+            overwrite (bool): Whether to overwrite the root database if it exists (otherwise, append)
 
-        :param bool overwrite: Whether to overwrite the root database if it exists (otherwise, append)
+            text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+            force_relational: A list of columns that should always be stored as relational data instead of directly in the database
 
-        :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+        Args:
+            nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
+            metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
 
-        :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
-
-        :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
-
-        :param metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
-
-        :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
-        
-        :param git_commit_in: perform a git commit on open() if the current
+            tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
+            git_commit_in: perform a git commit on open() if the current
             directory is inside a git repo with this branch name
     """
 
@@ -825,13 +838,12 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             the existing list of observed property traits for each
             device.
 
-            :param devices: Device instance or iterable of Device instances
+            Args:
+                devices: Device instance or iterable of Device instances
+                changes (bool): Whether to automatically log each time a property trait is set for the supplied device(s)
 
-            :param bool changes: Whether to automatically log each time a property trait is set for the supplied device(s)
-
-            :param always: name (or iterable of multiple names) of property traits to actively update on each call to get()
-
-            :param never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
+                always: name (or iterable of multiple names) of property traits to actively update on each call to get()
+                never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
         """
 
         self.aggregator.observe(devices=devices, changes=changes, always=always, never=never)
@@ -910,7 +922,9 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             non-scalar data to data files, and replacing their dictionary value
             with the relative path to the data file.
 
-            :returns: None
+            Returns:
+
+                None
         """
         count = len(self.pending)
 
@@ -940,7 +954,8 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
     def set_relational_file_format(self, format):
         """ Set the format to use for relational data files.
 
-            :param str format: one of 'csv', 'json', 'feather', or 'pickle'
+            Args:
+                format (str): one of 'csv', 'json', 'feather', or 'pickle'
         """
         warnings.warn("""set_nonscalar_file_type is deprecated; set when creating
                          the database object instead with the nonscalar_output flag""")
@@ -963,7 +978,8 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             aggregate property trait entry includes inst1_frequency=915e6, then the format string\
             '{dut}/{inst1_frequency}' means relative data path 'DUT15/915e6'.
 
-            :param format: a string compatible with :func:`str.format`, with replacement\
+            Args:
+                format: a string compatible with :func:`str.format`, with replacement\
             fields defined from the keys from the current entry of results and aggregated states.\
 
             :return: None
@@ -1019,13 +1035,14 @@ class CSVLogger(RelationalTableLogger):
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the root database
-        :param bool overwrite: Whether to overwrite the root database if it exists (otherwise, append)
-        :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
-        :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
-        :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
-        :param metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
-        :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
+        Args:
+            path (str): Base path to use for the root database
+            overwrite (bool): Whether to overwrite the root database if it exists (otherwise, append)
+            text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+            force_relational: A list of columns that should always be stored as relational data instead of directly in the database
+            nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
+            metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
+            tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
     root_file = 'root.csv'
@@ -1125,7 +1142,8 @@ class MungeToHDF(Device):
         relational files. The row valueis replaced in-place with the relative
         path to the data saved on disk.
 
-        :param row: dictionary of {'entry_name': "entry_value"} pairs
+        Args:
+            row: dictionary of {'entry_name': "entry_value"} pairs
         :return: the row dictionary, replacing special entries with the relative path to the saved data file
         """
         def is_path(v):
@@ -1183,9 +1201,10 @@ class MungeToHDF(Device):
         """ Write nonscalar (potentially array-like, or a python object) data
         to a file, and return a path to the file
 
-        :param name: name of the entry to write, used as the filename
-        :param value: the object containing array-like data
-        :param row: row dictionary, or None (the default) to write to the metadata folder
+        Args:
+            name: name of the entry to write, used as the filename
+            value: the object containing array-like data
+            row: row dictionary, or None (the default) to write to the metadata folder
         :return: the path to the file, relative to the directory that contains the root database
         """
 
@@ -1230,9 +1249,10 @@ class HDFLogger(RelationalTableLogger):
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the root database
-        :param bool append: Whether to append to the root database if it already exists (otherwise, raise IOError)
-        :param str key_fmt: format to use for keys in the h5
+        Args:
+            path (str): Base path to use for the root database
+            append (bool): Whether to append to the root database if it already exists (otherwise, raise IOError)
+            key_fmt (str): format to use for keys in the h5
 
     """
 
@@ -1312,13 +1332,14 @@ class SQLiteLogger(RelationalTableLogger):
         #. custom metadata in each queued aggregate property trait entry; and
         #. custom response to non-scalar data (such as relational databasing).
 
-        :param str path: Base path to use for the root database
-        :param bool overwrite: Whether to overwrite the root database if it exists (otherwise, append)
-        :param text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
-        :param force_relational: A list of columns that should always be stored as relational data instead of directly in the database
-        :param nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
-        :param metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
-        :param tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
+        Args:
+            path (str): Base path to use for the root database
+            overwrite (bool): Whether to overwrite the root database if it exists (otherwise, append)
+            text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
+            force_relational: A list of columns that should always be stored as relational data instead of directly in the database
+            nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
+            metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
+            tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
     index_label = 'id'  # Don't change this or sqlite breaks :(
@@ -1499,8 +1520,9 @@ def to_feather(data, path):
     to a column, index and column name metadata will be removed,
     and columns names will be changed to a string.
 
-    :param data: dataframe to write to disk
-    :param path: path to file to write
+    Args:
+        data: dataframe to write to disk
+        path: path to file to write
     :return: None
 
     """
@@ -1523,11 +1545,12 @@ def read_sqlite(path, table_name='root', columns=None, nrows=None,
                 index_col=RelationalTableLogger.index_label):
     """ Wrapper to that uses pandas.read_sql_table to load a table from an sqlite database at the specified path.
 
-    :param path: sqlite database path
-    :param table_name: name of table in the sqlite database
-    :param columns: columns to query and return, or None (default) to return all columns
-    :param nrows: number of rows of data to read, or None (default) to return all rows
-    :param index_col: the name of the column to use as the index
+    Args:
+        path: sqlite database path
+        table_name: name of table in the sqlite database
+        columns: columns to query and return, or None (default) to return all columns
+        nrows: number of rows of data to read, or None (default) to return all rows
+        index_col: the name of the column to use as the index
     :return: pandas.DataFrame instance containing data loaded from `path`
     """
 
@@ -1546,11 +1569,12 @@ def read(path_or_buf, columns=None, nrows=None, format='auto', **kws):
     """ Read tabular data from a file in one of various formats
     using pandas.
 
-    :param str path: path to the  data file.
-    :param columns: a column or iterable of multiple columns to return from the data file, or None (the default) to return all columns
-    :param nrows: number of rows to read at the beginning of the table, or None (the default) to read all rows
-    :param str format: data file format, one of ['pickle','feather','csv','json','csv'], or 'auto' (the default) to guess from the file extension
-    :param kws: additional keyword arguments to pass to the pandas read_<ext> function matching the file extension
+    Args:
+        path (str): path to the  data file.
+        columns: a column or iterable of multiple columns to return from the data file, or None (the default) to return all columns
+        nrows: number of rows to read at the beginning of the table, or None (the default) to read all rows
+        format (str): data file format, one of ['pickle','feather','csv','json','csv'], or 'auto' (the default) to guess from the file extension
+        kws: additional keyword arguments to pass to the pandas read_<ext> function matching the file extension
     :return: pandas.DataFrame instance containing data read from file
     """
 
@@ -1663,12 +1687,13 @@ def read_relational(path, expand_col, root_cols=None, target_cols=None,
         TODO: Support for a list of expand_col?
 
         :param pandas.DataFrame root: the root database, consisting of columns containing data and columns containing paths to data files
-        :param str expand_col: the column in the root database containing paths to    data files that should be expanded
-        :param root_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) pass all columns from `root`
-        :param target_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each root[expand_col]
-        :param root_path: a string containing the full path to the root database (to help find the relational files)
-        :param bool prepend_column_name: whether to prepend the name of the expanded column from the root database
-        :returns: the expanded dataframe
+            expand_col (str): the column in the root database containing paths to    data files that should be expanded
+            root_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) pass all columns from `root`
+            target_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each root[expand_col]
+            root_path: a string containing the full path to the root database (to help find the relational files)
+            prepend_column_name (bool): whether to prepend the name of the expanded column from the root database
+        Returns:
+            the expanded dataframe
 
     """
 

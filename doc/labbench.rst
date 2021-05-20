@@ -1,38 +1,28 @@
 labbench package
 ================
 
-labbench.backends module
-------------------------
-
-.. automodule:: labbench.backends
+.. automodule:: labbench
     :members:
     :show-inheritance:
 
-labbench.core module
+labbench.datareturn module
 --------------------
 
-.. automodule:: labbench.core
+.. automodule:: labbench.datareturn
     :members:
     :show-inheritance:
 
-labbench.data module
+labbench.property module
 --------------------
 
-.. automodule:: labbench.data
+.. automodule:: labbench.util
     :members:
     :show-inheritance:
 
-labbench.host module
+labbench.value module
 --------------------
 
-.. automodule:: labbench.host
-    :members:
-    :show-inheritance:
-
-labbench.notebooks module
--------------------------
-
-.. automodule:: labbench.notebooks
+.. automodule:: labbench.util
     :members:
     :show-inheritance:
 

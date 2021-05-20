@@ -108,12 +108,14 @@ class DisconnectedBackend(object):
         """
         if isinstance(dev, str):
             self.name = dev
+        elif hasattr(dev, '_instname'):
+            self.name = dev._instname
         else:
-            self.name = dev.__class__.__qualname__
+            self.name = f'{dev.__class__.__qualname__} instance'
 
     @util.hide_in_traceback
     def __getattr__(self, key):
-        msg = f"open {self} first to access its backend"
+        msg = f"open {self.name} first to access its backend"
         raise ConnectionError(msg)
 
     def __repr__(self):
@@ -140,49 +142,32 @@ def __init__():
 
 class Device(HasTraits, util.Ownable):
     r"""Base class for labbench driver wrappers in labbench. Subclass to
-        implement driver APIs. """
+    implement driver APIs.
 
-    #     Drivers that subclass `Device` get
+    Drivers that subclass `Device` share
 
-    #     * device connection management via context management (the `with` statement)
-    #     * test property trait management for easy test logging and extension to UI
-    #     * a degree automatic stylistic consistency between drivers
+    * standardized connection management via context blocks (the `with` statement)
+    * hooks for automatic data logging and heads-up displays
+    * API style consistency
+    * bounds checking and casting for typed attributes
 
-    #     .. note::
-    #         This `Device` base class is a boilerplate object. It has convenience
-    #         functions for device control, but no implementation.
+    .. note::
+        This `Device` base class has convenience
+        functions for device control, but no implementation.
 
-    #         Implementation of protocols with general support for broad classes
-    #         of devices are provided by other labbench Device subclasses:
+        Some wrappers for particular APIs labbench Device subclasses:
 
-    #             * VISADevice exposes a pyvisa backend for VISA Instruments
-    #             * ShellBackend exposes a threaded pipes backend for command line tools
-    #             * Serial exposes a pyserial backend for serial port communication
-    #             * DotNetDevice exposes a pythonnet for wrapping dotnet libraries
+            * VISADevice: pyvisa,
+            * ShellBackend: binaries and scripts
+            * Serial: pyserial
+            * DotNetDevice: pythonnet
 
-    #         (and others). If you are implementing a driver that uses one of
-    #         these backends, inherit from the corresponding class above, not
-    #         `Device`.
+        (and others). If you are implementing a driver that uses one of
+        these backends, inherit from the corresponding class above, not
+        `Device`.
+    
+    """
 
-
-    #     Value attributes
-    #     ************************
-    # """
-
-    # """ Value traits.
-
-    #     These are stored only within this class - accessing these traits in
-    #     a Device instance do not trigger interaction with the device. These
-    #     define connection addressing information, communication value traits,
-    #     and options that only apply to implementing python support for the
-    #     device.
-
-    #     The device uses this container to define the keyword options supported
-    #     by its __init__ function. These are applied when you instantiate the device.
-    #     After you instantiate the device, you can still change the value trait with::
-
-    #         Device.resource = 'insert-your-address-string-here'
-    # """
 
     resource = value.str(allow_none=True, help='device address or URI')
     concurrency= value.bool(True, sets=False, help='True if the device supports threading')
@@ -293,29 +278,32 @@ class Device(HasTraits, util.Ownable):
         cls.__imports__()
 
     @classmethod
-    def info(cls):
+    def info(cls, methods=True, values=True, properties=True, datareturns=True):
         clsname = cls.__qualname__
 
         ret = f"attributes of Device subclass {clsname}\n"
 
-        unique_attrs = set(dir(cls)).difference(dir(Device))
-        ret += "\nmethods:\n" + ''.join((
-            f"\t{clsname}.{name}(...):\n\t{getattr(cls, name).__doc__}\n"
-            for name in unique_attrs
-            if not name.startswith('_') and inspect.ismethod(getattr(cls,name))
-        ))
+        if methods:
+            unique_attrs = set(dir(cls)).difference(dir(Device))
+            ret += "\nmethods:\n" + ''.join((
+                f"\t{clsname}.{name}(...):\n\t{getattr(cls, name).__doc__}\n"
+                for name in unique_attrs
+                if not name.startswith('_') and inspect.ismethod(getattr(cls,name))
+            ))
 
-        ret += "value traits:\n" + ''.join((
-            f"\t{clsname}.{getattr(cls, name).doc()}\n"
-            for name in cls._value_attrs
-        ))
+        if values:
+            ret += "value traits:\n" + ''.join((
+                f"\t{clsname}.{getattr(cls, name).doc()}\n"
+                for name in cls._value_attrs
+            ))
 
-        ret += "\nproperty traits:\n" + ''.join((
-            f"\t{clsname}.{getattr(cls, name).doc()}\n"
-            for name in cls._property_attrs
-        ))
+        if properties:
+            ret += "\nproperty traits:\n" + ''.join((
+                f"\t{clsname}.{getattr(cls, name).doc()}\n"
+                for name in cls._property_attrs
+            ))
 
-        if len(cls._datareturn_attrs) > 0:
+        if datareturns and len(cls._datareturn_attrs) > 0:
             ret += "\ndatareturn traits:\n" + ''.join((
                 f"\t{clsname}.{getattr(cls, name).doc()}\n"
                 for name in cls._property_attrs

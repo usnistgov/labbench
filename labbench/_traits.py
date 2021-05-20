@@ -95,25 +95,23 @@ class Trait:
         The trait behavior is determined by whether its owner is a Device or HasSettings
         instance.
 
-        :param default: the default value of the trait (value traits only)
+        Args:
+            default: the default value of the trait (value traits only)
+            key: some types of Device take this input to determine automation behavior
 
-        :param key: some types of Device take this input to determine automation behavior
+            help: the Trait docstring
+            label: a label for the quantity, such as units
 
-        :param help: the Trait docstring
+        Args:
+            sets: True if the trait supports writes
+            gets: True if the trait supports reads
 
-        :param label: a label for the quantity, such as units
+            cache: if True, interact with the device only once, then return copies (state traits only)
+            only: value allowlist; others raise ValueError
 
-        :param sets: True if the trait supports writes
-
-        :param gets: True if the trait supports reads
-
-        :param cache: if True, interact with the device only once, then return copies (state traits only)
-
-        :param only: value allowlist; others raise ValueError
-
-        :param allow_none: permit None values in addition to the specified type
-
-        :param remap: a lookup table that maps the python type (keys) to a potentially different backend values (values) ,
+        Args:
+            allow_none: permit None values in addition to the specified type
+            remap: a lookup table that maps the python type (keys) to a potentially different backend values (values) ,
                       in places of the to_pythonic and from_pythonic methods (property traits only)
 
     """
@@ -221,7 +219,8 @@ class Trait:
         """ python triggers this call immediately after a Trait subclass
             is defined, allowing us to automatically customize its implementation.
 
-        :param type: the python type represented by the trait
+        Args:
+            type: the python type represented by the trait
         """
         if type is not Undefined:
             cls.type = type
@@ -328,7 +327,7 @@ class Trait:
     def __set__(self, owner, value):
         # First, validate the pythonic types
         if not self.sets:
-            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not sets")
+            raise AttributeError(f"{self.__str__()} cannot be set")
 
         # Validate the pythonic value
         if value is not None:
@@ -444,8 +443,9 @@ class Trait:
     def __cast_get__(self, owner, value, strict=False):
         """ Examine value and either return a valid pythonic value or raise an exception if it cannot be cast.
 
-        :param owner: the class that owns the trait
-        :param value: the value we need to validate and notify
+        Args:
+            owner: the class that owns the trait
+            value: the value we need to validate and notify
         :return:
         """
         if self.allow_none and value is None:
@@ -498,7 +498,7 @@ class Trait:
     def validate(self, value, owner=None):
         """ This is the default validator, which requires that trait values have the same type as self.type.
             A ValueError is raised for other types.
-        :param value: value to check
+            value: value to check
         :return: a valid value
         """
         if not isinstance(value, self.type):
@@ -694,7 +694,8 @@ class HasTraits(metaclass=HasTraitsMeta):
     def __get_value__(self, name):
         """ Get value of a trait for this value traits instance
 
-        :param name: Name of the trait
+        Args:
+            name: Name of the trait
         :return: cached value, or the trait default if it has not yet been set
         """
         return self.__cache__[name]
@@ -703,8 +704,9 @@ class HasTraits(metaclass=HasTraitsMeta):
     def __set_value__(self, name, value):
         """ Set value of a trait for this value traits instance
 
-        :param name: Name of the trait
-        :param value: value to assign
+        Args:
+            name: Name of the trait
+            value: value to assign
         :return: None
         """
         # assignment to to self.__cache__ here would corrupt 'old' message key in __notify__
@@ -738,9 +740,9 @@ def observe(obj, handler, name=Any, type_=('get', 'set')):
         * `name`: the name of the trait
         * 'event': 'set' or 'get'
 
-        :param handler: the handler function to call when the value changes
-
-        :param names: notify only changes to these trait names (None to disable filtering)
+        Args:
+            handler: the handler function to call when the value changes
+            names: notify only changes to these trait names (None to disable filtering)
     """
 
     if not callable(handler):
@@ -1078,9 +1080,9 @@ class BoundedNumber(Trait):
         """ generate a new Trait subclass that calibrates values given by
         another trait. their configuration comes from a trait in the owner.
 
-        :param offset_name: the name of a value trait in the owner containing a numerical offset
-
-        :param lookup: a table containing calibration data, or None to configure later
+        Args:
+            offset_name: the name of a value trait in the owner containing a numerical offset
+            lookup: a table containing calibration data, or None to configure later
         """
 
         params = {}
@@ -1111,9 +1113,10 @@ class BoundedNumber(Trait):
         """ generate a new Trait subclass that calibrates values given by
         another trait.
 
-        :param forward: a function that returns the transformed numerical value
+        Args:
+            forward: a function that returns the transformed numerical value
         given the untransformed value
-        :param reverse: a function that returns the untransformed numerical value
+            reverse: a function that returns the untransformed numerical value
         given the transformed value.
         """
 

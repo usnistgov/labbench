@@ -368,14 +368,15 @@ def retry(exception_or_exceptions, tries=4, delay=0,
     Inspired by https://github.com/saltycrane/retry-decorator which is released
     under the BSD license.
 
-    :param exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
-    :param tries: number of times to try before giving up
+    Args:
+        exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
+        tries: number of times to try before giving up
     :type tries: int
-    :param delay: initial delay between retries in seconds
+        delay: initial delay between retries in seconds
     :type delay: float
-    :param backoff: backoff to multiply to the delay for each retry
+        backoff: backoff to multiply to the delay for each retry
     :type backoff: float
-    :param exception_func: function to call on exception before the next retry
+        exception_func: function to call on exception before the next retry
     :type exception_func: callable
     """
     def decorator(f):
@@ -432,14 +433,15 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
             t.open(host,port,5)
             return t
 
-    :param exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
-    :param timeout: time in seconds to continue calling the decorated function while suppressing exception_or_exceptions
+    Args:
+        exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
+        timeout: time in seconds to continue calling the decorated function while suppressing exception_or_exceptions
     :type timeout: float
-    :param delay: initial delay between retries in seconds
+        delay: initial delay between retries in seconds
     :type delay: float
-    :param backoff: backoff to multiply to the delay for each retry
+        backoff: backoff to multiply to the delay for each retry
     :type backoff: float
-    :param exception_func: function to call on exception before the next retry
+        exception_func: function to call on exception before the next retry
     :type exception_func: callable
     """
     def decorator(f):
@@ -481,7 +483,8 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
 def show_messages(minimum_level):
     """ Configure screen debug message output for any messages as least as important as indicated by `level`.
 
-    :param minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
+    Args:
+        minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
     :return: None
     """
 
@@ -519,7 +522,8 @@ def show_messages(minimum_level):
 def kill_by_name(*names):
     """ Kill one or more running processes by the name(s) of matching binaries.
 
-        :param names: list of names of processes to kill
+        Args:
+            names: list of names of processes to kill
         :type names: str
 
         :example:
@@ -587,8 +591,9 @@ def stopwatch(desc: str = '',
     >>>     time.sleep(2)
     sleep statement time elapsed 1.999s.
 
-    :param desc: text for display that describes the event being timed
-    :param threshold: only show timing if at least this much time (in s) elapsed
+    Args:
+        desc: text for display that describes the event being timed
+        threshold: only show timing if at least this much time (in s) elapsed
     :
     :return: context manager
     """
@@ -699,11 +704,13 @@ class MultipleContexts:
                  params: dict,
                  objs: list):
         """
-        :param call_handler: one of `sequentially_call` or `concurrently_call`
-        :param params: a dictionary of operating parameters (see `concurrently`)
-        :param objs: a list of contexts to be entered and dict-like objects to return
+            call_handler: one of `sequentially_call` or `concurrently_call`
+            params: a dictionary of operating parameters (see `concurrently`)
+            objs: a list of contexts to be entered and dict-like objects to return
 
-        :returns: context object for use in a `with` statement
+        Returns:
+
+            context object for use in a `with` statement
 
         """
 
@@ -1075,11 +1082,12 @@ def concurrently(*objs, **kws):
         Multiple references to the same function in `objs` only result in one call. The `catch` and `nones`
         arguments may be callables, in which case they are executed (and each flag value is treated as defaults).
 
-        :param objs:  each argument may be a callable (function or class that defines a __call__ method), or context manager (such as a Device instance)
-        :param catch:  if `False` (the default), a `ConcurrentException` is raised if any of `funcs` raise an exception; otherwise, any remaining successful calls are returned as normal
-        :param nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
-        :param flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
-        :param traceback_delay: if `False`, immediately show traceback information on a thread exception; if `True` (the default), wait until all threads finish
+        Args:
+            objs:  each argument may be a callable (function or class that defines a __call__ method), or context manager (such as a Device instance)
+            catch:  if `False` (the default), a `ConcurrentException` is raised if any of `funcs` raise an exception; otherwise, any remaining successful calls are returned as normal
+            nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
+            flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
+            traceback_delay: if `False`, immediately show traceback information on a thread exception; if `True` (the default), wait until all threads finish
         :return: the values returned by each call
         :rtype: dictionary keyed by function name
 
@@ -1152,10 +1160,11 @@ def sequentially(*objs, **kws):
         Multiple references to the same function in `objs` only result in one call. The `nones`
         argument may be callables in  case they are executed (and each flag value is treated as defaults).
 
-        :param objs:  each argument may be a callable (function, or class that defines a __call__ method), or context manager (such as a Device instance)
-        :param kws: dictionary of further callables or context managers, with names set by the dictionary key
-        :param nones: if True, include dictionary entries for calls that return None (default is False); left as another entry in `kws` if callable or a context manager
-        :param flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
+        Args:
+            objs:  each argument may be a callable (function, or class that defines a __call__ method), or context manager (such as a Device instance)
+            kws: dictionary of further callables or context managers, with names set by the dictionary key
+            nones: if True, include dictionary entries for calls that return None (default is False); left as another entry in `kws` if callable or a context manager
+            flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
         :return: a dictionary keyed on the object name containing the return value of each function
         :rtype: dictionary of keyed by function
 
@@ -1435,7 +1444,8 @@ def accessed_attributes(method):
     """ enumerate the attributes of the parent class accessed by `method`
 
     :method: callable that is a method or defined in a class
-    :returns: tuple of attribute names
+    Returns:
+        tuple of attribute names
     """
 
     # really won't work unless method is a callable defined inside a class

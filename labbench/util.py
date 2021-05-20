@@ -663,12 +663,18 @@ class Call(object):
         # First, generate the list of callables
         for name, func in name_func_pairs:
             try:
+                if name is None:
+                    if hasattr(func, 'name'):
+                        name = func.name
+                    elif hasattr(func, '__name__'):
+                        name = func.__name__
+                    else:
+                        raise TypeError(f'could not find name of {func}')
+
                 if not isinstance(func, cls):
                     if not hasattr(func, name):
                         func.__name__  = name
                     func = cls(func)
-                if name is None:
-                    name = func.name
                 else:
                     func.name = name
                 if name in ret:

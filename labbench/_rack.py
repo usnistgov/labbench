@@ -228,14 +228,14 @@ class Method(util.Ownable):
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # ensure that required devices are connected
-        closed = [dev._instname for dev in self.dependencies if not dev.isopen]
+        closed = [dev._owned_name for dev in self.dependencies if not dev.isopen]
         if len(closed) > 0:
             closed = ', '.join(closed)
             label = self.__class__.__qualname__ + '.' + self.__name__
             raise ConnectionError(f"devices {closed} must be connected to invoke {self.__qualname__}")
 
         # notify observers about the parameters passed
-        name_prefix = '_'.join(self._owner._instname.split('.')[1:])+'_'
+        name_prefix = '_'.join(self._owner._owned_name.split('.')[1:])+'_'
         if len(kws) > 0:
             notify_params = {
                 name_prefix + k: v for k, v in kws.items()
@@ -247,7 +247,7 @@ class Method(util.Ownable):
         ret = self._wrapped(self._owner, *args, **kws)
         elapsed = time.perf_counter()-t0
         if elapsed > 0.1:
-            util.console.debug(f"{self._instname} completed in {elapsed:0.2f}s")
+            util.console.debug(f"{self._owned_name} completed in {elapsed:0.2f}s")
 
         # notify observers about the returned value
         if ret is not None:
@@ -298,7 +298,7 @@ class BoundSequence(util.Ownable):
         """
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.console.info(f"{self._instname} from '{str(path)}' "
+            util.console.info(f"{self._owned_name} from '{str(path)}' "
                              f"- '{row}' ({i+1}/{len(table.index)})")
             self.results = self(**table.loc[row].to_dict())
 
@@ -338,14 +338,18 @@ class OwnerContextAdapter:
     """
     def __init__(self, owner):
         self._owner = owner
-        self._instname = getattr(owner, '_instname', repr(owner))
+        self._owned_name = getattr(owner, '_owned_name', repr(owner))
+
+        display_name = getattr(self, '_owned_name', type(self).__name__)
+        self._console = util.console.logger.getChild(str(self))
+        self._console = logging.LoggerAdapter(self._console, dict(rack=display_name, origin=f" - " + str(self)))
 
     def __enter__(self):
         cls = type(self._owner)
         for opener in core.trace_methods(cls, 'open', Owner)[::-1]:
             opener(self._owner)
 
-        self._owner.open()
+        # self._owner.open()
         self._owner._console.debug('opened')
 
     def __exit__(self, *exc_info):
@@ -374,7 +378,7 @@ class OwnerContextAdapter:
         return repr(self._owner)
 
     def __str__(self):
-        return getattr(self._owner, '_instname', None) or repr(self)
+        return getattr(self._owner, '_owned_name', None) or repr(self)
 
 
 def recursive_devices(top):
@@ -397,26 +401,37 @@ def recursive_devices(top):
     return devices, entry_order
 
 
-def recursive_owner_managers(top):
+def flatten_nested_owner_contexts(top) -> dict:
+    """ generate a flattened mapping of context managers to
+    that nested Owner classes
+
+    Returns:
+        mapping of {name: contextmanager}
+    """
     managers = {}
     for name, owner in top._owners.items():
-        managers.update(recursive_owner_managers(owner))
-        # managers[name] = OwnerContextAdapter(owner)
+        managers.update(flatten_nested_owner_contexts(owner))
+        managers[name] = OwnerContextAdapter(owner)
 
-    if getattr(top, '_instname', None) is not None:
-        name = '_'.join(top._instname.split('.')[1:])
+    if getattr(top, '_owned_name', None) is not None:
+        name = '_'.join(top._owned_name.split('.')[1:])
         managers[name] = OwnerContextAdapter(top)
+    elif '' not in managers:
+        managers[''] = OwnerContextAdapter(top)
+    else:
+        raise KeyError(f"2 unbound owners in the manager tree")
+
     return managers
 
 
-def owner_context_manager(top):
+def package_owned_contexts(top):
     """
-    Make a context manager for an owner, as well as any of its owned instances of Device and Owner
-    (recursively).
-    Entry into this context will manage all of these.
+    Make a context manager for an owner that also enters any Owned members
+    (recursively) Entry into this context will manage all of these.
 
     Args:
-        top: Owner instance
+        top: top-level Owner
+
     Returns:
         Context manager
     """
@@ -448,7 +463,7 @@ def owner_context_manager(top):
     devices = util.concurrently(name='', **devices)
 
     # what remain are instances of Rack and other Owner types    
-    owners = recursive_owner_managers(top)
+    owners = flatten_nested_owner_contexts(top)
     owners_desc = f"({','.join([str(c) for c in owners.values()])})"
 
     # TODO: concurrent rack entry. This would mean device dependency
@@ -459,7 +474,7 @@ def owner_context_manager(top):
     # top._context.__enter__()
     # for child in top._owners.values():
     #     child.open()
-    # # top.open()
+    # top.open()
     #
     # the dictionary here is a sequence
     seq = dict(first)
@@ -476,21 +491,21 @@ def owner_context_manager(top):
     return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
 
 
-def propagate_instnames(parent_obj, parent_name=None):
-    """ recursively update _instname in child instances of Owner
+def propagate_owned_names(parent_obj, parent_name=None):
+    """ recursively update _owned_name in child instances of Owner
         classes or instances
     """
     if parent_name is None:
         parent_name = parent_obj.__name__
 
     for name, obj in parent_obj._owners.items():
-        propagate_instnames(obj, parent_name+'.'+name)
+        propagate_owned_names(obj, parent_name+'.'+name)
 
     # some objects may be reused by children. apply
     # our own namespace last to ensure the highest-level
     # ownership is attributed
     for name, obj in parent_obj._ownables.items():
-        obj._instname = parent_name+'.'+name
+        obj._owned_name = parent_name+'.'+name
 
 
 def owner_getattr_chains(owner):
@@ -535,7 +550,7 @@ class Owner:
         """ called recursively on initialization of any owner above the
             scope of this owner
         """
-        self._instname = parent_name+'.'+self.__name__
+        self._owned_name = parent_name+'.'+self.__name__
 
     @classmethod
     def _propagate_ownership(cls):
@@ -575,7 +590,7 @@ class Owner:
 
             setattr(cls, name, obj)
 
-        propagate_instnames(cls, cls.__name__)
+        propagate_owned_names(cls, cls.__name__)
 
     def __init__(self, **update_ownables):
         self._owners = dict(self._owners)
@@ -612,7 +627,7 @@ class Owner:
 
         super().__init__()
 
-        propagate_instnames(self, type(self).__name__)
+        propagate_owned_names(self, type(self).__name__)
 
         for name, obj in self._ownables.items():
             obj.__owner_init__(self)
@@ -642,11 +657,12 @@ class Owner:
 
     @property
     def __enter__(self):
-        self._context = owner_context_manager(self)
+        self._context = package_owned_contexts(self)
 
         @wraps(type(self).__enter__.fget)
         def __enter__():
             self._context.__enter__()
+            
             return self
 
         return __enter__
@@ -655,6 +671,37 @@ class Owner:
     def __exit__(self):
         # pass along from self._context
         return self._context.__exit__
+
+    # def __enter__(self):
+    #     cls = type(self)
+    #     for opener in core.trace_methods(cls, 'open', Owner)[::-1]:
+    #         opener(self)
+
+    #     self._console.debug('opened')
+
+    #     return self
+
+    # def __exit__(self, *exc_info):
+    #     cls = type(self)
+    #     methods = core.trace_methods(cls, 'close', Owner)
+
+    #     all_ex = []
+    #     for closer in methods:
+    #         try:
+    #             closer(self)
+    #         except BaseException:
+    #             all_ex.append(sys.exc_info())
+
+    #     # Print tracebacks for any suppressed exceptions
+    #     for ex in all_ex[::-1]:
+    #         # If ThreadEndedByMaster was raised, assume the error handling in
+    #         # util.concurrently will print the error message
+    #         if ex[0] is not util.ThreadEndedByMaster:
+    #             depth = len(tuple(traceback.walk_tb(ex[2])))
+    #             traceback.print_exception(*ex, limit=-(depth - 1))
+    #             sys.stderr.write('(Exception suppressed to continue close)\n\n')
+
+    #     self._console.debug('closed')
 
 
 @util.hide_in_traceback
@@ -1217,10 +1264,6 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __init__(self, **devices):
         super().__init__(**devices)
-
-        display_name = getattr(self, '_instname', type(self).__name__)
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(rack=display_name, origin=f" - " + str(self)))
 
         # match the device arguments to annotations
         devices = dict(devices)

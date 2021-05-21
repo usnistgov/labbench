@@ -108,8 +108,8 @@ class DisconnectedBackend(object):
         """
         if isinstance(dev, str):
             self.name = dev
-        elif hasattr(dev, '_instname'):
-            self.name = dev._instname
+        elif hasattr(dev, '_owned_name'):
+            self.name = dev._owned_name
         else:
             self.name = f'{dev.__class__.__qualname__} instance'
 
@@ -126,18 +126,6 @@ class DisconnectedBackend(object):
 
     str = __repr__
     __deepcopy__ = __copy__
-
-
-@util.hide_in_traceback
-def __init__():
-    """ Wrapper function to call __init__ with adjusted function signature
-    """
-
-    # The signature has been dynamically replaced and is unknown. Pull it in
-    # via locals() instead. We assume we're inside a __init__(self, ...) call.
-    items = dict(locals())
-    self = items.pop(next(iter(items.keys())))
-    self.__init___wrapped(**items)
 
 
 class Device(HasTraits, util.Ownable):
@@ -257,8 +245,6 @@ class Device(HasTraits, util.Ownable):
             if name != 'resource'
         ]
 
-        cls.__doc__,cls.__doc_bare__ = getattr(cls, '__doc_bare__', cls.__doc__), cls.__doc__
-
         # apply signature and generate doc for each acceptable value
         cls.__init__.__signature__ = inspect.Signature(params)
 
@@ -313,14 +299,14 @@ class Device(HasTraits, util.Ownable):
 
 
     @property
-    def _instname(self):
+    def _owned_name(self):
         if hasattr(self, '_console'):
             return self._console.extra['device']
         else:
             return None
 
-    @_instname.setter
-    def _instname(self, value):
+    @_owned_name.setter
+    def _owned_name(self, value):
         if value is not None:
             self._console.extra['device'] = value
             self._console.extra['origin'] = ' - '+value

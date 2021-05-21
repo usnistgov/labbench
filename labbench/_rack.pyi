@@ -109,7 +109,7 @@ def recursive_owner_managers(top: Any):
 def owner_context_manager(top: Any):
     ...
 
-def propagate_instnames(parent_obj: Any, parent_name: Optional[Any]=...) -> None:
+def propagate_owned_names(parent_obj: Any, parent_name: Optional[Any]=...) -> None:
     ...
 
 def owner_getattr_chains(owner: Any):

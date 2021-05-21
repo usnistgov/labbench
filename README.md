@@ -27,13 +27,16 @@ import labbench as lb
 import pandas as pd
 
 class PowerSensor(lb.VISADevice):
-    initiate_continuous:bool = lb.property(key='INIT:CONT')
-    output_trigger:bool = lb.property(key='OUTP:TRIG')
-    trigger_source:unicode = lb.property(key='TRIG:SOUR', only=('IMM', 'INT', 'EXT', 'BUS', 'INT1'), case=False)
-    trigger_count:int = lb.property(key='TRIG:COUN', min=1, max=200)
-    measurement_rate:unicode = lb.property(key='SENS:MRAT', only=('NORM', 'DOUB', 'FAST'), case=False)
-    sweep_aperture:float = lb.property(key='SWE:APER', min=20e-6, max=200e-3, help='time (s)')
-    frequency:float = lb.property(key='SENS:FREQ', min=10e6, max=18e9, step=1e-3,
+    SOURCES = 'IMM', 'INT', 'EXT', 'BUS', 'INT1'
+    RATES = 'NORM', 'DOUB', 'FAST'
+
+    initiate_continuous = lb.property.bool(key='INIT:CONT')
+    output_trigger = lb.property.bool(key='OUTP:TRIG')
+    trigger_source = lb.property.str(key='TRIG:SOUR', only=SOURCES, case=False)
+    trigger_count = lb.property.int(key='TRIG:COUN', min=1, max=200)
+    measurement_rate = lb.property.str(key='SENS:MRAT', only=RATES, case=False)
+    sweep_aperture = lb.property.float(key='SWE:APER', min=20e-6, max=200e-3, help='time (s)')
+    frequency = lb.property.float(key='SENS:FREQ', min=10e6, max=18e9, step=1e-3,
                          help='input signal center frequency (in Hz)')
 
     def preset(self):
@@ -125,10 +128,11 @@ sg = MySignalGenerator(resource='b')
 generator = Synthesize(inst=sg)
 detector = Analyze(inst=sa)
 
-procedure = lb.Coordinate(
-    setup=(generator.setup & detector.setup),  # concurrently execute the long setups
-    acquire=(generator.arm, detector.acquire), # first arm the generator, then and start acquisition
-    fetch=(generator.finish & detector.fetch), # concurrently clean up the test state
+procedure = lb.Sequence(
+    setup=(generator.setup, detector.setup),  # concurrently execute the long setups
+    arm=generator.arm, # arm the generator before the detector acquires
+    acquire=detector.acquire, # start acquisition in the generator
+    fetch=(generator.finish, detector.fetch), # concurrently cleanup and collect the acquired data
     finish=(db.new_row, db.write),          # start the next row in the database
 )
 ```

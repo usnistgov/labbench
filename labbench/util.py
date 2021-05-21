@@ -84,7 +84,7 @@ class Ownable:
     """
     __objclass__ = None
     __get_owned_name__ = None
-    _instname = None
+    _owned_name = None
 
     def __set_name__(self, owner_cls, name):
         self.__objclass__ = owner_cls
@@ -117,7 +117,7 @@ class Ownable:
             return object.__repr__(self)
 
     def __str__(self):
-        return self._instname or repr(self)
+        return self._owned_name or repr(self)
 
 
 class ConcurrentException(Exception):

@@ -361,8 +361,8 @@ class MungeToDirectory(MungerBase):
                     if isinstance(obj, Path):
                         v[name] = str(obj)
 
-            with io.TextIOWrapper(stream, newline='\n') as buf:
-                json.dump(v, buf, indent=True, sort_keys=True)
+            #with io.TextIOWrapper(stream, newline='\n') as buf:
+            json.dump(v, stream, indent=True, sort_keys=True)
 
 
 class TarFileIO(io.BytesIO):
@@ -432,7 +432,8 @@ class MungeToTar(MungerBase):
         dirpath = os.path.join(self.metadata_dirname, name)
         return TarFileIO(self.tarfile, dirpath, mode=mode)
 
-    def open(self):       
+    def open(self):      
+
         if not os.path.exists(self.resource):
             with suppress(FileExistsError):
                 os.makedirs(self.resource)
@@ -934,7 +935,6 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
         aggregated = dict(self.aggregator.get())
         if do_copy:
             aggregated = copy.deepcopy(aggregated)
-        # print('agg: ', aggregated)
         row.update(aggregated)
 
         # Pull in keyword arguments
@@ -1022,6 +1022,7 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
 
         self.munge.dirname_fmt = format
 
+
     def open(self):
         """ Open the file or database connection.
             This is an abstract base method (to be overridden by inheriting classes)
@@ -1029,8 +1030,6 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
             Returns:
                 None
         """
-
-        print('open RelationalDataLogger')
 
         if self.path is None:
             raise TypeError(f"cannot open dB while path is None")
@@ -1046,19 +1045,16 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
 
         self.last_index = 0
         self._console.debug(f'{self} is open')
+        return self
 
     def close(self):
         self.aggregator.disable()
-        try:
-            self.write()
-            if self.last_index > 0:
-                self.munge.save_metadata(self.aggregator.name_map, self.aggregator.key, **self.aggregator.metadata)
-        except BaseException as e:
-            traceback.print_exc()
-        finally:
-            self.close()
-
-        self._console.debug(f'{self} is closed')
+        # try:
+        self.write()
+        if self.last_index > 0:
+            self.munge.save_metadata(self.aggregator.name_map, self.aggregator.key, **self.aggregator.metadata)
+        # except BaseException as e:
+        #     traceback.print_exc()
 
 
 class CSVLogger(RelationalTableLogger):
@@ -1098,10 +1094,6 @@ class CSVLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-
-        super().open()
-
-        print('open CSVLogger')
 
         self.path.mkdir(parents=True, exist_ok=self._append)
 
@@ -1333,13 +1325,10 @@ class HDFLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-        super().open()
-
         self.df = None
 
     def close(self):
         self._write_root()
-        super().close()
 
     def _write_root(self):
         """ Write queued rows of data to csv. This is called automatically on :func:`close`, or when
@@ -1410,8 +1399,6 @@ class SQLiteLogger(RelationalTableLogger):
             is an exception.
         """
 
-        super().open()
-
         if self.path.exists():
             root = str(self.path.absolute())
             if not self.path.is_dir():
@@ -1456,12 +1443,7 @@ class SQLiteLogger(RelationalTableLogger):
         try:
             self._write_root()
         finally:
-            try:
-                self._engine.dispose()
-            except BaseException:
-                pass
-            finally:
-                super().close()
+            self._engine.dispose()
 
     def _write_root(self):
         """ Write queued rows of data to the database. This also is called automatically on :func:`close`, or when

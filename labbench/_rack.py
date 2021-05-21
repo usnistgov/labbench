@@ -378,23 +378,23 @@ class OwnerContextAdapter:
 
 
 def recursive_devices(top):
-    ordered_entry = list(top._ordered_entry)
+    entry_order = list(top._entry_order)
     devices = dict(top._devices)
     name_prefix = getattr(top, '__name__', '')
     if len(name_prefix) > 0:
         name_prefix = name_prefix + '.'
 
     for owner in top._owners.values():
-        children, o_ordered_entry = recursive_devices(owner)
+        children, o_entry_order = recursive_devices(owner)
 
         # this might be faster by reversing key and value order in devices (and thus children)?
         for name, child in children.items():
             if child not in devices.values():
                 devices[name_prefix+name] = child
 
-        ordered_entry.extend(o_ordered_entry)
+        entry_order.extend(o_entry_order)
 
-    return devices, ordered_entry
+    return devices, entry_order
 
 
 def recursive_owner_managers(top):
@@ -422,19 +422,19 @@ def owner_context_manager(top):
     """
 
     log = getattr(top, '_console', util.console)
-    contexts, ordered_entry = recursive_devices(top)
+    contexts, entry_order = recursive_devices(top)
 
-    # like set(ordered_entry), but maintains order in python >= 3.7
-    ordered_entry = tuple(dict.fromkeys(ordered_entry))
-    order_desc = ' -> '.join([e.__qualname__ for e in ordered_entry])
-    log.debug(f"ordered_entry before other devices: {order_desc}")
+    # like set(entry_order), but maintains order in python >= 3.7
+    entry_order = tuple(dict.fromkeys(entry_order))
+    order_desc = ' -> '.join([e.__qualname__ for e in entry_order])
+    log.debug(f"entry_order before other devices: {order_desc}")
 
-    # Pull any objects of types listed by top.ordered_entry, in the
-    # order of (1) the types listed in top.ordered_entry, then (2) the order
+    # Pull any objects of types listed by top.entry_order, in the
+    # order of (1) the types listed in top.entry_order, then (2) the order
     # they appear in objs
     first = dict()
     remaining = dict(contexts)
-    for cls in ordered_entry:
+    for cls in entry_order:
         for attr, obj in contexts.items():
             if isinstance(obj, cls):
                 first[attr] = remaining.pop(attr)
@@ -514,20 +514,20 @@ def owner_getattr_chains(owner):
 class Owner:
     """ own context-managed instances of Device as well as setup and cleanup calls to owned instances of Owner
     """
-    _ordered_entry = []
+    _entry_order = []
     _concurrent = True
     
-    def __init_subclass__(cls, ordered_entry: list = None):
+    def __init_subclass__(cls, entry_order: list = None):
         # registries that will be context managed
         cls._devices = {} # each of cls._devices.values() these will be context managed
         cls._owners = {} # each of these will get courtesy calls to open and close between _device entry and exit
         cls._ownables = {}
 
-        if ordered_entry is not None:
-            for e in ordered_entry:
+        if entry_order is not None:
+            for e in entry_order:
                 if not issubclass(e, core.Device):
-                    raise TypeError(f"ordered_entry item {e} is not a Device subclass")
-            cls._ordered_entry = ordered_entry
+                    raise TypeError(f"entry_order item {e} is not a Device subclass")
+            cls._entry_order = entry_order
 
         cls._propagate_ownership()
 
@@ -805,7 +805,8 @@ class Sequence(util.Ownable):
     def _dependency_map(self, spec, owner_deps={}) -> dict:
         """ list of Device dependencies of each Method.
 
-        :returns: {Device instance: reference to method that uses Device instance}
+        Returns:
+            {Device instance: reference to method that uses Device instance}
         """
 
         deps = dict(owner_deps)
@@ -830,7 +831,8 @@ class Sequence(util.Ownable):
 
         Args:
             tree: nested list of calls that contains the parsed call tree
-        :return: dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
+        Returns:
+            dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
             default_value is `EMPTY` if there is no default.
         """
 
@@ -881,7 +883,8 @@ class RackMeta(type):
 
         Args:
             name_or_module: a string containing the module to import, or a module object that is already imported
-        :return: class that is a subclass of Rack
+        Returns:
+            class that is a subclass of Rack
         """
         if isinstance(module, str):
             import importlib
@@ -1176,8 +1179,8 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     """
 
-    def __init_subclass__(cls, ordered_entry=[]):
-        cls._ordered_entry = ordered_entry
+    def __init_subclass__(cls, entry_order=[]):
+        cls._entry_order = entry_order
 
         # register step methods
         cls._methods = {}
@@ -1202,7 +1205,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
                                    **getattr(cls, '__annotations__', {}))
         cls.__init__.__annotations__ = cls.__annotations__
 
-        super().__init_subclass__(ordered_entry=ordered_entry)
+        super().__init_subclass__(entry_order=entry_order)
 
         # # sentinel values for each annotations (largely to support IDE introspection)
         # for name, annot_cls in cls.__annotations__.items():

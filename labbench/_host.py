@@ -189,20 +189,28 @@ class Email(core.Device):
         return subject, message
 
 
-class Dumper(yaml.Dumper):
-    """ Maintain the key order when dumping a dictionary to YAML
-    """
-    def represent_dict_preserve_order(self, data):
-        return self.represent_dict(data.items())
+# class Dumper(yaml.Dumper):
+#     """ Maintain the key order when dumping a dictionary to YAML
+#     """
+#     def represent_dict_preserve_order(self, data):
+#         return self.represent_dict(data.items())
 
-Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
+# Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
+import json
 
-
-class YAMLFormatter(logging.Formatter):
+class JSONFormatter(logging.Formatter):
     _last = []
+
+    @staticmethod
+    def json_serialize_dates(obj):
+        """JSON serializer for objects not serializable by default json code"""
+
+        if isinstance(obj, (datetime.datetime, datetime.date)):
+            return obj.isoformat()
+        raise TypeError (f"Type {type(obj).__qualname__} not serializable")
     
     def format(self, rec):
-        """ Return a YAML string for each logger message
+        """ Return a YAML string for each logger record
         """
 
         msg = dict(message=rec.msg,
@@ -223,9 +231,11 @@ class YAMLFormatter(logging.Formatter):
             msg['traceback'] = ''.join(format_tb(exc_tb)).splitlines()
 
         self._last.append((rec,msg))
+
+        return json.dumps(msg, indent=True, default=self.json_serialize_dates)+','
         
-        return yaml.dump([msg], Dumper=Dumper,
-                         indent=4, default_flow_style=False)
+        # return yaml.dump([msg], Dumper=Dumper,
+        #                  indent=4, default_flow_style=False)
 
 
 class Host(core.Device):
@@ -241,7 +251,7 @@ class Host(core.Device):
     def open(self):
         """ The host setup method tries to commit current changes to the tree
         """
-        log_formatter = YAMLFormatter()
+        log_formatter = JSONFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
         sh.setFormatter(log_formatter)
@@ -307,7 +317,7 @@ class Host(core.Device):
         running = dict(sorted([(k, versions[k.lower()])
                                for k in sys.modules.keys() if k in versions]))
         return pd.Series(running).sort_index()
-   
+
     @property_.str()
     def time(self):
         """ Get a timestamp of the current time
@@ -315,13 +325,20 @@ class Host(core.Device):
         now = datetime.datetime.now()
         return f'{now.strftime(self.time_format)}.{now.microsecond}'
 
-    @property_.str()
+    @property_.list()
     def log(self):
         """ Get the current host log contents.
         """
         self.backend['log_handler'].flush()
-        return self.backend['log_stream'].read().replace('\n', '\r\n')
-    
+        txt = self.backend['log_stream'].read()
+        if len(txt)>1:
+            self._txt = txt
+            self._serialized = '['+txt[:-2]+']'
+            self._ret = json.loads(self._serialized)#self.backend['log_stream'].read().replace('\n', '\r\n')
+            return self._ret
+        else:
+            return {}
+
     @property_.str(cache=True)
     def git_commit_id(self):
         """ Try to determine the current commit hash of the current git repo

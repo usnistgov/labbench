@@ -41,6 +41,7 @@ import io
 import json
 import logging
 from numbers import Number
+import numpy as np
 import os
 import pandas as pd
 from pathlib import Path
@@ -88,7 +89,8 @@ class MungerBase(core.Device):
 
         Args:
             row: dictionary of {'entry_name': "entry_value"} pairs
-        :return: the row dictionary, replacing special entries with the relative path to the saved data file
+        Returns:
+            the row dictionary, replacing special entries with the relative path to the saved data file
         """
         def is_path(v):
             if not isinstance(v, str):
@@ -98,20 +100,26 @@ class MungerBase(core.Device):
             except ValueError:
                 return False
 
-        for name, value in row.items():
-            # A path outside the relational database tree
+        for name, value in row.items():            
             if is_path(value):
-                # A file or directory that should be moved in
+                # Path to a datafile to move into the dataset
                 row[name] = self._from_external_file(name, value, index, row)
 
-            # A long string that should be written to a text file
             elif isinstance(value, (str, bytes)):
+                # A long string that should be written to a text file
                 if len(value) > self.text_relational_min\
                    or name in self.force_relational:
                     row[name] = self._from_text(name, value, index, row)
-            elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
+
+            elif isinstance(value, (np.ndarray, pd.Series, pd.DataFrame)):
                 # vector, table, matrix, etc.
-                row[name] = self._from_nonscalar(name, value, index, row)
+                row[name] = self._from_ndarraylike(name, value, index, row)
+
+            
+            elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
+                # tuple, list, or other iterable
+                row[name] = self._from_sequence(name, value, index, row)
+
         return row
 
     def save_metadata(self, name, key_func, **extra):
@@ -124,7 +132,7 @@ class MungerBase(core.Device):
                     return value
             elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
                 if not hasattr(value, '__len__') or len(value) > 0:
-                    self._from_nonscalar(key_name, value)
+                    self._from_ndarraylike(key_name, value)
                 else:
                     return ''
             else:
@@ -145,7 +153,7 @@ class MungerBase(core.Device):
     def _write_metadata(self, metadata):
         raise NotImplementedError
 
-    def _from_nonscalar(self, name, value, index=0, row=None):
+    def _from_ndarraylike(self, name, value, index=0, row=None):
         """ Write nonscalar (potentially array-like, or a python object) data
         to a file, and return a path to the file
 
@@ -153,7 +161,8 @@ class MungerBase(core.Device):
             name: name of the entry to write, used as the filename
             value: the object containing array-like data
             row: row dictionary, or None (the default) to write to the metadata folder
-        :return: the path to the file, relative to the directory that contains the root database
+        Returns:
+            the path to the file, relative to the directory that contains the root database
         """
 
         
@@ -191,9 +200,9 @@ class MungerBase(core.Device):
             ext = 'pickle'
         finally:
             if row is None:
-                stream = self._open_metadata(name + '.' + ext)
+                stream = self._open_metadata(name + '.' + ext, 'wb')
             else:
-                stream = self._open_relational(name + '.' + ext, index, row)
+                stream = self._open_relational(name + '.' + ext, index, row, mode='wb')
 
             # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
             try:
@@ -206,7 +215,7 @@ class MungerBase(core.Device):
     def _from_external_file(self, name, old_path,
                             index=0, row=None, ntries=10):
         basename = os.path.basename(old_path)
-        with self._open_relational(basename, index, row) as buf:
+        with self._open_relational(basename, index, row, mode='wb') as buf:
             new_path = buf.name
 
         self._import_from_file(old_path, new_path)
@@ -221,10 +230,26 @@ class MungerBase(core.Device):
             value: the string to write to file
             row: the row to infer timestamp, or None to write to metadata
             ext: file extension
-        :return: the path to the file, relative to the directory that contains the root database
+        Returns:
+            the path to the file, relative to the directory that contains the root database
         """
-        with self._open_relational(name + ext, index, row) as f:
-            f.write(bytes(value, encoding='utf-8'))
+        with self._open_relational(name + ext, index, row, 'w') as f:
+            f.write(value)
+        return self._get_key(f)
+
+    def _from_sequence(self, name, value, index=0, row=None, ext='.json'):
+        """ Write a string data to a file
+
+        Args:
+            name: name of the parameter (helps to determine file path)
+            value: the string to write to file
+            row: the row to infer timestamp, or None to write to metadata
+            ext: file extension
+        Returns:
+            the path to the file, relative to the directory that contains the root database
+        """
+        with self._open_relational(name + ext, index, row, mode='w') as f:
+            json.dump(value, f, indent=True)#f.write(bytes(value, encoding='utf-8'))
         return self._get_key(f)
 
     # The following methods need to be implemented in subclasses.
@@ -233,11 +258,12 @@ class MungerBase(core.Device):
 
         Args:
             stream: stream for writing to the relational data file
-        :return: the key
+        Returns:
+            the key
         """
         raise NotImplementedError
 
-    def _open_relational(self, name, index, row):
+    def _open_relational(self, name, index, row, mode):
         """ Open a stream / IO buffer for writing relational data, given
             the root database column, index, and the row dictionary.
 
@@ -271,7 +297,7 @@ class MungeToDirectory(MungerBase):
     """ Implement data munging into subdirectories.
     """
 
-    def _open_relational(self, name, index, row):
+    def _open_relational(self, name, index, row, mode):
         if 'host_time' not in row:
             self._console.error(
                 "no timestamp yet from host yet; this shouldn't happen :(")
@@ -280,20 +306,21 @@ class MungeToDirectory(MungerBase):
         if not os.path.exists(relpath):
             os.makedirs(relpath)
 
-        return open(os.path.join(relpath, name), 'wb+')
+        return open(os.path.join(relpath, name), mode)
 
-    def _open_metadata(self, name):
+    def _open_metadata(self, name, mode):
         dirpath = os.path.join(self.resource, self.metadata_dirname)
         with suppress(FileExistsError):
             os.makedirs(dirpath)
-        return open(os.path.join(dirpath, name), 'wb+')
+        return open(os.path.join(dirpath, name), mode)
 
     def _get_key(self, stream):
         """ Key to use for the relative data in the root database?
 
         Args:
             stream: stream for writing to the relational data file
-        :return: the key
+        Returns:
+            the key
         """
         return os.path.relpath(stream.name, self.resource)
 
@@ -323,7 +350,7 @@ class MungeToDirectory(MungerBase):
 
     def _write_metadata(self, metadata):
         for k, v in metadata.items():
-            stream = self._open_metadata(k + '.json')
+            stream = self._open_metadata(k + '.json', 'w')
             if hasattr(stream, 'overwrite'):
                 stream.overwrite = True
 
@@ -392,18 +419,18 @@ class MungeToTar(MungerBase):
 
     tarname = 'data.tar'
 
-    def _open_relational(self, name, index, row):
+    def _open_relational(self, name, index, row, mode):
         if 'host_time' not in row:
             self._console.error(
                 "no timestamp yet from host yet; this shouldn't happen :(")
 
         relpath = os.path.join(self.dirname_fmt.format(id=index, **row), name)
 
-        return TarFileIO(self.tarfile, relpath)
+        return TarFileIO(self.tarfile, relpath, mode=mode)
 
-    def _open_metadata(self, name):
+    def _open_metadata(self, name, mode):
         dirpath = os.path.join(self.metadata_dirname, name)
-        return TarFileIO(self.tarfile, dirpath)
+        return TarFileIO(self.tarfile, dirpath, mode=mode)
 
     def open(self):       
         if not os.path.exists(self.resource):
@@ -420,7 +447,8 @@ class MungeToTar(MungerBase):
 
         Args:
             path: path of the file
-        :return: path to the file relative to the root database
+        Returns:
+            path to the file relative to the root database
         """
         return buf.name
 
@@ -445,7 +473,7 @@ class MungeToTar(MungerBase):
 
     def _write_metadata(self, metadata):
         for k, v in metadata.items():
-            stream = self._open_metadata(k + '.json')
+            stream = self._open_metadata(k + '.json', 'w')
             if hasattr(stream, 'overwrite'):
                 stream.overwrite = True
 
@@ -575,7 +603,8 @@ class Aggregator(util.Ownable):
 
         Args:
             change (dict): callback info dictionary generated by traitlets
-        :return: None
+        Returns:
+            None
         """
 
         if msg['name'].startswith('_'):
@@ -691,7 +720,8 @@ class Aggregator(util.Ownable):
             target: device instance
             min_levels: minimum number of layers of calls to traverse
             max_levels: maximum number of layers to traverse
-        :return: name of the Device
+        Returns:
+            name of the Device
         """
 #        # If the context is a function, look in its first argument,
 #        # in case it is a method. Search its class instance.
@@ -737,7 +767,7 @@ class Aggregator(util.Ownable):
         return ret
 
 
-class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, MungerBase, _host.Host)):
+class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)):
     """ Abstract base class for loggers that queue dictionaries of data before writing
         to disk. This extends :class:`Aggregator` to support
 
@@ -887,7 +917,8 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
             :param bool copy=True: When `True` (the default), use a deep copy of `data` to avoid
             problems with overwriting references to data if `data` is reused during test. This takes some extra time; set to `False` to skip this copy operation.
 
-            :return: the dictionary representation of the row added to `self.pending`.
+            Returns:
+                the dictionary representation of the row added to `self.pending`.
         """
         do_copy = kwargs.pop('copy', None)
 
@@ -942,7 +973,8 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         """ Write pending data. This is an abstract base method (must be
             implemented by inheriting classes)
 
-            :return: None
+            Returns:
+                None
         """
         raise NotImplementedError
 
@@ -982,7 +1014,8 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
                 format: a string compatible with :func:`str.format`, with replacement\
             fields defined from the keys from the current entry of results and aggregated states.\
 
-            :return: None
+            Returns:
+                None
         """
         warnings.warn("""set_path_format is deprecated; set when creating
                          the database object instead with the nonscalar_output flag""")
@@ -993,8 +1026,11 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         """ Open the file or database connection.
             This is an abstract base method (to be overridden by inheriting classes)
 
-            :return: None
+            Returns:
+                None
         """
+
+        print('open RelationalDataLogger')
 
         if self.path is None:
             raise TypeError(f"cannot open dB while path is None")
@@ -1006,7 +1042,6 @@ class RelationalTableLogger(Owner, util.Ownable, ordered_entry=(_host.Email, Mun
         # the root db.
         self.aggregator.enable()
 
-        self.open()
         self.clear()
 
         self.last_index = 0
@@ -1063,6 +1098,10 @@ class CSVLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
+
+        super().open()
+
+        print('open CSVLogger')
 
         self.path.mkdir(parents=True, exist_ok=self._append)
 
@@ -1144,7 +1183,8 @@ class MungeToHDF(Device):
 
         Args:
             row: dictionary of {'entry_name': "entry_value"} pairs
-        :return: the row dictionary, replacing special entries with the relative path to the saved data file
+        Returns:
+            the row dictionary, replacing special entries with the relative path to the saved data file
         """
         def is_path(v):
             if not isinstance(v, str):
@@ -1205,7 +1245,8 @@ class MungeToHDF(Device):
             name: name of the entry to write, used as the filename
             value: the object containing array-like data
             row: row dictionary, or None (the default) to write to the metadata folder
-        :return: the path to the file, relative to the directory that contains the root database
+        Returns:
+            the path to the file, relative to the directory that contains the root database
         """
 
         
@@ -1292,11 +1333,13 @@ class HDFLogger(RelationalTableLogger):
             the file is closed when exiting the `with` block, even if there
             is an exception.
         """
-        
+        super().open()
+
         self.df = None
 
     def close(self):
         self._write_root()
+        super().close()
 
     def _write_root(self):
         """ Write queued rows of data to csv. This is called automatically on :func:`close`, or when
@@ -1367,6 +1410,8 @@ class SQLiteLogger(RelationalTableLogger):
             is an exception.
         """
 
+        super().open()
+
         if self.path.exists():
             root = str(self.path.absolute())
             if not self.path.is_dir():
@@ -1415,6 +1460,8 @@ class SQLiteLogger(RelationalTableLogger):
                 self._engine.dispose()
             except BaseException:
                 pass
+            finally:
+                super().close()
 
     def _write_root(self):
         """ Write queued rows of data to the database. This also is called automatically on :func:`close`, or when
@@ -1523,7 +1570,8 @@ def to_feather(data, path):
     Args:
         data: dataframe to write to disk
         path: path to file to write
-    :return: None
+    Returns:
+        None
 
     """
     import numpy as np
@@ -1551,7 +1599,8 @@ def read_sqlite(path, table_name='root', columns=None, nrows=None,
         columns: columns to query and return, or None (default) to return all columns
         nrows: number of rows of data to read, or None (default) to return all rows
         index_col: the name of the column to use as the index
-    :return: pandas.DataFrame instance containing data loaded from `path`
+    Returns:
+        pandas.DataFrame instance containing data loaded from `path`
     """
 
     from sqlalchemy import create_engine
@@ -1575,7 +1624,8 @@ def read(path_or_buf, columns=None, nrows=None, format='auto', **kws):
         nrows: number of rows to read at the beginning of the table, or None (the default) to read all rows
         format (str): data file format, one of ['pickle','feather','csv','json','csv'], or 'auto' (the default) to guess from the file extension
         kws: additional keyword arguments to pass to the pandas read_<ext> function matching the file extension
-    :return: pandas.DataFrame instance containing data read from file
+    Returns:
+        pandas.DataFrame instance containing data read from file
     """
 
     from pyarrow.feather import read_feather

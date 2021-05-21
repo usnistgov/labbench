@@ -118,7 +118,7 @@ def owner_getattr_chains(owner: Any):
 
 class Owner():
 
-    def __init_subclass__(cls: Any, ordered_entry: list=...) -> Any:
+    def __init_subclass__(cls: Any, entry_order: list=...) -> Any:
         ...
 
     def __meta_owner_init__(self, parent_name: Any) -> None:
@@ -196,7 +196,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
     def __init__():
         ...
 
-    def __init_subclass__(cls, ordered_entry: Any=...) -> None:
+    def __init_subclass__(cls, entry_order: Any=...) -> None:
         ...
 
     def __deepcopy__(self, memo: Optional[Any]=...):

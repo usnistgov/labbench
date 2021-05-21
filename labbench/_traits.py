@@ -360,7 +360,8 @@ class Trait:
 
         elif self.role == self.ROLE_PROPERTY:
             # convert to the outbound representation
-            value = self.remap.get(value, value)
+            if len(self.remap)>0:
+                value = self.remap.get(value, value)
 
             # send to the device
             if self._setter is not None:
@@ -388,7 +389,8 @@ class Trait:
         decorator function or the owner's get_key method to retrieve
         the result.
 
-        :return: retreived value
+        Returns:
+            retreived value
         """
 
         # only continue to get the value if the __get__ was called for an owning
@@ -435,7 +437,8 @@ class Trait:
             value = owner.get_key(self.key, self.name)
 
         # apply remapping as appropriate for the trait
-        value = self.remap_inbound.get(value, value)
+        if len(self.remap_inbound)>0:
+            value = self.remap_inbound.get(value, value)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -499,7 +502,8 @@ class Trait:
         """ This is the default validator, which requires that trait values have the same type as self.type.
             A ValueError is raised for other types.
             value: value to check
-        :return: a valid value
+        Returns:
+            a valid value
         """
         if not isinstance(value, self.type):
             raise ValueError(f"a '{type(self).__qualname__}' trait only accepts " \
@@ -696,7 +700,8 @@ class HasTraits(metaclass=HasTraitsMeta):
 
         Args:
             name: Name of the trait
-        :return: cached value, or the trait default if it has not yet been set
+        Returns:
+            cached value, or the trait default if it has not yet been set
         """
         return self.__cache__[name]
 
@@ -707,7 +712,8 @@ class HasTraits(metaclass=HasTraitsMeta):
         Args:
             name: Name of the trait
             value: value to assign
-        :return: None
+        Returns:
+            None
         """
         # assignment to to self.__cache__ here would corrupt 'old' message key in __notify__
         pass

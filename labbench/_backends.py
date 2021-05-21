@@ -707,7 +707,8 @@ class SerialDevice(Device):
     def list_ports(hwid=None):
         """ List USB serial devices on the computer
 
-            :return: list of port resource information
+            Returns:
+                list of port resource information
         """
         from serial.tools import list_ports
 
@@ -725,7 +726,8 @@ class SerialDevice(Device):
     def _map_serial_hwid_to_label():
         """ Map of the comports and their names.
 
-            :return: mapping {<comport name>: <comport ID>}
+            Returns:
+                mapping {<comport name>: <comport ID>}
         """
         from serial.tools import list_ports
 
@@ -736,7 +738,8 @@ class SerialDevice(Device):
     def _map_serial_hwid_to_port():
         """ Map of the comports and their names.
 
-            :return: mapping {<comport name>: <comport ID>}
+            Returns:
+                mapping {<comport name>: <comport ID>}
         """
         from serial.tools import list_ports
 
@@ -823,7 +826,8 @@ class SerialLoggingDevice(SerialDevice):
     def running(self):
         """ Check whether the logger is running.
 
-            :returns: `True` if the logger is running
+            Returns:
+                `True` if the logger is running
         """
         return hasattr(self, '_stop') and not self._stop.is_set()
 

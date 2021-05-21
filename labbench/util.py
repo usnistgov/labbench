@@ -485,7 +485,8 @@ def show_messages(minimum_level):
 
     Args:
         minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
-    :return: None
+    Returns:
+        None
     """
 
     import logging
@@ -595,7 +596,8 @@ def stopwatch(desc: str = '',
         desc: text for display that describes the event being timed
         threshold: only show timing if at least this much time (in s) elapsed
     :
-    :return: context manager
+    Returns:
+        context manager
     """
     t0 = time.perf_counter()
     try:
@@ -1094,7 +1096,8 @@ def concurrently(*objs, **kws):
             nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
             flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
             traceback_delay: if `False`, immediately show traceback information on a thread exception; if `True` (the default), wait until all threads finish
-        :return: the values returned by each call
+        Returns:
+            the values returned by each call
         :rtype: dictionary keyed by function name
 
         Here are some examples:
@@ -1171,7 +1174,8 @@ def sequentially(*objs, **kws):
             kws: dictionary of further callables or context managers, with names set by the dictionary key
             nones: if True, include dictionary entries for calls that return None (default is False); left as another entry in `kws` if callable or a context manager
             flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
-        :return: a dictionary keyed on the object name containing the return value of each function
+        Returns:
+            a dictionary keyed on the object name containing the return value of each function
         :rtype: dictionary of keyed by function
 
         Here are some examples:

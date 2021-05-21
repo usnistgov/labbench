@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `limit_exception_depth`, which is redundant with `hide_in_traceback`
 - `lb.Testbed`
 - `lb.CommandLineWrapper`, which replaces `lb.ShellBackend`
+- `lb.range`, `lb.linspace`, `lb.progress_bar`, which are out of scope and provided by other modules (e.g., tqdm)
 
 ## [0.20 - 2019-10-09]
 ### Added

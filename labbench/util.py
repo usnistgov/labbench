@@ -26,7 +26,7 @@
 
 __all__ = [# "misc"
            'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages',
-           'console', 'LabbenchDeprecationWarning', 'import_t0',
+           'logger', 'LabbenchDeprecationWarning', 'import_t0',
 
 
            # concurrency and sequencing
@@ -66,7 +66,7 @@ from warnings import simplefilter
 import_t0 = time.perf_counter()
 
 
-console = logging.LoggerAdapter(
+logger = logging.LoggerAdapter(
     logging.getLogger('labbench'),
     dict(label='labbench') # description of origin within labbench (for screen logs only)
 )
@@ -100,17 +100,17 @@ def show_messages(minimum_level, colors=True):
 
     level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
 
-    console.setLevel(level)
+    logger.setLevel(level)
 
     # Clear out any stale handlers
-    if hasattr(console, '_screen_handler'):
-        console.logger.removeHandler(console._screen_handler)
+    if hasattr(logger, '_screen_handler'):
+        logger.logger.removeHandler(logger._screen_handler)
 
     if level is None:
         return
 
-    console._screen_handler = logging.StreamHandler()
-    console._screen_handler.setLevel(level)
+    logger._screen_handler = logging.StreamHandler()
+    logger._screen_handler.setLevel(level)
     # - %(pathname)s:%(lineno)d'
     
     if colors:
@@ -124,28 +124,38 @@ def show_messages(minimum_level, colors=True):
         log_fmt = '{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}'
         formatter = logging.Formatter(log_fmt, style='{')
 
-    console._screen_handler.setFormatter(formatter)
-    console.logger.addHandler(console._screen_handler)
+    logger._screen_handler.setFormatter(formatter)
+    logger.logger.addHandler(logger._screen_handler)
 
 
 show_messages('info')
 
 
 def _logger_extras(obj):
-    if type(obj).__module__ == '__main__':
-        module = ''
-    else:
-        module = type(obj).__module__ + '.'
-
     d = dict(
         object=repr(obj),
-        origin=module+type(obj).__qualname__,
+        origin=type(obj).__qualname__,
         owned_name=obj._owned_name,
     )
 
-    d['label'] = d['owned_name'] if d['owned_name'] else d['origin']
+    if d['owned_name'] is not None:
+        d['label'] = d['owned_name']
+    elif repr(obj) == object.__repr__(obj):
+        d['label'] = type(obj).__qualname__+"(...)"
+    else:
+        txt = repr(obj)
+        if len(txt)>20:
+            txt = txt[:-1].split(',')[0]+')'
+        d['label'] = txt
 
     return d
+
+
+def callable_logger(func):
+    if isinstance(getattr(func, '__self__', None), Ownable):
+        return func.__self__._logger
+    else:
+        return logger
 
 
 class Ownable:
@@ -153,14 +163,11 @@ class Ownable:
     """
     __objclass__ = None
     _owned_name = None
-    _logger = console
+    _logger = logger
 
     def __init__(self):
-        print('own init')
-
-
         self._logger = logging.LoggerAdapter(
-            console.logger,
+            logger.logger,
             extra = _logger_extras(self),
         )
 
@@ -475,7 +482,9 @@ def retry(exception_or_exceptions, tries=4, delay=0,
                         etype = type(e).__qualname__
                         msg = f"caught '{etype}' on first call to '{f.__name__}' - repeating the call "\
                               f"{tries-1} more times or until no exception is raised"
-                        console.info(msg)
+
+                        callable_logger(f).info(msg)
+
                         notified = True
                     ex = e
                     exception_func()
@@ -543,7 +552,9 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
                         etype = type(e).__qualname__
                         msg = f"caught '{etype}' in first call to '{f.__name__}' - repeating calls for "\
                               f"another {timeout-progress:0.3f}s, or until no exception is raised"
-                        console.info(msg)
+                        
+                        callable_logger(f).info(msg)
+
                         notified = True
 
                     ex = e
@@ -584,7 +595,7 @@ def kill_by_name(*names):
             proc = psutil.Process(pid)
             for target in names:
                 if proc.name().lower() == target.lower():
-                    console.info(f'killing process {proc.name()}')
+                    logger.info(f'killing process {proc.name()}')
                     proc.kill()
         except psutil.NoSuchProcess:
             continue
@@ -654,7 +665,7 @@ def stopwatch(desc: str = '',
             if exc_info != (None, None, None):
                 msg += f" before exception {exc_info[1]}"
 
-            console.info(msg.lstrip())
+            logger.info(msg.lstrip())
 
 
 class Call(object):
@@ -701,7 +712,7 @@ class Call(object):
 
     @classmethod
     def wrap_list_to_dict(cls, name_func_pairs):
-        """ Adjust naming and wrap callables with Call
+        """ adjusts naming and wraps callables with Call
         """
         ret = {}
         # First, generate the list of callables
@@ -716,15 +727,15 @@ class Call(object):
                         raise TypeError(f'could not find name of {func}')
 
                 if not isinstance(func, cls):
-                    if not hasattr(func, name):
-                        func.__name__  = name
                     func = cls(func)
-                else:
-                    func.name = name
+
+                func.name = name
+
                 if name in ret:
                     msg = f'another callable is already named {repr(name)} - '\
-                        f'pass as a keyword argument to specify a different name'
+                           'pass as a keyword argument to specify a different name'
                     raise KeyError(msg)
+
                 ret[name] = func
             except:
                 print(name_func_pairs, name, func)
@@ -840,7 +851,11 @@ class MultipleContexts:
                         if e is not self.exc[name][1]:
                             msg = f"{name}.__exit__ raised {e} in cleanup attempt after another "\
                                    f"exception in {name}.__enter__"
-                            console.warning(msg)
+
+                            log_obj = callable_logger(contexts[name].__exit__)
+
+                            log_obj.warning(msg)
+
 
         if len(self.exc) == 1:
             exc_info = list(self.exc.values())[0]
@@ -851,7 +866,7 @@ class MultipleContexts:
             # sys.exc_info() may have been
             # changed by one of the exit methods
             # so provide explicit exception info
-            for h in console.logger.handlers:
+            for h in logger.logger.handlers:
                 h.flush()
 
             raise exc[1]
@@ -1042,7 +1057,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         except Empty:
             if time.perf_counter() - t0 > 60*15:
                 names = ','.join(list(threads.keys()))
-                console.debug(f'{names} threads are still running')
+                logger.debug(f'{names} threads are still running')
                 t0 = time.perf_counter()
             continue
         except BaseException as e:
@@ -1056,7 +1071,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         # Below only happens when called is not none
         if parent_exception is not None:
             names = ', '.join(list(threads.keys()))
-            console.error(
+            logger.error(
                 f'raising {parent_exception.__class__.__name__} in main thread after child threads {names} return')
 
         # if there was an exception that wasn't us ending the thread,
@@ -1092,7 +1107,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
     # Raise exceptions as necessary
     if parent_exception is not None:
-        for h in console.logger.handlers:
+        for h in logger.logger.handlers:
             h.flush()
 
         for tb in tracebacks:
@@ -1105,7 +1120,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         raise parent_exception
 
     elif len(tracebacks) > 0 and not catch:
-        for h in console.logger.handlers:
+        for h in logger.logger.handlers:
             h.flush()
         if len(tracebacks) == 1:
             raise last_exception
@@ -1405,7 +1420,7 @@ class ThreadSandbox(object):
 
             rsp.put((ret, exc), True)
 
-        console.debug('ThreadSandbox worker thread finished')
+        logger.debug('ThreadSandbox worker thread finished')
 
     @hide_in_traceback
     def __getattr__(self, name):

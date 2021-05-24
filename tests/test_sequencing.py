@@ -42,7 +42,7 @@ lb._force_full_traceback(True)
 
 
 class LaggyInstrument(EmulatedVISADevice):
-    """ A mock "instrument" to measure time response in concurrency
+    """A mock "instrument" to measure time response in (a)sync operations
     """
     delay = lb.value.float(0, min=0, help='connection time')
     fetch_time = lb.value.float(0, min=0, help='fetch time')

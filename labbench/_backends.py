@@ -906,16 +906,17 @@ class VISADevice(Device):
     r""" wraps pyvisa to communicate with instruments.
 
     Examples:
-        list valid `resource` strings detected by the ::
+
+        Autodetect a list of valid `resource` strings on the host::
 
             print(VISADevice.list_resources())
 
-        fetch the instrument identity string::
+        Fetch the instrument identity string::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
                 print(inst.identity)
 
-        write ':FETCH?' command to the instrument, read an ASCII response,
+        Write ':FETCH?' to the instrument, read an expected ASCII CSV response,
         and return it as a pandas DataFrame::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:

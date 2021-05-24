@@ -245,7 +245,11 @@ class Trait:
         # util.wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls._arg_defaults, 1, annots)
 
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
-        cls.__slots__ = [n for n in dir(cls) if not n.startswith('_')] + ['metadata', 'kind', 'name']
+        cls.__slots__ = [
+            n
+            for n in dir(cls)
+            if not n.startswith('_')
+        ] + ['metadata', 'kind', 'name']
 
     def copy(self, new_type=None, **update_kws):
         if new_type is None:
@@ -294,8 +298,10 @@ class Trait:
         elif len(self._decorated_funcs)==0:
             return
 
-        positional_argcounts = [f.__code__.co_argcount - len(f.__defaults__ or tuple()) \
-                        for f in self._decorated_funcs]
+        positional_argcounts = [
+            f.__code__.co_argcount - len(f.__defaults__ or tuple())
+            for f in self._decorated_funcs
+        ]
 
         if self.role == self.ROLE_DATARETURN:
             for func, argcount in zip(self._decorated_funcs, positional_argcounts):
@@ -310,9 +316,10 @@ class Trait:
                 raise AttributeError(f"a decorator implementation with @{self} must apply to a getter " \
                                         f"(above `def func(self)`) and/or setter (above `def func(self, value):`)")
             for func, argcount in zip(self._decorated_funcs, positional_argcounts):
-                if len(self.help.rstrip().strip()) == 0:
+                doc = (func.__doc__ or '').strip().rstrip()                
+                if len(doc)>0:
                     # take func docstring as default self.help
-                    self.help = (func.__doc__ or '').rstrip().strip()
+                    self.help = self.kws['help'] = doc
 
                 if argcount == 1:
                     self._getter = func
@@ -585,7 +592,7 @@ class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
 
-    def __init__(self):
+    def __init__(self, **values):
         # who is informed on new get or set values
         self.__notify_list__ = {}
 
@@ -598,8 +605,6 @@ class HasTraits(metaclass=HasTraitsMeta):
 
             if trait.default is not Undefined:
                 self.__cache__[name] = trait.default
-
-        super().__init__()
 
 
     @util.hide_in_traceback

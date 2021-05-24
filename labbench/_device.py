@@ -194,6 +194,28 @@ class Device(HasTraits, util.Ownable):
 
     __children__ = {}
 
+    @util.hide_in_traceback
+    def __init__(self, resource=Undefined, **values):
+        """ Update default values with these arguments on instantiation.
+        """
+        if resource is not Undefined:
+            values['resource'] = resource
+
+        super().__init__()
+
+        for name, init_value in values.items():
+            if init_value != self._traits[name].default:
+                setattr(self, name, init_value)
+
+        util.Ownable.__init__(self)
+
+        self.backend = DisconnectedBackend(self)
+
+        # Instantiate property trait now. It needed to wait until this point, after values are fully
+        # instantiated, in case property trait implementation depends on values
+        setattr(self, 'open', self.__open_wrapper__)
+        setattr(self, 'close', self.__close_wrapper__)
+
     @classmethod
     @util.hide_in_traceback
     def __init_subclass__(cls, **value_defaults):
@@ -233,6 +255,7 @@ class Device(HasTraits, util.Ownable):
             if cls._traits[name].sets
         }
 
+        # generate and apply the sequence of call signature parameters
         params += [
             inspect.Parameter(
                 name,
@@ -243,91 +266,37 @@ class Device(HasTraits, util.Ownable):
             for name, trait in settable_values.items()
             if name != 'resource'
         ]
-
-        # apply signature and generate doc for each acceptable value
         cls.__init__.__signature__ = inspect.Signature(params)
 
+        # generate the __init__ docstring
         value_docs = ''.join((
-            f"\t{t.doc()}\n"
+            f"    {t.doc()}\n"
             for t in settable_values.values()
+        ))        
+        cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
+
+        # update the class docstring
+        property_docs = ''.join((
+                f"    {getattr(cls, name).doc()}\n"
+                for name in cls._property_attrs
         ))
 
-        cls.__init__.__doc__ = f"Args:\n{value_docs}"
+        # datareturn_docs = ''.join((
+        #         f"    {getattr(cls, name).doc()}\n"
+        #         for name in cls._datareturn_attrs
+        # ))
 
-        properties = {
-            name: cls._traits[name]
-            for name in cls._property_attrs
-            if cls._traits[name].sets
-        }
-        
+        if cls.__doc__ is None:
+            # use the static doc written for the parent
+            cls.__baredoc__ = cls.__baredoc__
+        else:
+            cls.__baredoc__ = cls.__doc__
+
+        cls.__doc__ = str(cls.__baredoc__) # <- copy so we can += 
+        cls.__doc__ += '\nValue Attributes:\n' + value_docs
+        cls.__doc__ += '\nProperty Attributes:\n' + property_docs
+
         cls.__imports__()
-
-    @classmethod
-    def info(cls, methods=True, values=True, properties=True, datareturns=True):
-        clsname = cls.__qualname__
-
-        ret = f"attributes of Device subclass {clsname}\n"
-
-        if methods:
-            unique_attrs = set(dir(cls)).difference(dir(Device))
-            ret += "\nmethods:\n" + ''.join((
-                f"\t{clsname}.{name}(...):\n\t{getattr(cls, name).__doc__}\n"
-                for name in unique_attrs
-                if not name.startswith('_') and inspect.ismethod(getattr(cls,name))
-            ))
-
-        if values:
-            ret += "value traits:\n" + ''.join((
-                f"\t{clsname}.{getattr(cls, name).doc()}\n"
-                for name in cls._value_attrs
-            ))
-
-        if properties:
-            ret += "\nproperty traits:\n" + ''.join((
-                f"\t{clsname}.{getattr(cls, name).doc()}\n"
-                for name in cls._property_attrs
-            ))
-
-        if datareturns and len(cls._datareturn_attrs) > 0:
-            ret += "\ndatareturn traits:\n" + ''.join((
-                f"\t{clsname}.{getattr(cls, name).doc()}\n"
-                for name in cls._property_attrs
-            ))
-
-        return ret
-
-    # @property
-    # def _owned_name(self):
-    #     if hasattr(self, '_logger'):
-    #         return self._logger.extra['device']
-    #     else:
-    #         return None
-
-    # @_owned_name.setter
-    # def _owned_name(self, value):
-    #     if value is not None:
-    #         self._logger.extra['device'] = value
-    #         self._logger.extra['origin'] = ' - '+value
-
-    @util.hide_in_traceback
-    def __init__(self, resource=Undefined, **values):
-        """ Update default values with these arguments on instantiation.
-        """
-        if resource is not Undefined:
-            values['resource'] = resource
-
-        super().__init__()
-
-        for name, init_value in values.items():
-            if init_value != self._traits[name].default:
-                setattr(self, name, init_value)
-
-        self.backend = DisconnectedBackend(self)
-
-        # Instantiate property trait now. It needed to wait until this point, after values are fully
-        # instantiated, in case property trait implementation depends on values
-        setattr(self, 'open', self.__open_wrapper__)
-        setattr(self, 'close', self.__close_wrapper__)
 
     @util.hide_in_traceback
     @wraps(open)

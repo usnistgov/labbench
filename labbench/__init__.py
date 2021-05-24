@@ -26,7 +26,7 @@
 .. licenses.
 """
 
-from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, console, _force_full_traceback
+from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, logger, _force_full_traceback
 _force_full_traceback(True)
 
 from ._backends import ShellBackend, DotNetDevice, LabviewSocketInterface, SerialDevice, SerialLoggingDevice, TelnetDevice, VISADevice, Win32ComDevice

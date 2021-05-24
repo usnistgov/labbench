@@ -348,7 +348,7 @@ class OwnerContextAdapter:
             opener(self._owner)
 
         # self._owner.open()
-        getattr(self._owner, '_logger', util._logger).debug('opened')
+        getattr(self._owner, '_logger', util.logger).debug('opened')
 
     def __exit__(self, *exc_info):
         cls = type(self._owner)
@@ -370,7 +370,7 @@ class OwnerContextAdapter:
                 traceback.print_exception(*ex, limit=-(depth - 1))
                 sys.stderr.write('(Exception suppressed to continue close)\n\n')
 
-        getattr(self._owner, '_logger', util._logger).debug('closed')
+        getattr(self._owner, '_logger', util.logger).debug('closed')
 
     def __repr__(self):
         return repr(self._owner)

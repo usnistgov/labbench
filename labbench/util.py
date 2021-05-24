@@ -68,9 +68,8 @@ import_t0 = time.perf_counter()
 
 console = logging.LoggerAdapter(
     logging.getLogger('labbench'),
-    dict(origin='') # description of origin within labbench (for screen logs only)
+    dict(label='labbench') # description of origin within labbench (for screen logs only)
 )
-
 
 # show deprecation warnings only once
 class LabbenchDeprecationWarning(DeprecationWarning):
@@ -79,11 +78,91 @@ class LabbenchDeprecationWarning(DeprecationWarning):
 simplefilter('once', LabbenchDeprecationWarning)
 import weakref
 
+def show_messages(minimum_level, colors=True):
+    """ Configure screen debug message output for any messages as least as important as indicated by `level`.
+
+    Args:
+        minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
+    Returns:
+        None
+    """
+
+    import logging
+
+    err_map = {'debug': logging.DEBUG,
+               'warning': logging.WARNING,
+               'error': logging.ERROR,
+               'info': logging.INFO,
+               None: None}
+
+    if minimum_level not in err_map and not isinstance(minimum_level, int):
+        raise ValueError(f'message level must be a flag {tuple(err_map.keys())} or an integer, not {repr(minimum_level)}')
+
+    level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
+
+    console.setLevel(level)
+
+    # Clear out any stale handlers
+    if hasattr(console, '_screen_handler'):
+        console.logger.removeHandler(console._screen_handler)
+
+    if level is None:
+        return
+
+    console._screen_handler = logging.StreamHandler()
+    console._screen_handler.setLevel(level)
+    # - %(pathname)s:%(lineno)d'
+    
+    if colors:
+        from coloredlogs import ColoredFormatter, DEFAULT_FIELD_STYLES
+        log_fmt = '{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}'
+        styles = dict(DEFAULT_FIELD_STYLES,
+            label=dict(color='blue'),
+        )
+        formatter = ColoredFormatter(log_fmt, style='{', field_styles=styles)
+    else:
+        log_fmt = '{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}'
+        formatter = logging.Formatter(log_fmt, style='{')
+
+    console._screen_handler.setFormatter(formatter)
+    console.logger.addHandler(console._screen_handler)
+
+
+show_messages('info')
+
+
+def _logger_extras(obj):
+    if type(obj).__module__ == '__main__':
+        module = ''
+    else:
+        module = type(obj).__module__ + '.'
+
+    d = dict(
+        object=repr(obj),
+        origin=module+type(obj).__qualname__,
+        owned_name=obj._owned_name,
+    )
+
+    d['label'] = d['owned_name'] if d['owned_name'] else d['origin']
+
+    return d
+
+
 class Ownable:
     """ Subclass to pull in name from an owning class.
     """
     __objclass__ = None
     _owned_name = None
+    _logger = console
+
+    def __init__(self):
+        print('own init')
+
+
+        self._logger = logging.LoggerAdapter(
+            console.logger,
+            extra = _logger_extras(self),
+        )
 
     def __set_name__(self, owner_cls, name):
         self.__objclass__ = owner_cls
@@ -93,9 +172,14 @@ class Ownable:
         return self
 
     def __owner_init__(self, owner):
-        """ called when the owner is instantiated
+        """ called on instantiation of the owner (again for its parent owner)
         """
-        pass
+        if owner._owned_name is None:
+            self._owned_name = self.__name__
+        else:
+            self._owned_name = owner._owned_name+'.'+self.__name__
+
+        self._logger.extra.update(**_logger_extras(self))
 
     def __owner_subclass__(self, owner_cls):
         """ Called after the owner class is instantiated; returns an object to be used in the Rack namespace
@@ -476,46 +560,6 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
         return do_retry
 
     return decorator
-
-
-def show_messages(minimum_level):
-    """ Configure screen debug message output for any messages as least as important as indicated by `level`.
-
-    Args:
-        minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
-    Returns:
-        None
-    """
-
-    import logging
-    import coloredlogs
-
-    err_map = {'debug': logging.DEBUG,
-               'warning': logging.WARNING,
-               'error': logging.ERROR,
-               'info': logging.INFO,
-               None: None}
-
-    if minimum_level not in err_map and not isinstance(minimum_level, int):
-        raise ValueError(f'message level must be a flag {tuple(err_map.keys())} or an integer, not {repr(minimum_level)}')
-
-    level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
-
-    console.setLevel(level)
-
-    # Clear out any stale handlers
-    if hasattr(console, '_screen_handler'):
-        console.logger.removeHandler(console._screen_handler)
-
-    if level is not None:
-        console._screen_handler = logging.StreamHandler()
-        console._screen_handler.setLevel(level)
-        # - %(pathname)s:%(lineno)d'
-        log_fmt = '%(asctime)s.%(msecs)03d - %(levelname)s%(origin)s - %(message)s'
-        #    coloredlogs.install(level='DEBUG', logger=logger)
-        console._screen_handler.setFormatter(
-            coloredlogs.ColoredFormatter(log_fmt))
-        console.logger.addHandler(console._screen_handler)
 
 
 def kill_by_name(*names):

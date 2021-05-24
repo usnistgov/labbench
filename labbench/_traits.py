@@ -463,8 +463,8 @@ class Trait:
                 raise e
 
             # Once we have a python value, give warnings (not errors) if the device value fails further validation
-            if hasattr(owner, '_console'):
-                log = owner._console.warning
+            if hasattr(owner, '_logger'):
+                log = owner._logger.warning
             else:
                 log = warn
 
@@ -598,6 +598,8 @@ class HasTraits(metaclass=HasTraitsMeta):
 
             if trait.default is not Undefined:
                 self.__cache__[name] = trait.default
+
+        super().__init__()
 
 
     @util.hide_in_traceback
@@ -832,7 +834,7 @@ class LookupCorrectionMixIn(Trait):
 
         # this odd try-except...raise oddness spares us internal
         # pandas details in the traceback
-        util.console.warning(f"{self.__repr__(owner_inst=owner)} has no entry at {repr(uncal)} {self.label}")
+        util.logger.warning(f"{self.__repr__(owner_inst=owner)} has no entry at {repr(uncal)} {self.label}")
         return None
 
     def find_uncal(self, cal, owner):

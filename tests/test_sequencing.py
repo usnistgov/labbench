@@ -50,19 +50,19 @@ class LaggyInstrument(EmulatedVISADevice):
 
     def open(self):
         self.perf = {}
-        self._console.info(f'{self} connect start')
+        self._logger.info(f'{self} connect start')
         t0 = time.perf_counter()
         lb.sleep(self.delay)
         self.perf['open'] = time.perf_counter() - t0
-        self._console.info(f'{self} connected')
+        self._logger.info(f'{self} connected')
         
     def fetch(self):
         """ Return the argument after a 1s delay
         """
-        lb.console.info(f'{self}.fetch start')
+        lb.logger.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
-        lb.console.info(f'{self}.fetch done')
+        lb.logger.info(f'{self}.fetch done')
         self.perf['fetch'] = time.perf_counter() - t0
         return self.fetch_time
     
@@ -75,7 +75,7 @@ class LaggyInstrument(EmulatedVISADevice):
         return None
 
     def close(self):
-        self._console.info(f'{self} disconnected')
+        self._logger.info(f'{self} disconnected')
         if self.fail_disconnect:
             1 / 0
 
@@ -112,7 +112,7 @@ class TestConcurrency(unittest.TestCase):
         else:
             elapsed = time.perf_counter()-t0
             self.assertAlmostEqual(elapsed, expected_delay, delta=self.delay_tol)
-            lb.console.info(f'acceptable time elapsed {elapsed:0.3f}s'.lstrip())
+            lb.logger.info(f'acceptable time elapsed {elapsed:0.3f}s'.lstrip())
 
     def test_concurrent_connect_delay(self):
         # global inst1, inst2

@@ -195,7 +195,7 @@ class MungerBase(core.Device):
                 value = pd.DataFrame([value])
         except BaseException:
             # We couldn't make a DataFrame
-            self._console.error(
+            self._logger.error(
                 f"Failed to form DataFrame from {repr(name)}; pickling object instead")
             ext = 'pickle'
         finally:
@@ -299,7 +299,7 @@ class MungeToDirectory(MungerBase):
 
     def _open_relational(self, name, index, row, mode):
         if 'host_time' not in row:
-            self._console.error(
+            self._logger.error(
                 "no timestamp yet from host yet; this shouldn't happen :(")
 
         relpath = self._make_path_heirarchy(index, row)
@@ -333,9 +333,9 @@ class MungeToDirectory(MungerBase):
 
         try:
             move()
-            self._console.debug(f'moved {repr(old_path)} to {repr(dest)}')
+            self._logger.debug(f'moved {repr(old_path)} to {repr(dest)}')
         except PermissionError:
-            self._console.warning(
+            self._logger.warning(
                 'relational file was still open in another program; fallback to copy instead of rename')
             import shutil
             shutil.copyfile(old_path, dest)
@@ -421,7 +421,7 @@ class MungeToTar(MungerBase):
 
     def _open_relational(self, name, index, row, mode):
         if 'host_time' not in row:
-            self._console.error(
+            self._logger.error(
                 "no timestamp yet from host yet; this shouldn't happen :(")
 
         relpath = os.path.join(self.dirname_fmt.format(id=index, **row), name)
@@ -440,7 +440,7 @@ class MungeToTar(MungerBase):
         self.tarfile = tarfile.open(os.path.join(self.resource, self.tarname), 'a')
 
     def close(self):
-        util.console.warning('MungeToTar cleanup()')
+        util.logger.warning('MungeToTar cleanup()')
         self.tarfile.close()
 
     def _get_key(self, buf):
@@ -467,9 +467,9 @@ class MungeToTar(MungerBase):
 
         try:
             remove()
-            self._console.debug(f'moved {old_path} to into tar file as {dest}')
+            self._logger.debug(f'moved {old_path} to into tar file as {dest}')
         except PermissionError:
-            self._console.warning(
+            self._logger.warning(
                 f'could not remove old file or directory {old_path}')
 
     def _write_metadata(self, metadata):
@@ -507,8 +507,14 @@ class Aggregator(util.Ownable):
         # cached data
         self.metadata = {}
 
-        self._console = util.console.logger.getChild(self.__class__.__qualname__)
-        self._console = logging.LoggerAdapter(self._console, dict(origin=f" - {self.__class__.__qualname__}"))
+        self._logger = logging.LoggerAdapter(
+            util.logger,
+            dict(
+                object=repr(self),
+                origin=type(self).__module__+'.'+type(self).__qualname__,
+                owned_name=None,
+            )
+        )
 
         super().__init__()
 
@@ -596,7 +602,7 @@ class Aggregator(util.Ownable):
         
         key_conflicts = set(row_data).intersection(self._pending_rack)
         if len(key_conflicts) > 0:
-            self._console.warning(f"Rack call overwrites prior data with existing keys {key_conflicts}")
+            self._logger.warning(f"Rack call overwrites prior data with existing keys {key_conflicts}")
         self._pending_rack.update(row_data)
 
     def __receive_trait_update(self, msg: dict):
@@ -634,7 +640,7 @@ class Aggregator(util.Ownable):
             if name:
                 if device in self.name_map and name != self.name_map[device]:
                     # a rename is an odd case, make a note of it
-                    self._console.warning(f"renaming {device} from {self.name_map[device]} to {name}")
+                    self._logger.warning(f"renaming {device} from {self.name_map[device]} to {name}")
                 self.name_map[device] = name
 
             elif device in self.name_map:
@@ -647,7 +653,7 @@ class Aggregator(util.Ownable):
 
             else:
                 self.name_map[device] = name = self._find_object_in_callers(device)
-                self._console.info(f"{device} named '{name}' by introspection")
+                self._logger.info(f"{device} named '{name}' by introspection")
 
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
             raise Exception('Could not automatically determine unique names of device instances! '\
@@ -834,8 +840,8 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
         self._append = append
         self.set_row_preprocessor(None)
 
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - " + str(self)))
+        self._logger = util.logger.logger.getChild(str(self))
+        self._logger = logging.LoggerAdapter(self._logger, dict(rack=repr(self), origin=f" - " + str(self)))
 
     def __copy__(self):
         return copy.deepcopy(self)
@@ -843,8 +849,8 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
     def __owner_init__ (self, owner):
         super().__owner_init__(owner)
 
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - " + str(self)))
+        self._logger = util.logger.logger.getChild(str(self))
+        self._logger = logging.LoggerAdapter(self._logger, dict(rack=repr(self), origin=f" - " + str(self)))
 
         devices, _ = _rack.recursive_devices(owner)
         devices = {v:k for k,v in devices.items()}
@@ -944,7 +950,7 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
             kwargs = dict(kwargs)
         row.update(kwargs)
 
-        self._console.debug(f"new data row has {len(row)} columns")
+        self._logger.debug(f"new data row has {len(row)} columns")
 
         self.pending.append(row)
 
@@ -1044,7 +1050,7 @@ class RelationalTableLogger(Owner, util.Ownable, entry_order=(_host.Email, Munge
         self.clear()
 
         self.last_index = 0
-        self._console.debug(f'{self} is open')
+        self._logger.debug(f'{self} is open')
         return self
 
     def close(self):
@@ -1201,7 +1207,7 @@ class MungeToHDF(Device):
                 row[name] = self._from_nonscalar(name, value, index, row)
 
             else:
-                self._console.warning(fr"unrecognized type for row entry '{name}' with type {repr(value)}")
+                self._logger.warning(fr"unrecognized type for row entry '{name}' with type {repr(value)}")
                 row[name] = value
 
         return row
@@ -1250,7 +1256,7 @@ class MungeToHDF(Device):
                 df = pd.DataFrame([df])
         except BaseException:
             # We couldn't make a DataFrame
-            self._console.error(
+            self._logger.error(
                 f"Failed to form DataFrame from {repr(name)}; pickling object instead")            
             self.backend[key] = pickle.dumps(value)
 
@@ -1471,7 +1477,7 @@ class SQLiteLogger(RelationalTableLogger):
             new_columns = list(set(trait_cols).difference(blank_cols))
 
         for c in new_columns:
-            self._console.debug(f"inserting new column '{c}'")
+            self._logger.debug(f"inserting new column '{c}'")
             column_type = self._sql_type_name(traits[c])
             with self._engine.connect() as con:
                 query = f"alter table {self.table_name} add column {c} {column_type} default NULL"
@@ -1489,7 +1495,7 @@ class SQLiteLogger(RelationalTableLogger):
             df.to_sql(self.table_name, self._engine, if_exists='append',
                       index=True, index_label=self.index_label)
         except ArgumentError:
-            self._console.error(
+            self._logger.error(
                 f'failed to convert index label {self.index_label}')
             raise ArgumentError
         except BaseException as e:

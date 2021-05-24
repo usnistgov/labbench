@@ -194,7 +194,7 @@ class ShellBackend(Device):
         except ValueError:
             pass
 
-        self._console.debug(f"shell execute '{repr(' '.join(cmdl))}'")
+        self._logger.debug(f"shell execute '{repr(' '.join(cmdl))}'")
         cp = sp.run(cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return)
         ret = cp.stdout
 
@@ -207,11 +207,11 @@ class ShellBackend(Device):
             show_count = min(40, len(lines))
             remaining = max(0, len(lines) - show_count)
             for line in lines[:show_count // 2]:
-                self._console.debug(f'► {line}')
+                self._logger.debug(f'► {line}')
             if remaining > 0:
-                self._console.debug(f'…{remaining} more lines')
+                self._logger.debug(f'…{remaining} more lines')
             for line in lines[-show_count // 2:]:
-                self._console.debug(f'► {line}')
+                self._logger.debug(f'► {line}')
         return ret
 
     def _background_piped(self, *argv, check_return=False, check_stderr=False, respawn=False, timeout=None):
@@ -257,11 +257,11 @@ class ShellBackend(Device):
 
             # Respawn (or don't)
             if respawn and not self.__kill:
-                self._console.debug('respawning')
+                self._logger.debug('respawning')
                 self._kill_proc_tree(pid)
                 spawn(cmdl)
             else:
-                self._console.debug('process ended')
+                self._logger.debug('process ended')
 
         def stderr_to_exception(fd, cmdl):
             """ Thread worker to raise exceptions on standard error output
@@ -273,7 +273,7 @@ class ShellBackend(Device):
                 line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
                     q.put(line)
-                    self._console.debug(f'stderr {repr(line)}')
+                    self._logger.debug(f'stderr {repr(line)}')
                 #                    raise Exception(line)
                 else:
                     break
@@ -312,7 +312,7 @@ class ShellBackend(Device):
 
         # Generate the commandline and spawn
         cmdl = self._commandline(*argv)
-        self._console.debug(f"background execute: {repr(' '.join(cmdl))}")
+        self._logger.debug(f"background execute: {repr(' '.join(cmdl))}")
         self.__kill = False
         spawn(cmdl)
 
@@ -436,7 +436,7 @@ class ShellBackend(Device):
         self.__kill = True
         backend = self.backend
         if self.running():
-            self._console.debug(f'killing process {backend.pid}')
+            self._logger.debug(f'killing process {backend.pid}')
             self._kill_proc_tree(backend.pid)
 
     def running(self):
@@ -595,12 +595,12 @@ class LabviewSocketInterface(Device):
                 sock.shutdown(socket.SHUT_RDWR)
                 sock.close()
             except BaseException:
-                self._console.error('could not close socket ', repr(sock))
+                self._logger.error('could not close socket ', repr(sock))
 
     def write(self, msg):
         """ Send a string over the tx socket.
         """
-        self._console.debug(f'write {repr(msg)}')
+        self._logger.debug(f'write {repr(msg)}')
         self.backend['tx'].sendto(msg, (self.resource,
                                         self.tx_port))
         util.sleep(self.delay)
@@ -621,7 +621,7 @@ class LabviewSocketInterface(Device):
         if addr is None:
             raise Exception('received no data')
         rx_disp = rx[:min(80, len(rx))] + ('...' if len(rx) > 80 else '')
-        self._console.debug(f'read {repr(rx_disp)}')
+        self._logger.debug(f'read {repr(rx_disp)}')
 
         key, value = rx.rsplit(' ', 1)
         key = key.split(':', 1)[1].lstrip()
@@ -681,13 +681,13 @@ class SerialDevice(Device):
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(
             self.resource, self.baud_rate, **params)
-        self._console.debug(f'{repr(self)} connected')
+        self._logger.debug(f'{repr(self)} connected')
 
     def close(self):
         """ Disconnect the serial instrument
         """
         self.backend.close()
-        self._console.debug(f'{repr(self)} closed')
+        self._logger.debug(f'{repr(self)} closed')
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):
@@ -770,7 +770,7 @@ class SerialLoggingDevice(SerialDevice):
             This is a stub that does nothing --- it should be implemented by a
             subclass for a specific serial logger device.
         """
-        self._console.debug(
+        self._logger.debug(
             f'{repr(self)}: no device-specific configuration implemented')
 
     def start(self):
@@ -786,9 +786,9 @@ class SerialLoggingDevice(SerialDevice):
             timeout, self.backend.timeout = self.backend.timeout, 0
             q = self._stdout
             stop_event = self._stop
-            self._console.debug(f'{repr(self)}: configuring log acquisition')
+            self._logger.debug(f'{repr(self)}: configuring log acquisition')
             self.configure()
-            self._console.debug(f'{repr(self)}: starting log acquisition')
+            self._logger.debug(f'{repr(self)}: starting log acquisition')
             try:
                 while stop_event.wait(self.poll_rate) is not True:
                     q.put(self.backend.read(
@@ -798,7 +798,7 @@ class SerialLoggingDevice(SerialDevice):
                 self.close()
                 raise e
             finally:
-                self._console.debug(f'{repr(self)} ending log acquisition')
+                self._logger.debug(f'{repr(self)} ending log acquisition')
                 try:
                     self.backend.timeout = timeout
                 except BaseException:
@@ -1027,7 +1027,7 @@ class VISADevice(Device):
             e = str(e)
             if len(e.strip()) > 0:
                 # some emulated backends raise empty errors
-                self._console.warning('unhandled close error: ' + e)
+                self._logger.warning('unhandled close error: ' + e)
 
         finally:
             self.backend.close()
@@ -1082,7 +1082,7 @@ class VISADevice(Device):
         if self._opc:
             msg = msg + ';*OPC'
         msg_out = repr(msg) if len(msg) < 1024 else f'({len(msg)} bytes)'
-        self._console.debug(f'write {repr(msg_out)}')
+        self._logger.debug(f'write {repr(msg_out)}')
         self.backend.write(msg)
 
     def query(self, msg, timeout=None) -> str:
@@ -1100,14 +1100,14 @@ class VISADevice(Device):
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
-        self._console.debug(f'query {msg_out}')
+        self._logger.debug(f'query {msg_out}')
         try:
             ret = self.backend.query(msg)
         finally:
             if timeout is not None:
                 self.backend.timeout = _to
         msg_out = repr(ret) if len(ret) < 80 else f'({len(msg)} bytes)'
-        self._console.debug(f'      -> {msg_out}')
+        self._logger.debug(f'      -> {msg_out}')
         return ret
 
     def query_ascii_values(self, msg: str, type_, separator=',', container=list, delay=None, timeout=None):
@@ -1115,7 +1115,7 @@ class VISADevice(Device):
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
-        self._console.debug(f'query_ascii_values {msg_out}')
+        self._logger.debug(f'query_ascii_values {msg_out}')
 
         try:
             ret = self.backend.query_ascii_values(msg, type_, separator, container, delay)
@@ -1133,7 +1133,7 @@ class VISADevice(Device):
         else:
             logmsg = f'(iterable sequence of type {type(ret)})'
 
-        self._console.debug(f'      -> {logmsg}')
+        self._logger.debug(f'      -> {logmsg}')
 
         return ret
 

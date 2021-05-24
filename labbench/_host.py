@@ -24,20 +24,19 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _device as core
-from . import util
-from . import property as property_
-from . import value
-from . import datareturn
-
 import datetime
 import io
+import json
+import logging
 import os
 import socket
-import logging
 import sys
-import yaml
+import time
 
+from . import _device as core
+from . import datareturn
+from . import property as property_
+from . import util, value
 
 __all__ = ['Host', 'Email']
 
@@ -127,8 +126,8 @@ class Email(core.Device):
     def _send(self, subject, body):
         sys.stderr.flush()
         self.backend.flush()
-        from email.mime.text import MIMEText
         import smtplib
+        from email.mime.text import MIMEText
 
         msg = MIMEText(body, 'html')
         msg['From'] = self.sender
@@ -196,10 +195,13 @@ class Email(core.Device):
 #         return self.represent_dict(data.items())
 
 # Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
-import json
 
 class JSONFormatter(logging.Formatter):
     _last = []
+
+    def __init__(self, *args, **kws):
+        super().__init__(*args, **kws)
+        self.t0 = time.time()
 
     @staticmethod
     def json_serialize_dates(obj):
@@ -208,19 +210,34 @@ class JSONFormatter(logging.Formatter):
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         raise TypeError (f"Type {type(obj).__qualname__} not serializable")
-    
+
     def format(self, rec):
         """ Return a YAML string for each logger record
         """
 
-        msg = dict(message=rec.msg,
-                   time=datetime.datetime.fromtimestamp(rec.created),                   
-                   level=rec.levelname)
-        
-        # conditional keys, to save space
-        if hasattr(rec, 'device'):
-            msg['device'] = rec.device
-            
+        if hasattr(rec, 'owned_name'):
+            if '.' in rec.owned_name.log_prefix.owned_name:
+                log_prefix = rec.owned_name.replace('.',',')
+            else:
+                log_prefix = None
+        else:
+            log_prefix = None
+
+        msg = dict(
+            message=rec.msg,
+            time=datetime.datetime.fromtimestamp(rec.created),
+            elapsed_seconds=rec.created-self.t0,
+            level=rec.levelname,
+
+            object=getattr(rec, 'object', None),
+            object_log_prefix=log_prefix,
+
+            source_file = rec.pathname,
+            source_line = rec.lineno,
+            process = rec.process,
+            thread = rec.threadName
+        )
+
         if rec.threadName != 'MainThread':
             msg['thread']=rec.threadName
             
@@ -234,9 +251,6 @@ class JSONFormatter(logging.Formatter):
 
         return json.dumps(msg, indent=True, default=self.json_serialize_dates)+','
         
-        # return yaml.dump([msg], Dumper=Dumper,
-        #                  indent=4, default_flow_style=False)
-
 
 class Host(core.Device):
     # Settings
@@ -245,7 +259,7 @@ class Host(core.Device):
         allow_none=True,
          help='git commit on open() if run inside a git repo with this branch name'
     )
-                
+
     time_format = '%Y-%m-%d %H:%M:%S'
 
     def open(self):
@@ -265,13 +279,13 @@ class Host(core.Device):
         # git repository information
         try:
             repo = git.Repo('.', search_parent_directories=True)
-            self._console.debug("running in git repository")
+            self._logger.debug("running in git repository")
             if repo.active_branch == self.git_commit_in:
                 repo.index.commit('start of measurement')
-                self._console.debug("git commit finished")
+                self._logger.debug("git commit finished")
         except git.NoSuchPathError:
             repo = None
-            self._console.info(f"not running in a git repository")
+            self._logger.info(f"not running in a git repository")
 
         self.backend = {'logger': logger,
                         'log_stream': stream,

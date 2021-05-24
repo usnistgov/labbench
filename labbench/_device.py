@@ -129,8 +129,7 @@ class DisconnectedBackend(object):
 
 
 class Device(HasTraits, util.Ownable):
-    r"""Base class for labbench driver wrappers in labbench. Subclass to
-    implement driver APIs.
+    r"""base class for labbench device wrappers.
 
     Drivers that subclass `Device` share
 
@@ -297,39 +296,27 @@ class Device(HasTraits, util.Ownable):
 
         return ret
 
+    # @property
+    # def _owned_name(self):
+    #     if hasattr(self, '_logger'):
+    #         return self._logger.extra['device']
+    #     else:
+    #         return None
 
-    @property
-    def _owned_name(self):
-        if hasattr(self, '_console'):
-            return self._console.extra['device']
-        else:
-            return None
-
-    @_owned_name.setter
-    def _owned_name(self, value):
-        if value is not None:
-            self._console.extra['device'] = value
-            self._console.extra['origin'] = ' - '+value
+    # @_owned_name.setter
+    # def _owned_name(self, value):
+    #     if value is not None:
+    #         self._logger.extra['device'] = value
+    #         self._logger.extra['origin'] = ' - '+value
 
     @util.hide_in_traceback
     def __init__(self, resource=Undefined, **values):
         """ Update default values with these arguments on instantiation.
         """
-        # gotta have a console logger
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(
-            self._console,
-            dict(
-                device=type(self).__qualname__+'()',
-                origin=f" - " + type(self).__qualname__+'()'
-            )
-        )
-
-        # initialize property trait traits last so that calibration behaviors can use values and self._console
-        super().__init__()
-
         if resource is not Undefined:
             values['resource'] = resource
+
+        super().__init__()
 
         for name, init_value in values.items():
             if init_value != self._traits[name].default:
@@ -342,7 +329,6 @@ class Device(HasTraits, util.Ownable):
         setattr(self, 'open', self.__open_wrapper__)
         setattr(self, 'close', self.__close_wrapper__)
 
-
     @util.hide_in_traceback
     @wraps(open)
     def __open_wrapper__(self):
@@ -351,7 +337,7 @@ class Device(HasTraits, util.Ownable):
             method, starting with labbench.Device and working down
         """
         if self.isopen:
-            self._console.debug(f'attempt to open {self}, which is already open')
+            self._logger.debug(f'attempt to open {self}, which is already open')
             return
 
         self.backend = None
@@ -363,17 +349,10 @@ class Device(HasTraits, util.Ownable):
             self.backend = DisconnectedBackend(self)
             raise
 
-        self._console.debug(f"opened")
+        self._logger.debug(f"opened")
 
         # Force an update to self.isopen
         self.isopen
-
-    # def __owner_init__(self, owner):
-    #     super().__owner_init__(owner)
-
-    #     # update the name of the logger to match the context within owner
-    #     self._console = util.console.logger.getChild(str(self))
-    #     self._console = logging.LoggerAdapter(self._console, dict(device=repr(self), origin=f" - " + str(self)))
 
     @util.hide_in_traceback
     @wraps(close)
@@ -408,7 +387,7 @@ class Device(HasTraits, util.Ownable):
 
         self.isopen
 
-        self._console.debug('closed')
+        self._logger.debug('closed')
 
     
     @classmethod

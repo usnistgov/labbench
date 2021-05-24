@@ -31,7 +31,7 @@ class LaggyInstrument(EmulatedVISADevice):
     def fetch(self):
         """ Return the argument after a 1s delay
         """
-        lb.console.info(f'{self}.fetch start')
+        lb.logger.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
         self.perf['fetch'] = time.perf_counter() - t0

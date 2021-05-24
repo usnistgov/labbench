@@ -247,7 +247,7 @@ class Method(util.Ownable):
         ret = self._wrapped(self._owner, *args, **kws)
         elapsed = time.perf_counter()-t0
         if elapsed > 0.1:
-            util.console.debug(f"{self._owned_name} completed in {elapsed:0.2f}s")
+            util.logger.debug(f"{self._owned_name} completed in {elapsed:0.2f}s")
 
         # notify observers about the returned value
         if ret is not None:
@@ -274,10 +274,10 @@ class BoundSequence(util.Ownable):
         for i, (name, sequence) in enumerate(self.sequence.items()):
             step_kws = self._step(sequence, kwargs)
 
-            util.console.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
+            util.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
             ret.update(util.concurrently(**step_kws) or {})
 
-        util.console.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
+        util.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
 
         return ret
 
@@ -285,7 +285,7 @@ class BoundSequence(util.Ownable):
     def to_template(cls, path):
         if path is None:
             path = f"{cls.__name__} template.csv"
-        util.console.debug(f"writing csv template to {repr(path)}")
+        util.logger.debug(f"writing csv template to {repr(path)}")
         df = pd.DataFrame(columns=cls.params)
         df.index.name = 'Condition name'
         df.to_csv(path)
@@ -298,7 +298,7 @@ class BoundSequence(util.Ownable):
         """
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.console.info(f"{self._owned_name} from '{str(path)}' "
+            util.logger.info(f"{self._owned_name} from '{str(path)}' "
                              f"- '{row}' ({i+1}/{len(table.index)})")
             self.results = self(**table.loc[row].to_dict())
 
@@ -341,8 +341,6 @@ class OwnerContextAdapter:
         self._owned_name = getattr(owner, '_owned_name', repr(owner))
 
         display_name = getattr(self, '_owned_name', type(self).__name__)
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(rack=display_name, origin=f" - " + str(self)))
 
     def __enter__(self):
         cls = type(self._owner)
@@ -350,7 +348,7 @@ class OwnerContextAdapter:
             opener(self._owner)
 
         # self._owner.open()
-        self._owner._console.debug('opened')
+        getattr(self._owner, '_logger', util._logger).debug('opened')
 
     def __exit__(self, *exc_info):
         cls = type(self._owner)
@@ -372,7 +370,7 @@ class OwnerContextAdapter:
                 traceback.print_exception(*ex, limit=-(depth - 1))
                 sys.stderr.write('(Exception suppressed to continue close)\n\n')
 
-        self._owner._console.debug('closed')
+        getattr(self._owner, '_logger', util._logger).debug('closed')
 
     def __repr__(self):
         return repr(self._owner)
@@ -436,7 +434,7 @@ def package_owned_contexts(top):
         Context manager
     """
 
-    log = getattr(top, '_console', util.console)
+    log = getattr(top, '_logger', util.logger)
     contexts, entry_order = recursive_devices(top)
 
     # like set(entry_order), but maintains order in python >= 3.7
@@ -491,21 +489,21 @@ def package_owned_contexts(top):
     return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
 
 
-def propagate_owned_names(parent_obj, parent_name=None):
-    """ recursively update _owned_name in child instances of Owner
-        classes or instances
-    """
-    if parent_name is None:
-        parent_name = parent_obj.__name__
+# def propagate_owned_names(parent_obj, parent_name=None):
+#     """ recursively update _owned_name in child instances of Owner
+#         classes or instances
+#     """
+#     if parent_name is None:
+#         parent_name = parent_obj.__name__
 
-    for name, obj in parent_obj._owners.items():
-        propagate_owned_names(obj, parent_name+'.'+name)
+#     for name, obj in parent_obj._owners.items():
+#         propagate_owned_names(obj, parent_name+'.'+name)
 
-    # some objects may be reused by children. apply
-    # our own namespace last to ensure the highest-level
-    # ownership is attributed
-    for name, obj in parent_obj._ownables.items():
-        obj._owned_name = parent_name+'.'+name
+#     # some objects may be reused by children. apply
+#     # our own namespace last to ensure the highest-level
+#     # ownership is attributed
+#     for name, obj in parent_obj._ownables.items():
+#         obj._owned_name = parent_name+'.'+name
 
 
 def owner_getattr_chains(owner):
@@ -590,7 +588,7 @@ class Owner:
 
             setattr(cls, name, obj)
 
-        propagate_owned_names(cls, cls.__name__)
+        # propagate_owned_names(cls, cls.__name__)
 
     def __init__(self, **update_ownables):
         self._owners = dict(self._owners)
@@ -602,7 +600,7 @@ class Owner:
             if not isinstance(obj, util.Ownable)
         }
         if len(unownable) > 0:
-            raise TypeError(f"keyword arguments {unownable} are not ownable objects")            
+            raise TypeError(f"keyword argument objects {unownable} are not ownable")
 
         # update ownables
         unrecognized = set(update_ownables.keys()).difference(self._ownables.keys())
@@ -627,11 +625,14 @@ class Owner:
 
         super().__init__()
 
-        propagate_owned_names(self, type(self).__name__)
-
-        for name, obj in self._ownables.items():
+        for obj in self._owners.values():
             obj.__owner_init__(self)
-        
+
+        for obj in self._ownables.values():
+            # repeat this for Rack instances that are also Owners,
+            # ensuring that obj._owned_name refers to the topmost
+            # name
+            obj.__owner_init__(self)
 
     def __setattr__(self, key, obj):
         # update naming for any util.Ownable instances
@@ -677,7 +678,7 @@ class Owner:
     #     for opener in core.trace_methods(cls, 'open', Owner)[::-1]:
     #         opener(self)
 
-    #     self._console.debug('opened')
+    #     self._logger.debug('opened')
 
     #     return self
 
@@ -701,7 +702,7 @@ class Owner:
     #             traceback.print_exception(*ex, limit=-(depth - 1))
     #             sys.stderr.write('(Exception suppressed to continue close)\n\n')
 
-    #     self._console.debug('closed')
+    #     self._logger.debug('closed')
 
 
 @util.hide_in_traceback
@@ -959,7 +960,7 @@ class RackMeta(type):
         """
         with open(Path(config_path)/metacls.CONFIG_FILENAME,'r') as f:
             config = yaml.load(f)
-            util.console.debug(f"loaded configuration from {repr(str(config_path))}")
+            util.logger.debug(f"loaded configuration from {repr(str(config_path))}")
 
         rack_cls = metacls.from_module(
             config['source']['module'],
@@ -997,8 +998,8 @@ class RackMeta(type):
         # path = Path(root_path)/self.CONFIG_FILENAME
 
         # # if getattr(self.rack_cls, '__config_path__', None) == str(path):
-        # #     util.console.debug(f"already have {path}")
-        # #     util.console.debug(f"already have {cls.__config_path__}")
+        # #     util.logger.debug(f"already have {path}")
+        # #     util.logger.debug(f"already have {cls.__config_path__}")
         # #     return
         # # else:
         # #     cls.__config_path__ = str(path)
@@ -1033,7 +1034,7 @@ class RackMeta(type):
                 method.__kwdefaults__[names[k]] = v
 
         if len(defaults_in) > 0:
-            util.console.debug(f"applied defaults {defaults_in}")
+            util.logger.debug(f"applied defaults {defaults_in}")
 
         # take the updated defaults
         defaults.update(defaults_in)
@@ -1106,7 +1107,7 @@ class RackMeta(type):
         df.index.name = 'Condition name'
         path = root_path/f'{seq.__name__}.csv'
         df.to_csv(path)
-        util.console.debug(f"writing csv template to {repr(path)}")
+        util.logger.debug(f"writing csv template to {repr(path)}")
 
     @classmethod
     def _serialize_sequence_parameters(metacls, cls):
@@ -1317,8 +1318,6 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __owner_init__(self, owner):
         super().__owner_init__(owner)
-        self._console = util.console.logger.getChild(str(self))
-        self._console = logging.LoggerAdapter(self._console, dict(rack=repr(self), origin=f" - "+str(self)))
 
     def __getattribute__(self, item):
         if item != '_methods' and item in self._methods:

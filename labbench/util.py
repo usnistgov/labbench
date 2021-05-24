@@ -83,7 +83,6 @@ class Ownable:
     """ Subclass to pull in name from an owning class.
     """
     __objclass__ = None
-    __get_owned_name__ = None
     _owned_name = None
 
     def __set_name__(self, owner_cls, name):
@@ -96,7 +95,6 @@ class Ownable:
     def __owner_init__(self, owner):
         """ called when the owner is instantiated
         """
-        self.__get_owned_name__ = lambda: (str(owner) if hasattr(owner, '__name__') else '')
         pass
 
     def __owner_subclass__(self, owner_cls):

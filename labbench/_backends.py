@@ -903,27 +903,32 @@ class TelnetDevice(Device):
 
 
 class VISADevice(Device):
-    r""" .. class:: VISADevice(resource, read_termination='\\n', write_termination='\\n')
+    r""" wraps pyvisa to communicate with instruments.
 
-        VISADevice instances control VISA instruments using a
-        pyvisa backend. Compared to direct use of pyvisa, this
-        style of use permits use of labbench device `state`
-        goodies for compact, gets code, as well as type checking.
+    Examples:
+        list valid `resource` strings detected by the ::
 
-        For example, the following fetches the
-        identity string from the remote instrument::
+            print(VISADevice.list_resources())
+
+        fetch the instrument identity string::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
                 print(inst.identity)
 
-        This is equivalent to the more pyvisa-style use as follows::
+        write ':FETCH?' command to the instrument, read an ASCII response,
+        and return it as a pandas DataFrame::
 
-            inst = VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR')
-            inst.open()
-            print(inst.query('*IDN?'))
+            with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
+                print(inst.query_ascii_values(':FETCH?'))
 
-        Use of `inst` makes it possible to add callbacks to support
-        automatic property trait logging, or to build a UI.
+    See also:
+    .. _installing a proprietary OS service for VISA:
+        https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
+
+    Attributes:
+        backend (pyvisa.Resource):
+            https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
+
     """
 
     # Settings
@@ -944,7 +949,7 @@ class VISADevice(Device):
 
     @property_.dict(sets=False)
     def status_byte(self):
-        """ VISA status byte reported by the instrument """
+        """ status byte reported by the instrument """
         code = int(self.query('*STB?'))
         return {'error queue not empty': bool(code & 0b00000100),
                 'questionable state': bool(code & 0b00001000),
@@ -992,7 +997,7 @@ class VISADevice(Device):
             of the `with` block, or if there is any exception.
         """
 
-        self.__opc = False
+        self._opc = False
 
         self.backend = self._rm.open_resource(
             self.resource,
@@ -1074,7 +1079,7 @@ class VISADevice(Device):
             Returns:
                 None
         """
-        if self.__opc:
+        if self._opc:
             msg = msg + ';*OPC'
         msg_out = repr(msg) if len(msg) < 1024 else f'({len(msg)} bytes)'
         self._console.debug(f'write {repr(msg_out)}')
@@ -1195,9 +1200,9 @@ class VISADevice(Device):
                 timeout: delay (in milliseconds) on waiting for the instrument to finish the overlapped commands before a TimeoutError after leaving the `with` block. If `None`, use self.backend.timeout.
                 quiet: Suppress timeout exceptions if this evaluates as True
         """
-        self.__opc = True
+        self._opc = True
         yield
-        self.__opc = False
+        self._opc = False
         self.query('*OPC?', timeout=timeout)
 
     class suppress_timeout(contextlib.suppress):

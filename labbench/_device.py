@@ -281,11 +281,6 @@ class Device(HasTraits, util.Ownable):
                 for name in cls._property_attrs
         ))
 
-        # datareturn_docs = ''.join((
-        #         f"    {getattr(cls, name).doc()}\n"
-        #         for name in cls._datareturn_attrs
-        # ))
-
         if cls.__doc__ is None:
             # use the static doc written for the parent
             cls.__baredoc__ = cls.__baredoc__

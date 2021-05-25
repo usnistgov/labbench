@@ -28,13 +28,12 @@ __all__ = [# "misc"
            'ConfigStore', 'hash_caller', 'kill_by_name', 'show_messages',
            'logger', 'LabbenchDeprecationWarning', 'import_t0',
 
-
            # concurrency and sequencing
            'concurrently', 'sequentially', 'Call', 'ConcurrentException',
            'check_hanging_thread', 'ThreadSandbox', 'ThreadEndedByMaster',
 
            # timing and flow management
-           'retry', 'until_timeout', 'sleep', 'stopwatch',
+           'retry', 'until_timeout', 'sleep', 'stopwatch', 'timeout_iter'
 
            # wrapper helpers
            'wrap_attribute',
@@ -571,6 +570,17 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
         return do_retry
 
     return decorator
+
+
+def timeout_iter(duration):
+    """sets a timer for `duration` seconds, yields time elapsed as long as timeout has not been reached"""
+
+    t0 = time.perf_counter()
+    elapsed = 0
+
+    while elapsed < duration:
+        yield elapsed
+        elapsed = time.perf_counter()-t0
 
 
 def kill_by_name(*names):

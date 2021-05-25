@@ -257,8 +257,12 @@ class Method(util.Ownable):
         return {} if ret is None else ret
 
     def __repr__(self):
-        wrapped = repr(self._wrapped)[1:-1]
-        return f'<{wrapped} wrapped by {type(self).__module__}.{type(self).__name__} object>'
+        try:
+            wrapped = repr(self._wrapped)[1:-1]
+            return f'<{wrapped} wrapped by {type(self).__module__}.{type(self).__name__} object>'
+        except AttributeError:
+            return f'<{type(self).__module__}.{type(self).__name__} wrapper>'
+        
 
 
 class BoundSequence(util.Ownable):
@@ -543,12 +547,6 @@ class Owner:
             cls._entry_order = entry_order
 
         cls._propagate_ownership()
-
-    def __meta_owner_init__(self, parent_name):
-        """ called recursively on initialization of any owner above the
-            scope of this owner
-        """
-        self._owned_name = parent_name+'.'+self.__name__
 
     @classmethod
     def _propagate_ownership(cls):
@@ -995,22 +993,7 @@ class RackMeta(type):
     def _apply_sequence_defaults(metacls, rack_cls, defaults_in):
         """ adjust the method argument parameters in the Rack subclass `cls` according to config file
         """
-        # path = Path(root_path)/self.CONFIG_FILENAME
-
-        # # if getattr(self.rack_cls, '__config_path__', None) == str(path):
-        # #     util.logger.debug(f"already have {path}")
-        # #     util.logger.debug(f"already have {cls.__config_path__}")
-        # #     return
-        # # else:
-        # #     cls.__config_path__ = str(path)
-
         defaults, annots, methods, names = metacls._get_sequence_parameters(rack_cls)
-
-        # # read the existing defaults
-        # defaults_in = {}
-        # if path.exists():
-        #     with open(path, 'rb') as f:
-        #         defaults_in = yaml.safe_load(f) or {}
 
         for k, v in dict(defaults_in).items():
             if v == defaults[k]:
@@ -1018,7 +1001,8 @@ class RackMeta(type):
                 continue
 
             if k not in methods:
-                raise KeyError(f"sequence_kwdefaults configuration key '{k}' is not a parameter in any method of '{rack_cls.__qualname__}'")
+                clsname = rack_cls.__qualname__
+                raise KeyError(f"sequence key '{k}' does not match keywords for any method of '{clsname}'")
             elif annots[k] is not EMPTY and not isinstance(v, annots[k]):
                 raise TypeError(f"the sequence_kwdefaults configuration at key '{k}' with value '{v}' conflicts "
                                 f"with type annotation '{annots[k]}'")
@@ -1029,6 +1013,7 @@ class RackMeta(type):
             if isinstance(method, Method):
                 method.set_kwdefault(names[k], v)
             else:
+                #dictify __kwdefaults__
                 if method.__kwdefaults__ is None:
                     method.__kwdefaults__ = {}
                 method.__kwdefaults__[names[k]] = v
@@ -1038,16 +1023,6 @@ class RackMeta(type):
 
         # take the updated defaults
         defaults.update(defaults_in)
-
-    # def _repropagate_ownership(rack_cls):
-    #     # reinitialize the subclass to propagate changes to Sequence keyword signatures
-    #     for name in dir(rack_cls):
-    #         obj = getattr(rack_cls, name)
-    #         if isinstance(obj, util.Ownable):
-    #             obj.__set_name__(rack_cls, name)  # in case it was originally instantiated outside cls
-    #             new_obj = obj.__owner_subclass__(rack_cls)
-
-    #             setattr(rack_cls, name, new_obj)
 
     @classmethod
     def to_config(metacls, cls, path, with_defaults=False):
@@ -1149,7 +1124,7 @@ class RackMeta(type):
 
     @classmethod
     def _get_sequence_parameters(metacls, rack_cls):
-        """ introspect the arguments used in a sequence. cls is the Rack class or a subclass
+        """introspects the needed to run a sequence. cls is the Rack class or a subclass
         """
         defaults = {}
         annots = {}
@@ -1158,16 +1133,17 @@ class RackMeta(type):
 
         for owner in rack_cls._owners.values():
             if isinstance(owner, Rack):
+                prefix = owner.__name__+'_'
                 d, a, m, n = metacls._get_sequence_parameters(owner)
-                defaults.update({owner.__name__+'_'+k: v for k, v in d.items()})
-                annots.update({owner.__name__+'_'+k: v for k, v in a.items()})
-                methods.update({owner.__name__ + '_' + k: v for k, v in m.items()})
-                names.update({owner.__name__ + '_' + k: k for k, v in m.items()})
+                defaults.update(zip(((prefix+k for k in d), d.values())))
+                annots.update(zip(((prefix+k for k in a), a.values())))
+                methods.update(zip(((prefix+k for k in m), m.values())))
+                names.update(zip(((prefix+k for k in m), m.keys())))
 
         for step in rack_cls._methods.values():
             params = iter(inspect.signature(step).parameters.items())
-            next(params) # skip 'self'
-
+            
+            next(params) # skip 'self' then iterate
             for k, p in params:
                 methods[k] = step
                 if annots.setdefault(k, p.annotation) is EMPTY:
@@ -1178,14 +1154,20 @@ class RackMeta(type):
                     raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{rack_cls.__qualname__}' is not a class")
 
                 if defaults.setdefault(k, p.default) is EMPTY:
+                    # current or previous defaults[k] is empty, or defaults[k] was unset
                     defaults[k] = p.default
                 elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
-                    raise ValueError(f"conflicting defaults '{p.default}' and '{defaults[k]}' in {rack_cls.__qualname__} methods")
+                    raise ValueError(
+                        f"conflicting defaults '{p.default}' and '{defaults[k]}'"
+                        f"in {rack_cls.__qualname__} methods"
+                    )
 
             for k in defaults:
                 if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
-                    raise TypeError(f"default '{defaults[k]}' does not match type annotation "
-                                    f"'{annots[k]}' in '{rack_cls.__qualname__}' is not a class")
+                    raise TypeError(
+                        f"default '{defaults[k]}' does not match type annotation "
+                        f"'{annots[k]}' in '{rack_cls.__qualname__}'"
+                    )
 
         return defaults, annots, methods, names        
 
@@ -1233,12 +1215,6 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         # register step methods
         cls._methods = {}
         attr_names = sorted(set(dir(cls)).difference(dir(Owner)))
-        # attrs = ((name, getattr(cls, name)) for name in attr_names)
-        # cls._methods = {
-        #     name: obj
-        #     for name, obj in attrs
-        #     if name[0] != '_' and (inspect.ismethod(obj) or isinstance(obj, Method))
-        # }
 
         # not using cls.__dict__ because it neglects parent classes
         for name in attr_names:
@@ -1255,21 +1231,11 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
         super().__init_subclass__(entry_order=entry_order)
 
-        # # sentinel values for each annotations (largely to support IDE introspection)
-        # for name, annot_cls in cls.__annotations__.items():
-        #     if name in cls._methods:
-        #         clsname = cls.__qualname__
-        #         raise AttributeError(f"'{clsname}' device annotation and method conflict for attribute '{name}'")
-        #     else:
-        #         setattr(cls, name, annot_cls())
-
-    def __init__(self, **devices):
-        super().__init__(**devices)
-
-        # match the device arguments to annotations
-        devices = dict(devices)
+    def __init__(self, **ownables):
+        # new dict mapping object for the same devices
+        ownables = dict(ownables)
         annotations = dict(self.__annotations__)
-        for name, dev in devices.items():#self.__annotations__.items():
+        for name, dev in ownables.items():#self.__annotations__.items():
             try:
                 dev_type = annotations.pop(name)
             except KeyError:
@@ -1279,7 +1245,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
                 raise AttributeError(msg)
             setattr(self, name, dev)
 
-        # check for the is a valid instance in the class for each remaining attribute
+        # check for a valid instance in the class for each remaining attribute
         for name, dev_type in dict(annotations).items():
             if isinstance(getattr(self, name, EMPTY), dev_type):
                 del annotations[name]
@@ -1288,6 +1254,9 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         if len(annotations) > 0:
             kwargs = [f"{repr(k)}: {v}" for k, v in annotations.items()]
             raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
+
+        # now move forward with applying the devices
+        super().__init__(**ownables)
 
         # wrap self._methods as necessary
         self._methods = {

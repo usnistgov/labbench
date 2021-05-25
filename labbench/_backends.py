@@ -48,26 +48,24 @@ import sys
 from threading import Thread, Event
 import warnings
 
+# sentinel values unless they are imported later
+win32com = None
+
 
 class ShellBackend(Device):
-    """ Virtual device controlled by a shell command in another process. It supports
-        threaded data logging through standard
-        input, standard output, and standard error pipes.
+    """Virtual device controlled by a shell command in another process.
+    
+    Data can be captured from standard output, and standard error pipes, and
+    optionally run as a background thread.
 
-        The shell is connection-less, so the `backend` is `None` after connect. On a
-        call to execute(), `backend` becomes is a subprocess instance. When
-        EOF is reached on the executable's stdout, the backend is assumed
-        terminated and is reset to None.
+    After opening, `backend` is `None`. On a call to execute(), `backend`
+    becomes is a subprocess instance. When EOF is reached on the executable's
+    stdout, the backend resets to None.
 
-        When `execute` is called, the program runs in a subprocess.
-        The output piped to the command line standard output is queued in a
-        background thread. Call read_stdout() to retreive (and clear) this
-        queued stdout.
-
-        Special behaviors:
-        * traits in `ShellBackend` support the `key` argument, which can be a
-        string to specify a command flag, `None` to specify an argument with no flags,
-        or left as `lb.Undefined` to be ignored in forming a command line.
+    When `run` is called, the program runs in a subprocess.
+    The output piped to the command line standard output is queued in a
+    background thread. Call read_stdout() to retreive (and clear) this
+    queued stdout.
     """
 
     binary_path = value.Path(
@@ -493,21 +491,20 @@ import importlib
 from pathlib import Path
 
 class DotNetDevice(Device):
-    """ This Device backend represents a wrapper around a .NET library. It is implemented
-        with pythonnet, and handlesimports.
+    """Base class for .NET library wrappers based on pythonnet.
 
-        In order to implement a DotNetDevice subclass:
+    To implement a DotNetDevice subclass::
 
-        * define the attribute `library = <mypythonmodule.wheredllbinariesare>`, the python module with copies of the .NET DLLs are
+        import labbench as lb
 
-        * define the attribute `dll_name = "mydllname.dll"`, the name of the DLL binary in the python module above
+        class MyLibraryWrapper(lb.DotNetDevice, libary=<imported python module colocated with dll>, dll_name='mylibrary.dll')
+            ...
 
-        When a DotNetDevice is instantiated, it tries to load the dll according to the above specifications.
+    When a DotNetDevice is instantiated, it looks to load the dll from the location of the python module
+    and dll_name.
 
-        Other attributes of DotNetDevice use the following conventions
-
-        * `backend` may be set by a subclass `open` method (otherwise it is left as None)
-
+    Attributes:
+        - `backend` is None after open and is available for replacement by the subclass
     """
 
     # these can only be set as arguments to a subclass definition
@@ -557,19 +554,15 @@ class DotNetDevice(Device):
 
 
 class LabviewSocketInterface(Device):
-    """ Implement the basic sockets-based control interface for labview.
-        This implementation uses a transmit and receive socket.
+    """Base class demonstrating simple sockets-based control of a LabView VI.
 
-        State sets are implemented by simple ' command value' strings
-        and implemented with the 'key' keyword (like VISA strings).
-        Subclasses can therefore implement support for commands in
-        specific labview VI the same was as in VISA commands by
-        assigning the commands implemented in the corresponding labview VI.
+    Keyed get/set with lb.property are implemented by simple ' command value'.
+    Subclasses can therefore implement support for commands in
+    specific labview VI similar to VISA commands by
+    assigning the commands implemented in the corresponding labview VI.
 
-        The `resource` argument 
-        is the ip address of the host where the labview script
-        is running. Use the tx_port and rx_port attributes to set the
-        TCP/IP ports where communication is to take place.
+    Attributes:
+        - backend (dict): connection object mapping {'rx': rxsock, 'tx': txsock}
     """
 
     resource = value.NetworkAddress('127.0.0.1', accept_port=False, help='LabView VI host address')
@@ -644,24 +637,17 @@ class LabviewSocketInterface(Device):
 
 
 class SerialDevice(Device):
-    """ A general base class for communication with serial devices.
-        Unlike (for example) VISA instruments, there is no
-        standardized command format like SCPI. The implementation is
-        therefore limited to open and close, which open
-        or close a pyserial connection object: the `link` attribute.
-        Subclasses can read or write with the link attribute like they
-        would any other serial instance.
+    """Base class for wrappers that communicate via pyserial.
 
-        A SerialDevice resource string is the same as the
-        platform-dependent `port` argument to new serial.Serial
-        objects.
+    This implementation is very sparse because there is in general
+    no messaging string format for serial devices.
 
-        Subclassed devices that need property trait descriptors will need
-        to implement state_get and state_set methods in order to define
-        how the property trait descriptors set and get operations.
+    Attributes:
+        - backend (serial.Serial): control object, after open
     """
 
     # Connection value traits
+    resource = value.str(help='platform-dependent serial port address')
     timeout = value.float(2, min=0, help='Max time to wait for a connection before raising TimeoutError.')
     write_termination = value.bytes(b'\n', help='Termination character to send after a write.')
     baud_rate:int = value.int(9600, min=1, help='Data rate of the physical serial connection.')
@@ -777,7 +763,6 @@ class SerialLoggingDevice(SerialDevice):
         """ Start a background thread that acquires log data into a queue.
 
             Returns:
-
                 None
         """
         from serial import SerialException
@@ -874,7 +859,7 @@ class TelnetDevice(Device):
     """
 
     # Connection value traits
-    resource = value.NetworkAddress('127.0.0.1:23', help='remote address of the telnet server (default port is 23)')
+    resource = value.NetworkAddress('127.0.0.1:23', help='server host address')
     timeout= value.float(2, min=0, label='s', help='connection timeout')
 
     @classmethod
@@ -934,7 +919,6 @@ class VISADevice(Device):
 
     # Settings
     read_termination = value.str('\n', help='end of line string for reads')
-
     write_termination = value.str('\n', help='end of line string for writes')
 
     # States
@@ -1258,7 +1242,7 @@ class Win32ComDevice(Device, concurrency=True):
     # to the dispatched COM object block until the previous calls are completed
     # from within.
 
-    com_object = value.str(default='', help='the win32com object string')  # Must be a module
+    com_object = value.str(default='', sets=False, help='the win32com object string')  # Must be a module
 
     @classmethod
     def __imports__(cls):

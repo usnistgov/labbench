@@ -1,6 +1,23 @@
 from . import _traits
 
 
+class any(_traits.Any):
+
+    def __init__(
+        default=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False,
+        remap: dict={}
+    ):
+        ...
+    ...
+
+
 class bool(_traits.Bool):
 
     def __init__(

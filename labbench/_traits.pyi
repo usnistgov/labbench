@@ -3,6 +3,7 @@ from . import util as util
 from contextlib import contextmanager as contextmanager
 from typing import Any as _Any, Optional
 Undefined: _Any
+T: _Any
 
 
 class ThisType():
@@ -99,7 +100,7 @@ class Trait():
     def doc(self):
         ...
 
-    def tag(self, **kws: _Any):
+    def doc_params(self, omit: _Any=...):
         ...
 
 
@@ -108,7 +109,7 @@ class HasTraits(metaclass=HasTraitsMeta):
     __cls_namespace__: _Any = ...
     __cache__: _Any = ...
 
-    def __init__(self) -> None:
+    def __init__(self, **values: _Any) -> None:
         ...
 
     def __init_subclass__(cls) -> None:

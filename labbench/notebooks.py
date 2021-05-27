@@ -135,7 +135,7 @@ class panel:
     """ Show tables summarizing value traits and property traits in jupyter notebook.
     Only a single panel will be shown in a python kernel.
 
-    Args:
+    Arguments:
         source: Either an integer indicating how far up the calling tree to
                 search for Device instances, or a `labbench.Rack` instance.
         ncols: Maximum number of devices to show on each row

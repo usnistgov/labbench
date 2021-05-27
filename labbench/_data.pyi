@@ -129,7 +129,7 @@ class RelationalTableLogger(Owner, util.Ownable):
 
     def __init__(
         self,
-        path: Any,
+        path: Optional[Any]=...,
         *,
         append: bool=...,
         text_relational_min: int=...,
@@ -171,7 +171,7 @@ class RelationalTableLogger(Owner, util.Ownable):
         ...
     last_index: int = ...
 
-    def open(self) -> None:
+    def open(self):
         ...
 
     def close(self) -> None:

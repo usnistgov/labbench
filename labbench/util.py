@@ -36,7 +36,7 @@ __all__ = [# "misc"
            'retry', 'until_timeout', 'sleep', 'stopwatch', 'timeout_iter'
 
            # wrapper helpers
-           'wrap_attribute',
+           'copy_func',
 
            # traceback scrubbing
            'hide_in_traceback', '_force_full_traceback',
@@ -80,7 +80,7 @@ import weakref
 def show_messages(minimum_level, colors=True):
     """ Configure screen debug message output for any messages as least as important as indicated by `level`.
 
-    Args:
+    Arguments:
         minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
     Returns:
         None
@@ -307,15 +307,45 @@ class _filtered_exc_info:
             raise
 
 
+def copy_func(
+        func,
+        assigned=('__module__', '__name__', '__qualname__', '__doc__', '__annotations__'),
+        updated=('__dict__',),
+    ) -> callable:
+    """returns a copy of func with specified attributes (following the inspect.wraps arguments).
+    
+    This is similar to wrapping `func` with `lambda *args, **kws: func(*args, **kws)`, except
+    the returned callable contains a duplicate of the bytecode in `func`. The idea that the
+    returned copy has fresh to __doc__, __signature__, etc., which can be changed without
+    independently of `func`.
+    """
+
+    new = types.FunctionType(
+        func.__code__,
+        func.__globals__,
+        func.__name__,
+        func.__defaults__,
+        func.__closure__
+    )
+    
+    for attr in assigned:
+        setattr(new, attr, getattr(func, attr))
+
+    for attr in updated:
+        getattr(new, attr).update(getattr(func, attr))
+
+    return new
 
 # TODO: remove this
-def wrap_attribute(cls,
-                   name: str,
-                   wrapper,
-                   fields: list,
-                   defaults: dict,
-                   positional: int = None,
-                   annotations: dict = {}):
+def withsignature(
+        cls,
+        name: str,
+        fields: list,
+        defaults: dict,
+        positional: int = None,
+        annotations: dict = {}
+    ):
+    
     """ Replace cls.__init__ with a wrapper function with an explicit
         call signature, replacing the actual call signature that can be
         dynamic __init__(self, *args, **kws) call signature.
@@ -336,25 +366,9 @@ def wrap_attribute(cls,
     # Generate a code object with the adjusted signature
     code = wrapper.__code__
 
-    args = [1 + positional,  # co_argcount
-            len(fields) - positional,  # co_kwonlyargcount
-            len(fields) + 1,  # co_nlocals
-            code.co_stacksize,
-            code.co_flags,
-            code.co_code,
-            code.co_consts,
-            code.co_names,
-            ('self',) + tuple(fields), # co_varnames
-            code.co_filename,
-            code.co_name,
-            code.co_firstlineno,
-            code.co_lnotab,
-            code.co_freevars,
-            code.co_cellvars]
-
     if tuple(sys.version_info)[:2] >= (3, 8):
-        # there is a new co_posonlyargs argument since 3.8, so might as well use the
-        # new .replace syntactic sugar
+        # there is a new co_posonlyargs argument since 3.8 - use the new .replace
+        # to be less brittle to future signature changes
         code = code.replace(
             co_argcount=1+positional, # to include self
             co_posonlyargcount=0,
@@ -363,26 +377,28 @@ def wrap_attribute(cls,
             co_varnames=('self',) + tuple(fields)
         )
     else:
-        args = [1 + positional,  # co_argcount
-                len(fields) - positional,  # co_kwonlyargcount
-                len(fields) + 1,  # co_nlocals
-                code.co_stacksize,
-                code.co_flags,
-                code.co_code,
-                code.co_consts,
-                code.co_names,
-                ('self',) + tuple(fields),  # co_varnames
-                code.co_filename,
-                code.co_name,
-                code.co_firstlineno,
-                code.co_lnotab,
-                code.co_freevars,
-                code.co_cellvars]
-
-        code = types.CodeType(*args)
+        code = types.CodeType(
+            1 + positional,  # co_argcount
+            len(fields) - positional,  # co_kwonlyargcount
+            len(fields) + 1,  # co_nlocals
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            ('self',) + tuple(fields),  # co_varnames
+            code.co_filename,
+            code.co_name,
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            code.co_cellvars            
+        )
 
     # Generate the new wrapper function and its signature
     __globals__ = getattr(wrapped, '__globals__', builtins.__dict__)
+    import functools
+
     wrapper = types.FunctionType(code,
                                  __globals__,
                                  wrapped.__name__)
@@ -456,7 +472,7 @@ def retry(exception_or_exceptions, tries=4, delay=0,
     Inspired by https://github.com/saltycrane/retry-decorator which is released
     under the BSD license.
 
-    Args:
+    Arguments:
         exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
         tries: number of times to try before giving up
     :type tries: int
@@ -523,7 +539,7 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
             t.open(host,port,5)
             return t
 
-    Args:
+    Arguments:
         exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
         timeout: time in seconds to continue calling the decorated function while suppressing exception_or_exceptions
     :type timeout: float
@@ -586,7 +602,7 @@ def timeout_iter(duration):
 def kill_by_name(*names):
     """ Kill one or more running processes by the name(s) of matching binaries.
 
-        Args:
+        Arguments:
             names: list of names of processes to kill
         :type names: str
 
@@ -655,7 +671,7 @@ def stopwatch(desc: str = '',
     >>>     time.sleep(2)
     sleep statement time elapsed 1.999s.
 
-    Args:
+    Arguments:
         desc: text for display that describes the event being timed
         threshold: only show timing if at least this much time (in s) elapsed
     :
@@ -1157,7 +1173,7 @@ def concurrently(*objs, **kws):
         Multiple references to the same function in `objs` only result in one call. The `catch` and `nones`
         arguments may be callables, in which case they are executed (and each flag value is treated as defaults).
 
-        Args:
+        Arguments:
             objs:  each argument may be a callable (function or class that defines a __call__ method), or context manager (such as a Device instance)
             catch:  if `False` (the default), a `ConcurrentException` is raised if any of `funcs` raise an exception; otherwise, any remaining successful calls are returned as normal
             nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
@@ -1236,7 +1252,7 @@ def sequentially(*objs, **kws):
         Multiple references to the same function in `objs` only result in one call. The `nones`
         argument may be callables in  case they are executed (and each flag value is treated as defaults).
 
-        Args:
+        Arguments:
             objs:  each argument may be a callable (function, or class that defines a __call__ method), or context manager (such as a Device instance)
             kws: dictionary of further callables or context managers, with names set by the dictionary key
             nones: if True, include dictionary entries for calls that return None (default is False); left as another entry in `kws` if callable or a context manager

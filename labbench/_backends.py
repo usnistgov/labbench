@@ -50,6 +50,7 @@ import warnings
 
 # sentinel values unless they are imported later
 win32com = None
+pyvisa = None
 
 
 class ShellBackend(Device):
@@ -280,7 +281,7 @@ class ShellBackend(Device):
             """ Execute the binary in the background (nonblocking),
                 while funneling its standard output to a queue in a thread.
 
-                Args:
+                Arguments:
                     cmd: iterable containing the binary path, then
                             each argument to be passed to the binary.
 
@@ -888,7 +889,7 @@ class TelnetDevice(Device):
 
 
 class VISADevice(Device):
-    r""" wraps pyvisa to communicate with instruments.
+    r"""base class for VISA device wrappers with pyvisa.
 
     Examples:
 
@@ -910,16 +911,34 @@ class VISADevice(Device):
     See also:
     .. _installing a proprietary OS service for VISA:
         https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
+    .. _resource strings and basic configuration:
+        https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
 
     Attributes:
-        backend (pyvisa.Resource):
-            https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
+        backend (pyvisa.Resource): instance of a pyvisa instrument object (when open)
 
     """
 
     # Settings
-    read_termination = value.str('\n', help='end of line string for reads')
-    write_termination = value.str('\n', help='end of line string for writes')
+    read_termination = value.str(
+        '\n',
+        cache=True,
+        help='end of line string to expect in query replies'
+    )
+
+    write_termination = value.str(
+        '\n',
+        cache=True,
+        help='end of line string to send after writes'
+    )
+
+    _rm = value.str(
+        '@ivi',
+        only=('@ivi','@py','@sim'),
+        sets=False,
+        cache=True,
+        help="the pyvisa resource manager backend for connections"
+    )
 
     # States
     identity = property_.str(
@@ -934,70 +953,46 @@ class VISADevice(Device):
 
     @property_.dict(sets=False)
     def status_byte(self):
-        """ status byte reported by the instrument """
+        """instrument status decoded from '*STB?'"""
         code = int(self.query('*STB?'))
-        return {'error queue not empty': bool(code & 0b00000100),
-                'questionable state': bool(code & 0b00001000),
-                'message available': bool(code & 0b00010000),
-                'event status flag': bool(code & 0b00100000),
-                'service request': bool(code & 0b01000000),
-                'top level status summary': bool(code & 0b01000000),
-                'operating': bool(code & 0b10000000),
-                }
 
-    _rm = None
+        return {
+            'error queue not empty': bool(code & 0b00000100),
+            'questionable state': bool(code & 0b00001000),
+            'message available': bool(code & 0b00010000),
+            'event status flag': bool(code & 0b00100000),
+            'service request': bool(code & 0b01000000),
+            'top level status summary': bool(code & 0b01000000),
+            'operating': bool(code & 0b10000000),
+        }
 
     @classmethod
     def __imports__(cls):
-        if cls._rm is None:
-            cls.set_backend('@ivi')
-
-    def _release_remote_control(self):
-        # From instrument and pyvisa docs
-        self.backend.visalib.viGpibControlREN(self.backend.session,
-                                              pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL)
+        global pyvisa
+        import pyvisa
 
     # Overload methods as needed to implement RemoteDevice
     def open(self):
-        """ Connect to the VISA instrument defined by the VISA resource
-            set by `self.resource`. The pyvisa backend object is assigned
-            to `self.backend`.
+        """opens the instrument.
 
-            Returns:
-
-                None
-
-            Instead of calling `open` directly, consider using
-            `with` statements to guarantee a call to `close`
-            if there is an error. For example, the following
-            sets up a opened instance::
-
-                with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as inst:
-                    print(inst.identity)
-                    print(inst.status_byte)
-                    print(inst.options)
-
-            would instantiate a `VISADevice` and guarantee
-            a call to `close` either at the successful completion
-            of the `with` block, or if there is any exception.
+        When managing device connection through a `with` context,
+        this is called automatically and does not need
+        to be invoked.
         """
-
         self._opc = False
 
-        self.backend = self._rm.open_resource(
+        self.backend = self._get_rm().open_resource(
             self.resource,
             read_termination=self.read_termination,
             write_termination=self.write_termination
         )
 
     def close(self):
-        """ Disconnect the VISA instrument. If you use a `with` block
-            this is handled automatically and you do not need to
-            call this method.
-
-            Returns:
-
-                None
+        """closes the instrument.
+        
+        When managing device connection through a `with` context,
+        this is called automatically and does not need
+        to be invoked.
         """
         if not self.isopen or self.backend is None:
             return
@@ -1018,51 +1013,22 @@ class VISADevice(Device):
             self.backend.close()
 
     @classmethod
-    def set_backend(cls, backend_name):
-        """ Set the pyvisa resource manager for all VISA objects.
-
-            Args:
-                str (backend_name): '@ni' (the default) or '@py'
-            Returns:
-                None
-        """
-
-        if backend_name in ('@ivi','@ni'):
-            is_ivi = True
-            # compatibility layer for changes in pyvisa 1.12
-            if 'ivi' in pyvisa.highlevel.list_backends():
-                backend_name = '@ivi'
-            else:
-                backend_name = '@ni'
-        else:
-            is_ivi = False
-
-        try:
-            cls._rm = pyvisa.ResourceManager(backend_name)
-        except OSError as e:
-            if is_ivi:
-                url = r'https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa'
-                msg = f'could not connect to NI VISA resource manager - see {url}'
-                e.args = e.args + (msg,)
-            raise e
-
-    @classmethod
     def list_resources(cls):
-        """ List the resource strings of the available devices sensed by the VISA backend.
-        """
-        cls.__imports__()
-        return cls._rm.list_resources()
+        """autodetects and returns a list of valid resource strings"""
+        return cls._get_rm().list_resources()
 
-    def write(self, msg):
-        """ Send an SCPI command to the device via the pyvisa backend.
+    def write(self, msg:str):
+        """sends an SCPI message to the device.
 
-            Handles debug logging and adjustments when in overlap_and_block
-            contexts as appropriate.
+        Wraps `self.backend.write`, and handles debug logging and adjustments
+        when in overlap_and_block
+        contexts as appropriate.
 
-            Args:
-                msg (str): the SCPI command to send by VISA
-            Returns:
-                None
+        Arguments:
+            msg: the SCPI command to send
+
+        Returns:
+            None
         """
         if self._opc:
             msg = msg + ';*OPC'
@@ -1070,35 +1036,37 @@ class VISADevice(Device):
         self._logger.debug(f'write {repr(msg_out)}')
         self.backend.write(msg)
 
-    def query(self, msg, timeout=None) -> str:
-        """ Query the device with an SCPI command via pyvisa,
-            and return the device response string.
+    def query(self, msg:str, timeout=None) -> str:
+        """queries the device with an SCPI message and returns its reply.
 
-            Handles debug logging and adjustments when in overlap_and_block
-            contexts as appropriate.
+        Handles debug logging and adjustments when in overlap_and_block
+        contexts as appropriate.
 
-            Args:
-                msg (str): the SCPI command to send by VISA
-            Returns:
-                the response to the query from the device
+        Arguments:
+            msg: the SCPI message to send
         """
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
+
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'query {msg_out}')
+
         try:
             ret = self.backend.query(msg)
         finally:
             if timeout is not None:
                 self.backend.timeout = _to
+
         msg_out = repr(ret) if len(ret) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'      -> {msg_out}')
+
         return ret
 
     def query_ascii_values(self, msg: str, type_, separator=',', container=list, delay=None, timeout=None):
         # pre debug
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
+
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'query_ascii_values {msg_out}')
 
@@ -1123,15 +1091,18 @@ class VISADevice(Device):
         return ret
 
     def get_key(self, scpi_key, name=None):
-        """ Send an SCPI command to get a property trait value from the
-            device. This function
-            adds a '?' to match SCPI convention.
-            
-            This is automatically called for property traits defined with 'key='.
+        """queries a parameter named `scpi_key` by sending an SCPI message string.
 
-            Args:
-                key (str): The SCPI command to send
-                trait: The trait property trait corresponding with the command (ignored)
+        The command message string is formatted as f'{scpi_key}?'.
+        This is automatically called in wrapper objects on accesses to property traits that
+        defined with 'key=' (which then also cast to a pythonic type).
+
+        Arguments:
+            scpi_key (str): the name of the parameter to set
+            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
+
+        Returns:
+            response (str)
         """
         if name is not None:
             trait = self._traits[name]
@@ -1142,48 +1113,50 @@ class VISADevice(Device):
         return self.query(scpi_key + '?').rstrip()
 
     def set_key(self, scpi_key, value, name=None):
-        """ Send an SCPI command to set a property trait value on the
-            device using the given key. The command string follows the SCPI convention
-            by separating the key and value with a space.
+        """writes an SCPI message to set a parameter with a name key
+        to `value`.
 
-            This is automatically called for property traits defined with 'key='.
+        The command message string is formatted as f'{scpi_key} {value}'. This 
+        This is automatically called on assignment to property traits that
+        are defined with 'key='.
 
-            Args:
-                key (str): The key string to use to  to send
-                trait: The trait property trait corresponding with the command (ignored)
-                value (str): The value to assign to the parameter
+        Arguments:
+            scpi_key (str): the name of the parameter to set
+            value (str): value to assign
+            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
         """
         self.write(f'{scpi_key} {value}')
 
     def wait(self):
-        """ Convenience function to send standard SCPI '\\*WAI'
-        """
+        """sends '*WAI' to wait for all commands to complete before continuing"""
         self.write('*WAI')
 
     def preset(self):
-        """ Convenience function to send standard SCPI '\\*RST'
-        """
+        """sends '*RST' to reset the instrument to preset"""
         self.write('*RST')
 
     @contextlib.contextmanager
     def overlap_and_block(self, timeout=None, quiet=False):
-        """ A request is sent to the instrument to overlap all of the
-            VISA commands written while in this context. At the end
-            of the block, wait until the instrument confirms that all
-            operations have finished. This is the standard VISA ';\\*OPC'
-            and '\\*OPC?' behavior.
+        """context manager that sends '*OPC' on entry, and performs
+        a blocking '*OPC?' query on exit.
 
-            This is meant to be used in `with` blocks as follows::
+        By convention, these SCPI commands give a hint to the instrument
+        that commands sent inside this block may be executed concurrently.
+        The context exit then blocks until all of the commands have
+        completed.
 
-                with inst.overlap_and_block():
-                    inst.write('long running command 1')
-                    inst.write('long running command 2')
+        Example::
 
-            The wait happens on leaving the `with` block.
+            with inst.overlap_and_block():
+                inst.write('long running command 1')
+                inst.write('long running command 2')
 
-            Args:
-                timeout: delay (in milliseconds) on waiting for the instrument to finish the overlapped commands before a TimeoutError after leaving the `with` block. If `None`, use self.backend.timeout.
-                quiet: Suppress timeout exceptions if this evaluates as True
+        Arguments:
+            timeout: maximum time to wait for '*OPC?' reply, or None to use `self.backend.timeout`
+            quiet: Suppress timeout exceptions if this evaluates as True
+
+        Raises:
+            TimeoutError: on '*OPC?' query timeout
         """
         self._opc = True
         yield
@@ -1191,41 +1164,84 @@ class VISADevice(Device):
         self.query('*OPC?', timeout=timeout)
 
     class suppress_timeout(contextlib.suppress):
-        """ Context manager to suppress timeout exceptions.
+        """context manager that suppresses timeout exceptions on `write` or `query`.
 
-            Example::
+        Example::
 
-                with inst.suppress_timeout():
-                    inst.write('long running command 1')
-                    inst.write('long running command 2')
+            with inst.suppress_timeout():
+                inst.write('long command 1')
+                inst.write('long command 2')
 
-            If the command 1 raises an exception, then command 2 will (silently)
-            not execute.
-
+            If the command 1 raises an exception, command 2 will not execute
+            the context block is complete, and the exception from command 1
+            is swallowed.
         """
 
-        EXC = pyvisa.errors.VisaIOError
-        CODE = pyvisa.errors.StatusCode.error_timeout
-
         def __exit__(self, exctype, excinst, exctb):
-            return exctype == self.EXC and excinst.error_code == self.CODE
+            EXC = pyvisa.errors.VisaIOError
+            CODE = pyvisa.errors.StatusCode.error_timeout
+
+            return exctype == EXC and excinst.error_code == CODE
+
+    def _release_remote_control(self):
+        # From instrument and pyvisa docs
+        self.backend.visalib.viGpibControlREN(self.backend.session,
+                                              pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL)
+
+    @classmethod
+    def _get_rm(cls):
+        cls.__imports__()
+
+        backend_name = cls._rm.default
+
+        if backend_name in ('@ivi','@ni'):
+            is_ivi = True
+            # compatibility layer for changes in pyvisa 1.12
+            if 'ivi' in pyvisa.highlevel.list_backends():
+                backend_name = '@ivi'
+            else:
+                backend_name = '@ni'
+        else:
+            is_ivi = False
+
+        try:
+            rm = pyvisa.ResourceManager(backend_name)
+        except OSError as e:
+            if is_ivi:
+                url = r'https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa'
+                msg = f'could not connect to NI VISA resource manager - see {url}'
+                e.args[0] += msg
+            raise e
+
+        return rm
 
 
-class SimulatedVISADevice(VISADevice):
-    """ wrap the pyvisa-sim resource manager (resource '@sim')
-        for emulated instruments for the purposes of software testing
-        and demo 
+class SimulatedVISADevice(VISADevice, _rm='@sim'):
+    """Base class for wrapping simulated VISA devices with pyvisa.
+
+    See also:
+        - _Backend information: https://pyvisa-sim.readthedocs.io/
     """
 
     # can only set this when the class is defined
     yaml_source = value.Path('', sets=False, exists=True, help='definition of the simulated instrument')
 
-    @classmethod
-    def __imports__(cls):
-        cls.set_backend(f'{cls.yaml_source.default}@sim')
-
     def _release_remote_control(self):
         pass
+
+    @classmethod
+    def _get_rm(cls):
+        cls.__imports__()
+
+        backend_name = f'{cls.yaml_source.default}@sim'
+
+        try:
+            rm = pyvisa.ResourceManager(backend_name)
+        except OSError as e:
+            e.args[0] += f'is pyvisa-sim installed?'
+            raise e
+
+        return rm
 
 
 class Win32ComDevice(Device, concurrency=True):
@@ -1276,6 +1292,3 @@ class Win32ComDevice(Device, concurrency=True):
             self.backend = util.ThreadSandbox(factory, should_sandbox)
         else:
             self.backend = win32com.client.Dispatch(self.com_object)
-
-    def close(self):
-        pass

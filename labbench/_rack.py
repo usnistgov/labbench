@@ -431,7 +431,7 @@ def package_owned_contexts(top):
     Make a context manager for an owner that also enters any Owned members
     (recursively) Entry into this context will manage all of these.
 
-    Args:
+    Arguments:
         top: top-level Owner
 
     Returns:
@@ -758,33 +758,11 @@ class Sequence(util.Ownable):
 
         return self
 
-    @staticmethod
-    def _subclass_method_remap(cls):
-        return {}
-        if hasattr(cls, '__mro__'):
-            cls = cls
-        else:
-            cls = type(cls)
-
-        parent = cls.__mro__[1]
-
-        ret = {}
-        for owner in cls._owners.values():
-            ret.update(Sequence._subclass_method_remap(owner))
-
-        if hasattr(cls, '_methods'):
-            ret.update({
-                obj: getattr(cls, name)
-                for name, obj in parent._methods.items()
-            })
-        # ret.update(cls_or_obj._ownables)
-        return ret
-
-
     def __owner_init__(self, owner):
-        """ make a bound sequence for the owner when it is instantiated,
-            which can be called.
-        """
+        """make a sequence bound to the owner"""
+
+        # in case this is added through a 
+        self.__owner_subclass__(type(owner))
 
         def attr_chain_to_method(root_obj, chain):
             """ follow the chain with nested getattr
@@ -875,7 +853,7 @@ class Sequence(util.Ownable):
     def _collect_signatures(self, spec):
         """ collect a dictionary of parameter default values
 
-        Args:
+        Arguments:
             tree: nested list of calls that contains the parsed call tree
         Returns:
             dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
@@ -927,7 +905,7 @@ class RackMeta(type):
         Return a new Rack subclass composed of any instances of Device, Rack, data loggers, or dicts contained
         in a python module namespace.
 
-        Args:
+        Arguments:
             name_or_module: a string containing the module to import, or a module object that is already imported
         Returns:
             class that is a subclass of Rack

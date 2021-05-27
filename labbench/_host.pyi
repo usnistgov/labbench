@@ -1,5 +1,4 @@
 import logging
-import yaml
 from . import _device as core
 from typing import Any
 
@@ -68,13 +67,15 @@ class Email(core.Device):
         ...
 
 
-class Dumper(yaml.Dumper):
+class JSONFormatter(logging.Formatter):
+    t0: Any = ...
 
-    def represent_dict_preserve_order(self, data: Any):
+    def __init__(self, *args: Any, **kws: Any) -> None:
         ...
 
-
-class YAMLFormatter(logging.Formatter):
+    @staticmethod
+    def json_serialize_dates(obj: Any):
+        ...
 
     def format(self, rec: Any):
         ...

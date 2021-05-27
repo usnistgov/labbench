@@ -1,5 +1,4 @@
 from . import util as util
-from importlib import import_module as import_module
 from ruamel_yaml import round_trip_load as round_trip_load
 from typing import Any, Optional
 yaml: Any
@@ -103,13 +102,10 @@ class OwnerContextAdapter():
 def recursive_devices(top: Any):
     ...
 
-def recursive_owner_managers(top: Any):
+def flatten_nested_owner_contexts(top: Any) -> dict:
     ...
 
-def owner_context_manager(top: Any):
-    ...
-
-def propagate_owned_names(parent_obj: Any, parent_name: Optional[Any]=...) -> None:
+def package_owned_contexts(top: Any):
     ...
 
 def owner_getattr_chains(owner: Any):
@@ -121,10 +117,7 @@ class Owner():
     def __init_subclass__(cls: Any, entry_order: list=...) -> Any:
         ...
 
-    def __meta_owner_init__(self, parent_name: Any) -> None:
-        ...
-
-    def __init__(self, **devices: Any) -> None:
+    def __init__(self, **update_ownables: Any) -> None:
         ...
 
     def __setattr__(self, key: Any, obj: Any) -> None:
@@ -216,4 +209,3 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __iter__(self) -> Any:
         ...
-CONFIG_FILENAME: str

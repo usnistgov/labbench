@@ -22,10 +22,12 @@ from ._traits import Undefined as Undefined, observe as observe, unobserve as un
 from .util import (
     Call as Call,
     concurrently as concurrently,
-    console as console,
+    logger as logger,
     retry as retry,
     sequentially as sequentially,
+    show_messages as show_messages,
     sleep as sleep,
     stopwatch as stopwatch,
+    timeout_iter as timeout_iter,
     until_timeout as until_timeout,
 )

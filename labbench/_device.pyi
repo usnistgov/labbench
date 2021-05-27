@@ -46,7 +46,8 @@ class Device(HasTraits, util.Ownable):
     def __close_wrapper__(self) -> None:
         ...
 
-    def __imports__(self) -> None:
+    @classmethod
+    def __imports__(cls) -> None:
         ...
 
     def __enter__(self):

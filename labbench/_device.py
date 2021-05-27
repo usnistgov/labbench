@@ -31,6 +31,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from functools import wraps
+from copy import deepcopy
 import inspect
 import logging
 import sys
@@ -204,8 +205,12 @@ class Device(HasTraits, util.Ownable):
         super().__init__()
 
         for name, init_value in values.items():
-            if init_value != self._traits[name].default:
-                setattr(self, name, init_value)
+            try:
+                if init_value != self._traits[name].default:
+                    setattr(self, name, init_value)
+            except KeyError:
+                invalid = set(values).difference(self._value_attrs)
+                raise KeyError(f"keyword(s) {invalid} do not refer to value traits of {self}")
 
         util.Ownable.__init__(self)
 
@@ -266,6 +271,9 @@ class Device(HasTraits, util.Ownable):
             for name, trait in settable_values.items()
             if name != 'resource'
         ]
+
+        # we need a wrapper so that __init__ can be modified separately for each subclass
+        cls.__init__ = util.copy_func(cls.__init__)
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring

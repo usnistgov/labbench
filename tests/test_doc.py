@@ -41,15 +41,15 @@ class Child(lb.Device):
 
     def open(self):
         print('connect child')
-        
+
     def close(self):
         print('disconnect child')
-        
+
 
 class Mock(lb.Device):
     """ Helpful driver wrapper
     """
-    
+
     child0 = Child('addr0')
     child1 = Child('addr1')
 

@@ -17,7 +17,8 @@ from ._data import (
 )
 from ._device import Device as Device, list_devices as list_devices
 from ._host import Email as Email
-from ._rack import Rack as Rack, Sequence as Sequence
+from ._rack import Rack as Rack, Sequence as Sequence, import_as_rack as import_as_rack
+from ._serialize import dump_rack as dump_rack, load_rack as load_rack
 from ._traits import Undefined as Undefined, observe as observe, unobserve as unobserve
 from .util import (
     Call as Call,

@@ -81,7 +81,7 @@ class LogStderr(core.Device):
             self.log += self._buf.getvalue()
         except ValueError:
             pass
-        
+
 
 class Email(core.Device):
     """ Sends a notification message on disconnection. If an exception
@@ -91,19 +91,13 @@ class Email(core.Device):
     """
 
     resource = value.NetworkAddress(
-        default='smtp.nist.gov',
-        help='smtp server to use'
+        default='smtp.nist.gov', help='smtp server to use'
     )
 
-    port = value.int(
-        default=25,
-        min=1,
-        help='TCP/IP port'
-    )
-    
+    port = value.int(default=25, min=1, help='TCP/IP port')
+
     sender = value.str(
-        default='myemail@nist.gov',
-        help='email address of the sender'
+        default='myemail@nist.gov', help='email address of the sender'
     )
 
     recipients = value.list(
@@ -134,11 +128,9 @@ class Email(core.Device):
         msg['Subject'] = subject
         msg['To'] = ", ".join(self.recipients)
         self.server = smtplib.SMTP(self.resource, self.port)
-        
+
         try:
-            self.server.sendmail(self.sender,
-                                 self.recipients,
-                                 msg.as_string())
+            self.server.sendmail(self.sender, self.recipients, msg.as_string())
         finally:
             self.server.quit()
 
@@ -196,6 +188,7 @@ class Email(core.Device):
 
 # Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
 
+
 class JSONFormatter(logging.Formatter):
     _last = []
 
@@ -209,7 +202,7 @@ class JSONFormatter(logging.Formatter):
 
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
-        raise TypeError (f"Type {type(obj).__qualname__} not serializable")
+        raise TypeError(f"Type {type(obj).__qualname__} not serializable")
 
     def format(self, rec):
         """ Return a YAML string for each logger record
@@ -217,7 +210,7 @@ class JSONFormatter(logging.Formatter):
 
         if hasattr(rec, 'owned_name'):
             if '.' in rec.owned_name.log_prefix.owned_name:
-                log_prefix = rec.owned_name.replace('.',',')
+                log_prefix = rec.owned_name.replace('.', ',')
             else:
                 log_prefix = None
         else:
@@ -226,38 +219,38 @@ class JSONFormatter(logging.Formatter):
         msg = dict(
             message=rec.msg,
             time=datetime.datetime.fromtimestamp(rec.created),
-            elapsed_seconds=rec.created-self.t0,
+            elapsed_seconds=rec.created - self.t0,
             level=rec.levelname,
-
             object=getattr(rec, 'object', None),
             object_log_prefix=log_prefix,
-
-            source_file = rec.pathname,
-            source_line = rec.lineno,
-            process = rec.process,
-            thread = rec.threadName
+            source_file=rec.pathname,
+            source_line=rec.lineno,
+            process=rec.process,
+            thread=rec.threadName
         )
 
         if rec.threadName != 'MainThread':
-            msg['thread']=rec.threadName
-            
+            msg['thread'] = rec.threadName
+
         etype, einst, exc_tb = sys.exc_info()
         if etype is not None:
             from traceback import format_exception_only, format_tb
             msg['exception'] = format_exception_only(etype, einst)[0].rstrip()
             msg['traceback'] = ''.join(format_tb(exc_tb)).splitlines()
 
-        self._last.append((rec,msg))
+        self._last.append((rec, msg))
 
-        return json.dumps(msg, indent=True, default=self.json_serialize_dates)+','
-        
+        return json.dumps(
+            msg, indent=True, default=self.json_serialize_dates
+        ) + ','
+
 
 class Host(core.Device):
     # Settings
     git_commit_in = value.str(
         default=None,
         allow_none=True,
-         help='git commit on open() if run inside a git repo with this branch name'
+        help='git commit on open() if run inside a git repo with this branch name'
     )
 
     time_format = '%Y-%m-%d %H:%M:%S'
@@ -271,9 +264,9 @@ class Host(core.Device):
         sh.setFormatter(log_formatter)
         sh.setLevel(logging.DEBUG)
 
-        # Add to the labbench logger handler        
+        # Add to the labbench logger handler
         logger = logging.getLogger('labbench')
-        logger.setLevel(logging.DEBUG)        
+        logger.setLevel(logging.DEBUG)
         logger.addHandler(sh)
 
         # git repository information
@@ -287,11 +280,13 @@ class Host(core.Device):
             repo = None
             self._logger.info(f"not running in a git repository")
 
-        self.backend = {'logger': logger,
-                        'log_stream': stream,
-                        'log_handler': sh,
-                        'log_formatter': log_formatter,
-                        'repo': repo}
+        self.backend = {
+            'logger': logger,
+            'log_stream': stream,
+            'log_handler': sh,
+            'log_formatter': log_formatter,
+            'repo': repo
+        }
 
         # Preload the git repo parameters
         for name in self._traits:
@@ -326,10 +321,20 @@ class Host(core.Device):
         """
         import pandas as pd
 
-        versions = dict([str(d).lower().split(' ')
-                         for d in pip.get_installed_distributions()])
-        running = dict(sorted([(k, versions[k.lower()])
-                               for k in sys.modules.keys() if k in versions]))
+        versions = dict(
+            [
+                str(d).lower().split(' ')
+                for d in pip.get_installed_distributions()
+            ]
+        )
+        running = dict(
+            sorted(
+                [
+                    (k, versions[k.lower()])
+                    for k in sys.modules.keys() if k in versions
+                ]
+            )
+        )
         return pd.Series(running).sort_index()
 
     @property_.str()
@@ -345,10 +350,12 @@ class Host(core.Device):
         """
         self.backend['log_handler'].flush()
         txt = self.backend['log_stream'].read()
-        if len(txt)>1:
+        if len(txt) > 1:
             self._txt = txt
-            self._serialized = '['+txt[:-2]+']'
-            self._ret = json.loads(self._serialized)#self.backend['log_stream'].read().replace('\n', '\r\n')
+            self._serialized = '[' + txt[:-2] + ']'
+            self._ret = json.loads(
+                self._serialized
+            )  #self.backend['log_stream'].read().replace('\n', '\r\n')
             return self._ret
         else:
             return {}
@@ -391,6 +398,7 @@ class Host(core.Device):
             return str(tuple((diff.b_path for diff in diffs)))[1:-1]
         else:
             return ''
+
 
 if __name__ == '__main__':
     #    core.show_messages('DEBUG')

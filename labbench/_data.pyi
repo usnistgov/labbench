@@ -112,9 +112,6 @@ class Aggregator(util.Ownable):
     def set_device_labels(self, **mapping: Any) -> None:
         ...
 
-    def __update_names__(self, devices: Any) -> None:
-        ...
-
     def observe(self, devices: Any, changes: bool=..., always: Any=..., never: Any=...) -> None:
         ...
 

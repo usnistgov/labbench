@@ -24,28 +24,23 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _device as core
-from . import util as util
-
-from functools import wraps
-from pathlib import Path
-
 import contextlib
 import copy
 import importlib
 import inspect
 import logging
-import pandas as pd
+import sys
 import time
+import traceback
+from functools import wraps
+from pathlib import Path
 
-from ruamel_yaml import YAML, round_trip_dump, round_trip_load
-from ruamel_yaml.comments import CommentedMap
-yaml = YAML()
-yaml.indent(mapping=4, sequence=4)
+import pandas as pd
 
-EMPTY = inspect._empty
-BASIC_TYPES = bool, bytearray, bytes, complex, dict, float, frozenset, \
-              int, list, set, reversed, slice, str, tuple
+from . import _device as core
+from . import util as util
+
+EMPTY = inspect.Parameter.empty
 
 @contextlib.contextmanager
 def null_context(owner):
@@ -53,9 +48,7 @@ def null_context(owner):
 
 
 class notify:
-    """
-    Singleton notification handler shared globally by all Rack instances.
-    """
+    """Singleton notification handler shared by all Rack instances"""
 
     # the global mapping of references to notification callbacks
     _handlers = dict(returns=set(), calls=set())
@@ -67,14 +60,18 @@ class notify:
     @classmethod
     def return_event(cls, returned: dict):
         if not isinstance(returned, dict):
-            raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
+            raise TypeError(
+                f"returned data was {repr(returned)}, which is not a dict"
+            )
         for handler in cls._handlers['returns']:
             handler(returned)
 
     @classmethod
     def call_event(cls, parameters: dict):
         if not isinstance(parameters, dict):
-            raise TypeError(f"parameters data was {repr(parameters)}, which is not a dict")
+            raise TypeError(
+                f"parameters data was {repr(parameters)}, which is not a dict"
+            )
         for handler in cls._handlers['calls']:
             handler(parameters)
 
@@ -104,9 +101,8 @@ class notify:
 
 
 class Method(util.Ownable):
-    """
-    Wraps class methods to support use with Sequence
-    """
+    """Wrapper for class methods to support use with Sequence"""
+
     def __init__(self, owner, name, kwdefaults={}):
         super().__init__()
 
@@ -128,7 +124,9 @@ class Method(util.Ownable):
         # self.__qualname__ = obj.__qualname__
         self.__doc__ = obj.__doc__
         self.__name__ = name
-        self.__qualname__ = getattr(obj, '__qualname__', obj.__class__.__qualname__)
+        self.__qualname__ = getattr(
+            obj, '__qualname__', obj.__class__.__qualname__
+        )
 
         self._introspect()
 
@@ -149,6 +147,8 @@ class Method(util.Ownable):
     def _introspect(self):
         """ update self.__signature__
         """
+        self.__call__ = util.copy_func(self.__call__)
+
         # note the devices needed to execute this function
         if isinstance(self._owner, Rack):
             annotations = getattr(self._owner, '__annotations__', {})
@@ -168,31 +168,41 @@ class Method(util.Ownable):
 
         # get the signature, apply parameter defaults from self._kwdefaults
         sig = inspect.signature(self._wrapped)
-        sig = sig.replace(parameters=(
-            p.replace(default=self._kwdefaults.get(k,p.default))
-            for k,p in sig.parameters.items()
-        ))
+        sig = sig.replace(
+            parameters=(
+                p.replace(default=self._kwdefaults.get(k, p.default))
+                for k, p in sig.parameters.items()
+            )
+        )
 
         # set the call signature shown by help(), or with ? in ipython/jupyter
-        self.__signature__ = sig
+        self.__call__.__signature__ = sig
 
         # remember only named keywords, not "*args" and "**kwargs" in call signatures
         SKIP_KINDS = inspect._ParameterKind.VAR_KEYWORD, inspect._ParameterKind.VAR_POSITIONAL
-        self.args = list(sig.parameters.keys())[1:] # skip 'self' argument
+        # self.args = list(sig.parameters.keys())[1:]  # skip 'self' argument
         self._parameters = [
-            p for p in sig.parameters.values()
-            if p.kind not in SKIP_KINDS
+            p for p in sig.parameters.values() if p.kind not in SKIP_KINDS
         ][1:]
 
     def set_kwdefault(self, name, value):
-        if value is EMPTY:
-            self._kwdefaults.pop(name, None)
-        elif name not in self.__signature__.parameters:
-            raise TypeError(f"{self} has no keyword argument {repr(name)}")
-        else:
-            self._kwdefaults[name] = value
+        self._kwdefaults[name] = value
 
-        self._introspect()
+        sig = self.__call__.__signature__
+        update = {name: sig.parameters[name].replace(default=value)}
+        sig = sig.replace(
+            parameters=dict(sig.parameters, **update).values()
+        )
+        self.__call__.__signature__ = sig
+
+        # if value is EMPTY:
+        #     self._kwdefaults.pop(name, None)
+        # elif name not in self.__signature__.parameters:
+        #     raise TypeError(f"{self} has no keyword argument {repr(name)}")
+        # else:
+        #     self._kwdefaults[name] = value
+
+        # self._introspect()
 
         # if value is EMPTY:
         #     del self._kwdefaults[name]
@@ -201,57 +211,71 @@ class Method(util.Ownable):
 
         # self.introspect()
 
-    def long_kwarg_signature(self):
-        """ return a mapping keyed on call parameter name that gives a list [default value, annotation value].
-            EMPTY is a sentinel value for "does not exist"
-        """
-        ext_args = self.long_kwarg_names()
-        annots = getattr(self._wrapped, '__annotations__', {})
+    def extended_signature(self):
+        """maps extended keyword argument names into a copy of self.__call__.__signature__"""
+        sig = self.__call__.__signature__
+        ext_names = self.extended_argname_names()
 
-        return {
-            k:[v.default, annots.get(k, EMPTY)]
-            for k, v in zip(ext_args, self._parameters)
-        }
+        params = list(sig.parameters.values())[1:]
 
-    def long_kwarg_names(self):
-        return [(self._owner.__name__ + '_' + name) for name in self.args]
+        return sig.replace(
+            parameters=[
+                param.replace(name=k)
+                for k, param in zip(ext_names, params)
+            ]
+        )
+
+    def extended_argname_names(self):
+        sig = self.__call__.__signature__
+        prefix = self._owner.__name__+'_'
+        names = list(sig.parameters.keys())[1:]
+        return [prefix+name for name in names]
 
     @util.hide_in_traceback
-    def long_kwarg_call(self, *args, **kws):
+    def extended_argname_call(self, *args, **kws):
         """ rename keywords from the long form used by an owning class
         """
         i = len(self._owner.__name__)+1
-        # remove the leading f"{self._owner.__name__}"
+
+        # remove the leading name of the owner
         kws = {k[i:]: v for k, v in kws.items()}
         return self.__call__(*args, **kws)
 
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
+        # validate arguments against the signature
+        inspect.signature(self.__call__).bind(*args, **kws)
+
         # ensure that required devices are connected
-        closed = [dev._owned_name for dev in self.dependencies if not dev.isopen]
+        closed = [
+            dev._owned_name for dev in self.dependencies if not dev.isopen
+        ]
         if len(closed) > 0:
             closed = ', '.join(closed)
-            label = self.__class__.__qualname__ + '.' + self.__name__
-            raise ConnectionError(f"devices {closed} must be connected to invoke {self.__qualname__}")
+            raise ConnectionError(
+                f"devices {closed} must be connected to invoke {self.__qualname__}"
+            )
 
         # notify observers about the parameters passed
-        name_prefix = '_'.join(self._owner._owned_name.split('.')[1:])+'_'
+        name_prefix = '_'.join(self._owner._owned_name.split('.')[1:]) + '_'
         if len(kws) > 0:
-            notify_params = {
-                name_prefix + k: v for k, v in kws.items()
-            }
+            notify_params = {name_prefix + k: v for k, v in kws.items()}
             notify.call_event(notify_params)
 
         # invoke the wrapped function
         t0 = time.perf_counter()
         ret = self._wrapped(self._owner, *args, **kws)
-        elapsed = time.perf_counter()-t0
+        elapsed = time.perf_counter() - t0
         if elapsed > 0.1:
-            util.logger.debug(f"{self._owned_name} completed in {elapsed:0.2f}s")
+            util.logger.debug(
+                f"{self._owned_name} completed in {elapsed:0.2f}s"
+            )
 
         # notify observers about the returned value
         if ret is not None:
-            need_notify = ret if isinstance(ret, dict) else {name_prefix + self.__name__: ret}
+            need_notify = ret if isinstance(ret, dict) else {
+                name_prefix + self.__name__: ret
+            }
             notify.return_event(need_notify)
 
         return {} if ret is None else ret
@@ -262,7 +286,6 @@ class Method(util.Ownable):
             return f'<{wrapped} wrapped by {type(self).__module__}.{type(self).__name__} object>'
         except AttributeError:
             return f'<{type(self).__module__}.{type(self).__name__} wrapper>'
-        
 
 
 class BoundSequence(util.Ownable):
@@ -273,15 +296,22 @@ class BoundSequence(util.Ownable):
     """
     @util.hide_in_traceback
     def __call__(self, **kwargs):
+        # validate arguments against the signature
+        inspect.signature(self.__call__).bind(**kwargs)
+
         ret = {}
 
         for i, (name, sequence) in enumerate(self.sequence.items()):
             step_kws = self._step(sequence, kwargs)
 
-            util.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'")
+            util.logger.debug(
+                f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'"
+            )
             ret.update(util.concurrently(**step_kws) or {})
 
-        util.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
+        util.logger.debug(
+            f"{self.__objclass__.__qualname__}.{self.__name__} finished"
+        )
 
         return ret
 
@@ -290,7 +320,8 @@ class BoundSequence(util.Ownable):
         if path is None:
             path = f"{cls.__name__} template.csv"
         util.logger.debug(f"writing csv template to {repr(path)}")
-        df = pd.DataFrame(columns=cls.params)
+        params = inspect.signature(cls.__call__).parameters
+        df = pd.DataFrame(columns=list(params)[1:])
         df.index.name = 'Condition name'
         df.to_csv(path)
 
@@ -302,8 +333,10 @@ class BoundSequence(util.Ownable):
         """
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.logger.info(f"{self._owned_name} from '{str(path)}' "
-                             f"- '{row}' ({i+1}/{len(table.index)})")
+            util.logger.info(
+                f"{self._owned_name} from '{str(path)}' "
+                f"- '{row}' ({i+1}/{len(table.index)})"
+            )
             self.results = self(**table.loc[row].to_dict())
 
     def _step(self, spec, kwargs):
@@ -314,9 +347,9 @@ class BoundSequence(util.Ownable):
 
         def call(func):
             # make a Call object with the subset of `kwargs`
-            keys = available.intersection(func.long_kwarg_names())
+            keys = available.intersection(func.extended_argname_names())
             params = {k: kwargs[k] for k in keys}
-            return util.Call(func.long_kwarg_call, **params)
+            return util.Call(func.extended_argname_call, **params)
 
         kws_out = {}
 
@@ -333,7 +366,6 @@ class BoundSequence(util.Ownable):
 
         return kws_out
 
-import sys, traceback
 
 class OwnerContextAdapter:
     """ transform calls to __enter__ -> open and __exit__ -> close.
@@ -396,7 +428,7 @@ def recursive_devices(top):
         # this might be faster by reversing key and value order in devices (and thus children)?
         for name, child in children.items():
             if child not in devices.values():
-                devices[name_prefix+name] = child
+                devices[name_prefix + name] = child
 
         entry_order.extend(o_entry_order)
 
@@ -458,13 +490,15 @@ def package_owned_contexts(top):
     firsts_desc = '->'.join([str(c) for c in first.values()])
 
     # then, other devices, which need to be ready before we start into Rack setup methods
-    devices = {attr: remaining.pop(attr)
-               for attr, obj in dict(remaining).items()
-               if isinstance(obj, core.Device)}
+    devices = {
+        attr: remaining.pop(attr)
+        for attr, obj in dict(remaining).items()
+        if isinstance(obj, core.Device)
+    }
     devices_desc = f"({', '.join([str(c) for c in devices.values()])})"
     devices = util.concurrently(name='', **devices)
 
-    # what remain are instances of Rack and other Owner types    
+    # what remain are instances of Rack and other Owner types
     owners = flatten_nested_owner_contexts(top)
     owners_desc = f"({','.join([str(c) for c in owners.values()])})"
 
@@ -484,30 +518,12 @@ def package_owned_contexts(top):
         seq['_devices'] = devices
     seq.update(owners)
 
-    desc = '->'.join([
-        d for d in (firsts_desc, devices_desc, owners_desc)
-        if len(d)>0]
+    desc = '->'.join(
+        [d for d in (firsts_desc, devices_desc, owners_desc) if len(d) > 0]
     )
 
     log.debug(f"context order: {desc}")
     return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
-
-
-# def propagate_owned_names(parent_obj, parent_name=None):
-#     """ recursively update _owned_name in child instances of Owner
-#         classes or instances
-#     """
-#     if parent_name is None:
-#         parent_name = parent_obj.__name__
-
-#     for name, obj in parent_obj._owners.items():
-#         propagate_owned_names(obj, parent_name+'.'+name)
-
-#     # some objects may be reused by children. apply
-#     # our own namespace last to ensure the highest-level
-#     # ownership is attributed
-#     for name, obj in parent_obj._ownables.items():
-#         obj._owned_name = parent_name+'.'+name
 
 
 def owner_getattr_chains(owner):
@@ -519,7 +535,7 @@ def owner_getattr_chains(owner):
         # add only new changes (overwrite redundant keys with prior values)
         ret = {
             **{
-                obj: (name,)+chain
+                obj: (name, ) + chain
                 for obj, chain in owner_getattr_chains(sub_owner).items()
             },
             **ret
@@ -533,17 +549,21 @@ class Owner:
     """
     _entry_order = []
     _concurrent = True
-    
+
     def __init_subclass__(cls, entry_order: list = None):
         # registries that will be context managed
-        cls._devices = {} # each of cls._devices.values() these will be context managed
-        cls._owners = {} # each of these will get courtesy calls to open and close between _device entry and exit
+        cls._devices = {
+        }  # each of cls._devices.values() these will be context managed
+        cls._owners = {
+        }  # each of these will get courtesy calls to open and close between _device entry and exit
         cls._ownables = {}
 
         if entry_order is not None:
             for e in entry_order:
                 if not issubclass(e, core.Device):
-                    raise TypeError(f"entry_order item {e} is not a Device subclass")
+                    raise TypeError(
+                        f"entry_order item {e} is not a Device subclass"
+                    )
             cls._entry_order = entry_order
 
         cls._propagate_ownership()
@@ -581,7 +601,9 @@ class Owner:
 
         # run the hooks in owned classes, now that cls._devices and cls._owners are ready for them
         for name, obj in cls._ownables.items():
-            obj.__set_name__(cls, name)  # in case it was originally instantiated outside cls
+            obj.__set_name__(
+                cls, name
+            )  # in case it was originally instantiated outside cls
             obj = obj.__owner_subclass__(cls)
 
             setattr(cls, name, obj)
@@ -591,21 +613,27 @@ class Owner:
     def __init__(self, **update_ownables):
         self._owners = dict(self._owners)
 
-        # are the given objects ownable        
+        # are the given objects ownable
         unownable = {
             name: obj
             for name, obj in update_ownables.items()
             if not isinstance(obj, util.Ownable)
         }
         if len(unownable) > 0:
-            raise TypeError(f"keyword argument objects {unownable} are not ownable")
+            raise TypeError(
+                f"keyword argument objects {unownable} are not ownable"
+            )
 
         # update ownables
-        unrecognized = set(update_ownables.keys()).difference(self._ownables.keys())
+        unrecognized = set(update_ownables.keys()).difference(
+            self._ownables.keys()
+        )
         if len(unrecognized) > 0:
             clsname = type(self).__qualname__
             unrecognized = tuple(unrecognized)
-            raise TypeError(f"cannot update unrecognized attributes {unrecognized} of {clsname}")
+            raise TypeError(
+                f"cannot update unrecognized attributes {unrecognized} of {clsname}"
+            )
         self._ownables = dict(self._ownables, **update_ownables)
 
         # update devices
@@ -614,11 +642,15 @@ class Owner:
             for name, obj in update_ownables.items()
             if isinstance(obj, core.Device)
         }
-        unrecognized = set(update_devices.keys()).difference(self._devices.keys())
+        unrecognized = set(update_devices.keys()).difference(
+            self._devices.keys()
+        )
         if len(unrecognized) > 0:
             clsname = type(self).__qualname__
             unrecognized = tuple(unrecognized)
-            raise TypeError(f"{clsname} Device attributes {unrecognized} can only be instantiated with Device objects")
+            raise TypeError(
+                f"{clsname} Device attributes {unrecognized} can only be instantiated with Device objects"
+            )
         self._devices = dict(self._devices, **update_devices)
 
         super().__init__()
@@ -661,7 +693,7 @@ class Owner:
         @wraps(type(self).__enter__.fget)
         def __enter__():
             self._context.__enter__()
-            
+
             return self
 
         return __enter__
@@ -671,75 +703,105 @@ class Owner:
         # pass along from self._context
         return self._context.__exit__
 
-    # def __enter__(self):
-    #     cls = type(self)
-    #     for opener in core.trace_methods(cls, 'open', Owner)[::-1]:
-    #         opener(self)
 
-    #     self._logger.debug('opened')
+def override_empty(a, b, param_name, field):
+    """return no more than non-EMPTY value between two Parameter fields, otherwise raises TypeError"""
 
-    #     return self
+    nonempty = {a,b}-{EMPTY}
 
-    # def __exit__(self, *exc_info):
-    #     cls = type(self)
-    #     methods = core.trace_methods(cls, 'close', Owner)
+    if len(nonempty)==2:
+        msg = f"conflicting {field} {nonempty} in aggregating argument '{param_name}'"
+        raise TypeError(msg)
 
-    #     all_ex = []
-    #     for closer in methods:
-    #         try:
-    #             closer(self)
-    #         except BaseException:
-    #             all_ex.append(sys.exc_info())
+    elif len(nonempty) == 1:
+        ret = tuple(nonempty)[0]
 
-    #     # Print tracebacks for any suppressed exceptions
-    #     for ex in all_ex[::-1]:
-    #         # If ThreadEndedByMaster was raised, assume the error handling in
-    #         # util.concurrently will print the error message
-    #         if ex[0] is not util.ThreadEndedByMaster:
-    #             depth = len(tuple(traceback.walk_tb(ex[2])))
-    #             traceback.print_exception(*ex, limit=-(depth - 1))
-    #             sys.stderr.write('(Exception suppressed to continue close)\n\n')
+        if field == 'annotation' and not inspect.isclass(ret):
+            raise TypeError(
+                f"type annotation '{ret}' for parameter '{param_name}' is not a class"
+            )
 
-    #     self._logger.debug('closed')
+        return ret
+
+    else:
+        return EMPTY
 
 
-@util.hide_in_traceback
-def __call__():
-    # util.wrap_attribute will munge the call signature above for clean introspection in IDEs
-    items = dict(locals())
-    self = items.pop(next(iter(items.keys())))
-    return self.__call___wrapped(**items)
+def update_parameter_dict(dest: dict, signature: inspect.Signature):
+    """updates the dest mapping with parameters taken from inspect.Signature.
+
+    Items with the same name and defaults or annotations that are not EMPTY must be the same,
+    or TypeError is raised.
+    """
+    # pull a dictionary of signature values (default, annotation) with EMPTY as a null sentinel value
+    if not hasattr(signature, 'parameters'):
+        parameters = signature
+    else:
+        parameters = signature.parameters
+
+    for name, param in parameters.items():
+        if param.kind is inspect.Parameter.POSITIONAL_ONLY:
+            continue
+        if name in dest:
+            dest[name] = dest[name].replace(
+                annotation = override_empty(dest[name].annotation, param.annotation, name, 'annotation'),
+                default = override_empty(dest[name].default, param.default, name, 'default'),
+            )
+
+        else:
+            dest[name] = param.replace(
+                kind = inspect.Parameter.KEYWORD_ONLY
+            )
+
+
+def attr_chain_to_method(root_obj, chain):
+    """follows the chain with nested getattr calls to access the chain object"""
+    obj = root_obj
+
+    for name in chain[:-1]:
+        obj = getattr(obj, name)
+
+    if hasattr(obj, '_methods'):
+        return Method.from_method(obj._methods[chain[-1]])
+
+    attr = getattr(obj, chain[-1])
+    if isinstance(attr, Method):
+        return Method.from_method(attr)
+
+    else:
+        return Method(obj, chain[-1])
+
+
+def standardize_spec_step(sequence):
+    """standardizes the sequence specification dict to  {name: [list of methods]}"""
+    if isinstance(sequence, (list, tuple)):
+        # specification for a concurrent and/or sequential calls to Method methods
+        sequence = list(sequence)
+
+    elif isinstance(sequence, Method):
+        # a Method method that is already packaged for use
+        sequence = [sequence]
+
+    elif inspect.ismethod(sequence):
+        sequence = [Method(sequence.__self__, sequence.__name__)]
+
+    else:
+        typename = type(sequence).__qualname__
+        raise TypeError(
+            f"object of type '{typename}' is neither a Rack method nor a nested tuple/list"
+        )
+
+    return sequence
 
 
 class Sequence(util.Ownable):
-    """ Define an experiment built from methods in Rack instances. The input is a specification for sequencing these
+    """Experiment definition from methods in Rack instances. The input is a specification for sequencing these
     steps, including support for threading. The output is a callable function that can be assigned as a method
     to a top-level "root" Rack.
     """
-
     def __init__(self, **specification):
-        def spec_step(sequence):
-            """ standardize the specification dict to  {name: [methods]}
-            """
-            if isinstance(sequence, (list, tuple)):
-                # specification for a concurrent and/or sequential calls to Method methods
-                sequence = list(sequence)
-
-            elif isinstance(sequence, Method):
-                # a Method method that is already packaged for use
-                sequence = [sequence]
-
-            elif inspect.ismethod(sequence):
-                sequence = [Method(sequence.__self__, sequence.__name__)]
-
-            else:
-                typename = type(sequence).__qualname__
-                raise TypeError(f"object of type '{typename}' is neither a Rack method nor a nested tuple/list")
-
-            return sequence
-
         self.spec = {
-            k: spec_step(spec)
+            k: standardize_spec_step(spec)
             for k, spec in specification.items()
         }
 
@@ -752,7 +814,7 @@ class Sequence(util.Ownable):
             # in case of later copying and subclassing
             chain = owner_getattr_chains(owner_cls)
             self.access_spec = {
-                k: [chain[s._owner]+(s.__name__,) for s in spec]
+                k: [chain[s._owner] + (s.__name__, ) for s in spec]
                 for k, spec in self.spec.items()
             }
 
@@ -761,65 +823,51 @@ class Sequence(util.Ownable):
     def __owner_init__(self, owner):
         """make a sequence bound to the owner"""
 
-        # in case this is added through a 
+        # in case this is added through a
         self.__owner_subclass__(type(owner))
-
-        def attr_chain_to_method(root_obj, chain):
-            """ follow the chain with nested getattr
-                calls to access the chain object
-            """
-            obj = root_obj
-
-            for name in chain[:-1]:
-                obj = getattr(obj, name)
-            
-            if hasattr(obj, '_methods'):
-                return Method.from_method(obj._methods[chain[-1]])
-            
-            attr = getattr(obj, chain[-1])
-            if isinstance(attr, Method):
-                return Method.from_method(attr)
-
-            else:
-                return Method(obj, chain[-1])
 
         super().__owner_init__(owner)
 
         # initialization on the parent class definition
         # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
         spec = {
-            k: [attr_chain_to_method(owner,c) for c in chain]
+            k: [attr_chain_to_method(owner, c) for c in chain]
             for k, chain in self.access_spec.items()
         }
         self.last_spec = spec
-
-        # determine the call signature for the new Sequence procedure
-        signatures = self._collect_signatures(spec)
-        params = tuple(signatures.keys())  # *all* of the parameters, before pruning non-default ones
-        defaults = dict([(arg, sig[0]) for arg, sig in signatures.items() if sig[0] is not EMPTY])
-        annots = dict([(arg, sig[1]) for arg, sig in signatures.items() if sig[1] is not EMPTY])
 
         # build the callable object with a newly-defined subclass.
         # tricks ipython/jupyter into showing the call signature.
         ns = dict(
             sequence=spec,
-            params=params,
-            defaults=defaults,
-            annotations=annots,
-            signatures=signatures,
             dependencies=self._dependency_map(spec),
             __name__=self.__name__,
-            __qualname__=type(owner).__qualname__+'.'+self.__name__,
+            __qualname__=type(owner).__qualname__ + '.' + self.__name__,
             __objclass__=self.__objclass__,
-            __owner_subclass__=self.__owner_subclass__ # in case the owner changes and calls this again
+            __owner_subclass__=self.__owner_subclass__  # in case the owner changes and calls this again
         )
 
-        cls = type(BoundSequence.__name__, (BoundSequence,), ns)
+        cls = type(BoundSequence.__name__, (BoundSequence, ), ns)
 
-        util.wrap_attribute(
-            cls, '__call__', __call__, fields=params, defaults=defaults,
-            annotations=annots, positional=0
+        # Generate a signature for documentation and code autocomplete
+        # params = [
+        #     inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY),
+        # ]
+
+        # we need a wrapper so that __init__ can be modified separately for each subclass
+        cls.__call__ = util.copy_func(cls.__call__)
+        
+        # merge together
+        params = dict(
+            self=inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY)
         )
+
+        for funcs in spec.values():
+            for func in funcs:
+                update_parameter_dict(params, func.extended_signature())                
+
+        cls.__call__.__signature__ = inspect.Signature(parameters=params.values())
+
 
         # the testbed gets this BoundSequence instance in place of self
         obj = object.__new__(cls)
@@ -827,7 +875,7 @@ class Sequence(util.Ownable):
         setattr(owner, self.__name__, obj)
 
     def _dependency_map(self, spec, owner_deps={}) -> dict:
-        """ list of Device dependencies of each Method.
+        """maps the Device dependencies of each Method in spec.
 
         Returns:
             {Device instance: reference to method that uses Device instance}
@@ -838,326 +886,57 @@ class Sequence(util.Ownable):
         for spec in spec.values():
             for func in spec:
                 if not isinstance(func, (Method, BoundSequence)):
-                    raise TypeError(f"expected Method instance, but got '{type(func).__qualname__}' instead")
+                    raise TypeError(
+                        f"expected Method instance, but got '{type(func).__qualname__}' instead"
+                    )
 
                 # race condition check
                 conflicts = set(deps.keys()).intersection(func.dependencies)
                 if len(conflicts) > 0:
                     users = {deps[device] for device in conflicts}
-                    raise RuntimeError(f"risk of concurrent access to {conflicts} by {users}")
+                    raise RuntimeError(
+                        f"risk of concurrent access to {conflicts} by {users}"
+                    )
 
-                deps.update({device.__name__: device for device in func.dependencies})
+                deps.update(
+                    {device.__name__: device
+                     for device in func.dependencies}
+                )
 
         return deps
 
-    def _collect_signatures(self, spec):
-        """ collect a dictionary of parameter default values
+    # def _aggregate_signatures(self, spec) -> inspect.Signature:
+    #     """aggregates calls from the Sequence specification into a Signature object
 
-        Arguments:
-            tree: nested list of calls that contains the parsed call tree
-        Returns:
-            dict keyed on parameter name, with values that are a list of (caller, default_value) pairs.
-            default_value is `EMPTY` if there is no default.
-        """
+    #     Arguments:
+    #         spec: nested list of calls that contains the parsed call tree
+    #     """
 
-        signatures = {}
+    #     agg_params = dict(
+    #         self=inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY)
+    #     )
 
-        # collect the defaults
-        for funcs in spec.values():
-            for func in funcs:
-                # pull a dictionary of signature values (default, annotation) with EMPTY as a null sentinel value
-                for argname, (def_, annot) in func.long_kwarg_signature().items():
-                    prev_def_, prev_annot = signatures.setdefault(argname, [EMPTY, EMPTY])
+    #     # collect the defaults
+    #     for funcs in spec.values():
+    #         for func in funcs:
+    #             merge_keyword_parameters(agg_params, func.extended_signature().parameters)                
 
-                    if prev_annot is not EMPTY and annot is not EMPTY and prev_annot != annot:
-                        msg = f"conflicting type annotations {repr(prev_annot)}, {repr(annot)} for argument '{argname}'"
-                        raise ValueError(msg)
-                    else:
-                        signatures[argname][1] = annot
-
-                    if def_ is not EMPTY:
-                        signatures[argname][0] = def_
-                    if prev_def_ is not EMPTY and def_ != prev_def_:
-                        signatures[argname][0] = EMPTY
-                    elif prev_def_ is not EMPTY:
-                        signatures[argname][0] = def_
-
-        return signatures
-
-
-def _note_before(cm, key, text, indent=0):
-    cm.yaml_set_comment_before_after_key(key, before=text, indent=indent)
-
-def _note_eol(cm, key, text):
-    cm.yaml_add_eol_comment(comment=text, key=key)
+    #     return inspect.Signature(parameters=agg_params.values())
 
 
 class RackMeta(type):
-    CONFIG_FILENAME = f'rack.yaml'
-
-    @classmethod
-    def from_module(metacls, module_str, cls_name):
-        module = importlib.import_module(module_str)
-        return getattr(module, cls_name)
-
-    def wrap_module(cls, module):
-        """
-        Return a new Rack subclass composed of any instances of Device, Rack, data loggers, or dicts contained
-        in a python module namespace.
-
-        Arguments:
-            name_or_module: a string containing the module to import, or a module object that is already imported
-        Returns:
-            class that is a subclass of Rack
-        """
-        if isinstance(module, str):
-            import importlib
-            module = importlib.import_module(module)
-        if not inspect.ismodule(module):
-            raise TypeError(f"object of type '{type(module)}' is not a module")
-
-        # pull in only dictionaries (for config) and instances of Device, Rack, etc
-
-        namespace = {attr: obj for attr, obj in module.__dict__.items()
-                     if not attr.startswith('_') and isinstance(obj, BASIC_TYPES + (core.Device, Owner, util.Ownable))}
-
-        # block attribute overrides
-        name_conflicts = set(namespace).intersection(cls.__dict__)
-        if len(name_conflicts) > 0:
-            raise NameError(f"names {name_conflicts} in module '{module.__name__}' "
-                            f"conflict with attributes of '{cls.__qualname__}'")
-
-        # subclass into a new Rack
-        return type(module.__name__.rsplit('.')[-1], (cls,), dict(cls.__dict__, **namespace))
-
-    @classmethod
-    def from_config(metacls, config_path, apply=True):
-        """ read a
-        """
-        with open(Path(config_path)/metacls.CONFIG_FILENAME,'r') as f:
-            config = yaml.load(f)
-            util.logger.debug(f"loaded configuration from {repr(str(config_path))}")
-
-        rack_cls = metacls.from_module(
-            config['source']['module'],
-            config['source']['name']
-        )
-
-        # subclass the Rack so that we don't change its values
-        if apply:
-            # prepare a subclassed copy to avoid changing the actual class definition
-            new_cls = type(rack_cls.__name__, (rack_cls,), {})
-            new_cls.__qualname__ = rack_cls.__qualname__
-            new_cls.__module__ = rack_cls.__module__
-
-            metacls._apply_device_values(new_cls, config['devices'])
-            metacls._apply_sequence_defaults(new_cls, config['sequence_kwdefaults'])
-
-            rack_cls._propagate_ownership()
-            rack_cls = new_cls
-        
-        return rack_cls
-
-    def _apply_device_values(rack_cls, device_kwargs):
-        """ make a dictionary of new device instances using the supplied
-            mapping of keyword argument dictionarys, keyed on {device_name: kwargs_dict}
-        """
-        
-        for dev_name, dev in rack_cls._devices.items():
-            for trait_name, value in device_kwargs[dev_name].items():
-                setattr(dev, trait_name, value)
-
-    @classmethod
-    def _apply_sequence_defaults(metacls, rack_cls, defaults_in):
-        """ adjust the method argument parameters in the Rack subclass `cls` according to config file
-        """
-        defaults, annots, methods, names = metacls._get_sequence_parameters(rack_cls)
-
-        for k, v in dict(defaults_in).items():
-            if v == defaults[k]:
-                del defaults_in[k]
-                continue
-
-            if k not in methods:
-                clsname = rack_cls.__qualname__
-                raise KeyError(f"sequence key '{k}' does not match keywords for any method of '{clsname}'")
-            elif annots[k] is not EMPTY and not isinstance(v, annots[k]):
-                raise TypeError(f"the sequence_kwdefaults configuration at key '{k}' with value '{v}' conflicts "
-                                f"with type annotation '{annots[k]}'")
-
-            # update the call signature
-            method = methods[k]
-
-            if isinstance(method, Method):
-                method.set_kwdefault(names[k], v)
-            else:
-                #dictify __kwdefaults__
-                if method.__kwdefaults__ is None:
-                    method.__kwdefaults__ = {}
-                method.__kwdefaults__[names[k]] = v
-
-        if len(defaults_in) > 0:
-            util.logger.debug(f"applied defaults {defaults_in}")
-
-        # take the updated defaults
-        defaults.update(defaults_in)
-
-    @classmethod
-    def to_config(metacls, cls, path, with_defaults=False):
-        path = Path(path)
-        path.mkdir(exist_ok=False, parents=True)
-
-        with open(path/metacls.CONFIG_FILENAME, 'w') as stream:
-            cm = CommentedMap(
-                source=dict(
-                    name=cls.__name__,
-                    module=cls.__module__
-                ),
-                sequence_kwdefaults=metacls._serialize_sequence_parameters(cls),
-                devices=metacls._serialize_devices(cls),
-            )
-
-            _note_before(
-                cm,
-                'source',
-                'Rack class source import strings for the python interpreter'
-            )
-
-            _note_before(
-                cm,
-                'sequence_defaults',
-                '\nparameter defaults for sequences in rack:'
-                '\nthese parameters can be omitted from sequence table columns'
-            )
-
-            _note_before(
-                cm,
-                'devices',
-                '\ndevice settings: initial values for value traits'
-            )
-
-            yaml.dump(cm, stream)
-
-        for name, attr in cls.__dict__.items():
-            if isinstance(attr, Sequence):
-                metacls.to_sequence_table(cls, name, path, with_defaults=with_defaults)
-
-    def to_sequence_table(cls, name, path, with_defaults=False):
-        # TODO: configure whether/which defaults are included as columns
-        root_path = Path(path)
-        
-        seq = getattr(cls, name)
-        if not isinstance(seq, Sequence):
-            raise TypeError(f"{seq} is not a Sequence")
-
-        sigs = [
-            name
-            for name,(default,annot) in seq._collect_signatures(seq.spec).items()
-            if with_defaults or default is EMPTY
-        ]
-
-        df = pd.DataFrame(columns=sigs)
-        df.index.name = 'Condition name'
-        path = root_path/f'{seq.__name__}.csv'
-        df.to_csv(path)
-        util.logger.debug(f"writing csv template to {repr(path)}")
-
-    @classmethod
-    def _serialize_sequence_parameters(metacls, cls):
-        defaults, annots, *_ = metacls._get_sequence_parameters(cls)
-
-        cm = CommentedMap({
-            k:(None if v is EMPTY else v)
-            for k,v in defaults.items()
-        })
-
-        keys = list(cm.keys())
-
-        # find the last key for a non-default entry, which we'll need to comment out lines before the last one
-        for k in keys[::-1]:
-            if defaults[k] is not EMPTY:
-                last_default_key = k
-                break
-        else:
-            raise ValueError(f"currently require a default keyword from least 1 parameter (TODO: fix this)")
-
-        for i,k in enumerate(keys[::-1]):
-            if defaults[k] is EMPTY:
-                _note_before(cm, last_default_key, round_trip_dump({k: None}))
-                del cm[k]
-            else:
-                last_default_key = k
-                if annots[k] is not EMPTY:
-                    _note_eol(cm, k, f'{annots[k].__name__}')
-
-        return cm
-
-    def _serialize_devices(cls):
-        defaults = {
-            dev_name: {k:getattr(dev, k) for k in dev._value_attrs if dev._traits[k].sets}
-            for dev_name, dev in cls._devices.items()
-        }
-
-        return CommentedMap(defaults)
-
-    @classmethod
-    def _get_sequence_parameters(metacls, rack_cls):
-        """introspects the needed to run a sequence. cls is the Rack class or a subclass
-        """
-        defaults = {}
-        annots = {}
-        methods = {}
-        names = {}
-
-        for owner in rack_cls._owners.values():
-            if isinstance(owner, Rack):
-                prefix = owner.__name__+'_'
-                d, a, m, n = metacls._get_sequence_parameters(owner)
-                defaults.update(zip(((prefix+k for k in d), d.values())))
-                annots.update(zip(((prefix+k for k in a), a.values())))
-                methods.update(zip(((prefix+k for k in m), m.values())))
-                names.update(zip(((prefix+k for k in m), m.keys())))
-
-        for step in rack_cls._methods.values():
-            params = iter(inspect.signature(step).parameters.items())
-            
-            next(params) # skip 'self' then iterate
-            for k, p in params:
-                methods[k] = step
-                if annots.setdefault(k, p.annotation) is EMPTY:
-                    annots[k] = p.annotation
-                elif EMPTY not in (p.annotation, annots[k]) and p.annotation != annots[k]:
-                    raise ValueError(f"conflicting type annotations '{p.annotation}' and '{annots[k]}' in {rack_cls.__qualname__} methods")
-                if not inspect.isclass(annots[k]):
-                    raise TypeError(f"annotation '{annots[k]}' for parameter '{k}' in '{rack_cls.__qualname__}' is not a class")
-
-                if defaults.setdefault(k, p.default) is EMPTY:
-                    # current or previous defaults[k] is empty, or defaults[k] was unset
-                    defaults[k] = p.default
-                elif EMPTY not in (p.default, defaults[k]) and p.default != defaults[k]:
-                    raise ValueError(
-                        f"conflicting defaults '{p.default}' and '{defaults[k]}'"
-                        f"in {rack_cls.__qualname__} methods"
-                    )
-
-            for k in defaults:
-                if EMPTY not in (annots[k], defaults[k]) and not isinstance(defaults[k], annots[k]):
-                    raise TypeError(
-                        f"default '{defaults[k]}' does not match type annotation "
-                        f"'{annots[k]}' in '{rack_cls.__qualname__}'"
-                    )
-
-        return defaults, annots, methods, names        
-
+    """metaclass for helpful exceptions"""
     def __enter__(cls):
-        raise RuntimeError(f"the `with` block needs an instance - 'with {cls.__qualname__}():' instead of 'with {cls.__qualname__}:'")
+        raise RuntimeError(
+            f"the `with` block needs an instance - 'with {cls.__qualname__}():' instead of 'with {cls.__qualname__}:'"
+        )
 
     def __exit__(cls, *exc_info):
         pass
 
 
 class Rack(Owner, util.Ownable, metaclass=RackMeta):
-    """ A Rack contains and coordinates devices and data handling with method functions that define test steps.
+    """ A Rack provides context management and methods for groups of Device instances.
 
         The Rack object provides connection management for
         all devices and data managers for `with` block::
@@ -1186,7 +965,6 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
                 spectrogram = Spectrogram(db=db, sa=sa)
 
     """
-
     def __init_subclass__(cls, entry_order=[]):
         cls._entry_order = entry_order
 
@@ -1203,9 +981,33 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
                 cls._methods[name] = obj
 
         # include annotations from parent classes
-        cls.__annotations__ = dict(getattr(super(), '__annotations__', {}),
-                                   **getattr(cls, '__annotations__', {}))
+        cls.__annotations__ = dict(
+            getattr(super(), '__annotations__', {}),
+            **getattr(cls, '__annotations__', {})
+        )
         cls.__init__.__annotations__ = cls.__annotations__
+
+        # adjust the __init__ signature for introspection/doc
+
+        # Generate a signature for documentation and code autocomplete
+        params = [
+            inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY),
+        ]
+
+        # generate and apply the sequence of call signature parameters
+        params += [
+            inspect.Parameter(
+                name,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                default=getattr(cls, name, EMPTY),
+                annotation=annot
+            )
+            for name, annot in cls.__annotations__.items()
+        ]
+
+        # we need a wrapper so that __init__ can be modified separately for each subclass
+        cls.__init__ = util.copy_func(cls.__init__)
+        cls.__init__.__signature__ = inspect.Signature(params)
 
         super().__init_subclass__(entry_order=entry_order)
 
@@ -1213,11 +1015,13 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         # new dict mapping object for the same devices
         ownables = dict(ownables)
         annotations = dict(self.__annotations__)
-        for name, dev in ownables.items():#self.__annotations__.items():
+        for name, dev in ownables.items():  #self.__annotations__.items():
             try:
                 dev_type = annotations.pop(name)
             except KeyError:
-                raise NameError(f"{self.__class__.__qualname__}.__init__ was given invalid keyword argument '{name}'")
+                raise NameError(
+                    f"{self.__class__.__qualname__}.__init__ was given invalid keyword argument '{name}'"
+                )
             if not isinstance(dev, dev_type):
                 msg = f"argument '{name}' is not an instance of '{dev_type.__qualname__}'"
                 raise AttributeError(msg)
@@ -1231,7 +1035,9 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         # any remaining items in annotations are missing arguments
         if len(annotations) > 0:
             kwargs = [f"{repr(k)}: {v}" for k, v in annotations.items()]
-            raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
+            raise AttributeError(
+                f"missing keyword arguments {', '.join(kwargs)}'"
+            )
 
         # now move forward with applying the devices
         super().__init__(**ownables)
@@ -1253,14 +1059,14 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         # steps = {name: copy.deepcopy(obj) for name, obj in type(self)._methods.items()}
         namespace = dict(
             __annotations__=type(self).__annotations__,
-            __module__ = type(self).__module__,
+            __module__=type(self).__module__,
             **owners
         )
 
         # return self
         namespace.update(owners)
 
-        subcls = type(self.__class__.__name__, (type(self),), namespace)
+        subcls = type(self.__class__.__name__, (type(self), ), namespace)
         return subcls(**self._devices)
 
     def __owner_init__(self, owner):
@@ -1280,3 +1086,92 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __iter__(self):
         return (getattr(self, k) for k in self._methods)
+
+
+def import_as_rack(import_str:str, cls_name: str = None, base_cls: type = Rack, replace_attrs: list =['__doc__', '__module__']):
+    """Creates a Rack subclass with the specified module's contents. Ownable objects are annotated
+    by type, allowing the resulting class to be instantiated. 
+
+    Arguments:
+        import_str: the name of the module to import
+
+        cls_name: the name of the Rack subclass to import from the module (or None for a
+                  new subclass with the module contents)
+
+        base_cls: the base class to use for the new subclass
+
+        replace_attrs: attributes of `base_cls` to replace from the module
+
+    Exceptions:
+        NameError: if there is an attribute name conflict between the module and base_cls
+
+    Returns:
+        A dynamically created subclass of base_cls
+    """
+
+    def isadaptable(name, obj):
+        """skip function, module, and type attributes"""
+        type_ok = not (inspect.isclass(obj) or inspect.ismodule(obj) or inspect.isfunction(obj))
+
+        # __name__ causes an undesired __name__ attribute to exist in the root Rack class
+        # (this breaks logic that expects this to exist only in owned instances
+        name_ok = name in replace_attrs or not name.startswith('_')
+
+        return type_ok and name_ok
+
+    module = importlib.import_module(import_str)
+
+    if cls_name is not None:
+        # work with the class specified in the module
+        obj = getattr(module, cls_name)
+
+        if issubclass(obj, base_cls):
+            # it's already a Rack instance - return it
+            return base_cls
+        elif inspect.ismodule(obj):
+            module = obj
+        else:
+            raise TypeError(
+                f'{import_str}.{cls_name} is not a subclass of {base_cls.__qualname__}'
+            )
+
+        dunder_updates = dict()
+    else:
+        cls_name = '_as_rack'
+        dunder_updates = dict(
+            __module__ = import_str
+        )
+
+    namespace = {
+        # take namespace items that are not types or modules
+        attr: obj
+        for attr, obj in module.__dict__.items()
+        if isadaptable(attr, obj)
+    }
+
+    # annotate the rack, which sets up the constructor signature that we use for config
+    namespace['__annotations__'] = dict(
+        {
+            name: type(obj)
+            for name, obj in namespace.items()
+            if isinstance(obj, util.Ownable)
+        },
+        **getattr(module, '__attributes__', {})
+    )
+
+    namespace.update(dunder_updates)
+
+    # raise NameError on redundant names - overloading could be
+    # very messy in this context
+    name_conflicts = set(namespace).intersection(base_cls.__dict__).difference(replace_attrs)
+    if len(name_conflicts) > 0:
+        raise NameError(
+            f"names {name_conflicts} in module '{module.__name__}' "
+            f"conflict with attributes of '{base_cls.__qualname__}'"
+        )
+
+    # subclass into a new Rack
+    return type(
+        cls_name, (base_cls, ),
+        dict(base_cls.__dict__, **namespace)
+    )

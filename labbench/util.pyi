@@ -89,4 +89,4 @@ class ConfigStore:
 
 # Names in __all__ with no definition:
 #   _force_full_traceback
-#   timeout_itersignature_wrapper
+#   timeout_itercopy_func

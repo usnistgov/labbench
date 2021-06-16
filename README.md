@@ -181,16 +181,16 @@ Start in an installation of your favorite python>=3.7 distribution.
 
 * To install the current version, open a command prompt and type
   ```pip install labbench```
-* To install the "stable" development version (git master branch), open a command prompt and type
+* To install the "stable" version (master branch) from git, open a command prompt and type
   ```pip install git+https://github.nist.gov/usnistgov/labbench```
-* To install the "bleeding edge" development version (git develop branch), open a command prompt and type
+* To install the "bleeding edge" development version (develop branch) from git, open a command prompt and type
   ```pip install git+https://github.nist.gov/usnistgov/labbench@develop```
 
 If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime, such as [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
 
 ## Usage
 #### Getting started
-* [Using labbench drivers](examples/How%20to%20use%20a%20labbench%20driver%20by%20example.ipynb)
+* [Using labbench drivers](examples/concurrency.ipynb)
 * [Primer on device control with object-oriented scripting](examples/Object%20oriented%20programming%20for%20device%20control.ipynb)
 
 #### Using drivers and labbench goodies for laboratory automation

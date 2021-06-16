@@ -33,8 +33,9 @@ from ._backends import ShellBackend, DotNetDevice, LabviewSocketInterface, Seria
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._device import Device, list_devices
 from ._host import Email
-from ._rack import Rack, Sequence
+from ._rack import Rack, Sequence, import_as_rack
 from ._traits import observe, unobserve, Undefined
+from ._serialize import load_rack, dump_rack
 from ._version import __version__
 
 from . import value

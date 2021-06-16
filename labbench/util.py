@@ -45,7 +45,6 @@ __all__ = [# "misc"
            'Ownable',
            ]
 
-
 from contextlib import contextmanager, _GeneratorContextManager
 from functools import wraps
 from queue import Queue, Empty
@@ -64,18 +63,21 @@ from warnings import simplefilter
 
 import_t0 = time.perf_counter()
 
-
 logger = logging.LoggerAdapter(
     logging.getLogger('labbench'),
-    dict(label='labbench') # description of origin within labbench (for screen logs only)
+    dict(label='labbench'
+        )  # description of origin within labbench (for screen logs only)
 )
+
 
 # show deprecation warnings only once
 class LabbenchDeprecationWarning(DeprecationWarning):
     pass
 
+
 simplefilter('once', LabbenchDeprecationWarning)
 import weakref
+
 
 def show_messages(minimum_level, colors=True):
     """ Configure screen debug message output for any messages as least as important as indicated by `level`.
@@ -88,16 +90,21 @@ def show_messages(minimum_level, colors=True):
 
     import logging
 
-    err_map = {'debug': logging.DEBUG,
-               'warning': logging.WARNING,
-               'error': logging.ERROR,
-               'info': logging.INFO,
-               None: None}
+    err_map = {
+        'debug': logging.DEBUG,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'info': logging.INFO,
+        None: None
+    }
 
     if minimum_level not in err_map and not isinstance(minimum_level, int):
-        raise ValueError(f'message level must be a flag {tuple(err_map.keys())} or an integer, not {repr(minimum_level)}')
+        raise ValueError(
+            f'message level must be a flag {tuple(err_map.keys())} or an integer, not {repr(minimum_level)}'
+        )
 
-    level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
+    level = err_map[minimum_level.lower()
+                   ] if isinstance(minimum_level, str) else minimum_level
 
     logger.setLevel(level)
 
@@ -111,11 +118,12 @@ def show_messages(minimum_level, colors=True):
     logger._screen_handler = logging.StreamHandler()
     logger._screen_handler.setLevel(level)
     # - %(pathname)s:%(lineno)d'
-    
+
     if colors:
         from coloredlogs import ColoredFormatter, DEFAULT_FIELD_STYLES
         log_fmt = '{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}'
-        styles = dict(DEFAULT_FIELD_STYLES,
+        styles = dict(
+            DEFAULT_FIELD_STYLES,
             label=dict(color='blue'),
         )
         formatter = ColoredFormatter(log_fmt, style='{', field_styles=styles)
@@ -140,11 +148,11 @@ def _logger_extras(obj):
     if d['owned_name'] is not None:
         d['label'] = d['owned_name']
     elif repr(obj) == object.__repr__(obj):
-        d['label'] = type(obj).__qualname__+"(...)"
+        d['label'] = type(obj).__qualname__ + "(...)"
     else:
         txt = repr(obj)
-        if len(txt)>20:
-            txt = txt[:-1].split(',')[0]+')'
+        if len(txt) > 20:
+            txt = txt[:-1].split(',')[0] + ')'
         d['label'] = txt
 
     return d
@@ -167,7 +175,7 @@ class Ownable:
     def __init__(self):
         self._logger = logging.LoggerAdapter(
             logger.logger,
-            extra = _logger_extras(self),
+            extra=_logger_extras(self),
         )
 
     def __set_name__(self, owner_cls, name):
@@ -183,7 +191,7 @@ class Ownable:
         if owner._owned_name is None:
             self._owned_name = self.__name__
         else:
-            self._owned_name = owner._owned_name+'.'+self.__name__
+            self._owned_name = owner._owned_name + '.' + self.__name__
 
         self._logger.extra.update(**_logger_extras(self))
 
@@ -232,29 +240,23 @@ import types
 
 TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 
+
 def hide_in_traceback(func):
     def adjust(f):
         code = f.__code__
 
-        if tuple(sys.version_info)[:2] >= (3,8):
-            f.__code__ = code.replace(co_consts=code.co_consts+(TRACEBACK_HIDE_TAG,))
+        if tuple(sys.version_info)[:2] >= (3, 8):
+            f.__code__ = code.replace(
+                co_consts=code.co_consts + (TRACEBACK_HIDE_TAG, )
+            )
         else:
             # python < 3.8
             f.__code__ = types.CodeType(
-                code.co_argcount,
-                code.co_kwonlyargcount,
-                code.co_nlocals,
-                code.co_stacksize,
-                code.co_flags,
-                code.co_code,
-                code.co_consts + (TRACEBACK_HIDE_TAG,),
-                code.co_names,
-                code.co_varnames,
-                code.co_filename,
-                code.co_name,
-                code.co_firstlineno,
-                code.co_lnotab,
-                code.co_freevars,
+                code.co_argcount, code.co_kwonlyargcount, code.co_nlocals,
+                code.co_stacksize, code.co_flags, code.co_code,
+                code.co_consts + (TRACEBACK_HIDE_TAG, ), code.co_names,
+                code.co_varnames, code.co_filename, code.co_name,
+                code.co_firstlineno, code.co_lnotab, code.co_freevars,
                 code.co_cellvars
             )
 
@@ -310,7 +312,7 @@ class _filtered_exc_info:
 def copy_func(
         func,
         assigned=('__module__', '__name__', '__qualname__', '__doc__', '__annotations__'),
-        updated=('__dict__',),
+        updated=('__dict__', )
     ) -> callable:
     """returns a copy of func with specified attributes (following the inspect.wraps arguments).
     
@@ -321,13 +323,10 @@ def copy_func(
     """
 
     new = types.FunctionType(
-        func.__code__,
-        func.__globals__,
-        func.__name__,
-        func.__defaults__,
+        func.__code__, func.__globals__, func.__name__, func.__defaults__,
         func.__closure__
     )
-    
+
     for attr in assigned:
         setattr(new, attr, getattr(func, attr))
 
@@ -336,16 +335,16 @@ def copy_func(
 
     return new
 
+
 # TODO: remove this
 def withsignature(
-        cls,
-        name: str,
-        fields: list,
-        defaults: dict,
-        positional: int = None,
-        annotations: dict = {}
-    ):
-    
+    cls,
+    name: str,
+    fields: list,
+    defaults: dict,
+    positional: int = None,
+    annotations: dict = {}
+):
     """ Replace cls.__init__ with a wrapper function with an explicit
         call signature, replacing the actual call signature that can be
         dynamic __init__(self, *args, **kws) call signature.
@@ -370,11 +369,11 @@ def withsignature(
         # there is a new co_posonlyargs argument since 3.8 - use the new .replace
         # to be less brittle to future signature changes
         code = code.replace(
-            co_argcount=1+positional, # to include self
+            co_argcount=1 + positional,  # to include self
             co_posonlyargcount=0,
-            co_kwonlyargcount=len(fields)-positional,
-            co_nlocals=len(fields)+1,  # to include self
-            co_varnames=('self',) + tuple(fields)
+            co_kwonlyargcount=len(fields) - positional,
+            co_nlocals=len(fields) + 1,  # to include self
+            co_varnames=('self', ) + tuple(fields)
         )
     else:
         code = types.CodeType(
@@ -386,22 +385,20 @@ def withsignature(
             code.co_code,
             code.co_consts,
             code.co_names,
-            ('self',) + tuple(fields),  # co_varnames
+            ('self', ) + tuple(fields),  # co_varnames
             code.co_filename,
             code.co_name,
             code.co_firstlineno,
             code.co_lnotab,
             code.co_freevars,
-            code.co_cellvars            
+            code.co_cellvars
         )
 
     # Generate the new wrapper function and its signature
     __globals__ = getattr(wrapped, '__globals__', builtins.__dict__)
     import functools
 
-    wrapper = types.FunctionType(code,
-                                 __globals__,
-                                 wrapped.__name__)
+    wrapper = types.FunctionType(code, __globals__, wrapped.__name__)
 
     wrapper.__doc__ = wrapped.__doc__
     wrapper.__qualname__ = wrapped.__qualname__
@@ -448,9 +445,15 @@ def check_hanging_thread():
     """
     sleep(0.)
 
+
 @hide_in_traceback
-def retry(exception_or_exceptions, tries=4, delay=0,
-          backoff=0, exception_func=lambda: None):
+def retry(
+    exception_or_exceptions,
+    tries=4,
+    delay=0,
+    backoff=0,
+    exception_func=lambda: None
+):
     """ This decorator causes the function call to repeat, suppressing specified exception(s), until a
     maximum number of retries has been attempted.
     - If the function raises the exception the specified number of times, the underlying exception is raised.
@@ -516,9 +519,15 @@ def retry(exception_or_exceptions, tries=4, delay=0,
 
     return decorator
 
+
 @hide_in_traceback
-def until_timeout(exception_or_exceptions, timeout, delay=0,
-                  backoff=0, exception_func=lambda: None):
+def until_timeout(
+    exception_or_exceptions,
+    timeout,
+    delay=0,
+    backoff=0,
+    exception_func=lambda: None
+):
     """ This decorator causes the function call to repeat, suppressing specified exception(s), until the
     specified timeout period has expired.
     - If the timeout expires, the underlying exception is raised.
@@ -563,11 +572,11 @@ def until_timeout(exception_or_exceptions, timeout, delay=0,
                 except exception_or_exceptions as e:
                     progress = time.time() - t0
 
-                    if not notified and timeout-progress>0:
+                    if not notified and timeout - progress > 0:
                         etype = type(e).__qualname__
                         msg = f"caught '{etype}' in first call to '{f.__name__}' - repeating calls for "\
                               f"another {timeout-progress:0.3f}s, or until no exception is raised"
-                        
+
                         callable_logger(f).info(msg)
 
                         notified = True
@@ -596,7 +605,7 @@ def timeout_iter(duration):
 
     while elapsed < duration:
         yield elapsed
-        elapsed = time.perf_counter()-t0
+        elapsed = time.perf_counter() - t0
 
 
 def kill_by_name(*names):
@@ -663,8 +672,7 @@ def hash_caller(call_depth=1):
 
 
 @contextmanager
-def stopwatch(desc: str = '',
-              threshold: float = 0):
+def stopwatch(desc: str = '', threshold: float = 0):
     """ Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
@@ -684,7 +692,7 @@ def stopwatch(desc: str = '',
     finally:
         elapsed = time.perf_counter() - t0
         if elapsed >= threshold:
-            msg = str(desc)+' ' if len(desc) else ''
+            msg = str(desc) + ' ' if len(desc) else ''
             msg += f"{elapsed:0.3f} s elapsed"
 
             exc_info = sys.exc_info()
@@ -700,7 +708,6 @@ class Call(object):
         otherwise, it will automatically be wrapped inside `concurrently` to
         keep track of some call metadata during execution.
     """
-
     def __init__(self, func, *args, **kws):
         if not callable(func):
             raise ValueError('`func` argument is not callable')
@@ -785,11 +792,10 @@ class MultipleContexts:
         (not through call_handler), in the reversed order that each context
         __enter__ was called.
     """
-
-    def __init__(self,
-                 call_handler: Callable[[dict,list,dict],dict],
-                 params: dict,
-                 objs: list):
+    def __init__(
+        self, call_handler: Callable[[dict, list, dict], dict], params: dict,
+        objs: list
+    ):
         """
             call_handler: one of `sequentially_call` or `concurrently_call`
             params: a dictionary of operating parameters (see `concurrently`)
@@ -814,7 +820,9 @@ class MultipleContexts:
         self.__name__ = '__enter__'
 
         # make up names for the __enter__ objects
-        self.objs = [(f'enter_{type(o).__name__}_{hex(id(o))}', o) for _,o in objs]
+        self.objs = [
+            (f'enter_{type(o).__name__}_{hex(id(o))}', o) for _, o in objs
+        ]
 
         self.params = params
         self.call_handler = call_handler
@@ -828,7 +836,7 @@ class MultipleContexts:
         if not self.abort:
             # proceed only if there have been no exceptions
             try:
-                context.__enter__() # start of a context entry thread
+                context.__enter__()  # start of a context entry thread
             except:
                 self.abort = True
                 self.exc[name] = sys.exc_info()
@@ -846,7 +854,9 @@ class MultipleContexts:
                 self.call_handler(self.params, calls)
         except BaseException as e:
             try:
-                self.__exit__(None, None, None) # exit any open contexts before raise
+                self.__exit__(
+                    None, None, None
+                )  # exit any open contexts before raise
             finally:
                 raise e
 
@@ -882,12 +892,13 @@ class MultipleContexts:
 
                             log_obj.warning(msg)
 
-
         if len(self.exc) == 1:
             exc_info = list(self.exc.values())[0]
             raise exc_info[1]
         elif len(self.exc) > 1:
-            raise ConcurrentException(f"exceptions raised in {len(self.exc)} contexts are printed inline")
+            raise ConcurrentException(
+                f"exceptions raised in {len(self.exc)} contexts are printed inline"
+            )
         if exc != (None, None, None):
             # sys.exc_info() may have been
             # changed by one of the exit methods
@@ -898,10 +909,12 @@ class MultipleContexts:
             raise exc[1]
 
 
-RUNNERS = {(False, False): None,
-           (False, True): 'context',
-           (True,False): 'callable',
-           (True,True): 'both'}
+RUNNERS = {
+    (False, False): None,
+    (False, True): 'context',
+    (True, False): 'callable',
+    (True, True): 'both'
+}
 
 DIR_DICT = set(dir(dict))
 
@@ -921,18 +934,20 @@ def enter_or_call(flexible_caller, objs, kws):
 
     # Treat keyword arguments passed as callables should be left as callables;
     # otherwise, override the parameter
-    params = dict(catch=False,
-                  nones=False,
-                  traceback_delay=False,
-                  flatten=True,
-                  name=None)
+    params = dict(
+        catch=False,
+        nones=False,
+        traceback_delay=False,
+        flatten=True,
+        name=None
+    )
 
     def merge_inputs(dicts: list, candidates: list):
         """ Merge nested returns and check for return data key conflicts in
             the callable
         """
         ret = {}
-        for name,d in dicts:
+        for name, d in dicts:
             common = set(ret.keys()).difference(d.keys())
             if len(common) > 0:
                 which = ', '.join(common)
@@ -940,19 +955,23 @@ def enter_or_call(flexible_caller, objs, kws):
                 raise KeyError(msg)
             ret.update(d)
 
-        conflicts = set(ret.keys()).intersection([n for (n,obj) in candidates])
+        conflicts = set(ret.keys()).intersection([n for (n, obj) in candidates])
         if len(conflicts) > 0:
-            raise KeyError('keys of conflict in nested return dictionary keys with ')
+            raise KeyError(
+                'keys of conflict in nested return dictionary keys with '
+            )
 
         return ret
 
     def merge_results(inputs, result):
-        for k,v in dict(result).items():
+        for k, v in dict(result).items():
             if isdictducktype(v.__class__):
                 conflicts = set(v.keys()).intersection(start_keys)
                 if len(conflicts) > 0:
                     conflicts = ','.join(conflicts)
-                    raise KeyError(f'conflicts in keys ({conflicts}) when merging return dictionaries')
+                    raise KeyError(
+                        f'conflicts in keys ({conflicts}) when merging return dictionaries'
+                    )
                 inputs.update(result.pop(k))
 
     # Pull parameters from the passed keywords
@@ -963,11 +982,13 @@ def enter_or_call(flexible_caller, objs, kws):
     if params['name'] is None:
         # come up with a gobbledigook name that is at least unique
         frame = inspect.currentframe().f_back.f_back
-        params['name'] = f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
+        params[
+            'name'
+        ] = f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
 
     # Combine the position and keyword arguments, and assign labels
     allobjs = list(objs) + list(kws.values())
-    names = (len(objs)*[None]) + list(kws.keys())
+    names = (len(objs) * [None]) + list(kws.keys())
 
     candidates = list(zip(names, allobjs))
     del allobjs, names
@@ -984,8 +1005,13 @@ def enter_or_call(flexible_caller, objs, kws):
             dicts.append(candidates.pop(i))
             continue
 
-        thisone = RUNNERS[(callable(obj) and not isinstance(obj, _GeneratorContextManager)), # Is it callable?
-                          (hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)) # Is it a context manager?
+        thisone = RUNNERS[(
+            callable(obj) and not isinstance(obj, _GeneratorContextManager)
+        ),  # Is it callable?
+                          (
+                              hasattr(obj, '__enter__') or
+                              isinstance(obj, _GeneratorContextManager)
+                          )  # Is it a context manager?
                          ]
 
         if thisone is None:
@@ -1001,7 +1027,9 @@ def enter_or_call(flexible_caller, objs, kws):
             runner = thisone
         else:
             if thisone not in (runner, 'both'):
-                raise TypeError(f'cannot run a mixture of context managers and callables')
+                raise TypeError(
+                    f'cannot run a mixture of context managers and callables'
+                )
 
     # Enforce uniqueness in the callable or context manager objects
     candidate_objs = [c[1] for c in candidates]
@@ -1011,10 +1039,14 @@ def enter_or_call(flexible_caller, objs, kws):
     if runner is None:
         return {}
     elif runner == 'both':
-        raise TypeError("all objects supported both calling and context management - not sure which to run")
+        raise TypeError(
+            "all objects supported both calling and context management - not sure which to run"
+        )
     elif runner == 'context':
         if len(dicts) > 0:
-            raise ValueError(f'unexpected return value dictionary argument for context management {dicts}')
+            raise ValueError(
+                f'unexpected return value dictionary argument for context management {dicts}'
+            )
         return MultipleContexts(flexible_caller, params, candidates)
     else:
         ret = merge_inputs(dicts, candidates)
@@ -1025,6 +1057,7 @@ def enter_or_call(flexible_caller, objs, kws):
             merge_results(ret, result)
         ret.update(result)
         return ret
+
 
 @hide_in_traceback
 def concurrently_call(params: dict, name_func_pairs: list) -> dict:
@@ -1038,7 +1071,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         for i in range(count):
             if tb is not None and tb.tb_next is not None:
                 tb = tb.tb_next
-        return exc_tuple[:2] + (tb,)
+        return exc_tuple[:2] + (tb, )
 
     def check_thread_support(func_in):
         """ Setup threading (concurrent execution only), including
@@ -1046,9 +1079,12 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             concurrent execution or not.
         """
         func = func_in.func if isinstance(func_in, Call) else func_in
-        if hasattr(func, '__self__') and not getattr(func.__self__, 'concurrency', True):
+        if hasattr(func, '__self__'
+                  ) and not getattr(func.__self__, 'concurrency', True):
             # is this a Device that does not support concurrency?
-            raise ConcurrentException(f'{func.__self__} does not support concurrency')
+            raise ConcurrentException(
+                f'{func.__self__} does not support concurrency'
+            )
         return func_in
 
     stop_request_event.clear()
@@ -1061,8 +1097,10 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
     # Setup calls then funcs
     # Set up mappings between wrappers, threads, and the function to call
     wrappers = Call.wrap_list_to_dict(name_func_pairs)
-    threads = {name: Thread(target=w, name=name)
-               for name, w in wrappers.items()}
+    threads = {
+        name: Thread(target=w, name=name)
+        for name, w in wrappers.items()
+    }
 
     # Start threads with calls to each function
     finished = Queue()
@@ -1081,7 +1119,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         try:
             called = finished.get(timeout=0.25)
         except Empty:
-            if time.perf_counter() - t0 > 60*15:
+            if time.perf_counter() - t0 > 60 * 15:
                 names = ','.join(list(threads.keys()))
                 logger.debug(f'{names} threads are still running')
                 t0 = time.perf_counter()
@@ -1098,7 +1136,8 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         if parent_exception is not None:
             names = ', '.join(list(threads.keys()))
             logger.error(
-                f'raising {parent_exception.__class__.__name__} in main thread after child threads {names} return')
+                f'raising {parent_exception.__class__.__name__} in main thread after child threads {names} return'
+            )
 
         # if there was an exception that wasn't us ending the thread,
         # show messages
@@ -1107,7 +1146,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             tb = traceback_skip(called.traceback, 1)
 
             if called.traceback[0] is not ThreadEndedByMaster:
-#                exception_count += 1
+                #                exception_count += 1
                 tracebacks.append(tb)
                 last_exception = called.traceback[1]
 
@@ -1115,7 +1154,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 try:
                     traceback.print_exception(*tb)
                 except BaseException as e:
-                    sys.stderr.write('\nthread exception, but failed to print exception')
+                    sys.stderr.write(
+                        '\nthread exception, but failed to print exception'
+                    )
                     sys.stderr.write(str(e))
                     sys.stderr.write('\n')
         else:
@@ -1159,9 +1200,11 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                     sys.stderr.write('\n')
 
             raise ConcurrentException(
-                f'{len(tracebacks)} call(s) raised exceptions')
+                f'{len(tracebacks)} call(s) raised exceptions'
+            )
 
     return results
+
 
 @hide_in_traceback
 def concurrently(*objs, **kws):
@@ -1238,6 +1281,7 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
             results[name] = ret
 
     return results
+
 
 @hide_in_traceback
 def sequentially(*objs, **kws):
@@ -1339,8 +1383,10 @@ class ThreadDelegate(object):
             return message(self._sandbox, OP_SET, self._obj, name, value, None)
 
 
-delegate_keys = set(ThreadDelegate.__dict__.keys()
-                    ).difference(object.__dict__.keys())
+delegate_keys = set(ThreadDelegate.__dict__.keys()).difference(
+    object.__dict__.keys()
+)
+
 
 @hide_in_traceback
 def message(sandbox, *msg):
@@ -1348,7 +1394,7 @@ def message(sandbox, *msg):
 
     # Await and handle request. Exception should be raised in this
     # (main) thread
-    req.put(msg + (rsp,), True)
+    req.put(msg + (rsp, ), True)
     ret, exc = rsp.get(True)
     if exc is not None:
         raise exc
@@ -1375,8 +1421,9 @@ class ThreadSandbox(object):
         # Start the thread and block until it's ready
         self._requestq = Queue(1)
         ready = Queue(1)
-        self.__thread = Thread(target=self.__worker, args=(
-            factory, ready, should_sandbox_func))
+        self.__thread = Thread(
+            target=self.__worker, args=(factory, ready, should_sandbox_func)
+        )
         self.__thread.start()
         exc = ready.get(True)
         if exc is not None:
@@ -1393,7 +1440,8 @@ class ThreadSandbox(object):
             def default_sandbox_check_func(obj):
                 try:
                     return inspect.getmodule(obj).__name__.startswith(
-                        inspect.getmodule(root).__name__)
+                        inspect.getmodule(root).__name__
+                    )
                 except AttributeError:
                     return False
 
@@ -1402,7 +1450,8 @@ class ThreadSandbox(object):
 
             self.__repr_root__ = repr(root)
             self.__dir_root__ = sorted(
-                list(set(dir(root) + list(sandbox_keys))))
+                list(set(dir(root) + list(sandbox_keys)))
+            )
             exc = None
         except Exception as e:
             exc = e
@@ -1435,9 +1484,9 @@ class ThreadSandbox(object):
 
                 # Make it a delegate if it needs to be protected
                 if sandbox_check_func(ret):
-                    ret = ThreadDelegate(self, ret,
-                                         dir_=dir(ret),
-                                         repr_=repr(ret))
+                    ret = ThreadDelegate(
+                        self, ret, dir_=dir(ret), repr_=repr(ret)
+                    )
 
             # Catch all exceptions
             except Exception as e:
@@ -1491,8 +1540,9 @@ class ThreadSandbox(object):
         return self.__dir_root__
 
 
-sandbox_keys = set(ThreadSandbox.__dict__.keys()
-                   ).difference(object.__dict__.keys())
+sandbox_keys = set(ThreadSandbox.__dict__.keys()).difference(
+    object.__dict__.keys()
+)
 
 
 class ConfigStore:
@@ -1505,7 +1555,6 @@ class ConfigStore:
         name of the dictionary attribute and {attr_key} is the
         nested dictionary key.
     """
-
     @classmethod
     def all(cls):
         """ Return a dictionary of all attributes in the class
@@ -1532,6 +1581,7 @@ class ConfigStore:
 import ast
 import textwrap
 import re
+
 
 def accessed_attributes(method):
     """ enumerate the attributes of the parent class accessed by `method`
@@ -1566,6 +1616,7 @@ def accessed_attributes(method):
     self_name = func.args.args[0].arg
 
     def isselfattr(node):
-        return isinstance(node, ast.Attribute) and getattr(node.value, 'id', None) == self_name
+        return isinstance(node, ast.Attribute
+                         ) and getattr(node.value, 'id', None) == self_name
 
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})

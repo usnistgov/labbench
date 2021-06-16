@@ -35,16 +35,13 @@ lb = importlib.reload(lb)
 remap = {True: 'ON', False: 'OFF'}
 flag_start = False
 
+
 class Shell_Python(lb.ShellBackend):
     binary_path = lb.value.str(f"python")
 
-    path = lb.value.str(
-        key=None, help='path to a python script file'
-    )
+    path = lb.value.str(key=None, help='path to a python script file')
 
-    command = lb.value.str(
-        key='-c', help="execute a python command"
-    )
+    command = lb.value.str(key='-c', help="execute a python command")
 
     def _flag_names(self):
         return (name for name, trait in self._traits.items()
@@ -74,14 +71,16 @@ class Shell_Python(lb.ShellBackend):
             value = getattr(self, name)
             print(name, repr(value), repr(trait.key), repr(lb.Undefined))
 
-            if value is None = continue
+            if value is None:
+                continue
             elif trait.key in (None, ''):
                 cmd = cmd + (value,)
-            elif not isinstance(trait.key, str) and trait.key is not Undefined:
+            elif not isinstance(trait.key, str) and trait.key is not lb._traits.Undefined:
                 raise TypeError(f"keys defined in {self} must be strings")
             else:
                 cmd = cmd + (trait.key, value)
         return cmd
+
 
 # class TestSettings(unittest.TestCase):
 #     def test_defaults(self):

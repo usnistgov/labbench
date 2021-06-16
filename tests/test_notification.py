@@ -29,7 +29,6 @@ if '..' not in sys.path:
     sys.path.insert(0, '..')
 import labbench as lb
 
-
 if __name__ == '__main__':
     lb.show_messages('info')
 

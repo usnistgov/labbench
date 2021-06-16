@@ -20,7 +20,8 @@ class LaggyInstrument(EmulatedVISADevice):
     # Connection and driver value traits
     delay = lb.value.float(default=0, min=0, help='connection time (s)')
     fetch_time = lb.value.float(default=0, min=0, help='fetch time (s)')
-    fail_disconnect = lb.value.bool(default=False, help='raise DivideByZero on disconnect?')
+    fail_disconnect = lb.value.bool(default=False,
+                                    help='raise DivideByZero on disconnect?')
 
     def open(self):
         self.perf = {}
@@ -54,9 +55,11 @@ class Rack1(lb.Rack):
     dev1 = LaggyInstrument
     dev2 = LaggyInstrument
 
-    def setup(self, param1) = pass
+    def setup(self, param1):
+        pass
 
-    def arm(self) = pass
+    def arm(self):
+        pass
 
 
 class Rack2(lb.Rack):
@@ -76,7 +79,8 @@ class Rack2(lb.Rack):
 class Rack3(lb.Rack):
     dev = LaggyInstrument
 
-    def acquire(self, *, param2=7, param3) = pass
+    def acquire(self, *, param2=7, param3):
+        pass
 
     def fetch(self, *, param4):
         self.dev.fetch()
@@ -84,10 +88,14 @@ class Rack3(lb.Rack):
 
 db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
     'data',  # Path to new directory that will contain containing all files
-    append=True,  # `True` --- allow appends to an existing database; `False` --- append
-    text_relational_min=1024,  # Minimum text string length that triggers relational storage
-    force_relational=['host_log'],  # Data in these columns will always be relational
-    dirname_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
+    append=
+    True,  # `True` --- allow appends to an existing database; `False` --- append
+    text_relational_min=
+    1024,  # Minimum text string length that triggers relational storage
+    force_relational=['host_log'
+                     ],  # Data in these columns will always be relational
+    dirname_fmt=
+    '{id} {host_time}',  # Format string that generates relational data (keyed on data column)
     nonscalar_file_type='csv',  # Default format of numerical data, when possible
     metadata_dirname='metadata',  # metadata will be stored in this subdirectory
     tar=False  # `True` to embed relational data folders within `data.tar`

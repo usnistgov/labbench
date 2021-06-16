@@ -1,9 +1,8 @@
+import inspect
 from . import util as util
-from ruamel_yaml import round_trip_load as round_trip_load
+from pathlib import Path as Path
 from typing import Any, Optional
-yaml: Any
 EMPTY: Any
-BASIC_TYPES: Any
 
 def null_context(owner: Any) -> None:
     ...
@@ -61,13 +60,13 @@ class Method(util.Ownable):
     def set_kwdefault(self, name: Any, value: Any) -> None:
         ...
 
-    def long_kwarg_signature(self):
+    def extended_signature(self):
         ...
 
-    def long_kwarg_names(self):
+    def extended_argname_names(self):
         ...
 
-    def long_kwarg_call(self, *args: Any, **kws: Any):
+    def extended_argname_call(self, *args: Any, **kws: Any):
         ...
 
     def __call__(self, *args: Any, **kws: Any):
@@ -137,7 +136,16 @@ class Owner():
     def __exit__(self):
         ...
 
-def __call__():
+def override_empty(a: Any, b: Any, param_name: Any, field: Any):
+    ...
+
+def update_parameter_dict(dest: dict, signature: inspect.Signature) -> Any:
+    ...
+
+def attr_chain_to_method(root_obj: Any, chain: Any):
+    ...
+
+def standardize_spec_step(sequence: Any):
     ...
 
 
@@ -145,37 +153,18 @@ class Sequence(util.Ownable):
     spec: Any = ...
     access_spec: Any = ...
 
-    def __init__(self, **specification: Any):
+    def __init__(self, **specification: Any) -> None:
         ...
 
     def __owner_subclass__(self, owner_cls: Any):
         ...
     last_spec: Any = ...
 
-    def __owner_init__(self, owner: Any):
+    def __owner_init__(self, owner: Any) -> None:
         ...
 
 
 class RackMeta(type):
-    CONFIG_FILENAME: str = ...
-
-    @classmethod
-    def from_module(metacls: Any, module_str: Any, cls_name: Any):
-        ...
-
-    def wrap_module(cls, module: Any):
-        ...
-
-    @classmethod
-    def from_config(metacls: Any, config_path: Any, apply: bool=...):
-        ...
-
-    @classmethod
-    def to_config(metacls: Any, cls: Any, path: Any, with_defaults: bool=...) -> None:
-        ...
-
-    def to_sequence_table(cls, name: Any, path: Any, with_defaults: bool=...) -> None:
-        ...
 
     def __enter__(cls) -> None:
         ...
@@ -209,3 +198,6 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __iter__(self) -> Any:
         ...
+
+def import_as_rack(import_str: str, cls_name: str=..., base_cls: type=..., replace_attrs: list=...) -> Any:
+    ...

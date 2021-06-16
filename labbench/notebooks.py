@@ -50,6 +50,7 @@ skip_state_by_type = {
     core.Device: ['isopen']
 }
 
+
 def single(inst, inst_name):
     """ Generate a formatted html table widget which updates with recently-observed properties
         in a device.
@@ -62,11 +63,13 @@ def single(inst, inst_name):
     """
 
     _df = pd.DataFrame([], columns=['value'])
-    
-    TABLE_STYLES = [{
-        'selector': '.col_heading, .blank',
-        'props': [('display', 'none;')]
-    }]
+
+    TABLE_STYLES = [
+        {
+            'selector': '.col_heading, .blank',
+            'props': [('display', 'none;')]
+        }
+    ]
 
     CAPTION_FMT = '<center><b>{}<b></center>'
 
@@ -98,7 +101,8 @@ def single(inst, inst_name):
         _df.sort_index(inplace=True)
         caption = CAPTION_FMT.format(inst_name).replace(',', '<br>')
         html.value = _df.style.set_caption(caption).set_table_attributes(
-            'class="table"').set_TABLE_STYLES(TABLE_STYLES).render()
+            'class="table"'
+        ).set_TABLE_STYLES(TABLE_STYLES).render()
 
     core.observe(inst, _on_change)
 
@@ -115,14 +119,16 @@ class TextareaLogHandler(logging.StreamHandler):
         self.stream = StringIO()
         super(TextareaLogHandler, self).__init__(self.stream)
         self.widget = widgets.Textarea(
-            layout=widgets.Layout(width='100%', height='500px'))
+            layout=widgets.Layout(width='100%', height='500px')
+        )
         self.setFormatter(logging.Formatter(self.log_format, self.time_format))
         self.setLevel(level)
         self.last_time = None
 
     def emit(self, record):
         ret = super(TextareaLogHandler, self).emit(record)
-        if self.last_time is None or time.time() - self.last_time > self.min_delay:
+        if self.last_time is None or time.time(
+        ) - self.last_time > self.min_delay:
             self.last_time = time.time()
             newvalue = self.widget.value + self.stream.getvalue()
             if len(newvalue) > self.max_buffer:
@@ -153,15 +159,15 @@ class panel:
             cls.devices = dict([(k,v) for k,v in source.get_managed_contexts().items()\
                                 if isinstance(v,core.Device)])
         elif isinstance(source, numbers.Number):
-            cls.source = source+1
+            cls.source = source + 1
             cls.devices = core.list_devices(cls.source)
         else:
             raise ValueError(
-                f'source must be a Rack instance or int, but got {repr(source)}')
+                f'source must be a Rack instance or int, but got {repr(source)}'
+            )
 
         children = [
-            single(cls.devices[k], k)
-            for k in sorted(cls.devices.keys())
+            single(cls.devices[k], k) for k in sorted(cls.devices.keys())
             if isinstance(cls.devices[k], core.Device)
         ]
 
@@ -195,10 +201,7 @@ class panel:
 
         logger.addHandler(log_handler)
 
-        cls.widget = widgets.Tab([
-            vbox,
-            log_handler.widget
-        ])
+        cls.widget = widgets.Tab([vbox, log_handler.widget])
 
         cls.widget.set_title(0, 'State')
         cls.widget.set_title(1, 'Debug')

@@ -51,18 +51,17 @@ class TestProperty:
             self.assertEqual(m.remote_values['int0'], new_param)
 
             # verify expected "get"
-            self.assertEqual(m.bool0, m.PYTHONIC_VALUE_DEFAULT['bool0']) # get 1
+            self.assertEqual(m.bool0,
+                             m.PYTHONIC_VALUE_DEFAULT['bool0'])  # get 1
 
             # verify expected "set"
-            new_flag = not m.bool0 # get 2
+            new_flag = not m.bool0  # get 2
             m.bool0 = new_flag
 
-            self.assertEqual(m.bool0, new_flag) # get 3
+            self.assertEqual(m.bool0, new_flag)  # get 3
 
-            self.assertEqual(
-                m.remote_values['bool0'],
-                m.get_expected_remote_value('bool0', new_flag)
-            )
+            self.assertEqual(m.remote_values['bool0'],
+                             m.get_expected_remote_value('bool0', new_flag))
 
             self.assertEqual(m._getter_counts['bool0'], 3)
             self.assertEqual(m._getter_counts['int0'], 3)
@@ -86,10 +85,11 @@ class MockBase(lb.Device):
         self._last = {}
 
         for name, value in self.PYTHONIC_VALUE_DEFAULT.items():
-            self.remote_values[name] = self.get_expected_remote_value(name, value)
+            self.remote_values[name] = self.get_expected_remote_value(
+                name, value)
 
     def add_get_count(self, name):
-        self._getter_counts.setdefault(name,0)
+        self._getter_counts.setdefault(name, 0)
         self._getter_counts[name] += 1
 
     def clear_counts(self):
@@ -119,9 +119,7 @@ class MockDecoratedProperty(MockBase):
         'str2': 'hi'
     }
 
-    REMAP = dict(
-        bool0={True: 'ON', False: 'OFF'} 
-    )
+    REMAP = dict(bool0={True: 'ON', False: 'OFF'})
 
     @lb.property.int(min=0, max=10)
     def int0(self, value):
@@ -130,7 +128,7 @@ class MockDecoratedProperty(MockBase):
     def int0(self):
         self.add_get_count('int0')
         return self.remote_values['int0']
-    
+
     @lb.property.bool(remap=REMAP['bool0'])
     def bool0(self, value):
         self.remote_values['bool0'] = value
@@ -155,7 +153,9 @@ class MockDecoratedProperty(MockBase):
         self.add_get_count('str0')
         return self.remote_values['str0']
 
-    @lb.property.str(key='str1', cache=True, remap={'python value': 'device value'})
+    @lb.property.str(key='str1',
+                     cache=True,
+                     remap={'python value': 'device value'})
     def str1(self, value):
         self.remote_values['str1'] = value
 
@@ -190,14 +190,14 @@ class MockKeyedProperty(MockBase):
         'str2': 'hi'
     }
 
-    REMAP = dict(
-        bool0={True: 'ON', False: 'OFF'} 
-    )
+    REMAP = dict(bool0={True: 'ON', False: 'OFF'})
 
     int0 = lb.property.int(key='int0', min=0, max=10)
     bool0 = lb.property.bool(key='bool0', remap=REMAP['bool0'])
     str0 = lb.property.str(key='str0', cache=True)
-    str1 = lb.property.str(key='str1', cache=True, remap={'python value': 'device value'})
+    str1 = lb.property.str(key='str1',
+                           cache=True,
+                           remap={'python value': 'device value'})
     str2 = lb.property.str(key='str2', sets=False)
 
     def get_key(self, key, name=None):
@@ -211,13 +211,14 @@ class MockKeyedProperty(MockBase):
 
 
 class MockReturner(MockBase):
+
     @lb.datareturn.float()
-    def fetch_float0(self, a, b,c):
-        return a+b+c
+    def fetch_float0(self, a, b, c):
+        return a + b + c
 
     @lb.datareturn.float
-    def fetch_float1(self, a, b,c):
-        return a+b+c
+    def fetch_float1(self, a, b, c):
+        return a + b + c
 
 
 class TestProperty:
@@ -241,16 +242,19 @@ class TestProperty:
 
                 # in cases of remap, ensure the stored value in the mock device
                 # matches the expected
-                self.assertEqual(
-                    m.remote_values[trait_name],
-                    m.get_expected_remote_value(trait_name, new_value), msg=msg
-                )
+                self.assertEqual(m.remote_values[trait_name],
+                                 m.get_expected_remote_value(
+                                     trait_name, new_value),
+                                 msg=msg)
 
                 # validate the pythonic value
-                self.assertEqual(getattr(m, trait_name), new_value, msg=msg) # +1 get (unless cached)
+                self.assertEqual(getattr(m, trait_name), new_value,
+                                 msg=msg)  # +1 get (unless cached)
 
                 # make sure there weren't any unecessary extra 'get' operations
-                self.assertEqual(m.get_get_count(trait_name), 0 if trait.cache else 1,msg=msg)
+                self.assertEqual(m.get_get_count(trait_name),
+                                 0 if trait.cache else 1,
+                                 msg=msg)
 
     def test_disabled_set(self):
         with self.TestDevice() as m:
@@ -274,8 +278,12 @@ class TestProperty:
 
                     # Device gets should only happen once if cache=True
                     m.clear_counts()
-                    self.assertEqual(getattr(m, trait_name), m.PYTHONIC_VALUE_DEFAULT[trait_name], msg=msg)
-                    self.assertEqual(getattr(m, trait_name), m.PYTHONIC_VALUE_DEFAULT[trait_name], msg=msg)
+                    self.assertEqual(getattr(m, trait_name),
+                                     m.PYTHONIC_VALUE_DEFAULT[trait_name],
+                                     msg=msg)
+                    self.assertEqual(getattr(m, trait_name),
+                                     m.PYTHONIC_VALUE_DEFAULT[trait_name],
+                                     msg=msg)
                     self.assertEqual(m.get_get_count(trait_name), 1, msg=msg)
 
     def test_get_default(self):
@@ -296,20 +304,21 @@ class TestDecoratedProperty(unittest.TestCase, TestProperty):
     TestDevice = MockDecoratedProperty
 
 
-
 class TestKeyedProperty(unittest.TestCase, TestProperty):
     TestDevice = MockDecoratedProperty
 
 
 class TestReturner(unittest.TestCase):
-    def test_returner_type(self):           
+
+    def test_returner_type(self):
         with MockReturner() as m:
-            self.assertEqual(m.fetch_float0(1,2,3), 6.)
-            self.assertEqual(m.fetch_float1(1,2,3), 6.)
+            self.assertEqual(m.fetch_float0(1, 2, 3), 6.)
+            self.assertEqual(m.fetch_float1(1, 2, 3), 6.)
+
 
 if __name__ == '__main__':
     lb.show_messages('debug')
     unittest.main()
-    
+
     # with MockDecoratedProperty() as m:
     #     pass

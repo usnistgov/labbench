@@ -23,7 +23,6 @@
 # copyright and licensing statements of any third-party software that are
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
-
 """
 This implementation is deeply intertwined obscure details of the python object
 model. Consider starting with a close read of the documentation and exploring
@@ -42,7 +41,6 @@ from . import property as property_
 from . import value
 
 from ._traits import HasTraits, Trait, Undefined
-
 
 __all__ = ['Device', 'list_devices', 'property', 'value', 'datareturn']
 
@@ -82,8 +80,8 @@ def list_devices(depth=1):
         f = f.f_back
     try:
         ret = {
-            k:v for k,v in list(f.frame.f_locals.items())
-            if isinstance(v, Device)
+            k: v
+            for k, v in list(f.frame.f_locals.items()) if isinstance(v, Device)
         }
 
         # If the context is a function, look in its first argument,
@@ -103,7 +101,6 @@ class DisconnectedBackend(object):
     """ "Null Backend" implementation to raises an exception with discriptive
         messages on attempts to use a backend before a Device is connected.
     """
-
     def __init__(self, dev):
         """ dev may be a class or an object for error feedback
         """
@@ -122,7 +119,7 @@ class DisconnectedBackend(object):
     def __repr__(self):
         return 'DisconnectedBackend()'
 
-    def __copy__ (self, memo=None):
+    def __copy__(self, memo=None):
         return DisconnectedBackend(self.name)
 
     str = __repr__
@@ -156,10 +153,10 @@ class Device(HasTraits, util.Ownable):
     
     """
 
-
     resource = value.str(allow_none=True, help='device address or URI')
-    concurrency= value.bool(True, sets=False, help='True if the device supports threading')
-
+    concurrency = value.bool(
+        True, sets=False, help='True if the device supports threading'
+    )
     """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
         value on the Device. Therefore, getting or setting property trait traits
@@ -199,18 +196,18 @@ class Device(HasTraits, util.Ownable):
     def __init__(self, resource=Undefined, **values):
         """ Update default values with these arguments on instantiation.
         """
+
+        # validate presence of required arguments
+        inspect.signature(self.__init__).bind(resource, **values)
+
         if resource is not Undefined:
             values['resource'] = resource
 
         super().__init__()
 
         for name, init_value in values.items():
-            try:
-                if init_value != self._traits[name].default:
-                    setattr(self, name, init_value)
-            except KeyError:
-                invalid = set(values).difference(self._value_attrs)
-                raise KeyError(f"keyword(s) {invalid} do not refer to value traits of {self}")
+            if init_value != self._traits[name].default:
+                setattr(self, name, init_value)
 
         util.Ownable.__init__(self)
 
@@ -227,25 +224,24 @@ class Device(HasTraits, util.Ownable):
         super().__init_subclass__()
 
         for trait_name, new_default in value_defaults.items():
-            
+
             trait = getattr(cls, trait_name, None)
 
             if trait is None or trait.role != Trait.ROLE_VALUE:
                 parent_name = cls.__mro__[1].__qualname__
-                raise AttributeError(f"there is no value trait {parent_name}.{trait_name}, cannot update its default")
+                raise AttributeError(
+                    f"there is no value trait {parent_name}.{trait_name}, cannot update its default"
+                )
 
             cls._traits[trait_name] = trait.copy(default=new_default)
             setattr(cls, trait_name, cls._traits[trait_name])
 
-        if len(value_defaults)>0:
+        if len(value_defaults) > 0:
             super().__init_subclass__()
 
         # Generate a signature for documentation and code autocomplete
         params = [
-            inspect.Parameter(
-                'self',
-                kind=inspect.Parameter.POSITIONAL_ONLY
-            ),
+            inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY),
             inspect.Parameter(
                 'resource',
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -256,8 +252,7 @@ class Device(HasTraits, util.Ownable):
 
         settable_values = {
             name: cls._traits[name]
-            for name in cls._value_attrs
-            if cls._traits[name].sets
+            for name in cls._value_attrs if cls._traits[name].sets
         }
 
         # generate and apply the sequence of call signature parameters
@@ -267,9 +262,7 @@ class Device(HasTraits, util.Ownable):
                 kind=inspect.Parameter.KEYWORD_ONLY,
                 default=trait.default,
                 annotation=trait.type
-            )
-            for name, trait in settable_values.items()
-            if name != 'resource'
+            ) for name, trait in settable_values.items() if name != 'resource'
         ]
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
@@ -277,17 +270,18 @@ class Device(HasTraits, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = ''.join((
-            f"    {t.doc()}\n"
-            for t in settable_values.values()
-        ))        
+        value_docs = ''.join(
+            (f"    {t.doc()}\n" for t in settable_values.values())
+        )
         cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
 
         # update the class docstring
-        property_docs = ''.join((
+        property_docs = ''.join(
+            (
                 f"    {getattr(cls, name).doc()}\n"
                 for name in cls._property_attrs
-        ))
+            )
+        )
 
         if cls.__doc__ is None:
             # use the static doc written for the parent
@@ -295,7 +289,7 @@ class Device(HasTraits, util.Ownable):
         else:
             cls.__baredoc__ = cls.__doc__
 
-        cls.__doc__ = str(cls.__baredoc__) # <- copy so we can += 
+        cls.__doc__ = str(cls.__baredoc__)  # <- copy so we can +=
         cls.__doc__ += '\nValue Attributes:\n' + value_docs
         cls.__doc__ += '\nProperty Attributes:\n' + property_docs
 
@@ -361,7 +355,6 @@ class Device(HasTraits, util.Ownable):
 
         self._logger.debug('closed')
 
-    
     @classmethod
     def __imports__(cls):
         pass
@@ -426,6 +419,4 @@ class Device(HasTraits, util.Ownable):
 #     self.__cm = util.sequentially(name=f'{repr(self)} connections',
 #                                   **contexts)
 
-
 Device.__init_subclass__()
-

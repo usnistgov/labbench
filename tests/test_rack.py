@@ -51,11 +51,12 @@ class LaggyInstrument(EmulatedVISADevice):
     # Connection and driver value traits
     delay = lb.value.float(0, min=0, help='connection time')
     fetch_time = lb.value.float(0, min=0, help='fetch time')
-    fail_disconnect = lb.value.bool(False, help='True to raise DivideByZero on disconnect')
+    fail_disconnect = lb.value.bool(
+        False, help='True to raise DivideByZero on disconnect')
 
     variable_setting = lb.value.int(0)
 
-    def open(self):        
+    def open(self):
         self.perf = {}
         t0 = time.perf_counter()
         lb.sleep(self.delay)
@@ -69,8 +70,8 @@ class LaggyInstrument(EmulatedVISADevice):
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
         self.perf['fetch'] = time.perf_counter() - t0
-        return pd.Series([1,2,3,4,5,6])
-    
+        return pd.Series([1, 2, 3, 4, 5, 6])
+
     def dict(self):
         return {self.resource: self.resource}
 
@@ -98,6 +99,9 @@ class Rack1(lb.Rack):
         time.sleep(.25)
 
 
+rack = Rack1(dev1=LaggyInstrument(resource='address'))
+
+
 class Rack2(lb.Rack):
     dev: lb.Device = LaggyInstrument()
 
@@ -108,15 +112,22 @@ class Rack2(lb.Rack):
     def acquire(self, *, param1):
         return 'rack 3 - acquire'
 
-    def fetch(self, *, param2:int=7):
+    def fetch(self, *, param2: int = 7):
         return self.dev.fetch()
 
     def open(self):
         time.sleep(.25)
 
+
+rack = Rack1()
+
+with rack:
+    # 
+    pass
+
 class Rack3(lb.Rack):
     # this is unset (no =), so it _must_ be passed as an argument to instantiate, i.e.,
-    # 
+    #
     # >>> Rack3(dev=MyDevice)
     dev: lb.Device
 
@@ -130,6 +141,7 @@ class Rack3(lb.Rack):
     def open(self):
         time.sleep(.25)
 
+
 class MyRack(lb.Rack):
     # config = lb.Configuration('test-config')
 
@@ -140,13 +152,20 @@ class MyRack(lb.Rack):
     # )
 
     db = lb.CSVLogger(
-        path=time.strftime(f"test db/test-rack %Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
+        path=time.strftime(
+            f"test db/test-rack %Y-%m-%d_%Hh%Mm%Ss"
+        ),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
-        text_relational_min=1024,  # Minimum text string length that triggers relational storage
-        force_relational=['host_log'],  # Data in these columns will always be relational
-        dirname_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
-        nonscalar_file_type='csv',  # Default format of numerical data, when possible
-        metadata_dirname='metadata',  # metadata will be stored in this subdirectory
+        text_relational_min=
+        1024,  # Minimum text string length that triggers relational storage
+        force_relational=['host_log'
+                         ],  # Data in these columns will always be relational
+        dirname_fmt=
+        '{id} {host_time}',  # Format string that generates relational data (keyed on data column)
+        nonscalar_file_type=
+        'csv',  # Default format of numerical data, when possible
+        metadata_dirname=
+        'metadata',  # metadata will be stored in this subdirectory
         tar=False  # `True` to embed relational data folders within `data.tar`
     )
 
@@ -168,6 +187,16 @@ class MyRack(lb.Rack):
         finish=db.new_row,
     )
 
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
+with rack:
+    pass
+
+
 import inspect
 
 if __name__ == '__main__':
@@ -176,7 +205,7 @@ if __name__ == '__main__':
 
     # # Testbed = lb.Rack.take_module('module_as_testbed')
     Testbed = MyRack
-    
+
     setup = lb._rack.Setup(Testbed)
     setup.make('test-config3')
 
@@ -216,7 +245,6 @@ if __name__ == '__main__':
 
     # df = lb.read(testbed.db.path/'master.db')
     # df.to_csv(testbed.db.path/'master.csv')
-
 
     # config_root = Path('test-config')
     # config_root.mkdir(parents=True, exist_ok=True)

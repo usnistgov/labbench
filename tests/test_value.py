@@ -35,7 +35,6 @@ import labbench as lb
 
 lb._force_full_traceback(True)
 
-
 remap = {True: 'ON', False: 'OFF'}
 flag_start = False
 
@@ -45,13 +44,13 @@ class TrialDevice(lb.Device):
 
     float0 = lb.value.float()
     float1 = lb.value.float(min=0, max=10, help='descriptive', label='items')
-    float2 = lb.value.float(only=(0,3,96))
+    float2 = lb.value.float(only=(0, 3, 96))
     float3 = lb.value.float(step=3)
-    
+
     int0 = lb.value.int()
     int1 = lb.value.int(min=0, max=10, help='descriptive', label='items')
-    int2 = lb.value.int(only=(0,3,96))
- 
+    int2 = lb.value.int(only=(0, 3, 96))
+
     str0 = lb.value.str()
     str1 = lb.value.str(default='hello')
     str2 = lb.value.str('moose', only=('moose', 'squirrel'))
@@ -61,23 +60,27 @@ class TrialDevice(lb.Device):
     # series0 = lb.value.Series(pd.Series([0,1,2,3,4,5]))
     # array0 = lb.value.ndarray(np.array([0,1,2,3,4,5]))
 
+
 class UpdateTrialDevice(TrialDevice, float0=7):
     float1 = 63.
     pass
 
+
 class TestValueTraits(unittest.TestCase):
+
     def test_default_types(self):
         with TrialDevice() as m:
             for name in m._value_attrs:
                 trait = m._traits[name]
-                value = getattr(m,name)
+                value = getattr(m, name)
 
                 if trait.allow_none:
                     allow_types = (type(None), trait.type)
                 else:
                     allow_types = trait.type
 
-                self.assertTrue(issubclass(type(value), allow_types), msg=f'trait {name}')
+                self.assertTrue(issubclass(type(value), allow_types),
+                                msg=f'trait {name}')
 
     def test_scalar_defaults(self):
         with TrialDevice() as m:
@@ -87,16 +90,16 @@ class TestValueTraits(unittest.TestCase):
                 if isinstance(trait, lb._traits.NonScalar):
                     continue
 
-                value = getattr(m,name)
+                value = getattr(m, name)
 
                 self.assertEqual(getattr(m, name),
-                                trait.default, msg=f'defaults: {name}')
-
+                                 trait.default,
+                                 msg=f'defaults: {name}')
 
     def assertArrayEqual(self, a1, a2):
         self.assertEqual(a1.dtype, a2.dtype)
         self.assertEqual(a1.shape, a2.shape)
-        self.assertTrue(np.allclose(a1,a2))
+        self.assertTrue(np.allclose(a1, a2))
 
     def test_nonscalar_defaults(self):
         with TrialDevice() as m:
@@ -107,7 +110,8 @@ class TestValueTraits(unittest.TestCase):
 
                 if trait.type in (pd.DataFrame, pd.Series):
                     self.assertArrayEqual(v.values, trait.default.values)
-                    self.assertArrayEqual(v.index.values, trait.default.index.values)
+                    self.assertArrayEqual(v.index.values,
+                                          trait.default.index.values)
                     self.assertEqual(v.index.name, trait.default.index.name)
                 elif trait.type is np.ndarray:
                     self.assertArrayEqual(v, trait.default)
@@ -116,38 +120,37 @@ class TestValueTraits(unittest.TestCase):
         value = 3
         for i in range(4):
             with TrialDevice(**{f'float{i}': value}) as m:
-                self.assertEqual(getattr(m, f'float{i}'), value,
+                self.assertEqual(getattr(m, f'float{i}'),
+                                 value,
                                  msg=f'float{i}')
-                
+
         value = 3
         for i in range(2):
             with TrialDevice(**{f'int{i}': value}) as m:
-                self.assertEqual(getattr(m, f'int{i}'), value,
-                                 msg=f'int{i}')                
+                self.assertEqual(getattr(m, f'int{i}'), value, msg=f'int{i}')
 
         value = 'moose'
         for i in range(4):
             with TrialDevice(**{f'str{i}': value}) as m:
-                self.assertEqual(getattr(m, f'str{i}'), value,
-                                 msg=f'str{i}')
+                self.assertEqual(getattr(m, f'str{i}'), value, msg=f'str{i}')
 
     def test_casting(self):
         value = '3'
         expected = 3
         for i in range(4):
             with TrialDevice(**{f'float{i}': value}) as m:
-                self.assertEqual(getattr(m, f'float{i}'), expected,
+                self.assertEqual(getattr(m, f'float{i}'),
+                                 expected,
                                  msg=f'float{i}')
 
         value = 437
         expected = '437'
         for i in range(2):
             with TrialDevice(**{f'str{i}': value}) as m:
-                self.assertEqual(getattr(m, f'str{i}'), expected,
-                                 msg=f'str{i}')
+                self.assertEqual(getattr(m, f'str{i}'), expected, msg=f'str{i}')
 
     def test_param_case(self):
-        with self.assertRaises(ValueError):           
+        with self.assertRaises(ValueError):
             with TrialDevice() as m:
                 m.str2 = 'MOOSE'
 
@@ -192,17 +195,18 @@ class TestValueTraits(unittest.TestCase):
             m.float3 = -2
             self.assertEqual(m.float3, -3.)
             m.float3 = -1
-            self.assertEqual(m.float3, 0) 
+            self.assertEqual(m.float3, 0)
 
     def test_init_docstring(self):
         self.assertIn('descriptive', TrialDevice.__init__.__doc__)
         with TrialDevice() as m:
             self.assertIn('descriptive', m.__init__.__doc__)
-            
+
     def test_subclassing(self):
         with UpdateTrialDevice() as m:
             self.assertEqual(m.float0, 7.0)
         self.assertEqual(UpdateTrialDevice.float1, 63.)
+
 
 if __name__ == '__main__':
     lb.show_messages('debug')

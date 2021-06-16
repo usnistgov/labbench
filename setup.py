@@ -89,7 +89,7 @@ if __name__ == '__main__':
             'pyvisa(>=1.8)',
             'sqlalchemy',
             'pyarrow',
-            'pyyaml',
+            'ruamel_yaml',
             'validators'
         ] + (['pythonnet'] if is_windows else []),
         scripts=[

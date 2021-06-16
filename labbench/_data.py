@@ -38,7 +38,6 @@ import copy
 import inspect
 import io
 import json
-import logging
 from numbers import Number
 import numpy as np
 import os
@@ -47,9 +46,7 @@ from pathlib import Path
 import pickle
 import shutil
 import tarfile
-import traceback
 import warnings
-import yaml
 
 EMPTY = inspect._empty
 

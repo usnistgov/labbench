@@ -935,9 +935,9 @@ class LookupCorrectionMixIn(Trait):
 
         by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
         if by_uncal is None:
-            raise AttributeError(
-                f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or load a correction lookup "
-                f"table first to calibrate {self.__repr__(owner_inst=owner)}"
+            raise KeyError(
+                f"load a correction table to use the corrected '{self.name}' {self.role}, "
+                f"or use the uncorrected '{self._other.name}' {self._other.role}"
             )
 
         uncal = self._other.__get__(owner, owner_cls)
@@ -951,9 +951,9 @@ class LookupCorrectionMixIn(Trait):
     def __set__(self, owner, cal):
         by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
         if by_uncal is None:
-            raise AttributeError(
-                f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or load a correction lookup "
-                f"table first to calibrate {self.__repr__(owner_inst=owner)}"
+            raise KeyError(
+                f"load a correction table to use the corrected '{self.name}' {self.role}, "
+                f"or use the uncorrected '{self._other.name}' {self._other.role}"
             )
 
         # start with type conversion and validation on the requested calibrated value

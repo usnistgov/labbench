@@ -107,8 +107,7 @@ if __name__ == '__main__':
             ],
 
             maintenance=[
-                # these packages are needed for build and maintenance,
-                # but not to import or use labbench
+                # these packages are only needed for dist/maintenance/CI,
                 'ast_decompile',
                 'mypy',
                 'sphinx(>=1.6)',

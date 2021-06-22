@@ -60,8 +60,12 @@ def init(import_str, config_dir, force=False, with_defaults=False):
 @click.argument('csv_path', type=click.Path(exists=True))#, help='path to the config directory')
 @click.option('--with-defaults', is_flag=True, help='include sequence parameters that have defaults')
 def rewrite(csv_path, sequence_name, with_defaults=False):
-    cls = lb.load_rack(csv_path.parent, apply=True)
-    lb._serialize.to_sequence_table(cls, csv_path.stem, csv_path.parent, with_defaults=with_defaults)
+
+    # pull in the rack
+    rack = lb.load_rack(csv_path.parent, apply=True)
+
+    # make_sequence_stub takes care of the introspection on the rack
+    lb._serialize.make_sequence_stub(rack, csv_path.stem, csv_path.parent, with_defaults=with_defaults)
 
 @cli.command(
     name='run',

@@ -117,7 +117,7 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict):
     if len(defaults_in) > 0:
         util.logger.debug(f"applied defaults {defaults_in}")
 
-def _make_sequence_stub(
+def make_sequence_stub(
                     rack: Rack,
                     name: str,
                     path: Path,
@@ -256,7 +256,7 @@ def dump_rack(rack: Rack, dir_path: Path, exist_ok: bool = False, with_defaults:
 
     for name, attr in cls.__dict__.items():
         if isinstance(attr, Sequence):
-            _make_sequence_stub(
+            make_sequence_stub(
                 rack, name, dir_path, with_defaults=with_defaults
             )
 

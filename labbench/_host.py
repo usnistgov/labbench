@@ -38,19 +38,19 @@ from . import datareturn
 from . import property as property_
 from . import util, value
 
-__all__ = ['Host', 'Email']
+__all__ = ["Host", "Email"]
 
 
 class LogStreamBuffer:
     def __init__(self):
-        self._value = ''
+        self._value = ""
 
     def write(self, msg):
         self._value = self._value + msg
         return len(msg)
 
     def read(self):
-        ret, self._value = self._value, ''
+        ret, self._value = self._value, ""
         return ret
 
     def flush(self):
@@ -58,9 +58,9 @@ class LogStreamBuffer:
 
 
 class LogStderr(core.Device):
-    """ This "Device" logs a copy of messages on sys.stderr while connected.
-    """
-    log = ''
+    """This "Device" logs a copy of messages on sys.stderr while connected."""
+
+    log = ""
 
     def open(self):
         self._stderr, self._buf, sys.stderr = sys.stderr, io.StringIO(), self
@@ -84,37 +84,32 @@ class LogStderr(core.Device):
 
 
 class Email(core.Device):
-    """ Sends a notification message on disconnection. If an exception
-        was thrown, this is a failure subject line with traceback information
-        in the main body. Otherwise, the message is a success message in the
-        subject line. Stderr is also sent.
+    """Sends a notification message on disconnection. If an exception
+    was thrown, this is a failure subject line with traceback information
+    in the main body. Otherwise, the message is a success message in the
+    subject line. Stderr is also sent.
     """
 
-    resource = value.NetworkAddress(
-        default='smtp.nist.gov', help='smtp server to use'
-    )
+    resource = value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use")
 
-    port = value.int(default=25, min=1, help='TCP/IP port')
+    port = value.int(default=25, min=1, help="TCP/IP port")
 
-    sender = value.str(
-        default='myemail@nist.gov', help='email address of the sender'
-    )
+    sender = value.str(default="myemail@nist.gov", help="email address of the sender")
 
     recipients = value.list(
-        default=['myemail@nist.gov'],
-        help='list of email addresses of recipients'
+        default=["myemail@nist.gov"], help="list of email addresses of recipients"
     )
 
     success_message = value.str(
-        default='Test finished normally',
+        default="Test finished normally",
         allow_none=True,
-        help='subject line for test success emails (None to suppress the emails)'
+        help="subject line for test success emails (None to suppress the emails)",
     )
 
     failure_message = value.str(
-        default='Exception ended test early',
+        default="Exception ended test early",
         allow_none=True,
-        help='subject line for test failure emails (None to suppress the emails)'
+        help="subject line for test failure emails (None to suppress the emails)",
     )
 
     def _send(self, subject, body):
@@ -123,10 +118,10 @@ class Email(core.Device):
         import smtplib
         from email.mime.text import MIMEText
 
-        msg = MIMEText(body, 'html')
-        msg['From'] = self.sender
-        msg['Subject'] = subject
-        msg['To'] = ", ".join(self.recipients)
+        msg = MIMEText(body, "html")
+        msg["From"] = self.sender
+        msg["Subject"] = subject
+        msg["To"] = ", ".join(self.recipients)
         self.server = smtplib.SMTP(self.resource, self.port)
 
         try:
@@ -145,8 +140,7 @@ class Email(core.Device):
             self.send_summary()
 
     def send_summary(self):
-        """ Send the email containing the final property trait of the test.
-        """
+        """Send the email containing the final property trait of the test."""
         exc = sys.exc_info()
 
         if exc[0] is KeyboardInterrupt:
@@ -158,24 +152,28 @@ class Email(core.Device):
             if self.failure_message is None:
                 return
             subject = self.failure_message
-            message = '<b>Exception</b>\n'\
-                      + '<font face="Courier New, Courier, monospace">'\
-                      + format_exc()\
-                      + '</font>'
+            message = (
+                "<b>Exception</b>\n"
+                + '<font face="Courier New, Courier, monospace">'
+                + format_exc()
+                + "</font>"
+            )
         else:
             if self.success_message is None:
                 return
             subject = self.success_message
-            message = ''
+            message = ""
 
         if len(self.backend.log) > 0:
-            message = message \
-                + '\n\n<b>Standard error</b>\n'\
-                + '<font face="Courier New, Courier, monospace">'\
-                + self.backend.log\
-                + '</font>'
+            message = (
+                message
+                + "\n\n<b>Standard error</b>\n"
+                + '<font face="Courier New, Courier, monospace">'
+                + self.backend.log
+                + "</font>"
+            )
 
-        self._send(subject, message.replace('\n', '<br>'))
+        self._send(subject, message.replace("\n", "<br>"))
 
         return subject, message
 
@@ -205,12 +203,11 @@ class JSONFormatter(logging.Formatter):
         raise TypeError(f"Type {type(obj).__qualname__} not serializable")
 
     def format(self, rec):
-        """ Return a YAML string for each logger record
-        """
+        """Return a YAML string for each logger record"""
 
-        if hasattr(rec, 'owned_name'):
-            if '.' in rec.owned_name.log_prefix.owned_name:
-                log_prefix = rec.owned_name.replace('.', ',')
+        if hasattr(rec, "owned_name"):
+            if "." in rec.owned_name.log_prefix.owned_name:
+                log_prefix = rec.owned_name.replace(".", ",")
             else:
                 log_prefix = None
         else:
@@ -221,28 +218,27 @@ class JSONFormatter(logging.Formatter):
             time=datetime.datetime.fromtimestamp(rec.created),
             elapsed_seconds=rec.created - self.t0,
             level=rec.levelname,
-            object=getattr(rec, 'object', None),
+            object=getattr(rec, "object", None),
             object_log_prefix=log_prefix,
             source_file=rec.pathname,
             source_line=rec.lineno,
             process=rec.process,
-            thread=rec.threadName
+            thread=rec.threadName,
         )
 
-        if rec.threadName != 'MainThread':
-            msg['thread'] = rec.threadName
+        if rec.threadName != "MainThread":
+            msg["thread"] = rec.threadName
 
         etype, einst, exc_tb = sys.exc_info()
         if etype is not None:
             from traceback import format_exception_only, format_tb
-            msg['exception'] = format_exception_only(etype, einst)[0].rstrip()
-            msg['traceback'] = ''.join(format_tb(exc_tb)).splitlines()
+
+            msg["exception"] = format_exception_only(etype, einst)[0].rstrip()
+            msg["traceback"] = "".join(format_tb(exc_tb)).splitlines()
 
         self._last.append((rec, msg))
 
-        return json.dumps(
-            msg, indent=True, default=self.json_serialize_dates
-        ) + ','
+        return json.dumps(msg, indent=True, default=self.json_serialize_dates) + ","
 
 
 class Host(core.Device):
@@ -250,14 +246,13 @@ class Host(core.Device):
     git_commit_in = value.str(
         default=None,
         allow_none=True,
-        help='git commit on open() if run inside a git repo with this branch name'
+        help="git commit on open() if run inside a git repo with this branch name",
     )
 
-    time_format = '%Y-%m-%d %H:%M:%S'
+    time_format = "%Y-%m-%d %H:%M:%S"
 
     def open(self):
-        """ The host setup method tries to commit current changes to the tree
-        """
+        """The host setup method tries to commit current changes to the tree"""
         log_formatter = JSONFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
@@ -265,32 +260,32 @@ class Host(core.Device):
         sh.setLevel(logging.DEBUG)
 
         # Add to the labbench logger handler
-        logger = logging.getLogger('labbench')
+        logger = logging.getLogger("labbench")
         logger.setLevel(logging.DEBUG)
         logger.addHandler(sh)
 
         # git repository information
         try:
-            repo = git.Repo('.', search_parent_directories=True)
+            repo = git.Repo(".", search_parent_directories=True)
             self._logger.debug("running in git repository")
             if repo.active_branch == self.git_commit_in:
-                repo.index.commit('start of measurement')
+                repo.index.commit("start of measurement")
                 self._logger.debug("git commit finished")
         except git.NoSuchPathError:
             repo = None
             self._logger.info(f"not running in a git repository")
 
         self.backend = {
-            'logger': logger,
-            'log_stream': stream,
-            'log_handler': sh,
-            'log_formatter': log_formatter,
-            'repo': repo
+            "logger": logger,
+            "log_stream": stream,
+            "log_handler": sh,
+            "log_formatter": log_formatter,
+            "repo": repo,
         }
 
         # Preload the git repo parameters
         for name in self._traits:
-            if name.startswith('git'):
+            if name.startswith("git"):
                 getattr(self, name)
 
     @classmethod
@@ -301,110 +296,96 @@ class Host(core.Device):
 
     def close(self):
         try:
-            self.backend['logger'].removeHandler(self.backend['log_handler'])
+            self.backend["logger"].removeHandler(self.backend["log_handler"])
         except (AttributeError, TypeError):
             pass
         try:
-            self.backend['log_stream'].close()
+            self.backend["log_stream"].close()
         except (AttributeError, TypeError):
             pass
 
     def metadata(self):
-        """ Generate the metadata associated with the host and python distribution
-        """
+        """Generate the metadata associated with the host and python distribution"""
         ret = super().metadata()
-        ret['python_modules'] = self.__python_module_versions()
+        ret["python_modules"] = self.__python_module_versions()
         return ret
 
     def __python_module_versions(self):
-        """ Enumerate the versions of installed python modules
-        """
+        """Enumerate the versions of installed python modules"""
         import pandas as pd
 
         versions = dict(
-            [
-                str(d).lower().split(' ')
-                for d in pip.get_installed_distributions()
-            ]
+            [str(d).lower().split(" ") for d in pip.get_installed_distributions()]
         )
         running = dict(
             sorted(
-                [
-                    (k, versions[k.lower()])
-                    for k in sys.modules.keys() if k in versions
-                ]
+                [(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions]
             )
         )
         return pd.Series(running).sort_index()
 
     @property_.str()
     def time(self):
-        """ Get a timestamp of the current time
-        """
+        """Get a timestamp of the current time"""
         now = datetime.datetime.now()
-        return f'{now.strftime(self.time_format)}.{now.microsecond}'
+        return f"{now.strftime(self.time_format)}.{now.microsecond}"
 
     @property_.list()
     def log(self):
-        """ Get the current host log contents.
-        """
-        self.backend['log_handler'].flush()
-        txt = self.backend['log_stream'].read()
+        """Get the current host log contents."""
+        self.backend["log_handler"].flush()
+        txt = self.backend["log_stream"].read()
         if len(txt) > 1:
             self._txt = txt
-            self._serialized = '[' + txt[:-2] + ']'
+            self._serialized = "[" + txt[:-2] + "]"
             self._ret = json.loads(
                 self._serialized
-            )  #self.backend['log_stream'].read().replace('\n', '\r\n')
+            )  # self.backend['log_stream'].read().replace('\n', '\r\n')
             return self._ret
         else:
             return {}
 
     @property_.str(cache=True)
     def git_commit_id(self):
-        """ Try to determine the current commit hash of the current git repo
-        """
+        """Try to determine the current commit hash of the current git repo"""
         try:
-            commit = self.backend['repo'].commit()
+            commit = self.backend["repo"].commit()
             return commit.hexsha
         except git.NoSuchPathError:
-            return ''
+            return ""
 
     @property_.str(cache=True)
     def git_remote_url(self):
-        """ Try to identify the remote URL of the repository of the current git repo
-        """
+        """Try to identify the remote URL of the repository of the current git repo"""
         try:
-            return next(self.backend['repo'].remote().urls)
+            return next(self.backend["repo"].remote().urls)
         except BaseException:
-            return ''
+            return ""
 
     @property_.str(cache=True)
     def hostname(self):
-        """ Get the name of the current host
-        """
+        """Get the name of the current host"""
         return socket.gethostname()
 
     @property_.str(cache=True)
     def git_browse_url(self):
-        """ URL for browsing the current git repository
-        """
-        return f'{self.git_remote_url}/tree/{self.git_commit_id}'
+        """URL for browsing the current git repository"""
+        return f"{self.git_remote_url}/tree/{self.git_commit_id}"
 
     @property_.str(cache=True)
     def git_pending_changes(self):
-        if self.backend['repo'] is not None:
-            diffs = self.backend['repo'].index.diff(None)
+        if self.backend["repo"] is not None:
+            diffs = self.backend["repo"].index.diff(None)
             return str(tuple((diff.b_path for diff in diffs)))[1:-1]
         else:
-            return ''
+            return ""
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     #    core.show_messages('DEBUG')
     #
     #    with Host() as pc:
     #        print(pc.time)
 
-    with Email(recipients=['daniel.kuester@nist.gov']) as email:
+    with Email(recipients=["daniel.kuester@nist.gov"]) as email:
         pass

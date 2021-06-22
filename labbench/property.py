@@ -85,7 +85,5 @@ class NetworkAddress(_traits.NetworkAddress):
 
 # mutate these traits into the right role
 _traits.subclass_namespace_traits(
-    locals(),
-    role=_traits.Trait.ROLE_PROPERTY,
-    omit_trait_attrs=['default', 'func']
+    locals(), role=_traits.Trait.ROLE_PROPERTY, omit_trait_attrs=["default", "func"]
 )

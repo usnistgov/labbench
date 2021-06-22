@@ -26,10 +26,32 @@
 .. licenses.
 """
 
-from .util import concurrently, sequentially, Call, stopwatch, retry, until_timeout, show_messages, sleep, logger, timeout_iter, _force_full_traceback
+from .util import (
+    concurrently,
+    sequentially,
+    Call,
+    stopwatch,
+    retry,
+    until_timeout,
+    show_messages,
+    sleep,
+    logger,
+    timeout_iter,
+    _force_full_traceback,
+)
+
 _force_full_traceback(True)
 
-from ._backends import ShellBackend, DotNetDevice, LabviewSocketInterface, SerialDevice, SerialLoggingDevice, TelnetDevice, VISADevice, Win32ComDevice
+from ._backends import (
+    ShellBackend,
+    DotNetDevice,
+    LabviewSocketInterface,
+    SerialDevice,
+    SerialLoggingDevice,
+    TelnetDevice,
+    VISADevice,
+    Win32ComDevice,
+)
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._device import Device, list_devices
 from ._host import Email
@@ -45,6 +67,6 @@ from . import util
 
 # scrub __module__ for cleaner repr() and doc
 for _obj in dict(locals()).values():
-    if getattr(_obj, '__module__', '').startswith('labbench.'):
-        _obj.__module__ = 'labbench'
+    if getattr(_obj, "__module__", "").startswith("labbench."):
+        _obj.__module__ = "labbench"
 del _obj

@@ -42,12 +42,11 @@ from . import value
 
 from ._traits import HasTraits, Trait, Undefined
 
-__all__ = ['Device', 'list_devices', 'property', 'value', 'datareturn']
+__all__ = ["Device", "list_devices", "property", "value", "datareturn"]
 
 
 def trace_methods(cls, name, until_cls=None):
-    """ Look for a method called `name` in cls and all of its parent classes.
-    """
+    """Look for a method called `name` in cls and all of its parent classes."""
     methods = []
     last_method = None
 
@@ -66,12 +65,12 @@ def trace_methods(cls, name, until_cls=None):
 
 
 def list_devices(depth=1):
-    """ Look for Device instances, and their names, in the calling
-        code context (depth == 1) or its callers (if depth in (2,3,...)).
-        Checks locals() in that context first.
-        If no Device instances are found there, search the first
-        argument of the first function argument, in case this is
-        a method in a class.
+    """Look for Device instances, and their names, in the calling
+    code context (depth == 1) or its callers (if depth in (2,3,...)).
+    Checks locals() in that context first.
+    If no Device instances are found there, search the first
+    argument of the first function argument, in case this is
+    a method in a class.
     """
     from inspect import getouterframes, currentframe
 
@@ -79,10 +78,7 @@ def list_devices(depth=1):
     for i in range(depth):
         f = f.f_back
     try:
-        ret = {
-            k: v
-            for k, v in list(f.frame.f_locals.items()) if isinstance(v, Device)
-        }
+        ret = {k: v for k, v in list(f.frame.f_locals.items()) if isinstance(v, Device)}
 
         # If the context is a function, look in its first argument,
         # in case it is a method. Search its class instance.
@@ -99,17 +95,17 @@ def list_devices(depth=1):
 
 class DisconnectedBackend(object):
     """ "Null Backend" implementation to raises an exception with discriptive
-        messages on attempts to use a backend before a Device is connected.
+    messages on attempts to use a backend before a Device is connected.
     """
+
     def __init__(self, dev):
-        """ dev may be a class or an object for error feedback
-        """
+        """dev may be a class or an object for error feedback"""
         if isinstance(dev, str):
             self.name = dev
-        elif hasattr(dev, '_owned_name'):
+        elif hasattr(dev, "_owned_name"):
             self.name = dev._owned_name
         else:
-            self.name = f'{dev.__class__.__qualname__} instance'
+            self.name = f"{dev.__class__.__qualname__} instance"
 
     @util.hide_in_traceback
     def __getattr__(self, key):
@@ -117,7 +113,7 @@ class DisconnectedBackend(object):
         raise ConnectionError(msg)
 
     def __repr__(self):
-        return 'DisconnectedBackend()'
+        return "DisconnectedBackend()"
 
     def __copy__(self, memo=None):
         return DisconnectedBackend(self.name)
@@ -150,12 +146,12 @@ class Device(HasTraits, util.Ownable):
         (and others). If you are implementing a driver that uses one of
         these backends, inherit from the corresponding class above, not
         `Device`.
-    
+
     """
 
-    resource = value.str(allow_none=True, help='device address or URI')
+    resource = value.str(allow_none=True, help="device address or URI")
     concurrency = value.bool(
-        True, sets=False, help='True if the device supports threading'
+        True, sets=False, help="True if the device supports threading"
     )
     """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
@@ -178,14 +174,14 @@ class Device(HasTraits, util.Ownable):
     # Backend classes may optionally overload these, and do not need to call the parents
     # defined here
     def open(self):
-        """ Backend implementations overload this to open a backend
-            connection to the resource.
+        """Backend implementations overload this to open a backend
+        connection to the resource.
         """
         pass
 
     def close(self):
-        """ Backend implementations must overload this to disconnect an
-            existing connection to the resource encapsulated in the object.
+        """Backend implementations must overload this to disconnect an
+        existing connection to the resource encapsulated in the object.
         """
         self.backend = DisconnectedBackend(self)
         self.isopen
@@ -194,14 +190,13 @@ class Device(HasTraits, util.Ownable):
 
     @util.hide_in_traceback
     def __init__(self, resource=Undefined, **values):
-        """ Update default values with these arguments on instantiation.
-        """
+        """Update default values with these arguments on instantiation."""
 
         # validate presence of required arguments
         inspect.signature(self.__init__).bind(resource, **values)
 
         if resource is not Undefined:
-            values['resource'] = resource
+            values["resource"] = resource
 
         super().__init__()
 
@@ -215,8 +210,8 @@ class Device(HasTraits, util.Ownable):
 
         # Instantiate property trait now. It needed to wait until this point, after values are fully
         # instantiated, in case property trait implementation depends on values
-        setattr(self, 'open', self.__open_wrapper__)
-        setattr(self, 'close', self.__close_wrapper__)
+        setattr(self, "open", self.__open_wrapper__)
+        setattr(self, "close", self.__close_wrapper__)
 
     @classmethod
     @util.hide_in_traceback
@@ -241,18 +236,19 @@ class Device(HasTraits, util.Ownable):
 
         # Generate a signature for documentation and code autocomplete
         params = [
-            inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY),
+            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
             inspect.Parameter(
-                'resource',
+                "resource",
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
                 default=cls.resource.default,
-                annotation=cls.resource.type
-            )
+                annotation=cls.resource.type,
+            ),
         ]
 
         settable_values = {
             name: cls._traits[name]
-            for name in cls._value_attrs if cls._traits[name].sets
+            for name in cls._value_attrs
+            if cls._traits[name].sets
         }
 
         # generate and apply the sequence of call signature parameters
@@ -261,8 +257,10 @@ class Device(HasTraits, util.Ownable):
                 name,
                 kind=inspect.Parameter.KEYWORD_ONLY,
                 default=trait.default,
-                annotation=trait.type
-            ) for name, trait in settable_values.items() if name != 'resource'
+                annotation=trait.type,
+            )
+            for name, trait in settable_values.items()
+            if name != "resource"
         ]
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
@@ -270,17 +268,12 @@ class Device(HasTraits, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = ''.join(
-            (f"    {t.doc()}\n" for t in settable_values.values())
-        )
+        value_docs = "".join((f"    {t.doc()}\n" for t in settable_values.values()))
         cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
 
         # update the class docstring
-        property_docs = ''.join(
-            (
-                f"    {getattr(cls, name).doc()}\n"
-                for name in cls._property_attrs
-            )
+        property_docs = "".join(
+            (f"    {getattr(cls, name).doc()}\n" for name in cls._property_attrs)
         )
 
         if cls.__doc__ is None:
@@ -290,26 +283,26 @@ class Device(HasTraits, util.Ownable):
             cls.__baredoc__ = cls.__doc__
 
         cls.__doc__ = str(cls.__baredoc__)  # <- copy so we can +=
-        cls.__doc__ += '\nValue Attributes:\n' + value_docs
-        cls.__doc__ += '\nProperty Attributes:\n' + property_docs
+        cls.__doc__ += "\nValue Attributes:\n" + value_docs
+        cls.__doc__ += "\nProperty Attributes:\n" + property_docs
 
         cls.__imports__()
 
     @util.hide_in_traceback
     @wraps(open)
     def __open_wrapper__(self):
-        """ A wrapper for the connect() method. It steps through the
-            method resolution order of self.__class__ and invokes each open()
-            method, starting with labbench.Device and working down
+        """A wrapper for the connect() method. It steps through the
+        method resolution order of self.__class__ and invokes each open()
+        method, starting with labbench.Device and working down
         """
         if self.isopen:
-            self._logger.debug(f'attempt to open {self}, which is already open')
+            self._logger.debug(f"attempt to open {self}, which is already open")
             return
 
         self.backend = None
 
         try:
-            for opener in trace_methods(self.__class__, 'open', Device)[::-1]:
+            for opener in trace_methods(self.__class__, "open", Device)[::-1]:
                 opener(self)
         except:
             self.backend = DisconnectedBackend(self)
@@ -323,9 +316,9 @@ class Device(HasTraits, util.Ownable):
     @util.hide_in_traceback
     @wraps(close)
     def __close_wrapper__(self):
-        """ A wrapper for the close() method that runs
-            cleanup() before calling close(). close()
-            will still be called if there is an exception in cleanup().
+        """A wrapper for the close() method that runs
+        cleanup() before calling close(). close()
+        will still be called if there is an exception in cleanup().
         """
         # Try to run cleanup(), but make sure to run
         # close() even if it fails
@@ -333,7 +326,7 @@ class Device(HasTraits, util.Ownable):
         if not self.isopen:
             return
 
-        methods = trace_methods(self.__class__, 'close', Device)
+        methods = trace_methods(self.__class__, "close", Device)
 
         all_ex = []
         for closer in methods:
@@ -349,11 +342,11 @@ class Device(HasTraits, util.Ownable):
             if ex[0] is not util.ThreadEndedByMaster:
                 depth = len(tuple(traceback.walk_tb(ex[2])))
                 traceback.print_exception(*ex, limit=-(depth - 1))
-                sys.stderr.write('(Exception suppressed to continue close)\n\n')
+                sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
         self.isopen
 
-        self._logger.debug('closed')
+        self._logger.debug("closed")
 
     @classmethod
     def __imports__(cls):
@@ -367,7 +360,7 @@ class Device(HasTraits, util.Ownable):
         except BaseException as e:
             args = list(e.args)
             if len(args) > 0:
-                args[0] = f'{repr(self)}: {args[0]}'
+                args[0] = f"{repr(self)}: {args[0]}"
                 e.args = tuple(args)
             raise e
 
@@ -377,7 +370,7 @@ class Device(HasTraits, util.Ownable):
             self.close()
         except BaseException as e:
             args = list(e.args)
-            args[0] = '{}: {}'.format(repr(self), str(args[0]))
+            args[0] = "{}: {}".format(repr(self), str(args[0]))
             e.args = tuple(args)
             raise e
 
@@ -387,15 +380,15 @@ class Device(HasTraits, util.Ownable):
 
     def __repr__(self):
         name = self.__class__.__qualname__
-        if hasattr(self, 'resource'):
-            return f'{name}({repr(self.resource)})'
+        if hasattr(self, "resource"):
+            return f"{name}({repr(self.resource)})"
         else:
             # In case an exception has occurred before __init__
-            return f'{name}()'
+            return f"{name}()"
 
     @property_.bool()
     def isopen(self):
-        """ is the backend ready? """
+        """is the backend ready?"""
         try:
             return DisconnectedBackend not in self.backend.__class__.__mro__
         except:

@@ -44,34 +44,27 @@ import ipywidgets as widgets
 from ipywidgets import IntProgress, HTML, VBox
 from IPython.display import display
 
-skip_state_by_type = {
-    VISADevice: ['identity'],
-    Host: ['log'],
-    core.Device: ['isopen']
-}
+skip_state_by_type = {VISADevice: ["identity"], Host: ["log"], core.Device: ["isopen"]}
 
 
 def single(inst, inst_name):
-    """ Generate a formatted html table widget which updates with recently-observed properties
-        in a device.
+    """Generate a formatted html table widget which updates with recently-observed properties
+    in a device.
 
-        Arguments:
-            inst: the device to monitor, an instance of :class:`labbench.Device` (or one of its subclasses)
-            inst_name: the name to use to label the table
-        Returns:
-            `ipywidgdets.HBox` containing one `ipywidgets.HTML` widget
+    Arguments:
+        inst: the device to monitor, an instance of :class:`labbench.Device` (or one of its subclasses)
+        inst_name: the name to use to label the table
+    Returns:
+        `ipywidgdets.HBox` containing one `ipywidgets.HTML` widget
     """
 
-    _df = pd.DataFrame([], columns=['value'])
+    _df = pd.DataFrame([], columns=["value"])
 
     TABLE_STYLES = [
-        {
-            'selector': '.col_heading, .blank',
-            'props': [('display', 'none;')]
-        }
+        {"selector": ".col_heading, .blank", "props": [("display", "none;")]}
     ]
 
-    CAPTION_FMT = '<center><b>{}<b></center>'
+    CAPTION_FMT = "<center><b>{}<b></center>"
 
     skip_attrs = []
     for cls, skip in skip_state_by_type.items():
@@ -81,7 +74,7 @@ def single(inst, inst_name):
     html = widgets.HTML()
 
     def _on_change(change):
-        obj, name, value = change['owner'], change['name'], change['new']
+        obj, name, value = change["owner"], change["name"], change["new"]
 
         # if name == 'isopen':
         #     if value:
@@ -92,17 +85,20 @@ def single(inst, inst_name):
         if name in skip_attrs:
             return
 
-        if hasattr(obj, 'isopen') and name != 'isopen' and not obj.isopen:
+        if hasattr(obj, "isopen") and name != "isopen" and not obj.isopen:
             if name in _df.index:
                 _df.drop(name, inplace=True)
             return
         label = obj._traits[name].label
-        _df.loc[name] = str(value) + ' ' + str('' if label is None else label),
+        _df.loc[name] = (str(value) + " " + str("" if label is None else label),)
         _df.sort_index(inplace=True)
-        caption = CAPTION_FMT.format(inst_name).replace(',', '<br>')
-        html.value = _df.style.set_caption(caption).set_table_attributes(
-            'class="table"'
-        ).set_TABLE_STYLES(TABLE_STYLES).render()
+        caption = CAPTION_FMT.format(inst_name).replace(",", "<br>")
+        html.value = (
+            _df.style.set_caption(caption)
+            .set_table_attributes('class="table"')
+            .set_TABLE_STYLES(TABLE_STYLES)
+            .render()
+        )
 
     core.observe(inst, _on_change)
 
@@ -110,8 +106,8 @@ def single(inst, inst_name):
 
 
 class TextareaLogHandler(logging.StreamHandler):
-    log_format = '%(asctime)s.%(msecs).03d %(levelname)10s %(message)s'
-    time_format = '%Y-%m-%d %H:%M:%S'
+    log_format = "%(asctime)s.%(msecs).03d %(levelname)10s %(message)s"
+    time_format = "%Y-%m-%d %H:%M:%S"
     max_buffer = 10000
     min_delay = 0.1
 
@@ -119,7 +115,7 @@ class TextareaLogHandler(logging.StreamHandler):
         self.stream = StringIO()
         super(TextareaLogHandler, self).__init__(self.stream)
         self.widget = widgets.Textarea(
-            layout=widgets.Layout(width='100%', height='500px')
+            layout=widgets.Layout(width="100%", height="500px")
         )
         self.setFormatter(logging.Formatter(self.log_format, self.time_format))
         self.setLevel(level)
@@ -127,18 +123,17 @@ class TextareaLogHandler(logging.StreamHandler):
 
     def emit(self, record):
         ret = super(TextareaLogHandler, self).emit(record)
-        if self.last_time is None or time.time(
-        ) - self.last_time > self.min_delay:
+        if self.last_time is None or time.time() - self.last_time > self.min_delay:
             self.last_time = time.time()
             newvalue = self.widget.value + self.stream.getvalue()
             if len(newvalue) > self.max_buffer:
-                newvalue = newvalue[-self.max_buffer:]
+                newvalue = newvalue[-self.max_buffer :]
             self.widget.value = newvalue
         return ret
 
 
 class panel:
-    """ Show tables summarizing value traits and property traits in jupyter notebook.
+    """Show tables summarizing value traits and property traits in jupyter notebook.
     Only a single panel will be shown in a python kernel.
 
     Arguments:
@@ -156,18 +151,24 @@ class panel:
         cls.ncols = ncols
 
         if isinstance(source, Rack):
-            cls.devices = dict([(k,v) for k,v in source.get_managed_contexts().items()\
-                                if isinstance(v,core.Device)])
+            cls.devices = dict(
+                [
+                    (k, v)
+                    for k, v in source.get_managed_contexts().items()
+                    if isinstance(v, core.Device)
+                ]
+            )
         elif isinstance(source, numbers.Number):
             cls.source = source + 1
             cls.devices = core.list_devices(cls.source)
         else:
             raise ValueError(
-                f'source must be a Rack instance or int, but got {repr(source)}'
+                f"source must be a Rack instance or int, but got {repr(source)}"
             )
 
         children = [
-            single(cls.devices[k], k) for k in sorted(cls.devices.keys())
+            single(cls.devices[k], k)
+            for k in sorted(cls.devices.keys())
             if isinstance(cls.devices[k], core.Device)
         ]
 
@@ -184,7 +185,7 @@ class panel:
             # Sometimes stale source._contexts leads to AttributeError.
             # Delete them and try again
             except AttributeError:
-                if hasattr(source, '_contexts'):
+                if hasattr(source, "_contexts"):
                     return cls(source=cls.source, ncols=cls.ncols)
                 else:
                     raise
@@ -195,16 +196,16 @@ class panel:
 
         vbox = widgets.VBox(hboxes)
 
-        show_messages('error')
+        show_messages("error")
         log_handler = TextareaLogHandler()
-        logger = logging.getLogger('labbench')
+        logger = logging.getLogger("labbench")
 
         logger.addHandler(log_handler)
 
         cls.widget = widgets.Tab([vbox, log_handler.widget])
 
-        cls.widget.set_title(0, 'State')
-        cls.widget.set_title(1, 'Debug')
+        cls.widget.set_title(0, "State")
+        cls.widget.set_title(1, "Debug")
 
         display(cls.widget)
 

@@ -25,26 +25,9 @@
 # licenses.
 
 longdescription = \
-""" The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
+""" A set of python tools for writing laboratory automation scripts that are clear, concise, and explainable. Code that achieves these goals should read like a pseudocode expression of the experimental procedure. Objects for control over equipment (or other software) should only expose a clear set of automation capabilities to make laboratory automation more robust and less frustrating.
 
-A device driver implemented with labbench is a light wrapper around another instrument control library.
-This library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level to access instrument.
-The labbench driver gives a declarative-style abstraction provides several benefits:
-
-* automatic acquisition logging into an SQLite database,
-* automatically-generated jupyter notebook monitoring widgets,
-* interact with value traits and data on remote devices with native python data types (instead of strings),
-* python exceptions on invalid device property trait value traits (instead of silent failure),
-* drivers provide consistent style and API conventions for easy scripting (hello, tab completion!),
-* ensure devices disconnect properly when acquisition completes (even on exceptions), and
-* conversion of vector or tabular data to [pandas](pandas.pydata.org) Series or DataFrame objects for rapid exploration of data.
-
-Together, these features help to minimize the amount of "copy-and-paste" code that can make your lab automation scripts error-prone and difficult to maintain.
-The python code that results can be clear, concise, reusable and maintainable, and
-provide consistent formatting for stored data.
-The result helps researchers to meet NIST's
-[open data](https://www.nist.gov/open) obligations, even for complicated, large,
-and heterogeneous datasets.
+The labbench module provides tools that support toward this goal through an object protocol and support functions. These separate repetitive and error-prone boilerplate code, Use of these capabilities among multiple experimental runs also helps to produced data sets with consistent structure.
 """
 
 if __name__ == '__main__':
@@ -93,7 +76,7 @@ if __name__ == '__main__':
             'validators'
         ] + (['pythonnet'] if is_windows else []),
         scripts=[
-            # CLI tools installed into the python scripts directory, likely to 
+            # CLI tools installed into the python scripts directory, likely to
             # be in PATH
             'scripts/labbench-rack-script.py',
             'scripts/labbench-rack.bat' if is_windows else 'scripts/labbench-rack',
@@ -112,7 +95,7 @@ if __name__ == '__main__':
                 'mypy',
                 'sphinx(>=1.6)',
                 'recommonmark'
-            ], 
+            ],
         ),
         long_description=longdescription,
         long_description_content_type="text/markdown",

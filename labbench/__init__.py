@@ -26,15 +26,47 @@
 .. licenses.
 """
 
-from .core import *
-from .data import *
-from .host import *
-from .notebooks import *
-from .version import __version__
-from .util import *
-from .backends import *
-from .testbed import *
+from .util import (
+    concurrently,
+    sequentially,
+    Call,
+    stopwatch,
+    retry,
+    until_timeout,
+    show_messages,
+    sleep,
+    logger,
+    timeout_iter,
+    _force_full_traceback,
+)
 
-show_messages('info')
+_force_full_traceback(True)
 
-name = 'labbench'
+from ._backends import (
+    ShellBackend,
+    DotNetDevice,
+    LabviewSocketInterface,
+    SerialDevice,
+    SerialLoggingDevice,
+    TelnetDevice,
+    VISADevice,
+    Win32ComDevice,
+)
+from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
+from ._device import Device, list_devices
+from ._host import Email
+from ._rack import Rack, Sequence, import_as_rack
+from ._traits import observe, unobserve, Undefined
+from ._serialize import load_rack, dump_rack
+from ._version import __version__
+
+from . import value
+from . import property
+from . import datareturn
+from . import util
+
+# scrub __module__ for cleaner repr() and doc
+for _obj in dict(locals()).values():
+    if getattr(_obj, "__module__", "").startswith("labbench."):
+        _obj.__module__ = "labbench"
+del _obj

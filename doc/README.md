@@ -45,7 +45,7 @@ labbench Driver subclasses standardize an object protocol for backend wrappers t
 
 ## Backends
 The following types of backend classes are implemented to streamline development of new instrumentation drivers:
-* CommandLineWrapper (standard input/output wrapper for command line programs)
+* ShellBackend (standard input/output wrapper for command line programs)
 * DotNet (pythonnet backend for dotnet libraries)
 * LabViewSocketInterface (for controlling LabView VIs via a simple networking socket)
 * SerialDevice (pyserial backend)

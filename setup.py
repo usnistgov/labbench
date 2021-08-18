@@ -24,19 +24,17 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from __future__ import print_function
-
 longdescription = \
-''' The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
+""" The `labbench` module provides tools for instrument automation and data management in scripted lab experiments.
 
 A device driver implemented with labbench is a light wrapper around another instrument control library.
-This means another library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level routines. The labbench
-abstraction provides several benefits:
+This library (like pyvisa, pyserial, libtelnet, or even a C or .NET DLL) provides low-level to access instrument.
+The labbench driver gives a declarative-style abstraction provides several benefits:
 
 * automatic acquisition logging into an SQLite database,
 * automatically-generated jupyter notebook monitoring widgets,
-* interact with settings and data on remote devices with native python data types (instead of strings),
-* python exceptions on invalid device state settings (instead of silent failure),
+* interact with value traits and data on remote devices with native python data types (instead of strings),
+* python exceptions on invalid device property trait value traits (instead of silent failure),
 * drivers provide consistent style and API conventions for easy scripting (hello, tab completion!),
 * ensure devices disconnect properly when acquisition completes (even on exceptions), and
 * conversion of vector or tabular data to [pandas](pandas.pydata.org) Series or DataFrame objects for rapid exploration of data.
@@ -47,44 +45,75 @@ provide consistent formatting for stored data.
 The result helps researchers to meet NIST's
 [open data](https://www.nist.gov/open) obligations, even for complicated, large,
 and heterogeneous datasets.
-'''
+"""
 
 if __name__ == '__main__':
-    from distutils.core import setup
+    from distutils.core import setup, Extension
+    import platform
     import setuptools
     import sys
+    from glob import glob
     sys.path.insert(0, './labbench')
-    from version import __version__
+    from _version import __version__
 
-    py_version_req = (3, 6)
+    is_windows = 'windows' in platform.system().lower()
+
+    py_version_req = (3, 7)
     if sys.version_info < py_version_req:
         raise ValueError(
-            f"python version is {sys.version} but install requires >={'.'.join(py_version_req)}")
+            f"python version is {sys.version} but install requires >={'.'.join([str(v) for v in py_version_req])}")
 
-    setup(name='labbench',
-          version=__version__,
-          description='scripting tools for streamlined laboratory automation',
-          author='Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma',
-          author_email='daniel.kuester@nist.gov',
-          url='https://github.com/usnistgov/labbench',
-          packages=setuptools.find_packages(),
-          license='NIST',
-          install_requires=['pandas(>=0.20)',
-                            'pyserial(>=3.0)',
-                            'pyvisa(>=1.8)',
-                            'coloredlogs(>=7.0)',
-                            'future',
-                            'numpy(>=1.0)',
-                            'scipy(>=0.9)',
-                            'sortedcontainers(>=1.4)',
-                            'psutil(>=5.0)',
-                            'sqlalchemy',
-                            'GitPython(>=2.0)',
-                            'pyarrow',
-                            'traitlets(>=4)'
-                            ],
-          extras_require={'html': ['sphinx(>=1.6)','recommonmark'],
-                          'notebook': ['notebook', 'ipywidgets']},
-          long_description=longdescription,
-          long_description_content_type="text/markdown",                          
-          )
+    setup(
+        name='labbench',
+        version=__version__,
+        description='scripting tools for streamlined laboratory automation',
+        author='Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma',
+        author_email='daniel.kuester@nist.gov',
+        url='https://github.com/usnistgov/labbench',
+        packages=setuptools.find_packages(),
+        package_data=dict(
+            # these type stubs provide clean call signatures for IDEs
+            labbench=['*.pyi','py.typed'],
+        ),
+        license='NIST',
+        install_requires=[
+            # TODO: tighten these requirements a little - perhaps
+            # specify ==major version instead of >=
+            'coloredlogs(>=7.0)',
+            "feather-format(>=0.4.0)",
+            'GitPython(>=2.0)',
+            'numpy(>=1.0)',
+            'pandas(>=1.00)',
+            'psutil(>=5.0)',
+            'pyserial(>=3.0)',
+            'pyvisa(>=1.8)',
+            'sqlalchemy',
+            'pyarrow',
+            'ruamel_yaml',
+            'validators'
+        ] + (['pythonnet'] if is_windows else []),
+        scripts=[
+            # CLI tools installed into the python scripts directory, likely to 
+            # be in PATH
+            'scripts/labbench-rack-script.py',
+            'scripts/labbench-rack.bat' if is_windows else 'scripts/labbench-rack',
+        ],
+        extras_require=dict(
+            notebook=[
+                # optional (for now) to reduce dependencies
+                # on embedded platforms
+                'notebook',
+                'ipywidgets'
+            ],
+
+            maintenance=[
+                # these packages are only needed for dist/maintenance/CI,
+                'ast_decompile',
+                'mypy',
+                'sphinx(>=1.6)',
+                'recommonmark'
+            ], 
+        ),
+        long_description=longdescription,
+        long_description_content_type="text/markdown",
+    )

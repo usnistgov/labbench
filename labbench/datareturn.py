@@ -24,36 +24,66 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import unittest
-import importlib
-import sys
-if '..' not in sys.path:
-    sys.path.insert(0, '..')
-import labbench as lb
-lb = importlib.reload(lb)
-
-int_start = 3
-int_stop = 10
+from . import _traits
 
 
-class Child(lb.Device):
-    param = lb.property.int(min=0, max=10)
-
-    def open(self):
-        print('connect child')
-
-    def close(self):
-        print('disconnect child')
+class bool(_traits.Bool):
+    pass
 
 
-class Mock(lb.Device):
-    """ Helpful driver wrapper
-    """
-
-    child0 = Child('addr0')
-    child1 = Child('addr1')
+class float(_traits.Float):
+    pass
 
 
-if __name__ == '__main__':
-    with Mock() as m:
-        pass
+class int(_traits.Int):
+    pass
+
+
+class complex(_traits.Complex):
+    pass
+
+
+class str(_traits.Unicode):
+    pass
+
+
+class bytes(_traits.Bytes):
+    pass
+
+
+class list(_traits.List):
+    pass
+
+
+class tuple(_traits.Tuple):
+    pass
+
+
+class dict(_traits.Dict):
+    pass
+
+
+class Path(_traits.Path):
+    pass
+
+
+class DataFrame(_traits.PandasDataFrame):
+    pass
+
+
+class Series(_traits.PandasSeries):
+    pass
+
+
+class ndarray(_traits.NumpyArray):
+    pass
+
+
+class NetworkAddress(_traits.NetworkAddress):
+    pass
+
+
+# mutate these traits into the right role
+_traits.subclass_namespace_traits(
+    locals(), role=_traits.Trait.ROLE_DATARETURN, omit_trait_attrs=["key", "default"]
+)

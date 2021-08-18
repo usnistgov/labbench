@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
-## [Unreleased]
-**API incompatible with labbench<=0.20** 
+## [0.21 - 2021-08-18]
+**API incompatible with labbench<=0.20 after major refactor**
 
 ### Added
 - Unit tests for lb.concurrently and lb.sequentially in test_concurrently.py
@@ -32,11 +32,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Replaced Device methods `connect` and `disconnect` with `open` and `close` to more closely match python convention
 - Support for updating default values of settings in subclasses as annotations
 - Reduced import time by waiting to import heavier packages pyvisa and pandas
-- lb.notebook is no longer pulled in by default; importing it now injects wrappers around builtins.range and np.linspace 
+- lb.notebook is no longer pulled in by default; importing it now injects wrappers around builtins.range and np.linspace
 - `host_log.txt` is now in YAML
 - `CommandLineWrapper` is now `ShellBackend`
-- Renamed the `logger` attribute to `_console` in Rack and Device to reduce the confusing overuse of the word "logger" 
-- `lb.BoundedNumber` (and subclasses `lb.Int`, `lb.Float`) now support creating derived Traits that act as arithmetic transformations, calibration against `device.setting`, and calibration against lookup tables 
+- Renamed the `logger` attribute to `_console` in Rack and Device to reduce the confusing overuse of the word "logger"
+- `lb.BoundedNumber` (and subclasses `lb.Int`, `lb.Float`) now support creating derived Traits that act as arithmetic transformations, calibration against `device.setting`, and calibration against lookup tables
 - `feather-format` is now an explicit dependency, because it is no longer (always?) pulled in by `pyarrow`
 - Logger messages are only emitted after exceptions on the first attempt now in `lb.retry` and `lb.until_timeout`
 - Added support for language changes in python 3.8
@@ -102,7 +102,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - lb.panel now supports a testbed keyword to search a Testbed instance for devices instead of the parent namespace
 - When only a single thread raises an exception, `labbench.concurrently` now raises that exception instead of `ConcurrentException`
 - Fixed a rare race condition in command line execution
-- Raise AttributeError on attempts to assign to a state or setting that hasn't been defined 
+- Raise AttributeError on attempts to assign to a state or setting that hasn't been defined
 - feather-format is no longer a dependency; it has been replaced with pyarrow
 - Use `pyarrow` instead of `feather-format` to implement feather support, reducing the number of dependencies
 - Fixed a bug in VISADevice.list_devices
@@ -192,12 +192,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.14] - 2018-02-14
 ### Added
-- list_devices() function lists Device instances in the current frame 
+- list_devices() function lists Device instances in the current frame
 - ConfigStore and ConcurrentRunner classes for supporting high-level testbed development
 
 ### Changed
 - the concurrently function now supports concurrently context managers entry for concurrent connection to Device instances
-- expanded the Device __repr__ to show the all parameters passed to __init__ 
+- expanded the Device __repr__ to show the all parameters passed to __init__
 - SQLiteLogger now stores the master database in {base-folder}/master.db instead of {base-folder}.db to keep all folders together
 - Skipped to 0.14 because tag whoops
 
@@ -215,7 +215,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - the dotnet backend will now log an error but not raise an exception if pythonnet is not installed
 - If NI VISA is not installed, an exception is now raised only if you try to connect to a VISA driver
 - VISADevice.read_termination and VISADevice.write_termination are now in VISADevice.state as local state traits
-- Removed the connect_lock argument from local state traits. This argument was not used. 
+- Removed the connect_lock argument from local state traits. This argument was not used.
 - Local state traits defined with read_only='connected' now also set is_metadata=True
 - Bugfixes for debug logging
 - Each Device now has a .logger attribute that includes consistent indication of the Device instance that produced the log message
@@ -234,7 +234,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - updated dotnet connect() method to match current object model
 - Device instantiation keyword arguments now set values of Local state descriptors (instead of attributes of the Device class)
 - CommandLineWrapper now logs debug entries
-- Updated SerialDevice to base connection settings on Local state descriptors 
+- Updated SerialDevice to base connection settings on Local state descriptors
 - Device state local traits can now be defined with read_only='connected', making them read-only from if the device is connected
 
 ### Removed

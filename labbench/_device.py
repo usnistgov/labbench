@@ -397,19 +397,4 @@ class Device(HasTraits, util.Ownable):
             return False
 
 
-# def device_contexts(objs, concurrent=True):
-#     other_contexts = dict([(a, o) for a, o in objs.items()])
-
-#     # Enforce the ordering set by self.enter_first
-#     if concurrent:
-#         # Any remaining context managers will be run concurrently if concurrent=True
-#         contexts = dict(first_contexts,
-#                         others=util.concurrently(name=f'',
-#                                                  **other_contexts))
-#     else:
-#         # Otherwise, run them sequentially
-#         contexts = dict(first_contexts, **other_contexts)
-#     self.__cm = util.sequentially(name=f'{repr(self)} connections',
-#                                   **contexts)
-
 Device.__init_subclass__()

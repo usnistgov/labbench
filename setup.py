@@ -74,7 +74,7 @@ if __name__ == '__main__':
             'pyarrow',
             'ruamel_yaml',
             'validators'
-        ] + (['pythonnet'] if is_windows else []),
+        ] + (['pywin32', 'comtypes', 'pythonnet'] if is_windows else []),
         scripts=[
             # CLI tools installed into the python scripts directory, likely to
             # be in PATH

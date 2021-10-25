@@ -186,7 +186,7 @@ Start in an installation of your favorite python>=3.7 distribution.
 * To install the "bleeding edge" development version (develop branch) from git, open a command prompt and type
   ```pip install git+https://github.nist.gov/usnistgov/labbench@develop```
 
-If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime, such as [this one for windows](http://download.ni.com/support/softlib/visa/NI-VISA/16.0/Windows/NIVISA1600runtime.exe).
+If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime.
 
 ## Usage
 #### Getting started

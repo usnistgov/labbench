@@ -1,26 +1,35 @@
 #!python3
 
-# Command line tool for manipulating the yaml files in COVID-19 spectrum monitoring data
+# Command line tool for lab experiments using labbench.Rack objects
 
 import sys
 sys.path.insert(0,'.')
 
-import click
-from pathlib import Path
-from numbers import Number
-# import shutil
-import labbench as lb
-lb._force_full_traceback(True)
-import labbench as lb
-import importlib
+try:
+    import click
+    from pathlib import Path
+    from numbers import Number
+    # import shutil
+    import labbench as lb
+    lb._force_full_traceback(True)
+    import labbench as lb
+    import importlib
+except KeyboardInterrupt:
+    # skip the trace dump on ctrl+c
+    sys.exit(1)
 
 # the Rack metaclass is where the configs live
 rack_factory = type(lb.Rack)
 
+def do_cli():
+    try:
+        cli()
+    except KeyboardInterrupt:
+        sys.exit(1)
+
 @click.group(help="configure and run labbench Rack objects")
 def cli():
     pass
-
 
 @cli.command(
     name='init',
@@ -94,6 +103,5 @@ def run(csv_path, sequence_name):
         print(dir(bound_seq))
         bound_seq.iterate_from_csv(csv_path)
 
-
 if __name__ == '__main__':
-    cli()
+    do_cli()

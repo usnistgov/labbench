@@ -39,7 +39,10 @@ if __name__ == '__main__':
     sys.path.insert(0, './labbench')
     from _version import __version__
 
-    is_windows = 'windows' in platform.system().lower()
+    if 'windows' in platform.system().lower():
+        PLATFORM_REQUIRES_EXTRAS = ['pywin32', 'comtypes', 'pythonnet']
+    else:
+        PLATFORM_REQUIRES_EXTRAS = []
 
     py_version_req = (3, 7)
     if sys.version_info < py_version_req:
@@ -70,17 +73,24 @@ if __name__ == '__main__':
             'psutil(>=5.0)',
             'pyserial(>=3.0)',
             'pyvisa(>=1.8)',
+
+            # TODO: pin versioning on these
             'sqlalchemy',
             'pyarrow',
-            'ruamel_yaml',
+            'ruamel_yaml', 
             'validators'
-        ] + (['pywin32', 'comtypes', 'pythonnet'] if is_windows else []),
-        scripts=[
-            # CLI tools installed into the python scripts directory, likely to
-            # be in PATH
-            'scripts/labbench-rack-script.py',
-            'scripts/labbench-rack.bat' if is_windows else 'scripts/labbench-rack',
-        ],
+        ] + PLATFORM_REQUIRES_EXTRAS,
+
+        entry_points=dict(
+            # The presence of labbench.__main__ already allows CLI execution with:
+            #   `python -m labbench`
+            # The following installs to a scripts directory so that CLI can be accessed
+            # in the console path as simply
+            #   `labbench`
+            # (for supported distributions).
+            console_scripts=['labbench=labbench.__main__:cli']
+        ),
+
         extras_require=dict(
             notebook=[
                 # optional (for now) to reduce dependencies

@@ -10,8 +10,14 @@ __all__ = "dump_rack", "load_rack", "pack_module_into_rack"
 from ._rack import Rack, Sequence, BoundSequence, import_as_rack, update_parameter_dict
 from . import util
 
-import ruamel_yaml
-from ruamel_yaml.comments import CommentedMap
+# some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
+# using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
+try:
+    import ruamel.yaml as ruamel_yaml
+    from ruamel.yaml.comments import CommentedMap
+except ModuleNotFoundError:
+    import ruamel_yaml
+    from ruamel_yaml.comments import CommentedMap
 
 _yaml = ruamel_yaml.YAML()
 _yaml.indent(mapping=4, sequence=4)

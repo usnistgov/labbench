@@ -52,6 +52,7 @@ def init(import_str, config_dir, force=False, with_defaults=False):
         class_name = None
     
     cls = lb._rack.import_as_rack(import_str, class_name)
+    print(cls.__dict__)
     obj = cls()
 
     lb.dump_rack(obj, config_dir, exist_ok=force, with_defaults=with_defaults)

@@ -1064,6 +1064,9 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         return (getattr(self, k) for k in self._methods)
 
 
+Rack.__init_subclass__()
+
+
 def import_as_rack(
     import_str: str,
     cls_name: str = None,
@@ -1110,7 +1113,7 @@ def import_as_rack(
 
         if issubclass(obj, base_cls):
             # it's already a Rack instance - return it
-            return base_cls
+            return obj
         elif inspect.ismodule(obj):
             module = obj
         else:

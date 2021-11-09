@@ -262,8 +262,8 @@ def dump_rack(
 
         _yaml.dump(cm, stream)
 
-    for name, attr in cls.__dict__.items():
-        if isinstance(attr, Sequence):
+    for name, obj in rack.__dict__.items():
+        if isinstance(obj, BoundSequence):
             make_sequence_stub(rack, name, dir_path, with_defaults=with_defaults)
 
 

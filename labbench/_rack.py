@@ -48,6 +48,23 @@ def null_context(owner):
     yield owner
 
 
+class NeverRaisedException(BaseException):
+    pass
+
+_INSPECT_SKIP_PARAMETER_KINDS = (
+    # remember only named keywords, not "*args" and "**kwargs" in call signatures
+    inspect._ParameterKind.VAR_KEYWORD,
+    inspect._ParameterKind.VAR_POSITIONAL,
+)
+
+def _filter_signature_parameters(params: dict):
+    return {
+        p.name: p
+        for p in list(params.values())[1:]
+        if p.kind not in _INSPECT_SKIP_PARAMETER_KINDS
+    }
+
+
 class notify:
     """Singleton notification handler shared by all Rack instances"""
 
@@ -174,14 +191,7 @@ class Method(util.Ownable):
         self.__call__.__signature__ = sig
 
         # remember only named keywords, not "*args" and "**kwargs" in call signatures
-        SKIP_KINDS = (
-            inspect._ParameterKind.VAR_KEYWORD,
-            inspect._ParameterKind.VAR_POSITIONAL,
-        )
-        # self.args = list(sig.parameters.keys())[1:]  # skip 'self' argument
-        self._parameters = [
-            p for p in sig.parameters.values() if p.kind not in SKIP_KINDS
-        ][1:]
+        self._parameters = list(_filter_signature_parameters(sig.parameters).values())
 
     def set_kwdefault(self, name, value):
         self._kwdefaults[name] = value
@@ -212,15 +222,19 @@ class Method(util.Ownable):
         sig = self.__call__.__signature__
         ext_names = self.extended_argname_names()
 
-        params = list(sig.parameters.values())[1:]
+        param_list = list(_filter_signature_parameters(sig.parameters).values())
 
         return sig.replace(
-            parameters=[param.replace(name=k) for k, param in zip(ext_names, params)]
+            parameters=[param.replace(name=k) for k, param in zip(ext_names, param_list)]
         )
 
     def extended_argname_names(self):
         sig = self.__call__.__signature__
-        prefix = self._owner.__name__ + "_"
+        if hasattr(self._owner, '__name__'):
+            prefix = self._owner.__name__ + "_"
+        else:
+            prefix = ''
+        
         names = list(sig.parameters.keys())[1:]
         return [prefix + name for name in names]
 
@@ -282,6 +296,8 @@ class BoundSequence(util.Ownable):
     a new Rack object. its keyword arguments are aggregated
     from all of the methods called by the Sequence.
     """
+    cleanup_func = None
+    exception_allowlist = NeverRaisedException
 
     @util.hide_in_traceback
     def __call__(self, **kwargs):
@@ -290,13 +306,19 @@ class BoundSequence(util.Ownable):
 
         ret = {}
 
-        for i, (name, sequence) in enumerate(self.sequence.items()):
-            step_kws = self._step(sequence, kwargs)
+        try:
+            for i, (name, sequence) in enumerate(self.sequence.items()):
+                step_kws = self._step(sequence, kwargs)
 
-            util.logger.debug(
-                f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'"
-            )
-            ret.update(util.concurrently(**step_kws) or {})
+                util.logger.debug(
+                    f"{self.__objclass__.__qualname__}.{self.__name__} ({i+1}/{len(self.sequence)}) - '{name}'"
+                )
+                ret.update(util.concurrently(**step_kws) or {})
+        except self.exception_allowlist as e:
+            core.logger.warning(f'{str(e)}')
+            ret['exception'] = e.__class__.__name__
+            if self.cleanup_func is not None:
+                self.cleanup_func()
 
         util.logger.debug(f"{self.__objclass__.__qualname__}.{self.__name__} finished")
 
@@ -765,7 +787,12 @@ def standardize_spec_step(sequence):
         sequence = [sequence]
 
     elif inspect.ismethod(sequence):
+        # it is a class method, just need to wrap it
         sequence = [Method(sequence.__self__, sequence.__name__)]
+
+    elif hasattr(sequence, '__wrapped__'):
+        # if it's a wrapper as implemented by functools, try again on the wrapped callable
+        return standardize_spec_step(sequence.__wrapped__)
 
     else:
         typename = type(sequence).__qualname__
@@ -777,26 +804,46 @@ def standardize_spec_step(sequence):
 
 
 class Sequence(util.Ownable):
-    """Experiment definition from methods in Rack instances. The input is a specification for sequencing these
-    steps, including support for threading. The output is a callable function that can be assigned as a method
-    to a top-level "root" Rack.
+    """An experimental procedure defined with methods in Rack instances. The input is a specification for sequencing these
+    steps, including support for threading.
+    
+    Sequence are meant to be defined as attributes of Rack subclasses in instances of the Rack subclasses.
     """
+    access_spec = None
+    cleanup_func = None
+    exception_allowlist = NeverRaisedException
 
     def __init__(self, **specification):
         self.spec = {
             k: standardize_spec_step(spec) for k, spec in specification.items()
         }
 
-        self.access_spec = None
+    def return_on_exceptions(self, exception_or_exceptions, cleanup_func=None):
+        """ Configures calls to the bound Sequence to swallow the specified exceptions raised by
+        constitent steps. If an exception is swallowed, subsequent steps
+        Sequence are not executed. The dictionary of return values from each Step is returned with
+        an additional 'exception' key indicating the type of the exception that occurred.
+        """
+        self.exception_allowlist = exception_or_exceptions
+        self.cleanup_func = cleanup_func
 
     def __owner_subclass__(self, owner_cls):
+        def extend_chain(chain, spec_entry):
+            if spec_entry._owner not in chain:
+                print(self.spec)
+                raise TypeError(
+                    f'method "{spec_entry._owner}.{spec_entry.__name__}" in Sequence does not belong to a Rack'
+                )
+            return chain[spec_entry._owner] + (spec_entry.__name__,)
+
         if self.access_spec is None:
             # transform the objects in self.spec
             # into attribute names for dynamic access
             # in case of later copying and subclassing
             chain = owner_getattr_chains(owner_cls)
+
             self.access_spec = {
-                k: [chain[s._owner] + (s.__name__,) for s in spec]
+                k: [extend_chain(chain, s) for s in spec]
                 for k, spec in self.spec.items()
             }
 
@@ -823,6 +870,8 @@ class Sequence(util.Ownable):
         ns = dict(
             sequence=spec,
             dependencies=self._dependency_map(spec),
+            cleanup_func = self.cleanup_func,
+            exception_allowlist = self.exception_allowlist,
             __name__=self.__name__,
             __qualname__=type(owner).__qualname__ + "." + self.__name__,
             __objclass__=self.__objclass__,
@@ -1003,6 +1052,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
                     f"{self.__class__.__qualname__}.__init__ was given invalid keyword argument '{name}'"
                 )
             if not isinstance(dev, dev_type):
+                # allow the sentinel EMPTY to instantiate for introspection
                 msg = (
                     f"argument '{name}' is not an instance of '{dev_type.__qualname__}'"
                 )
@@ -1068,8 +1118,9 @@ Rack.__init_subclass__()
 
 
 def import_as_rack(
-    import_str: str,
+    source_file: Path,
     cls_name: str = None,
+    append_path: list = None,
     base_cls: type = Rack,
     replace_attrs: list = ["__doc__", "__module__"],
 ):
@@ -1077,12 +1128,14 @@ def import_as_rack(
     by type, allowing the resulting class to be instantiated.
 
     Arguments:
-        import_str: the name of the module to import
+        source_file: path to the name of the source code file containing the Rack to import
 
-        cls_name: the name of the Rack subclass to import from the module (or None for a
+        cls_name: the name of the Rack subclass to import from the module (or None to build a
                   new subclass with the module contents)
 
         base_cls: the base class to use for the new subclass
+
+        append_path: list of paths to append to sys.path before import
 
         replace_attrs: attributes of `base_cls` to replace from the module
 
@@ -1105,7 +1158,12 @@ def import_as_rack(
 
         return type_ok and name_ok
 
-    module = importlib.import_module(import_str)
+    for p in append_path[::-1]:
+        sys.path.insert(0, str(p))
+
+    spec = importlib.util.spec_from_file_location(Path(source_file).stem, str(source_file))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
     if cls_name is not None:
         # work with the class specified in the module
@@ -1118,13 +1176,13 @@ def import_as_rack(
             module = obj
         else:
             raise TypeError(
-                f"{import_str}.{cls_name} is not a subclass of {base_cls.__qualname__}"
+                f"{cls_name} is not a subclass of {base_cls.__qualname__}"
             )
 
         dunder_updates = dict()
     else:
         cls_name = "_as_rack"
-        dunder_updates = dict(__module__=import_str)
+        dunder_updates = dict(__module__=module.__name__)
 
     namespace = {
         # take namespace items that are not types or modules

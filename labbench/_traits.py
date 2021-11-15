@@ -1165,8 +1165,8 @@ class BoundedNumber(Trait):
         label=Undefined,
         allow_none=False,
     ):
-        """generate a new Trait subclass that calibrates values given by
-        another trait. their configuration comes from a trait in the owner.
+        """generate a new Trait with value dependent on another trait. their configuration
+        comes from a trait in the owner.
 
         Arguments:
             offset_name: the name of a value trait in the owner containing a numerical offset

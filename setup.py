@@ -88,7 +88,7 @@ if __name__ == '__main__':
             # in the console path as simply
             #   `labbench`
             # (for supported distributions).
-            console_scripts=['labbench=labbench.__main__:do_cli']
+            console_scripts=['labbench=cli.__main__:do_cli']
         ),
 
         extras_require=dict(

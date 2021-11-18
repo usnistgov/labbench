@@ -39,10 +39,13 @@ if __name__ == '__main__':
     sys.path.insert(0, './labbench')
     from _version import __version__
 
+    PLATFORM_REQUIRES_EXTRAS = []
+    PLATFORM_OPTIONAL_EXTRAS = []
+
     if 'windows' in platform.system().lower():
-        PLATFORM_REQUIRES_EXTRAS = ['pywin32', 'comtypes', 'pythonnet']
-    else:
-        PLATFORM_REQUIRES_EXTRAS = []
+        PLATFORM_REQUIRES_EXTRAS += ['pywin32', 'comtypes']
+        PLATFORM_OPTIONAL_EXTRAS += ['pythonnet']
+        
 
     py_version_req = (3, 7)
     if sys.version_info < py_version_req:
@@ -77,7 +80,7 @@ if __name__ == '__main__':
             # TODO: pin versioning on these
             'sqlalchemy',
             'pyarrow',
-            'ruamel_yaml', 
+            'ruamel_yaml(>0.17)', 
             'validators'
         ] + PLATFORM_REQUIRES_EXTRAS,
 
@@ -106,6 +109,8 @@ if __name__ == '__main__':
                 'sphinx(>=1.6)',
                 'recommonmark'
             ],
+
+            platform=PLATFORM_OPTIONAL_EXTRAS
         ),
         long_description=longdescription,
         long_description_content_type="text/markdown",

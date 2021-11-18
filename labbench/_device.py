@@ -102,7 +102,7 @@ class DisconnectedBackend(object):
         """dev may be a class or an object for error feedback"""
         if isinstance(dev, str):
             self.name = dev
-        elif hasattr(dev, "_owned_name"):
+        elif getattr(dev, "_owned_name", None) is not None:
             self.name = dev._owned_name
         else:
             self.name = f"{dev.__class__.__qualname__} instance"

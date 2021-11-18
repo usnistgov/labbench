@@ -5,8 +5,6 @@ import inspect
 from pathlib import Path
 import pandas as pd
 
-__all__ = "dump_rack", "load_rack", "pack_module_into_rack"
-
 from ._rack import Rack, Sequence, BoundSequence, import_as_rack, update_parameter_dict
 from . import util
 
@@ -40,16 +38,20 @@ def _yaml_comment_out(cm, key):
     cm.ca.items[key][1] = [CommentToken("# ", CommentMark(0), None)]
 
 
-def _yaml_apply_quoting(cm):
+def _quote_strings_recursive(cm):
     """apply quotes to dict values that have str type"""
 
-    from ruamel_yaml.scalarstring import DoubleQuotedScalarString as yaml_quote
+    from ruamel_yaml.scalarstring import DoubleQuotedScalarString as quote
 
-    for k, v in dict(cm).items():
+    ret = dict()
+
+    for k, v in cm.items():
         if isinstance(v, str):
-            cm[k] = yaml_quote(v)
+            ret[k] = quote(v)
         elif isinstance(v, dict):
-            _yaml_apply_quoting(v)
+            ret[k] = _quote_strings_recursive(v)
+
+    return ret
 
 
 def _search_method_parameters(rack_cls):
@@ -267,7 +269,7 @@ def dump_rack(
             _FIELD_DEVICES, before="\ndevice settings: initial values for value traits"
         )
 
-        _yaml_apply_quoting(cm)
+        # cm = _quote_strings_recursive(cm)
 
         _yaml.dump(cm, stream)
 

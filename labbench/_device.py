@@ -40,7 +40,7 @@ from . import util
 from . import property as property_
 from . import value
 
-from ._traits import HasTraits, Trait, Undefined
+from ._traits import HasTraits, Trait, Undefined, BoundedNumber
 
 __all__ = ["Device", "list_devices", "property", "value", "datareturn", "trait_info"]
 
@@ -103,7 +103,7 @@ class DisconnectedBackend(object):
         if isinstance(dev, str):
             self.name = dev
         elif getattr(dev, "_owned_name", None) is not None:
-            self.name = dev._owned_name 
+            self.name = dev._owned_name
         else:
             self.name = f"{dev.__class__.__qualname__} instance"
 
@@ -400,7 +400,6 @@ class Device(HasTraits, util.Ownable):
 Device.__init_subclass__()
 
 
-
 def trait_info(device: Device, name: str) -> dict:
     """ returns the keywords used to define the trait attribute named `name` in `device`
     """
@@ -408,12 +407,9 @@ def trait_info(device: Device, name: str) -> dict:
     trait = device._traits[name]
     info = dict(trait.kws)
 
-    if isinstance(trait, lb._traits.BoundedNumber):
+    if isinstance(trait, BoundedNumber):
         info.update(
-            min=trait._min(device),
-            max=trait._max(device),
-            step=trait.step,
+            min=trait._min(device), max=trait._max(device), step=trait.step,
         )
 
     return info
-

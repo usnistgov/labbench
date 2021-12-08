@@ -28,13 +28,15 @@
 
 from labbench.util import sequentially
 import sys
-if '..' not in sys.path:
-    sys.path.insert(0, '..')
+
+if ".." not in sys.path:
+    sys.path.insert(0, "..")
 
 import unittest
 import importlib
 
 import time
+
 try:
     from .emulate import EmulatedVISADevice
 except:
@@ -49,10 +51,11 @@ class LaggyInstrument(EmulatedVISADevice):
     """
 
     # Connection and driver value traits
-    delay = lb.value.float(0, min=0, help='connection time')
-    fetch_time = lb.value.float(0, min=0, help='fetch time')
+    delay = lb.value.float(0, min=0, help="connection time")
+    fetch_time = lb.value.float(0, min=0, help="fetch time")
     fail_disconnect = lb.value.bool(
-        False, help='True to raise DivideByZero on disconnect')
+        False, help="True to raise DivideByZero on disconnect"
+    )
 
     variable_setting = lb.value.int(0)
 
@@ -60,16 +63,17 @@ class LaggyInstrument(EmulatedVISADevice):
         self.perf = {}
         t0 = time.perf_counter()
         lb.sleep(self.delay)
-        self.perf['open'] = time.perf_counter() - t0
+        self.perf["open"] = time.perf_counter() - t0
 
     def fetch(self):
         """ Return the argument after a 1s delay
         """
         import pandas as pd
-        lb.logger.info(f'{self}.fetch start')
+
+        lb.logger.info(f"{self}.fetch start")
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
-        self.perf['fetch'] = time.perf_counter() - t0
+        self.perf["fetch"] = time.perf_counter() - t0
         return pd.Series([1, 2, 3, 4, 5, 6])
 
     def dict(self):
@@ -96,34 +100,35 @@ class Rack1(lb.Rack):
         self.dev1.variable_setting = self.dev1.variable_setting + 2
 
     def open(self):
-        time.sleep(.25)
+        time.sleep(0.25)
 
 
-rack = Rack1(dev1=LaggyInstrument(resource='address'))
+rack = Rack1(dev1=LaggyInstrument(resource="address"))
 
 
 class Rack2(lb.Rack):
     dev: lb.Device = LaggyInstrument()
 
     def setup(self):
-        return 'rack 2 - setup'
+        return "rack 2 - setup"
         return self.dev.dict()
 
     def acquire(self, *, param1):
-        return 'rack 3 - acquire'
+        return "rack 3 - acquire"
 
     def fetch(self, *, param2: int = 7):
         return self.dev.fetch()
 
     def open(self):
-        time.sleep(.25)
+        time.sleep(0.25)
 
 
 rack = Rack1()
 
 with rack:
-    # 
+    #
     pass
+
 
 class Rack3(lb.Rack):
     # this is unset (no =), so it _must_ be passed as an argument to instantiate, i.e.,
@@ -139,7 +144,7 @@ class Rack3(lb.Rack):
         return self.dev.fetch()
 
     def open(self):
-        time.sleep(.25)
+        time.sleep(0.25)
 
 
 class MyRack(lb.Rack):
@@ -156,22 +161,19 @@ class MyRack(lb.Rack):
             f"test db/test-rack %Y-%m-%d_%Hh%Mm%Ss"
         ),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
-        text_relational_min=
-        1024,  # Minimum text string length that triggers relational storage
-        force_relational=['host_log'
-                         ],  # Data in these columns will always be relational
-        dirname_fmt=
-        '{id} {host_time}',  # Format string that generates relational data (keyed on data column)
-        nonscalar_file_type=
-        'csv',  # Default format of numerical data, when possible
-        metadata_dirname=
-        'metadata',  # metadata will be stored in this subdirectory
-        tar=False  # `True` to embed relational data folders within `data.tar`
+        text_relational_min=1024,  # Minimum text string length that triggers relational storage
+        force_relational=[
+            "host_log"
+        ],  # Data in these columns will always be relational
+        dirname_fmt="{id} {host_time}",  # Format string that generates relational data (keyed on data column)
+        nonscalar_file_type="csv",  # Default format of numerical data, when possible
+        metadata_dirname="metadata",  # metadata will be stored in this subdirectory
+        tar=False,  # `True` to embed relational data folders within `data.tar`
     )
 
     # Devices
-    inst1: LaggyInstrument = LaggyInstrument(resource='a', delay=.12)
-    inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=.06)
+    inst1: LaggyInstrument = LaggyInstrument(resource="a", delay=0.12)
+    inst2: LaggyInstrument = LaggyInstrument(resource="b", delay=0.06)
 
     # Test procedures
     rack1 = Rack1(dev1=inst1, dev2=inst2)
@@ -193,25 +195,26 @@ class MyRack(lb.Rack):
     def close(self):
         pass
 
+
 with rack:
     pass
 
 
 import inspect
 
-if __name__ == '__main__':
-    lb.show_messages('debug')
+if __name__ == "__main__":
+    lb.show_messages("debug")
     lb.util._force_full_traceback(True)
 
     # # Testbed = lb.Rack.take_module('module_as_testbed')
     Testbed = MyRack
 
     setup = lb._rack.Setup(Testbed)
-    setup.make('test-config3')
+    setup.make("test-config3")
 
-    NewTestbed = setup.apply('test-config2')
+    NewTestbed = setup.apply("test-config2")
 
-    setup.make('test-config4')
+    setup.make("test-config4")
 
     # lst = CommentedSeq(['a', 'b'])
     # lst.yaml_add_eol_comment("foo", 0, 0)

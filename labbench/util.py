@@ -137,10 +137,7 @@ def show_messages(minimum_level, colors=True):
         from coloredlogs import ColoredFormatter, DEFAULT_FIELD_STYLES
 
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
-        styles = dict(
-            DEFAULT_FIELD_STYLES,
-            label=dict(color="blue"),
-        )
+        styles = dict(DEFAULT_FIELD_STYLES, label=dict(color="blue"),)
         formatter = ColoredFormatter(log_fmt, style="{", field_styles=styles)
     else:
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
@@ -155,9 +152,7 @@ show_messages("info")
 
 def _logger_extras(obj):
     d = dict(
-        object=repr(obj),
-        origin=type(obj).__qualname__,
-        owned_name=obj._owned_name,
+        object=repr(obj), origin=type(obj).__qualname__, owned_name=obj._owned_name,
     )
 
     if d["owned_name"] is not None:
@@ -188,10 +183,7 @@ class Ownable:
     _logger = logger
 
     def __init__(self):
-        self._logger = logging.LoggerAdapter(
-            logger.logger,
-            extra=_logger_extras(self),
-        )
+        self._logger = logging.LoggerAdapter(logger.logger, extra=_logger_extras(self),)
 
     def __set_name__(self, owner_cls, name):
         self.__objclass__ = owner_cls

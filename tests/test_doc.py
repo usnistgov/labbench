@@ -27,9 +27,11 @@
 import unittest
 import importlib
 import sys
-if '..' not in sys.path:
-    sys.path.insert(0, '..')
+
+if ".." not in sys.path:
+    sys.path.insert(0, "..")
 import labbench as lb
+
 lb = importlib.reload(lb)
 
 int_start = 3
@@ -40,20 +42,20 @@ class Child(lb.Device):
     param = lb.property.int(min=0, max=10)
 
     def open(self):
-        print('connect child')
+        print("connect child")
 
     def close(self):
-        print('disconnect child')
+        print("disconnect child")
 
 
 class Mock(lb.Device):
     """ Helpful driver wrapper
     """
 
-    child0 = Child('addr0')
-    child1 = Child('addr1')
+    child0 = Child("addr0")
+    child1 = Child("addr1")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     with Mock() as m:
         pass

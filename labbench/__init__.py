@@ -53,7 +53,7 @@ from ._backends import (
     Win32ComDevice,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
-from ._device import Device, list_devices
+from ._device import Device, list_devices, trait_info
 from ._host import Email
 from ._rack import Rack, Sequence, import_as_rack
 from ._traits import observe, unobserve, Undefined

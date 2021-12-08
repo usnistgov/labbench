@@ -25,18 +25,21 @@
 # licenses.
 
 import sys
-if '..' not in sys.path:
-    sys.path.insert(0, '..')
+
+if ".." not in sys.path:
+    sys.path.insert(0, "..")
 import labbench as lb
 
-if __name__ == '__main__':
-    lb.show_messages('info')
+if __name__ == "__main__":
+    lb.show_messages("info")
 
     try:
-        with lb.Email(sender='AggregateLTETestTeam@nistgov.onmicrosoft.com',
-                      recipients=['dkuester@nist.gov']) as email:
-            lb.logger.warning('test warning message')
-            sys.stderr.write('error info\n')
+        with lb.Email(
+            sender="AggregateLTETestTeam@nistgov.onmicrosoft.com",
+            recipients=["dkuester@nist.gov"],
+        ) as email:
+            lb.logger.warning("test warning message")
+            sys.stderr.write("error info\n")
             1 // 0
     except ZeroDivisionError:
         pass

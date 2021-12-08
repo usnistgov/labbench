@@ -25,8 +25,9 @@
 # licenses.
 
 import sys
-if '..' not in sys.path:
-    sys.path.insert(0, '..')
+
+if ".." not in sys.path:
+    sys.path.insert(0, "..")
 import labbench as lb
 import unittest
 import pandas as pd
@@ -50,17 +51,15 @@ class EmulatedInstrument(EmulatedVISADevice):
     trace_index = lb.value.int(0)
 
     # properties
-    initiate_continuous = lb.property.bool(key='INIT:CONT')
-    output_trigger = lb.property.bool(key='OUTP:TRIG')
-    sweep_aperture = lb.property.float(key='SWE:APER',
-                                       min=20e-6,
-                                       max=200e-3,
-                                       help='time (in s)')
-    frequency = lb.property.float(key='SENS:FREQ',
-                                  min=10e6,
-                                  max=18e9,
-                                  help='center frequency (in Hz)')
-    atten = lb.property.float(key='POW', min=0, max=100, step=0.5)
+    initiate_continuous = lb.property.bool(key="INIT:CONT")
+    output_trigger = lb.property.bool(key="OUTP:TRIG")
+    sweep_aperture = lb.property.float(
+        key="SWE:APER", min=20e-6, max=200e-3, help="time (in s)"
+    )
+    frequency = lb.property.float(
+        key="SENS:FREQ", min=10e6, max=18e9, help="center frequency (in Hz)"
+    )
+    atten = lb.property.float(key="POW", min=0, max=100, step=0.5)
 
     def trigger(self):
         """ This would tell the instrument to start a measurement
@@ -68,7 +67,7 @@ class EmulatedInstrument(EmulatedVISADevice):
         pass
 
     def method(self):
-        print('method!')
+        print("method!")
 
     @lb.datareturn.DataFrame
     def fetch_trace(self, N=101):
@@ -76,34 +75,33 @@ class EmulatedInstrument(EmulatedVISADevice):
         """
         self.trace_index = self.trace_index + 1
 
-        series = pd.Series(self.trace_index * np.ones(N),
-                           index=self.sweep_aperture * np.arange(N),
-                           name='Voltage (V)')
+        series = pd.Series(
+            self.trace_index * np.ones(N),
+            index=self.sweep_aperture * np.arange(N),
+            name="Voltage (V)",
+        )
 
-        series.index.name = 'Time (s)'
+        series.index.name = "Time (s)"
         return series
 
 
 class TestDB(unittest.TestCase):
-
     def test_state_wrapper_type(self):
-        with EmulatedInstrument() as m,\
-             lb.SQLiteLogger(path) as db:
+        with EmulatedInstrument() as m, lb.SQLiteLogger(path) as db:
 
             self.assertEqual(m.param, int_start)
             m.param = int_stop
             self.assertEqual(m.param, int_stop)
 
 
-if __name__ == '__main__':
-    lb.show_messages('debug')
+if __name__ == "__main__":
+    lb.show_messages("debug")
 
-    path = f'test db/{np.random.bytes(8).hex()}'
+    path = f"test db/{np.random.bytes(8).hex()}"
 
-    with EmulatedInstrument() as inst,\
-         lb.SQLiteLogger(path, tar=False) as db:
+    with EmulatedInstrument() as inst, lb.SQLiteLogger(path, tar=False) as db:
 
-        db.observe(inst, changes=True, always='sweep_aperture')
+        db.observe(inst, changes=True, always="sweep_aperture")
 
         inst.fetch_trace()
 
@@ -112,8 +110,8 @@ if __name__ == '__main__':
             inst.fetch_trace()
             db.new_row(**METADATA)
 
-    df = lb.read(path + '/master.db')
-    df.to_csv(path + '/master.csv')
+    df = lb.read(path + "/master.db")
+    df.to_csv(path + "/master.csv")
 
 # df = pd.read_csv(path)
 #    print(df.tail(11))

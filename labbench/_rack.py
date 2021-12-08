@@ -51,11 +51,13 @@ def null_context(owner):
 class NeverRaisedException(BaseException):
     pass
 
+
 _INSPECT_SKIP_PARAMETER_KINDS = (
     # remember only named keywords, not "*args" and "**kwargs" in call signatures
     inspect._ParameterKind.VAR_KEYWORD,
     inspect._ParameterKind.VAR_POSITIONAL,
 )
+
 
 def _filter_signature_parameters(params: dict):
     return {
@@ -225,16 +227,18 @@ class Method(util.Ownable):
         param_list = list(_filter_signature_parameters(sig.parameters).values())
 
         return sig.replace(
-            parameters=[param.replace(name=k) for k, param in zip(ext_names, param_list)]
+            parameters=[
+                param.replace(name=k) for k, param in zip(ext_names, param_list)
+            ]
         )
 
     def extended_argname_names(self):
         sig = self.__call__.__signature__
-        if hasattr(self._owner, '__name__'):
+        if hasattr(self._owner, "__name__"):
             prefix = self._owner.__name__ + "_"
         else:
-            prefix = ''
-        
+            prefix = ""
+
         names = list(sig.parameters.keys())[1:]
         return [prefix + name for name in names]
 
@@ -296,6 +300,7 @@ class BoundSequence(util.Ownable):
     a new Rack object. its keyword arguments are aggregated
     from all of the methods called by the Sequence.
     """
+
     cleanup_func = None
     exception_allowlist = NeverRaisedException
 
@@ -315,8 +320,8 @@ class BoundSequence(util.Ownable):
                 )
                 ret.update(util.concurrently(**step_kws) or {})
         except self.exception_allowlist as e:
-            core.logger.warning(f'{str(e)}')
-            ret['exception'] = e.__class__.__name__
+            core.logger.warning(f"{str(e)}")
+            ret["exception"] = e.__class__.__name__
             if self.cleanup_func is not None:
                 self.cleanup_func()
 
@@ -790,7 +795,7 @@ def standardize_spec_step(sequence):
         # it is a class method, just need to wrap it
         sequence = [Method(sequence.__self__, sequence.__name__)]
 
-    elif hasattr(sequence, '__wrapped__'):
+    elif hasattr(sequence, "__wrapped__"):
         # if it's a wrapper as implemented by functools, try again on the wrapped callable
         return standardize_spec_step(sequence.__wrapped__)
 
@@ -809,6 +814,7 @@ class Sequence(util.Ownable):
     
     Sequence are meant to be defined as attributes of Rack subclasses in instances of the Rack subclasses.
     """
+
     access_spec = None
     cleanup_func = None
     exception_allowlist = NeverRaisedException
@@ -870,8 +876,8 @@ class Sequence(util.Ownable):
         ns = dict(
             sequence=spec,
             dependencies=self._dependency_map(spec),
-            cleanup_func = self.cleanup_func,
-            exception_allowlist = self.exception_allowlist,
+            cleanup_func=self.cleanup_func,
+            exception_allowlist=self.exception_allowlist,
             __name__=self.__name__,
             __qualname__=type(owner).__qualname__ + "." + self.__name__,
             __objclass__=self.__objclass__,
@@ -1161,7 +1167,9 @@ def import_as_rack(
     for p in append_path[::-1]:
         sys.path.insert(0, str(p))
 
-    spec = importlib.util.spec_from_file_location(Path(source_file).stem, str(source_file))
+    spec = importlib.util.spec_from_file_location(
+        Path(source_file).stem, str(source_file)
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
@@ -1175,9 +1183,7 @@ def import_as_rack(
         elif inspect.ismodule(obj):
             module = obj
         else:
-            raise TypeError(
-                f"{cls_name} is not a subclass of {base_cls.__qualname__}"
-            )
+            raise TypeError(f"{cls_name} is not a subclass of {base_cls.__qualname__}")
 
         dunder_updates = dict()
     else:

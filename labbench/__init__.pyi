@@ -1,4 +1,9 @@
-from . import datareturn as datareturn, property as property, util as util, value as value
+from . import (
+    datareturn as datareturn,
+    property as property,
+    util as util,
+    value as value,
+)
 from ._backends import (
     DotNetDevice as DotNetDevice,
     LabviewSocketInterface as LabviewSocketInterface,

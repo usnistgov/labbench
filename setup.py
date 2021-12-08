@@ -24,66 +24,65 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-longdescription = \
-""" A set of python tools for writing laboratory automation scripts that are clear, concise, and explainable. Code that achieves these goals should read like a pseudocode expression of the experimental procedure. Objects for control over equipment (or other software) should only expose a clear set of automation capabilities to make laboratory automation more robust and less frustrating.
+longdescription = """ A set of python tools for writing laboratory automation scripts that are clear, concise, and explainable. Code that achieves these goals should read like a pseudocode expression of the experimental procedure. Objects for control over equipment (or other software) should only expose a clear set of automation capabilities to make laboratory automation more robust and less frustrating.
 
 The labbench module provides tools that support toward this goal through an object protocol and support functions. These separate repetitive and error-prone boilerplate code, Use of these capabilities among multiple experimental runs also helps to produced data sets with consistent structure.
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from distutils.core import setup, Extension
     import platform
     import setuptools
     import sys
     from glob import glob
-    sys.path.insert(0, './labbench')
+
+    sys.path.insert(0, "./labbench")
     from _version import __version__
 
     PLATFORM_REQUIRES_EXTRAS = []
     PLATFORM_OPTIONAL_EXTRAS = []
 
-    if 'windows' in platform.system().lower():
-        PLATFORM_REQUIRES_EXTRAS += ['pywin32', 'comtypes']
-        PLATFORM_OPTIONAL_EXTRAS += ['pythonnet']
-        
+    if "windows" in platform.system().lower():
+        PLATFORM_REQUIRES_EXTRAS += ["pywin32", "comtypes"]
+        PLATFORM_OPTIONAL_EXTRAS += ["pythonnet"]
 
     py_version_req = (3, 7)
     if sys.version_info < py_version_req:
         raise ValueError(
-            f"python version is {sys.version} but install requires >={'.'.join([str(v) for v in py_version_req])}")
+            f"python version is {sys.version} but install requires >={'.'.join([str(v) for v in py_version_req])}"
+        )
 
     setup(
-        name='labbench',
+        name="labbench",
         version=__version__,
-        description='scripting tools for streamlined laboratory automation',
-        author='Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma',
-        author_email='daniel.kuester@nist.gov',
-        url='https://github.com/usnistgov/labbench',
+        description="scripting tools for streamlined laboratory automation",
+        author="Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma",
+        author_email="daniel.kuester@nist.gov",
+        url="https://github.com/usnistgov/labbench",
         packages=setuptools.find_packages(),
         package_data=dict(
             # these type stubs provide clean call signatures for IDEs
-            labbench=['*.pyi','py.typed'],
+            labbench=["*.pyi", "py.typed"],
         ),
-        license='NIST',
+        license="NIST",
         install_requires=[
             # TODO: tighten these requirements a little - perhaps
             # specify ==major version instead of >=
-            'coloredlogs(>=7.0)',
+            "coloredlogs(>=7.0)",
             "feather-format(>=0.4.0)",
-            'GitPython(>=2.0)',
-            'numpy(>=1.0)',
-            'pandas(>=1.00)',
-            'psutil(>=5.0)',
-            'pyserial(>=3.0)',
-            'pyvisa(>=1.8)',
-
+            "GitPython(>=2.0)",
+            "numpy(>=1.0)",
+            "pandas(>=1.00)",
+            "psutil(>=5.0)",
+            "pyserial(>=3.0)",
+            "pyvisa(>=1.8)",
             # TODO: pin versioning on these
-            'sqlalchemy',
-            'pyarrow',
-            'ruamel_yaml(>0.17)', 
-            'validators'
-        ] + PLATFORM_REQUIRES_EXTRAS,
-
+            "sqlalchemy",
+            "pyarrow",
+            "ruamel_yaml(>0.17)",
+            "validators",
+        ]
+        + PLATFORM_REQUIRES_EXTRAS,
         entry_points=dict(
             # The presence of labbench.__main__ already allows CLI execution with:
             #   `python -m labbench`
@@ -91,26 +90,23 @@ if __name__ == '__main__':
             # in the console path as simply
             #   `labbench`
             # (for supported distributions).
-            console_scripts=['labbench=cli.__main__:do_cli']
+            console_scripts=["labbench=cli.__main__:do_cli"]
         ),
-
         extras_require=dict(
             notebook=[
                 # optional (for now) to reduce dependencies
                 # on embedded platforms
-                'notebook',
-                'ipywidgets'
+                "notebook",
+                "ipywidgets",
             ],
-
             maintenance=[
                 # these packages are only needed for dist/maintenance/CI,
-                'ast_decompile',
-                'mypy',
-                'sphinx(>=1.6)',
-                'recommonmark'
+                "ast_decompile",
+                "mypy",
+                "sphinx(>=1.6)",
+                "recommonmark",
             ],
-
-            platform=PLATFORM_OPTIONAL_EXTRAS
+            platform=PLATFORM_OPTIONAL_EXTRAS,
         ),
         long_description=longdescription,
         long_description_content_type="text/markdown",

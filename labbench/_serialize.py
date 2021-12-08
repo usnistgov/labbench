@@ -199,8 +199,7 @@ def _map_devices(cls):
     for dev_name, dev in cls._devices.items():
         cm[dev_name] = CommentedMap()
         cm.yaml_set_comment_before_after_key(
-            dev_name,
-            before="\n",
+            dev_name, before="\n",
         )
 
         for value_name in dev._value_attrs:
@@ -231,7 +230,12 @@ def _map_devices(cls):
 
 
 def dump_rack(
-    rack: Rack, output_path: Path, sourcepath:Path, pythonpath:Path=None, exist_ok: bool = False, with_defaults: bool = False, 
+    rack: Rack,
+    output_path: Path,
+    sourcepath: Path,
+    pythonpath: Path = None,
+    exist_ok: bool = False,
+    with_defaults: bool = False,
 ):
     if not isinstance(rack, Rack):
         raise TypeError(f"'rack' argument must be an instance of labbench.Rack")
@@ -246,7 +250,7 @@ def dump_rack(
             {
                 _FIELD_SOURCE: dict(
                     source_file=str(sourcepath),
-                    class_name=None if cls.__name__ == "_as_rack" else cls.__name__,                    
+                    class_name=None if cls.__name__ == "_as_rack" else cls.__name__,
                     python_path=str(pythonpath),
                 ),
                 _FIELD_KEYWORD_DEFAULTS: _map_method_defaults(rack),
@@ -255,8 +259,7 @@ def dump_rack(
         )
 
         cm.yaml_set_comment_before_after_key(
-            _FIELD_SOURCE,
-            before="orient the python interpreter to the source",
+            _FIELD_SOURCE, before="orient the python interpreter to the source",
         )
 
         cm.yaml_set_comment_before_after_key(
@@ -275,7 +278,7 @@ def dump_rack(
 
     for name, obj in rack.__dict__.items():
         if isinstance(obj, BoundSequence):
-            obj.to_template(output_path/f"{obj.__name__}.csv")
+            obj.to_template(output_path / f"{obj.__name__}.csv")
             # make_sequence_stub(rack, name, output_path, with_defaults=with_defaults)
 
 
@@ -287,20 +290,20 @@ def load_rack(output_path, apply=True) -> Rack:
         config = _yaml.load(f)
         util.logger.debug(f'loaded configuration from "{str(output_path)}"')
 
-    if 'source_file' not in config[_FIELD_SOURCE]:
+    if "source_file" not in config[_FIELD_SOURCE]:
         raise KeyError(f"python source file path missing from '{str(config_path)}'")
 
-    append_path = config[_FIELD_SOURCE]['python_path']
+    append_path = config[_FIELD_SOURCE]["python_path"]
 
     # synthesize a Rack class
     rack_cls = import_as_rack(
         source_file=config[_FIELD_SOURCE]["source_file"],
-        cls_name = config[_FIELD_SOURCE]['class_name'],
-        append_path = [] if append_path is None else [append_path]
+        cls_name=config[_FIELD_SOURCE]["class_name"],
+        append_path=[] if append_path is None else [append_path]
         # TODO: support extensions to python path?
     )
 
-    annot_types = rack_cls.__annotations__ 
+    annot_types = rack_cls.__annotations__
     if apply:
         # instantiate Devices
         devices = {

@@ -649,14 +649,10 @@ class HasTraits(metaclass=HasTraitsMeta):
             obj = getattr(cls, name)
 
             if not isinstance(obj, Trait):
-                if (
-                    trait.role
-                    in (
-                        Trait.ROLE_PROPERTY,
-                        Trait.ROLE_DATARETURN,
-                    )
-                    and callable(obj)
-                ):
+                if trait.role in (
+                    Trait.ROLE_PROPERTY,
+                    Trait.ROLE_DATARETURN,
+                ) and callable(obj):
                     # if it's a method, decorate it
                     cls._traits[name] = trait(obj)
                 else:

@@ -27,8 +27,9 @@
 import unittest
 import importlib
 import sys
-if '..' not in sys.path:
-    sys.path.insert(0, '..')
+
+if ".." not in sys.path:
+    sys.path.insert(0, "..")
 import labbench as lb
 
 lb.util._force_full_traceback(True)
@@ -37,8 +38,9 @@ lb.util._force_full_traceback(True)
 # from test_properties import *
 # from test_db import *
 from test_concurrently import *
+
 # from test_doc import *
 
-if __name__ == '__main__':
-    lb.show_messages('warning')
+if __name__ == "__main__":
+    lb.show_messages("warning")
     unittest.main()

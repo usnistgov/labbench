@@ -282,7 +282,7 @@ def dump_rack(
             # make_sequence_stub(rack, name, output_path, with_defaults=with_defaults)
 
 
-def load_rack(output_path, apply=True) -> Rack:
+def load_rack(output_path, defaults={}, apply=True) -> Rack:
     """instantiates a Rack object from a config directory created by dump_rack"""
 
     config_path = Path(output_path) / RACK_CONFIG_FILENAME
@@ -303,6 +303,7 @@ def load_rack(output_path, apply=True) -> Rack:
         # TODO: support extensions to python path?
     )
 
+
     annot_types = rack_cls.__annotations__
     if apply:
         # instantiate Devices
@@ -312,6 +313,13 @@ def load_rack(output_path, apply=True) -> Rack:
         }
 
         # apply default values of method keyword arguments
+        unsupported_keys = set(defaults.keys()).intersection(config[_FIELD_KEYWORD_DEFAULTS])
+        if len(unsupported_keys) == 0:
+            config[_FIELD_KEYWORD_DEFAULTS].update(defaults)
+        else:
+            print(config[_FIELD_KEYWORD_DEFAULTS])
+            raise KeyError(f"no such columns {unsupported_keys} in {config_path}")
+
         _adjust_sequence_defaults(rack_cls, config[_FIELD_KEYWORD_DEFAULTS])
 
     else:

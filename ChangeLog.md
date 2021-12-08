@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
 ## [0.23 - unreleased]
+### Added
+- `lb.trait_info` returns a dictionary containing a device's trait definition keywords 
+
 ### Changed
 - The cli is now packaged in the cli directory to skip some unecessary imports
 - Many bugfixes in the cli

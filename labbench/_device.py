@@ -42,7 +42,7 @@ from . import value
 
 from ._traits import HasTraits, Trait, Undefined
 
-__all__ = ["Device", "list_devices", "property", "value", "datareturn"]
+__all__ = ["Device", "list_devices", "property", "value", "datareturn", "trait_info"]
 
 
 def trace_methods(cls, name, until_cls=None):
@@ -103,7 +103,7 @@ class DisconnectedBackend(object):
         if isinstance(dev, str):
             self.name = dev
         elif getattr(dev, "_owned_name", None) is not None:
-            self.name = dev._owned_name
+            self.name = dev._owned_name 
         else:
             self.name = f"{dev.__class__.__qualname__} instance"
 
@@ -398,3 +398,22 @@ class Device(HasTraits, util.Ownable):
 
 
 Device.__init_subclass__()
+
+
+
+def trait_info(device: Device, name: str) -> dict:
+    """ returns the keywords used to define the trait attribute named `name` in `device`
+    """
+
+    trait = device._traits[name]
+    info = dict(trait.kws)
+
+    if isinstance(trait, lb._traits.BoundedNumber):
+        info.update(
+            min=trait._min(device),
+            max=trait._max(device),
+            step=trait.step,
+        )
+
+    return info
+

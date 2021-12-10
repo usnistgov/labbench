@@ -95,9 +95,11 @@ def _search_method_parameters(rack_cls):
     return parameters, methods
 
 
-def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict):
+def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defaults):
     """adjusts the method argument parameters in the Rack subclass `cls` according to config file"""
     params, methods = _search_method_parameters(rack_cls)
+
+    defaults_in = dict(defaults_in, **override_defaults)
 
     sequences = [
         obj for obj in rack_cls._ownables.values() if isinstance(obj, Sequence)
@@ -165,7 +167,7 @@ def make_sequence_stub(
         defaults = []
 
     df = pd.DataFrame([defaults], columns=columns)
-    df.index.name = "Condition name"
+    df.index.name = BoundSequence.INDEX_COLUMN_NAME
     path = root_path / f"{seq.__name__}.csv"
     df.to_csv(path)
     util.logger.debug(f"writing csv template to {repr(path)}")
@@ -249,7 +251,7 @@ def dump_rack(
         cm = CommentedMap(
             {
                 _FIELD_SOURCE: dict(
-                    source_file=str(sourcepath),
+                    import_string=str(sourcepath),
                     class_name=None if cls.__name__ == "_as_rack" else cls.__name__,
                     python_path=str(pythonpath),
                 ),
@@ -282,7 +284,7 @@ def dump_rack(
             # make_sequence_stub(rack, name, output_path, with_defaults=with_defaults)
 
 
-def load_rack(output_path, defaults={}, apply=True) -> Rack:
+def load_rack(output_path:str, defaults:dict={}, apply:bool=True) -> Rack:
     """instantiates a Rack object from a config directory created by dump_rack"""
 
     config_path = Path(output_path) / RACK_CONFIG_FILENAME
@@ -290,19 +292,18 @@ def load_rack(output_path, defaults={}, apply=True) -> Rack:
         config = _yaml.load(f)
         util.logger.debug(f'loaded configuration from "{str(output_path)}"')
 
-    if "source_file" not in config[_FIELD_SOURCE]:
-        raise KeyError(f"python source file path missing from '{str(config_path)}'")
+    if "import_string" not in config[_FIELD_SOURCE]:
+        raise KeyError(f"import_string missing from '{str(config_path)}'")
 
     append_path = config[_FIELD_SOURCE]["python_path"]
 
     # synthesize a Rack class
     rack_cls = import_as_rack(
-        source_file=config[_FIELD_SOURCE]["source_file"],
+        import_string=config[_FIELD_SOURCE]["import_string"],
         cls_name=config[_FIELD_SOURCE]["class_name"],
-        append_path=[] if append_path is None else [append_path]
+        append_path=[] if append_path is None else [append_path],
         # TODO: support extensions to python path?
     )
-
 
     annot_types = rack_cls.__annotations__
     if apply:
@@ -312,15 +313,7 @@ def load_rack(output_path, defaults={}, apply=True) -> Rack:
             for name, params in config[_FIELD_DEVICES].items()
         }
 
-        # apply default values of method keyword arguments
-        unsupported_keys = set(defaults.keys()).intersection(config[_FIELD_KEYWORD_DEFAULTS])
-        if len(unsupported_keys) == 0:
-            config[_FIELD_KEYWORD_DEFAULTS].update(defaults)
-        else:
-            print(config[_FIELD_KEYWORD_DEFAULTS])
-            raise KeyError(f"no such columns {unsupported_keys} in {config_path}")
-
-        _adjust_sequence_defaults(rack_cls, config[_FIELD_KEYWORD_DEFAULTS])
+        _adjust_sequence_defaults(rack_cls, config[_FIELD_KEYWORD_DEFAULTS], **defaults)
 
     else:
         # instantiate Devices with defaults set in the source code (or blank arguments if unset)

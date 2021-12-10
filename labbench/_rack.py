@@ -28,7 +28,6 @@ import contextlib
 import copy
 import importlib
 import inspect
-import logging
 import sys
 import time
 import traceback
@@ -222,7 +221,7 @@ class Method(util.Ownable):
     def extended_signature(self):
         """maps extended keyword argument names into a copy of self.__call__.__signature__"""
         sig = self.__call__.__signature__
-        ext_names = self.extended_argname_names()
+        ext_names = self.extended_arguments()
 
         param_list = list(_filter_signature_parameters(sig.parameters).values())
 
@@ -232,7 +231,7 @@ class Method(util.Ownable):
             ]
         )
 
-    def extended_argname_names(self):
+    def extended_arguments(self):
         sig = self.__call__.__signature__
         if hasattr(self._owner, "__name__"):
             prefix = self._owner.__name__ + "_"
@@ -254,15 +253,17 @@ class Method(util.Ownable):
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
         # validate arguments against the signature
-        inspect.signature(self.__call__).bind(*args, **kws)
+        inspect.signature(self.__call__).bind(self, *args, **kws)
 
         # ensure that required devices are connected
-        closed = [dev._owned_name for dev in self.dependencies if not dev.isopen]
-        if len(closed) > 0:
-            closed = ", ".join(closed)
-            raise ConnectionError(
-                f"devices {closed} must be connected to invoke {self.__qualname__}"
-            )
+        # TODO: let the devices handle this. some interactions with devices are necessary
+        # and good without being connected, for example setting value traits.
+        # closed = [dev._owned_name for dev in self.dependencies if not dev.isopen]
+        # if len(closed) > 0:
+        #     closed = ", ".join(closed)
+        #     raise ConnectionError(
+        #         f"devices {closed} must be connected to invoke {self.__qualname__}"
+        #     )
 
         # notify observers about the parameters passed
         name_prefix = "_".join(self._owner._owned_name.split(".")[1:]) + "_"
@@ -301,6 +302,8 @@ class BoundSequence(util.Ownable):
     from all of the methods called by the Sequence.
     """
 
+    INDEX_COLUMN_NAME = "step_name"
+
     cleanup_func = None
     exception_allowlist = NeverRaisedException
 
@@ -336,7 +339,7 @@ class BoundSequence(util.Ownable):
         util.logger.debug(f"writing csv template to {repr(path)}")
         params = inspect.signature(cls.__call__).parameters
         df = pd.DataFrame(columns=list(params)[1:])
-        df.index.name = "Condition name"
+        df.index.name = cls.INDEX_COLUMN_NAME
         df.to_csv(path)
 
     def iterate_from_csv(self, path):
@@ -360,7 +363,7 @@ class BoundSequence(util.Ownable):
 
         def call(func):
             # make a Call object with the subset of `kwargs`
-            keys = available.intersection(func.extended_argname_names())
+            keys = available.intersection(func.extended_arguments())
             params = {k: kwargs[k] for k in keys}
             return util.Call(func.extended_argname_call, **params)
 
@@ -1123,8 +1126,21 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 Rack.__init_subclass__()
 
 
+class _use_module_path:
+    def __init__(self, path):
+        self.path = path
+
+    def __enter__(self):
+        sys.path.insert(0, self.path)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            sys.path.remove(self.path)
+        except ValueError:
+            pass
+
 def import_as_rack(
-    source_file: Path,
+    import_string: str,
     cls_name: str = None,
     append_path: list = None,
     base_cls: type = Rack,
@@ -1134,7 +1150,7 @@ def import_as_rack(
     by type, allowing the resulting class to be instantiated.
 
     Arguments:
-        source_file: path to the name of the source code file containing the Rack to import
+        import_string: for the module that contains the Rack to import
 
         cls_name: the name of the Rack subclass to import from the module (or None to build a
                   new subclass with the module contents)
@@ -1167,21 +1183,27 @@ def import_as_rack(
     for p in append_path[::-1]:
         sys.path.insert(0, str(p))
 
-    spec = importlib.util.spec_from_file_location(
-        Path(source_file).stem, str(source_file)
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    if append_path is not None:
+        with _use_module_path(append_path):
+            module = importlib.import_module(import_string)
+    else:
+        module = importlib.import_module(import_string)
+
+    # spec = importlib.util.spec_from_file_location(
+    #     Path(module_name).stem, str(module_name)
+    # )
+    # module = importlib.util.module_from_spec(spec)
+    # spec.loader.exec_module(module)
 
     if cls_name is not None:
         # work with the class specified in the module
-        obj = getattr(module, cls_name)
+        cls = getattr(module, cls_name)
 
-        if issubclass(obj, base_cls):
+        if issubclass(cls, base_cls):
             # it's already a Rack instance - return it
-            return obj
-        elif inspect.ismodule(obj):
-            module = obj
+            return cls
+        elif inspect.ismodule(cls):
+            module = cls
         else:
             raise TypeError(f"{cls_name} is not a subclass of {base_cls.__qualname__}")
 
@@ -1222,3 +1244,29 @@ def import_as_rack(
 
     # subclass into a new Rack
     return type(cls_name, (base_cls,), dict(base_cls.__dict__, **namespace))
+
+
+def find_owned_rack_by_type(parent_rack: Rack, target_type: Rack, include_parent:bool=True):
+    """ return a rack instance of `target_type` owned by `parent_rack`. if there is
+    not exactly 1 for `target_type`, TypeError is raised.
+    """
+    # TODO: add this to labbench
+    if include_parent and isinstance(parent_rack, target_type):
+        target_rack = parent_rack
+    else:
+        type_matches = {
+            name: obj
+            for name, obj in parent_rack._ownables.items()
+
+            # need to think about why the inheritance tree is broken here
+            if str(type(obj).__mro__) == str(target_type.__mro__)
+        }
+
+        if len(type_matches) == 0:
+            raise TypeError(f'{parent_rack} contains no racks of type {target_type}')
+        elif len(type_matches) > 1:
+            raise TypeError(f'{parent_rack} contains multiple racks {type_matches.keys()} of type {target_type}')
+        else:
+            target_rack, = type_matches.values()
+
+    return target_rack

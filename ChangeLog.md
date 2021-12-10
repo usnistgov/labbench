@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - The cli is now packaged in the cli directory to skip some unecessary imports
 - Many bugfixes in the cli
+- Corrected an exception to the call signature of Rack methods
 
 ## [0.22.2 - 2021-11-09]
 ### Changed

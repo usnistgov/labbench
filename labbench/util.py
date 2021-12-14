@@ -150,7 +150,7 @@ def show_messages(minimum_level, colors=True):
 show_messages("info")
 
 
-def _logger_extras(obj):
+def _inject_logger_metadata(obj):
     d = dict(
         object=repr(obj), origin=type(obj).__qualname__, owned_name=obj._owned_name,
     )
@@ -183,7 +183,7 @@ class Ownable:
     _logger = logger
 
     def __init__(self):
-        self._logger = logging.LoggerAdapter(logger.logger, extra=_logger_extras(self),)
+        self._logger = logging.LoggerAdapter(logger.logger, extra=_inject_logger_metadata(self),)
 
     def __set_name__(self, owner_cls, name):
         self.__objclass__ = owner_cls
@@ -199,7 +199,7 @@ class Ownable:
         else:
             self._owned_name = owner._owned_name + "." + self.__name__
 
-        self._logger.extra.update(**_logger_extras(self))
+        self._logger.extra.update(**_inject_logger_metadata(self))
 
     def __owner_subclass__(self, owner_cls):
         """Called after the owner class is instantiated; returns an object to be used in the Rack namespace"""
@@ -860,9 +860,8 @@ class MultipleContexts:
     def __enter__(self):
         calls = [(name, Call(self.enter, name, obj)) for name, obj in self.objs]
 
-        # try:
         try:
-            with stopwatch(f"{self.params['name']} - context entry", 0.5):
+            with stopwatch(f"entry into context for {self.params['name']}", 0.5):
                 self.call_handler(self.params, calls)
         except BaseException as e:
             try:
@@ -1037,7 +1036,7 @@ def enter_or_call(flexible_caller, objs, kws):
                     f"cannot run a mixture of context managers and callables"
                 )
 
-    # Enforce uniqueness in the callable or context manager objects
+    # Enforce uniqueness in the (callable or context manager) object
     candidate_objs = [c[1] for c in candidates]
     if len(set(candidate_objs)) != len(candidate_objs):
         raise ValueError("each callable and context manager must be unique")

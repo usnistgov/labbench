@@ -103,7 +103,7 @@ class DisconnectedBackend(object):
         if isinstance(dev, str):
             self.name = dev
         elif getattr(dev, "_owned_name", None) is not None:
-            self.name = dev._owned_name
+            self.name = dev._owned_name 
         else:
             self.name = f"{dev.__class__.__qualname__} instance"
 
@@ -409,7 +409,10 @@ def trait_info(device: Device, name: str) -> dict:
 
     if isinstance(trait, BoundedNumber):
         info.update(
-            min=trait._min(device), max=trait._max(device), step=trait.step,
+            min=trait._min(device),
+            max=trait._max(device),
+            step=trait.step,
         )
 
     return info
+

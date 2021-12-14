@@ -178,15 +178,6 @@ class Email(core.Device):
         return subject, message
 
 
-# class Dumper(yaml.Dumper):
-#     """ Maintain the key order when dumping a dictionary to YAML
-#     """
-#     def represent_dict_preserve_order(self, data):
-#         return self.represent_dict(data.items())
-
-# Dumper.add_representer(dict, Dumper.represent_dict_preserve_order)
-
-
 class JSONFormatter(logging.Formatter):
     _last = []
 
@@ -205,21 +196,20 @@ class JSONFormatter(logging.Formatter):
     def format(self, rec):
         """Return a YAML string for each logger record"""
 
-        if hasattr(rec, "owned_name"):
-            if "." in rec.owned_name.log_prefix.owned_name:
-                log_prefix = rec.owned_name.replace(".", ",")
-            else:
-                log_prefix = None
-        else:
-            log_prefix = None
+        # if isinstance(rec, core.Device):
+        #     log_prefix = rec._owned_name.replace(".", ",")
+        # else:
+        #     log_prefix = ''
+
+        # object = getattr(rec, 'object', None)
 
         msg = dict(
             message=rec.msg,
             time=datetime.datetime.fromtimestamp(rec.created),
             elapsed_seconds=rec.created - self.t0,
             level=rec.levelname,
-            object=getattr(rec, "object", None),
-            object_log_prefix=log_prefix,
+            object=getattr(rec, 'object', None),
+            object_log_name=getattr(rec, 'owned_name', None),
             source_file=rec.pathname,
             source_line=rec.lineno,
             process=rec.process,

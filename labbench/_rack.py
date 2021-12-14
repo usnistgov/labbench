@@ -466,13 +466,17 @@ def flatten_nested_owner_contexts(top) -> dict:
         managers.update(flatten_nested_owner_contexts(owner))
         managers[name] = OwnerContextAdapter(owner)
 
+    if "" in managers:
+        obj = managers.pop('')
+        managers[obj._owned_name] = obj
+
     if getattr(top, "_owned_name", None) is not None:
         name = "_".join(top._owned_name.split(".")[1:])
         managers[name] = OwnerContextAdapter(top)
     elif "" not in managers:
         managers[""] = OwnerContextAdapter(top)
     else:
-        raise KeyError(f"2 unbound owners in the manager tree")
+        raise KeyError(f"unbound owners in the manager tree: {managers['']._owned_name}")
 
     return managers
 
@@ -1128,14 +1132,17 @@ Rack.__init_subclass__()
 
 class _use_module_path:
     def __init__(self, path):
+        if isinstance(path, str):
+            path = [path]
+
         self.path = path
 
     def __enter__(self):
-        sys.path.insert(0, self.path)
+        sys.path = list(self.path) + sys.path
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
-            sys.path.remove(self.path)
+            sys.path = sys.path[len(self.path):]
         except ValueError:
             pass
 
@@ -1180,9 +1187,6 @@ def import_as_rack(
 
         return type_ok and name_ok
 
-    for p in append_path[::-1]:
-        sys.path.insert(0, str(p))
-
     if append_path is not None:
         with _use_module_path(append_path):
             module = importlib.import_module(import_string)
@@ -1209,8 +1213,15 @@ def import_as_rack(
 
         dunder_updates = dict()
     else:
-        cls_name = "_as_rack"
-        dunder_updates = dict(__module__=module.__name__)
+        cls_name = "__main__"
+
+        dunder_updates = dict(
+            __module__=module.__name__,
+            __attributes__=dict(
+                getattr(base_cls, '__attributes__', {}),
+                **getattr(module, '__attributes__', {})
+            ),
+        )
 
     namespace = {
         # take namespace items that are not types or modules
@@ -1219,17 +1230,12 @@ def import_as_rack(
         if isadaptable(attr, obj)
     }
 
-    # annotate the rack, which sets up the constructor signature that we use for config
-    namespace["__annotations__"] = dict(
-        {
-            name: type(obj)
-            for name, obj in namespace.items()
-            if isinstance(obj, util.Ownable)
-        },
-        **getattr(module, "__attributes__", {}),
-    )
-
-    namespace.update(dunder_updates)
+    # # annotate the rack, which sets up the constructor signature that we use for config
+    # namespace["__annotations__"] = {
+    #         name: type(obj)
+    #         for name, obj in namespace.items()
+    #         if isinstance(obj, util.Ownable)
+    # }
 
     # raise NameError on redundant names - overloading could be
     # very messy in this context
@@ -1241,6 +1247,8 @@ def import_as_rack(
             f"names {name_conflicts} in module '{module.__name__}' "
             f"conflict with attributes of '{base_cls.__qualname__}'"
         )
+
+    namespace.update(dunder_updates)
 
     # subclass into a new Rack
     return type(cls_name, (base_cls,), dict(base_cls.__dict__, **namespace))

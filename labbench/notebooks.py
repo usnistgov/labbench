@@ -30,6 +30,7 @@ from ._backends import VISADevice
 from ._host import Host
 from .util import show_messages
 from ._rack import Rack
+from ._traits import observe
 
 import logging
 import time
@@ -44,16 +45,15 @@ import ipywidgets as widgets
 from ipywidgets import IntProgress, HTML, VBox
 from IPython.display import display
 
-skip_state_by_type = {VISADevice: ["identity"], Host: ["log"], core.Device: ["isopen"]}
+skip_traits = {VISADevice: ["identity"], Host: ["log"], core.Device: ["isopen"]}
 
 
-def single(inst, inst_name):
+def trait_table(device):
     """Generate a formatted html table widget which updates with recently-observed properties
     in a device.
 
     Arguments:
-        inst: the device to monitor, an instance of :class:`labbench.Device` (or one of its subclasses)
-        inst_name: the name to use to label the table
+        device: the device to monitor, an deviceance of :class:`labbench.Device` (or one of its subclasses)
     Returns:
         `ipywidgdets.HBox` containing one `ipywidgets.HTML` widget
     """
@@ -67,14 +67,17 @@ def single(inst, inst_name):
     CAPTION_FMT = "<center><b>{}<b></center>"
 
     skip_attrs = []
-    for cls, skip in skip_state_by_type.items():
-        if isinstance(inst, cls):
+    for cls, skip in skip_traits.items():
+        if isinstance(device, cls):
             skip_attrs += skip
 
     html = widgets.HTML()
 
-    def _on_change(change):
+    def on_change(change):
         obj, name, value = change["owner"], change["name"], change["new"]
+
+        if name != 'isopen':
+            print(name, value)
 
         # if name == 'isopen':
         #     if value:
@@ -89,18 +92,20 @@ def single(inst, inst_name):
             if name in _df.index:
                 _df.drop(name, inplace=True)
             return
+        else:
+            print(name)
         label = obj._traits[name].label
         _df.loc[name] = (str(value) + " " + str("" if label is None else label),)
         _df.sort_index(inplace=True)
-        caption = CAPTION_FMT.format(inst_name).replace(",", "<br>")
+        caption = CAPTION_FMT.format(obj._owned_name or repr(obj)).replace(",", "<br>")
         html.value = (
             _df.style.set_caption(caption)
             .set_table_attributes('class="table"')
-            .set_TABLE_STYLES(TABLE_STYLES)
+            .set_table_styles(TABLE_STYLES)
             .render()
         )
 
-    core.observe(inst, _on_change)
+    observe(device, on_change)
 
     return widgets.HBox([html])
 
@@ -154,7 +159,7 @@ class panel:
             cls.devices = dict(
                 [
                     (k, v)
-                    for k, v in source.get_managed_contexts().items()
+                    for k, v in source._ownables.items()
                     if isinstance(v, core.Device)
                 ]
             )
@@ -167,7 +172,7 @@ class panel:
             )
 
         children = [
-            single(cls.devices[k], k)
+            trait_table(cls.devices[k])
             for k in sorted(cls.devices.keys())
             if isinstance(cls.devices[k], core.Device)
         ]

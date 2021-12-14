@@ -54,8 +54,8 @@ class LaggyInstrument(EmulatedVISADevice):
 
 
 class Rack1(lb.Rack):
-    dev1 = LaggyInstrument
-    dev2 = LaggyInstrument
+    dev1:lb.Device = LaggyInstrument()
+    dev2:lb.Device = LaggyInstrument()
 
     def setup(self, param1):
         pass
@@ -65,7 +65,7 @@ class Rack1(lb.Rack):
 
 
 class Rack2(lb.Rack):
-    dev = LaggyInstrument
+    dev:lb.Device = LaggyInstrument()
 
     def setup(self):
         return "rack 2 - setup"
@@ -79,7 +79,7 @@ class Rack2(lb.Rack):
 
 
 class Rack3(lb.Rack):
-    dev = LaggyInstrument
+    dev:lb.Device = LaggyInstrument()
 
     def acquire(self, *, param2=7, param3):
         pass
@@ -88,7 +88,7 @@ class Rack3(lb.Rack):
         self.dev.fetch()
 
 
-db: lb.data.RelationalTableLogger = lb.SQLiteLogger(
+db: lb._data.RelationalTableLogger = lb.SQLiteLogger(
     "data",  # Path to new directory that will contain containing all files
     append=True,  # `True` --- allow appends to an existing database; `False` --- append
     text_relational_min=1024,  # Minimum text string length that triggers relational storage
@@ -108,10 +108,11 @@ rack1 = Rack1(dev1=inst1, dev2=inst2)
 rack2 = Rack2(dev=inst1)
 rack3 = Rack3(dev=inst2)
 
-run = lb.Coordinate(
-    setup=(rack1.setup & rack2.setup),  # executes these 2 methods concurrently
+run = lb.Sequence(
+    setup=(rack1.setup, rack2.setup),  # executes these 2 methods concurrently
     arm=(rack1.arm),
-    acquire=(rack2.acquire, rack3.acquire),  # executes these 2 sequentially
-    fetch=(rack2.fetch & rack3.fetch),
+    acquire1=rack2.acquire,
+    acquire2=rack3.acquire,  # executes these 2 sequentially
+    fetch=(rack2.fetch, rack3.fetch),
     finish=(db.new_row),
 )

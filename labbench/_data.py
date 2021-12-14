@@ -636,10 +636,19 @@ class Aggregator(util.Ownable):
         else:
             self._pending_values[self.key(name, attr)] = msg["new"]
 
-    def _update_name_map(self, devices):
+    def _update_name_map(self, rack_or_devices):
         """ "map each Device to a name in devices.values() by introspection"""
 
-        self.name_map.clear()
+        # self.name_map.clear()
+
+        if isinstance(rack_or_devices, Rack):
+            devices = {
+                name: obj
+                for name, obj in Rack._ownables.items()
+                if isinstance(obj, Device)
+            }
+        else:
+            devices = rack_or_devices
 
         for device, name in devices.items():
             if not isinstance(device, Device):

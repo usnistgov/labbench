@@ -107,7 +107,7 @@ rack = Rack1(dev1=LaggyInstrument(resource="address"))
 
 
 class Rack2(lb.Rack):
-    dev: lb.Device = LaggyInstrument()
+    dev: LaggyInstrument = LaggyInstrument()
 
     def setup(self):
         return "rack 2 - setup"
@@ -134,7 +134,7 @@ class Rack3(lb.Rack):
     # this is unset (no =), so it _must_ be passed as an argument to instantiate, i.e.,
     #
     # >>> Rack3(dev=MyDevice)
-    dev: lb.Device
+    dev: LaggyInstrument
 
     # notice this operation requires param2 and param3
     def acquire(self, *, param3, param2=7):
@@ -209,12 +209,8 @@ if __name__ == "__main__":
     # # Testbed = lb.Rack.take_module('module_as_testbed')
     Testbed = MyRack
 
-    setup = lb._rack.Setup(Testbed)
-    setup.make("test-config3")
 
-    NewTestbed = setup.apply("test-config2")
 
-    setup.make("test-config4")
 
     # lst = CommentedSeq(['a', 'b'])
     # lst.yaml_add_eol_comment("foo", 0, 0)

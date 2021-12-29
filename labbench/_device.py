@@ -40,7 +40,7 @@ from . import util
 from . import property as property_
 from . import value
 
-from ._traits import HasTraits, Trait, Undefined, BoundedNumber
+from ._traits import HasTraits, Trait, Undefined, BoundedNumber, observe, unobserve
 
 __all__ = ["Device", "list_devices", "property", "value", "datareturn", "trait_info"]
 
@@ -103,7 +103,7 @@ class DisconnectedBackend(object):
         if isinstance(dev, str):
             self.name = dev
         elif getattr(dev, "_owned_name", None) is not None:
-            self.name = dev._owned_name 
+            self.name = dev._owned_name
         else:
             self.name = f"{dev.__class__.__qualname__} instance"
 
@@ -120,6 +120,28 @@ class DisconnectedBackend(object):
 
     str = __repr__
     __deepcopy__ = __copy__
+
+
+def log_trait_activity(msg):
+    """emit debug messages for trait values"""
+
+    # print('logger debug!', msg)
+
+    owner = msg['owner']
+    trait_name = msg['name']
+
+    if msg['type'] == 'set':
+        label = owner._traits[trait_name].label or ' '
+        if label:
+            label = ' {label} '
+        owner._logger.debug(f'{repr(msg["new"])}{label} → trait "{trait_name}"')
+    elif msg['type'] == 'get':
+        label = owner._traits[trait_name].label
+        if label:
+            label = ' {label} '
+        owner._logger.debug(f'trait "{trait_name}" → {repr(msg["new"])}{label}')
+    else:
+        owner._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
 class Device(HasTraits, util.Ownable):
@@ -177,7 +199,7 @@ class Device(HasTraits, util.Ownable):
         """Backend implementations overload this to open a backend
         connection to the resource.
         """
-        pass
+        observe(self, log_trait_activity)
 
     def close(self):
         """Backend implementations must overload this to disconnect an
@@ -185,6 +207,7 @@ class Device(HasTraits, util.Ownable):
         """
         self.backend = DisconnectedBackend(self)
         self.isopen
+        unobserve(self, log_trait_activity)
 
     __children__ = {}
 
@@ -409,10 +432,7 @@ def trait_info(device: Device, name: str) -> dict:
 
     if isinstance(trait, BoundedNumber):
         info.update(
-            min=trait._min(device),
-            max=trait._max(device),
-            step=trait.step,
+            min=trait._min(device), max=trait._max(device), step=trait.step,
         )
 
     return info
-

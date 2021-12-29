@@ -2,6 +2,7 @@
 
 import importlib
 import inspect
+import os
 from pathlib import Path
 import pandas as pd
 
@@ -160,13 +161,15 @@ def make_sequence_stub(
 
     if with_defaults:
         defaults = [
-            None if params[name].default is EMPTY else params[name].default
-            for name in columns
+            [
+                None if params[name].default is EMPTY else params[name].default
+                for name in columns
+            ]
         ]
     else:
         defaults = []
 
-    df = pd.DataFrame([defaults], columns=columns)
+    df = pd.DataFrame(defaults, columns=columns)
     df.index.name = BoundSequence.INDEX_COLUMN_NAME
     path = root_path / f"{seq.__name__}.csv"
     df.to_csv(path)
@@ -284,8 +287,11 @@ def dump_rack(
             # make_sequence_stub(rack, name, output_path, with_defaults=with_defaults)
 
 
-def load_rack(output_path:str, defaults:dict={}, apply:bool=True) -> Rack:
-    """instantiates a Rack object from a config directory created by dump_rack"""
+def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack:
+    """instantiates a Rack object from a config directory created by dump_rack.
+    
+    After instantiation, the current working directory is changed to output_path.
+    """
 
     config_path = Path(output_path) / RACK_CONFIG_FILENAME
     with open(config_path, "r") as f:
@@ -324,4 +330,8 @@ def load_rack(output_path:str, defaults:dict={}, apply:bool=True) -> Rack:
 
     rack_cls._propagate_ownership()
 
-    return rack_cls(**devices)
+    obj = rack_cls(**devices)
+
+    os.chdir(output_path)
+
+    return obj

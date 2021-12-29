@@ -183,7 +183,9 @@ class Ownable:
     _logger = logger
 
     def __init__(self):
-        self._logger = logging.LoggerAdapter(logger.logger, extra=_inject_logger_metadata(self),)
+        self._logger = logging.LoggerAdapter(
+            logger.logger, extra=_inject_logger_metadata(self),
+        )
 
     def __set_name__(self, owner_cls, name):
         self.__objclass__ = owner_cls
@@ -203,6 +205,10 @@ class Ownable:
 
     def __owner_subclass__(self, owner_cls):
         """Called after the owner class is instantiated; returns an object to be used in the Rack namespace"""
+        # TODO: revisit whether there should be any assignment of _owned_name here
+        if self._owned_name is None:
+            self._owned_name = self.__name__
+
         return self
 
     def __repr__(self):

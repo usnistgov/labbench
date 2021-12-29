@@ -998,6 +998,21 @@ class RelationalTableLogger(
             self._write_root()
             self.clear()
 
+    @contextmanager
+    @util.hide_in_traceback
+    def context(self, *args, **kws):
+        """ calls `self.new_row(*args, **kws); self.write()` on context exit.
+
+        This is meant as a convenience for defining execution behavior in
+        table inputs for Racks.
+        """
+
+        try:
+            yield self
+        finally:
+            self.new_row(*args, **kws)
+            self.write()
+
     def _write_root(self):
         """Write pending data. This is an abstract base method (must be
         implemented by inheriting classes)

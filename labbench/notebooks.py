@@ -76,7 +76,7 @@ def trait_table(device):
     def on_change(change):
         obj, name, value = change["owner"], change["name"], change["new"]
 
-        if name != 'isopen':
+        if name != "isopen":
             print(name, value)
 
         # if name == 'isopen':

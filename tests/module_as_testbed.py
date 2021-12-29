@@ -54,8 +54,8 @@ class LaggyInstrument(EmulatedVISADevice):
 
 
 class Rack1(lb.Rack):
-    dev1:lb.Device = LaggyInstrument()
-    dev2:lb.Device = LaggyInstrument()
+    dev1: lb.Device = LaggyInstrument()
+    dev2: lb.Device = LaggyInstrument()
 
     def setup(self, param1):
         pass
@@ -65,7 +65,7 @@ class Rack1(lb.Rack):
 
 
 class Rack2(lb.Rack):
-    dev:lb.Device = LaggyInstrument()
+    dev: lb.Device = LaggyInstrument()
 
     def setup(self):
         return "rack 2 - setup"
@@ -79,7 +79,7 @@ class Rack2(lb.Rack):
 
 
 class Rack3(lb.Rack):
-    dev:lb.Device = LaggyInstrument()
+    dev: lb.Device = LaggyInstrument()
 
     def acquire(self, *, param2=7, param3):
         pass

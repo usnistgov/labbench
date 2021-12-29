@@ -25,7 +25,7 @@ import typing
 def nameit(obj):
     if obj is Undefined:
         return "Undefined"
-    if isinstance(obj, typing._VariadicGenericAlias):
+    if isinstance(obj, typing.GenericAlias):
         return repr(obj)
     elif hasattr(obj, "__name__"):
         return obj.__name__

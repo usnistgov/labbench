@@ -79,10 +79,8 @@ class HasTraitsMeta(type):
 
 
 class Trait:
-    """implement typing checking, casting, decorators, and callback
-    features in Device classes. These help reduce code errors that
-    result from "copy and paste" boilerplate, and help to clarify
-    the intent of the code.
+    """base class for typed descriptors in Device classes. These
+    implement type checking, casting, decorators, and callbacks.
 
     A Device instance supports two types of Traits:
 
@@ -204,10 +202,13 @@ class Trait:
             self.default = Undefined
 
         # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
-        if len(kws["remap"]) > 0:
-            self.remap_inbound = {v: k for k, v in kws["remap"].items()}
-        else:
-            self.remap_inbound = {}
+        try:
+            if len(kws["remap"]) > 0:
+                self.remap_inbound = {v: k for k, v in kws["remap"].items()}
+            else:
+                self.remap_inbound = {}
+        except KeyError:
+            raise
 
         if len(kws["remap"]) != len(self.remap_inbound):
             raise ValueError(f"'remap' has duplicate values")
@@ -272,17 +273,15 @@ class Trait:
         Trait takes advantage of this to remember the owning class for debug
         messages and to register with the owner class.
         """
-        if not issubclass(owner_cls, HasTraits):
-            # otherwise, other objects that house this Trait may unintentionally become owners
-            return
-
-        # inspect module expects this name - don't play with it
-        self.__objclass__ = owner_cls
-
-        # Take the given name, unless we've bene tagged with a different
-        self.name = name
-
+        # other owning objects may unintentionally become owners; this causes problems
+        # if they do not implement the HasTraits object protocol
         if issubclass(owner_cls, HasTraits):
+            # inspect module expects this name - don't play with it
+            self.__objclass__ = owner_cls
+
+            # Take the given name, unless we've bene tagged with a different
+            self.name = name
+
             owner_cls._traits[name] = self
 
     def __init_owner_subclass__(self, owner_cls):
@@ -414,7 +413,7 @@ class Trait:
         if owner is None or owner_cls.__dict__.get(
             self.name, None
         ) is not self.__objclass__.__dict__.get(self.name):
-            # the .__dict__.get acrobatics avoids a recursive __get__ loop
+            # the __dict__ acrobatics avoids a recursive __get__ loop
             return self
 
         elif self.role == self.ROLE_DATARETURN:
@@ -612,6 +611,21 @@ class Trait:
         else:
             return owner._owned_name + "." + self.name
 
+    def update(self, obj=None, **attrs):
+        """ returns `self` or (if `obj` is None) or `other`, after updating its keyword
+        parameters with `attrs`
+        """
+        if obj is None:
+            obj = self
+        invalid_params = set(attrs).difference(obj.__dict__)
+        if len(invalid_params) > 0:
+            raise AttributeError(
+                f"{obj} does not have the parameter(s) {invalid_params}"
+            )
+
+        obj.__dict__.update(attrs)
+        return obj
+
 
 Trait.__init_subclass__()
 
@@ -792,13 +806,28 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
         names: notify only changes to these trait names (None to disable filtering)
     """
 
+    def validate_name(n):
+        attr = getattr(type(obj), n, Undefined)
+        if attr is Undefined:
+            raise TypeError(f'there is no attribute "{n}" to observe in "{obj}"')
+        elif not isinstance(attr, Trait):
+            raise TypeError(f"cannot observe {obj}.{n} because it is not a trait")
+
     if not callable(handler):
         raise ValueError(
             f"argument 'handler' is {repr(handler)}, which is not a callable"
         )
 
     if isinstance(name, str):
+        validate_name(name)
         name = (name,)
+    elif isinstance(name, (tuple, list)):
+        for n in name:
+            validate_name(n)
+    elif name is not Any:
+        raise ValueError(
+            f"name argument {name} has invalid type - must be one of (str, tuple, list), or the value Any"
+        )
 
     if isinstance(type, str):
         type_ = (type_,)
@@ -809,6 +838,8 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
             return
         elif msg["type"] not in type_:
             return
+        elif isinstance(msg["new"], Trait):
+            raise TypeError(f"Trait instance returned as a callback value")
         handler(msg)
 
     if isinstance(obj, HasTraits):
@@ -832,29 +863,102 @@ def unobserve(obj, handler):
         raise TypeError("object to unobserve must be an instance of Device")
 
 
-class LookupCorrectionMixIn(Trait):
-    """act as another BoundedNumber trait calibrated with a lookup table"""
+def find_trait_in_mro(cls):
+    if issubclass(cls, DependentTrait):
+        return find_trait_in_mro(type(cls._trait_dependencies["base"]))
+    else:
+        return cls
 
-    table: Any = None  # really a pandas Series
+
+class DependentTrait(Trait):
+    _trait_dependencies = set()
+
+    def __set_name__(self, owner_cls, name):
+        super().__set_name__(owner_cls, name)
+
+        # propagate ownership of dependent traits, if available
+        if isinstance(owner_cls, HasTraits):
+            objclass = owner_cls
+        elif hasattr(self, "__objclass__"):
+            objclass = self.__objclass__
+        else:
+            return
+
+        for trait in self._trait_dependencies.values():
+            trait.__objclass__ = objclass
+
+    def _validate_trait_dependencies(self, owner, allow_none: bool, operation="access"):
+        if allow_none:
+            return
+
+        none_names = [
+            f"{owner}.{trait.name}"
+            for trait in self._trait_dependencies.values()
+            if getattr(owner, trait.name) is None
+        ]
+
+        if len(none_names) == 1:
+            raise ValueError(
+                f"cannot {operation} {owner}.{self.name} while {none_names[0]} is None"
+            )
+        elif len(none_names) > 1:
+            raise ValueError(
+                f"cannot {operation} {owner}.{self.name} while {tuple(none_names)} are None"
+            )
+
+    @classmethod
+    def derive(mixin_cls, template_trait, dependent_traits={}, *init_args, **init_kws):
+        name = template_trait.__class__.__name__
+        name = ("" if name.startswith("dependent_") else "dependent_") + name
+
+        dependent_traits["base"] = template_trait
+
+        traits_dict = {}
+
+        for c in mixin_cls.__mro__:
+            if issubclass(c, DependentTrait):
+                traits_dict.update(c._trait_dependencies)
+
+        traits_dict.update(dependent_traits)
+
+        ns = dict(_trait_dependencies=traits_dict, **dependent_traits)
+
+        ttype = type(name, (mixin_cls, find_trait_in_mro(type(template_trait))), ns)
+
+        obj = ttype(*init_args, **init_kws)
+        return obj
+
+
+class RemappingCorrectionMixIn(DependentTrait):
+    """act as another BoundedNumber trait calibrated with a mapping"""
+
+    mapping: Any = None  # really a pandas Series
+
+    EMPTY_STORE = dict(by_cal=None, by_uncal=None)
 
     def _min(self, owner):
-        by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
+        by_uncal = owner._calibrations.get(self.name, {}).get("by_uncal", None)
         if by_uncal is None:
             return None
         else:
             return by_uncal.min()
 
     def _max(self, owner):
-        by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
+        by_uncal = owner._calibrations.get(self.name, {}).get("by_uncal", None)
         if by_uncal is None:
             return None
         else:
             return by_uncal.max()
 
     def __init_owner_instance__(self, owner):
-        observe(owner, self.__owner_event__, name=self._other.name)
+        self.set_mapping(self.mapping, owner=owner)
+        observe(
+            owner,
+            self._on_base_trait_change,
+            name=self._trait_dependencies["base"].name,
+        )
 
-    def __owner_event__(self, msg):
+    def _on_base_trait_change(self, msg):
         owner = msg["owner"]
         owner.__notify__(
             self.name,
@@ -864,21 +968,19 @@ class LookupCorrectionMixIn(Trait):
         )
 
     def lookup_cal(self, uncal, owner):
-        """return the index value that gives the attenuation level nearest to `proposal`"""
-        by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
-        if by_uncal is None:
+        """look up and return the calibrated value, given the uncalibrated value"""
+        owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+        if owner_cal["by_uncal"] is None:
             return None
 
         try:
-            return by_uncal.loc[uncal]
+            return owner_cal["by_uncal"].loc[uncal]
         except KeyError:
-            pass
+            # spare us pandas details in the traceback
+            util.logger.warning(
+                f"{self.__repr__(owner_inst=owner)} has no entry at {repr(uncal)} {self.label}"
+            )
 
-        # this odd try-except...raise oddness spares us internal
-        # pandas details in the traceback
-        util.logger.warning(
-            f"{self.__repr__(owner_inst=owner)} has no entry at {repr(uncal)} {self.label}"
-        )
         return None
 
     def find_uncal(self, cal, owner):
@@ -886,21 +988,21 @@ class LookupCorrectionMixIn(Trait):
         error, then if `self.allow_none` evaluates as True, triggers return of None, or if
          `self.allow_none` evaluates False, ValueError is raised.
         """
-        by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
-        if by_uncal is None:
+        owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+        if owner_cal["by_uncal"] is None:
             return None
 
-        i = by_cal.index.get_loc(cal, method="nearest")
-        return by_cal.iloc[i]
+        i = owner_cal["by_cal"].index.get_loc(cal, method="nearest")
+        return owner_cal["by_cal"].iloc[i]
 
-    def set_table(self, series_or_uncal, cal=None, owner=None):
-        """set the lookup table as `set_table(series)`, where `series` is a pandas Series (uncalibrated
-        values in the index), or `set_table(cal_vector, uncal_vector)`, where both vectors have 1
+    def set_mapping(self, series_or_uncal, cal=None, owner=None):
+        """set the lookup mapping as `set_mapping(series)`, where `series` is a pandas Series (uncalibrated
+        values in the index), or `set_mapping(cal_vector, uncal_vector)`, where both vectors have 1
         dimension of the same length.
         """
 
         if owner is None:
-            raise ValueError(f"must pass owner to set_table")
+            raise ValueError(f"must pass owner to set_mapping")
 
         import pandas as pd
 
@@ -912,55 +1014,62 @@ class LookupCorrectionMixIn(Trait):
             return
         else:
             raise ValueError(
-                f"must call set_table with None, a Series, or a pair of vector "
+                f"must call set_mapping with None, a Series, or a pair of vector "
                 f"arguments, not {series_or_uncal}"
             )
-        by_uncal = by_uncal.sort_index()
+        by_uncal = by_uncal[~by_uncal.index.duplicated(keep="first")].sort_index()
         by_uncal.index.name = "uncal"
         by_uncal.name = "cal"
 
         by_cal = pd.Series(by_uncal.index, index=by_uncal.values, name="uncal")
-        by_cal = by_cal.sort_index()
+        by_cal = by_cal[~by_cal.index.duplicated(keep="first")].sort_index()
         by_cal.index.name = "cal"
 
-        owner._calibrations[self.name] = by_cal, by_uncal
+        owner._calibrations.setdefault(self.name, {}).update(
+            by_cal=by_cal, by_uncal=by_uncal
+        )
 
+    @util.hide_in_traceback
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
+            # print(f'{type(owner)}, {owner_cls}, {getattr(self, "__objclass__", None)}')
             return self
 
-        by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
-        if by_uncal is None:
-            raise KeyError(
-                f"load a correction table to use the corrected '{self.name}' {self.role}, "
-                f"or use the uncorrected '{self._other.name}' {self._other.role}"
-            )
+        # by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
+        self._validate_trait_dependencies(owner, self.allow_none, "get")
 
-        uncal = self._other.__get__(owner, owner_cls)
+        uncal = self._trait_dependencies["base"].__get__(owner, owner_cls)
+
         cal = self.lookup_cal(uncal, owner)
 
         if cal is None:
-            return uncal
+            ret = uncal
         else:
-            return cal
+            ret = cal
 
-    def __set__(self, owner, cal):
-        by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
-        if by_uncal is None:
-            raise KeyError(
-                f"load a correction table to use the corrected '{self.name}' {self.role}, "
-                f"or use the uncorrected '{self._other.name}' {self._other.role}"
+        if hasattr(self, 'name'):
+            owner.__notify__(
+                self.name, ret, "get", cache=self.cache or (self.role == self.ROLE_VALUE)
             )
 
+        return ret
+
+    @util.hide_in_traceback
+    def __set__(self, owner, cal):
+        owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+        self._validate_trait_dependencies(owner, False, "set")
+
         # start with type conversion and validation on the requested calibrated value
-        cal = self._other.to_pythonic(cal)
+        cal = self._trait_dependencies["base"].to_pythonic(cal)
 
         # lookup the uncalibrated value that results in the nearest calibrated result
         uncal = self.find_uncal(cal, owner)
 
         if uncal is None:
-            self._other.__set__(owner, cal)
-        elif uncal != type(self._other).validate(self, uncal, owner):
+            self._trait_dependencies["base"].__set__(owner, cal)
+        elif uncal != type(self._trait_dependencies["base"]).validate(
+            self, uncal, owner
+        ):
             # raise an exception if the calibration table contains invalid
             # values, instead
             raise ValueError(
@@ -968,151 +1077,208 @@ class LookupCorrectionMixIn(Trait):
             )
         else:
             # execute the set
-            self._other.__set__(owner, uncal)
+            self._trait_dependencies["base"].__set__(owner, uncal)
+
+        if hasattr(self, 'name'):
+            owner.__notify__(
+                self.name, cal, "set", cache=self.cache or (self.role == self.ROLE_VALUE)
+            )
 
 
-class OffsetCorrectionMixIn(Trait):
-    """act as another BoundedNumber trait, calibrated with an additive offset"""
+class TableCorrectionMixIn(RemappingCorrectionMixIn):
+    _CAL_TABLE_KEY = "table"
 
-    offset_name: str = (
-        None  # the name of a trait in owner that contains the offset value
-    )
+    path_trait = None  # a dependent Unicode trait
 
-    def _min(self, owner):
-        if None in (self._other._min(owner), owner._calibrations[self.name]):
-            return None
-        return self._other._min(owner) + owner._calibrations[self.name]
+    index_lookup_trait = None  # a dependent trait
 
-    def _max(self, owner):
-        if None in (self._other._max(owner), owner._calibrations[self.name]):
-            return None
-        return self._other._max(owner) + owner._calibrations[self.name]
+    table_index_column: str = None
 
     def __init_owner_instance__(self, owner):
-        self._last_value = None
+        super().__init_owner_instance__(owner)
 
-        observe(owner, self.__other_update__, self._other.name)
-        observe(owner, self.__offset_update__, name=self.offset_name)
-        owner._calibrations[self.name] = getattr(owner, self.offset_name)
+        observe(
+            owner, self._on_path_trait_update, name=self.path_trait.name, type_="set"
+        )
+        if self.path_trait.default is not None:
+            getattr(owner, self.path_trait.name)  # trigger an update
 
-        # # get the current offset, and observe changes to the value to keep it
-        # # up to date
-        # if self.role == self.ROLE_PROPERTY:
-        #     observe(owner., self.__offset_update__, name=self.offset_name)
-        #     owner._calibrations[self.name] = getattr(owner., self.offset_name)
-        # elif self.role == self.ROLE_VALUE:
-        #     observe(owner, self.__offset_update__, name=self.offset_name)
-        #     owner._calibrations[self.name] = getattr(owner, self.offset_name)
-        # elif self.role == self.ROLE_UNSET:
-        #     raise ValueError(f"{self.__repr__(owner_inst=owner)} is not attached to a device")
-        # else:
-        #     raise ValueError(f"unrecognized trait type '{self.role}'")
+        observe(
+            owner,
+            self._on_index_value_update,
+            name=self.index_lookup_trait.name,
+            type_="set",
+        )
+        if self.index_lookup_trait.default is not None:
+            getattr(owner, self.index_lookup_trait.name)  # trigger an update
 
-    def __offset_update__(self, msg):
-        owner = msg["owner"]
-        owner._calibrations[self.name] = msg["new"]
+    def _on_path_trait_update(self, msg):
+        return self._load_calibration_table(msg["owner"], msg["new"])
 
-        if None in (self._last_value, owner._calibrations[self.name]):
-            value = None
-        else:
-            value = self._last_value + owner._calibrations[self.name]
+    def _on_index_value_update(self, msg):
+        return self._update_index_value(msg["owner"], msg["new"])
 
-        owner.__notify__(self.name, value, msg["type"], cache=msg["cache"])
+    def _load_calibration_table(self, owner, path):
+        """ stash the calibration table from disk
+        """
+        import pandas as pd
+        from pathlib import Path
 
-    def __other_update__(self, msg):
-        owner = msg["owner"]
-        value = self._last_value = msg["new"]
+        def read(path):
+            # quick read
+            cal = pd.read_csv(str(path), index_col=self.table_index_column, dtype=float)
 
-        if None in (value, owner._calibrations[self.name]):
-            value = None
-        else:
-            value = value + owner._calibrations[self.name]
+            cal.columns = cal.columns.astype(float)
+            if self.index_lookup_trait.max in cal.index:
+                cal.drop(self.index_lookup_trait.max, axis=0, inplace=True)
+            #    self._cal_offset.values[:] = self._cal_offset.values-self._cal_offset.columns.values[np.newaxis,:]
 
-        owner.__notify__(self.name, value, msg["type"], cache=msg["cache"])
-
-    def _offset_trait(self, owner):
-        return owner._traits[self.offset_name]
-        # if self.role == self.ROLE_PROPERTY:
-        #     return owner.[self.offset_name]
-        # else:
-        #     return owner[self.offset_name]
-
-    def __get__(self, owner, owner_cls=None):
-        if owner is None or owner_cls is not self.__objclass__:
-            return self
-
-        if owner._calibrations[self.name] is None:
-            offset_trait = self._offset_trait(owner)
-            raise AttributeError(
-                f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or calibrate "
-                f"{self.__repr__(owner_inst=owner)} first by setting {offset_trait}"
+            owner._calibrations.setdefault(self.name, {}).update(
+                {self._CAL_TABLE_KEY: cal}
             )
 
-        return self._other.__get__(owner, owner_cls) + owner._calibrations[self.name]
+            owner._logger.debug(f"calibration data read from {path}")
 
-    def __set__(self, owner, value):
-        if owner._calibrations[self.name] is None:
-            offset_trait = self._offset_trait(owner)
-            raise AttributeError(
-                f"use the uncalibrated {self._other.__repr__(owner_inst=owner)}, or calibrate "
-                f"{self.__repr__(owner_inst=owner)} first by setting {offset_trait}"
-            )
+        if path is None:
+            if not self.allow_none:
+                raise ValueError(
+                    f"{self} defined with allow_none=False; path_trait must not be None"
+                )
+            else:
+                return None
 
-        # use the other to the value into the proper format and validate it
-        value = self._other.to_pythonic(value)
-        type(self._other).validate(self, value, owner)
+        read(path)
 
-        self._other.__set__(owner, value - owner._calibrations[self.name])
+    def _update_index_value(self, owner, index_value):
+        """update the calibration on change of index_value"""
+        cal = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+
+        if cal is None:
+            txt = f"index_value change has no effect because calibration_data has not been set"
+        elif index_value is None:
+            cal = None
+            txt = f"set {owner}.{self.index_lookup_trait.name} to enable calibration"
+        else:
+            # pull in the calibration mapping specific to this index_value
+            i_freq = cal.index.get_loc(index_value, "nearest")
+            cal = cal.iloc[i_freq]
+            txt = f"calibrated at {index_value/1e6:0.3f} MHz"
+
+        self.set_mapping(cal, owner=owner)
 
 
-class TransformMixIn(Trait):
+class TransformMixIn(DependentTrait):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber trait"""
 
-    _forward: Any = lambda x: x
-    _reverse: Any = lambda x: x
+    _forward: Any = lambda x, y: x
+    _reverse: Any = lambda x, y: x
 
     def __init_owner_instance__(self, owner):
+        super().__init_owner_instance__(owner)
         observe(owner, self.__owner_event__)
 
     def __owner_event__(self, msg):
-        # pass on a corresponding notification when self._other changes
-        if msg["name"] != self._other.name:
+        # pass on a corresponding notification when self._trait_dependencies['base'] changes
+        base_trait = self._trait_dependencies["base"]
+
+        if msg["name"] != getattr(base_trait, "name", None) or not hasattr(
+            base_trait, "__objclass__"
+        ):
             return
 
         owner = msg["owner"]
-        owner.__notify__(
-            self.name, self._forward(msg["new"]), msg["type"], cache=msg["cache"]
-        )
+        owner.__notify__(self.name, msg["new"], msg["type"], cache=msg["cache"])
+
+    def _transformed_extrema(self, owner):
+        base_trait = self._trait_dependencies["base"]
+        base_bounds = [base_trait._min(owner), base_trait._max(owner)]
+
+        other_trait = self._trait_dependencies.get("other", None)
+
+        if other_trait is None:
+            trial_bounds = [
+                self._forward(base_bounds[0]),
+                self._forward(base_bounds[1]),
+            ]
+        else:
+            other_bounds = [
+                other_trait._min(owner),
+                other_trait._max(owner),
+            ]
+
+            trial_bounds = [
+                self._forward(base_bounds[0], other_bounds[0]),
+                self._forward(base_bounds[0], other_bounds[1]),
+                self._forward(base_bounds[1], other_bounds[0]),
+                self._forward(base_bounds[1], other_bounds[1]),
+            ]
+
+        if None in trial_bounds:
+            return None, None
+
+        return min(trial_bounds), max(trial_bounds)
 
     def _min(self, owner):
         # TODO: ensure this works properly for any reversible self._forward()?
-        if self._other._min(owner) is None:
+        lo, hi = self._transformed_extrema(owner)
+
+        if lo is None:
             return None
-        return min(
-            self._forward(self._other._max(owner)),
-            self._forward(self._other._min(owner)),
-        )
+        else:
+            return min(lo, hi)
 
     def _max(self, owner):
-        # TODO: does this actually work for any reversible self._forward()?
-        if self._other._max(owner) is None:
+        # TODO: ensure this works properly for any reversible self._forward()?
+        lo, hi = self._transformed_extrema(owner)
+
+        if hi is None:
             return None
-        return max(
-            self._forward(self._other._max(owner)),
-            self._forward(self._other._min(owner)),
-        )
+        else:
+            return max(lo, hi)
 
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
+            # print('return self: ', self, owner, owner_cls)
             return self
+        # else:
+        # print('return value: ', self, owner, owner_cls)
 
-        return self._forward(self._other.__get__(owner, owner_cls))
+        base_value = self._trait_dependencies["base"].__get__(owner, owner_cls)
 
-    def __set__(self, owner, value):
+        if "other" in self._trait_dependencies:
+            other_value = self._trait_dependencies["other"].__get__(owner, owner_cls)
+            ret = self._forward(base_value, other_value)
+        else:
+            ret = self._forward(base_value)
+
+        if hasattr(self, 'name'):
+            owner.__notify__(
+                self.name, ret, "get", cache=self.cache or (self.role == self.ROLE_VALUE)
+            )
+
+        return ret
+
+    def __set__(self, owner, value_request):
         # use the other to the value into the proper format and validate it
-        value = self._other.to_pythonic(value)
-        type(self._other).validate(self, value, owner)
-        self._other.__set__(owner, self._reverse(value))
+        base_trait = self._trait_dependencies["base"]
+        value = base_trait.to_pythonic(value_request)
+
+        # now reverse the transformation
+        if "other" in self._trait_dependencies:
+            other_trait = self._trait_dependencies["other"]
+            other_value = other_trait.__get__(owner, other_trait.__objclass__)
+
+            base_value = self._reverse(value, other_value)
+        else:
+            base_value = self._reverse(value)
+
+        # set the value of the base trait with the reverse-transformed value
+        base_trait.__set__(owner, base_value)
+
+        if hasattr(self, 'name'):
+            owner.__notify__(
+                self.name, value, "set", cache=self.cache or (self.role == self.ROLE_VALUE)
+            )
 
 
 class BoundedNumber(Trait):
@@ -1153,10 +1319,18 @@ class BoundedNumber(Trait):
         """overload this to dynamically compute max"""
         return self.min
 
-    def calibrate(
+    path_trait: Any = None  # TODO: should be a Unicode string trait
+
+    index_lookup_trait: Any = None  # TODO: this is a trait that should almost certainly be a BoundedNumber
+
+    table_index_column: str = None
+
+    def calibrate_from_table(
         self,
-        offset_name=Undefined,
-        lookup=Undefined,
+        path_trait,
+        index_lookup_trait,
+        *,
+        table_index_column: str = None,
         help="",
         label=Undefined,
         allow_none=False,
@@ -1166,53 +1340,109 @@ class BoundedNumber(Trait):
 
         Arguments:
             offset_name: the name of a value trait in the owner containing a numerical offset
-            lookup: a table containing calibration data, or None to configure later
+            lookup1d: a table containing calibration data, or None to configure later
         """
-
-        params = {}
-        if lookup is not Undefined:
-            mixin = LookupCorrectionMixIn
-            params["table"] = lookup
-
-        elif offset_name is not Undefined:
-            mixin = OffsetCorrectionMixIn
-            params["offset_name"] = offset_name
 
         if label is Undefined:
             label = self.label
 
-        if len(params) != 1:
-            raise ValueError(f"must set exactly one of `offset` and `table`")
-
-        name = self.__class__.__name__
-        name = ("" if name.startswith("Dependent") else "Dependent") + name
-        ttype = type(name, (mixin, type(self)), dict(_other=self))
-
-        return ttype(
+        ret = TableCorrectionMixIn.derive(
+            self,
+            dict(path_trait=path_trait, index_lookup_trait=index_lookup_trait,),
             help=help,
-            label=self.label,
+            label=self.label if label is Undefined else label,
             sets=self.sets,
             gets=self.gets,
             allow_none=allow_none,
-            **params,
+            table_index_column=table_index_column,
         )
 
-    def transform(self, forward, reverse, help="", allow_none=False):
-        """generate a new Trait subclass that calibrates values given by
-        another trait.
+        return ret
+
+    def calibrate_from_expression(
+        self,
+        trait_expression,
+        help: str = "",
+        label: str = Undefined,
+        allow_none: bool = False,
+    ):
+        if isinstance(self, DependentTrait):
+            # This a little unsatisfying, but the alternative would mean
+            # solving the trait_expression for the trait `self`
+            obj = trait_expression
+            while isinstance(obj, DependentTrait):
+                obj = obj._trait_dependencies["base"]
+                if obj == self:
+                    break
+            else:
+                raise TypeError(
+                    f"the trait being calibrated must also be the first trait in the calibration expression"
+                )
+
+        return self.update(
+            trait_expression, help=help, label=label, allow_none=allow_none
+        )
+
+    # def calibrate(
+    #     self,
+    #     offset=Undefined,
+    #     mapping=Undefined,
+    #     table=Undefined,
+    #     help="",
+    #     label=Undefined,
+    #     allow_none=False,
+    # ):
+    #     """generate a new Trait with value dependent on another trait. their configuration
+    #     comes from a trait in the owner.
+
+    #     Arguments:
+    #         offset_name: the name of a value trait in the owner containing a numerical offset
+    #         lookup1d: a table containing calibration data, or None to configure later
+    #     """
+
+    #     params = {}
+    #     if mapping is not Undefined:
+    #         mixin = RemappingCorrectionMixIn
+    #         params["mapping"] = mapping
+
+    #     elif offset is not Undefined:
+    #         mixin = OffsetCorrectionMixIn
+    #         params["offset"] = offset
+
+    #     if label is Undefined:
+    #         label = self.label
+
+    #     if len(params) != 1:
+    #         raise ValueError(f"must set exactly one of `offset`, `lookup1d`, and `lookup2d`")
+
+    #     return mixin.derive(
+    #         self,
+    #         help=help,
+    #         label=self.label,
+    #         sets=self.sets,
+    #         gets=self.gets,
+    #         allow_none=allow_none,
+    #         **params,
+    #     )
+
+    def transform(
+        self,
+        other_trait: Trait,
+        forward: callable,
+        reverse: callable,
+        help="",
+        allow_none=False,
+    ):
+        """generate a new Trait subclass that adjusts values in other traits.
 
         Arguments:
-            forward: a function that returns the transformed numerical value
-        given the untransformed value
-            reverse: a function that returns the untransformed numerical value
-        given the transformed value.
+            forward: implementation of the forward transformation
+            reverse: implementation of the reverse transformation
         """
 
-        name = self.__class__.__name__
-        name = ("" if name.startswith("Dependent") else "Dependent") + name
-        ttype = type(name, (TransformMixIn, type(self)), dict(_other=self))
-
-        return ttype(
+        obj = TransformMixIn.derive(
+            self,
+            dependent_traits={} if other_trait is None else dict(other=other_trait),
             help=help,
             label=self.label,
             sets=self.sets,
@@ -1222,82 +1452,84 @@ class BoundedNumber(Trait):
             _reverse=reverse,
         )
 
+        return obj
+
     def __neg__(self):
-        def neg(x):
+        def neg(x, y=None):
             return None if x is None else -x
 
         return self.transform(
-            neg, neg, allow_none=self.allow_none, help=f"-1*({self.help})"
+            None, neg, neg, allow_none=self.allow_none, help=f"-1*({self.help})"
         )
 
     def __add__(self, other):
-        def add(x):
-            return None if x is None else x + other
+        def add(x, y):
+            return None if None in (x, y) else x + y
 
-        def sub(x):
-            return None if x is None else x - other
+        def sub(x, y):
+            return None if None in (x, y) else x - y
 
         return self.transform(
-            add, sub, allow_none=self.allow_none, help=f"({self.help}) + {other}"
+            other, add, sub, allow_none=self.allow_none, help=f"({self.help}) + {other}"
         )
 
     __radd__ = __add__
 
     def __sub__(self, other):
-        def add(x):
-            return None if x is None else x + other
+        def add(x, y):
+            return None if None in (x, y) else x + y
 
-        def sub(x):
-            return None if x is None else x - other
+        def sub(x, y):
+            return None if None in (x, y) else x - y
 
         return self.transform(
-            sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}"
+            other, sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}"
         )
 
     def __rsub__(self, other):
-        def add(x):
-            return None if x is None else other + x
+        def add(x, y):
+            return None if None in (x, y) else y + x
 
-        def sub(x):
-            return None if x is None else other - x
+        def sub(x, y):
+            return None if None in (x, y) else y - x
 
         return self.transform(
-            sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}"
+            other, sub, add, allow_none=self.allow_none, help=f"({self.help}) + {other}"
         )
 
     def __mul__(self, other):
-        def mul(x):
-            return None if x is None else x * other
+        def mul(x, y):
+            return None if None in (x, y) else x * y
 
-        def div(x):
-            return None if x is None else x / other
+        def div(x, y):
+            return None if None in (x, y) else x / y
 
         return self.transform(
-            mul, div, allow_none=self.allow_none, help=f"({self.help}) + {other}"
+            other, mul, div, allow_none=self.allow_none, help=f"({self.help}) + {other}"
         )
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
-        def mul(x):
-            return None if x is None else x * other
+        def mul(x, y):
+            return None if None in (x, y) else x * y
 
-        def div(x):
-            return None if x is None else x / other
+        def div(x, y):
+            return None if None in (x, y) else x / y
 
         return self.transform(
-            div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}"
+            other, div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}"
         )
 
     def __rdiv__(self, other):
-        def mul(x):
-            return None if x is None else other * x
+        def mul(x, y):
+            return None if None in (x, y) else y * x
 
-        def div(x):
-            return None if x is None else other / x
+        def div(x, y):
+            return None if None in (x, y) else y / x
 
         return self.transform(
-            div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}"
+            other, div, mul, allow_none=self.allow_none, help=f"({self.help}) + {other}"
         )
 
 

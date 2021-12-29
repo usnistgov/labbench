@@ -6,12 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.23 - unreleased]
 ### Added
-- `lb.trait_info` returns a dictionary containing a device's trait definition keywords 
+- `lb.trait_info` returns a dictionary of all trait definitions in a `lb.Device` instance
+- new `calibrate_from_table` and `calibrate_from_expression` methods in numeric trait types
 
 ### Changed
 - The cli is now packaged in the cli directory to skip some unecessary imports
 - Many bugfixes in the cli
 - Corrected an exception to the call signature of Rack methods
+- All trait events are now logged
 
 ## [0.22.2 - 2021-11-09]
 ### Changed

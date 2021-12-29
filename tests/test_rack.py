@@ -209,9 +209,6 @@ if __name__ == "__main__":
     # # Testbed = lb.Rack.take_module('module_as_testbed')
     Testbed = MyRack
 
-
-
-
     # lst = CommentedSeq(['a', 'b'])
     # lst.yaml_add_eol_comment("foo", 0, 0)
     # lst.yaml_add_eol_comment("bar\n\n", 1)

@@ -69,6 +69,11 @@ def cli():
     is_flag=True,
     help="include sequence columns that have default values",
 )
+@click.option(
+    "--with-defaults",
+    is_flag=True,
+    help="include sequence columns that have default values",
+)
 def init(
     pyfile, cls=None, pythonpath=None, output=None, force=False, with_defaults=False
 ):
@@ -155,7 +160,14 @@ def reset(path, with_defaults=False):
 @click.argument(
     "csv_path", type=click.Path(exists=True)
 )  # , help='path to the config directory')
-def run(csv_path, sequence_name):
+@click.option(
+    "--notebook",
+    is_flag=True,
+    type=bool,
+    help="show formatted progress when run in a notebook",
+)
+def run(csv_path, notebook=False):
+    csv_path = Path(csv_path)
     config_dir = csv_path.parent
     sequence_name = csv_path.stem
 
@@ -167,6 +179,11 @@ def run(csv_path, sequence_name):
     # instantiate a Rack from config.yaml
     rack = lb.load_rack(config_dir, apply=True)
 
+    if notebook:
+        from labbench import notebooks
+
+        notebooks.display(notebooks.panel(rack))
+
     # get the callable bound sequence before connection
     # in case it does not exist
     bound_seq = getattr(rack, sequence_name)
@@ -174,9 +191,9 @@ def run(csv_path, sequence_name):
     # instantiate the rack, binding the Sequence method
     with rack:
         # ...and run the sequence object
-
-        print(dir(bound_seq))
-        bound_seq.iterate_from_csv(csv_path)
+        row_iterator = bound_seq.iterate_from_csv(csv_path)
+        for i, (row, result) in enumerate(row_iterator):
+            pass
 
 
 if __name__ == "__main__":

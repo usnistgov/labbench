@@ -55,7 +55,7 @@ from ._backends import (
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
 from ._device import Device, list_devices, trait_info
 from ._host import Email
-from ._rack import Rack, Sequence, import_as_rack, find_owned_rack_by_type, table_input
+from ._rack import Rack, Sequence, import_as_rack, find_owned_rack_by_type, rack_input_table, rack_kwargs_skip, rack_kwargs_template
 from ._traits import observe, unobserve, Undefined
 from ._serialize import load_rack, dump_rack
 from ._version import __version__

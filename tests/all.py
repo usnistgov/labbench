@@ -34,10 +34,10 @@ import labbench as lb
 
 lb.util._force_full_traceback(True)
 
-# from test_values import *
-# from test_properties import *
+from test_value import *
+from test_property import *
 # from test_db import *
-from test_concurrently import *
+# from test_concurrently import *
 
 # from test_doc import *
 

@@ -675,7 +675,7 @@ class Aggregator(util.Ownable):
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
             names = list(self.name_map.values())
             duplicates = set([x for x in names if names.count(x) > 1])
-            print(names)
+
             raise Exception(
                 f"could not automatically resolve duplicate device name(s) {duplicates}"
             )

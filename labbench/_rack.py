@@ -30,6 +30,7 @@ from ctypes import ArgumentError
 from dataclasses import dataclass
 import importlib
 import inspect
+import os
 import sys
 import time
 import traceback
@@ -132,7 +133,12 @@ class CallSignatureTemplate:
             # might have no signature yet if it has not been claimed by its owner
             return None
 
-        target = owner._ownables.get(self.target.__name__, self.target)
+        target = owner._ownables.get(
+            self.target.__name__,
+            self.target
+        )
+        
+        
 
         if not callable(target):
             raise TypeError(
@@ -143,6 +149,7 @@ class CallSignatureTemplate:
 
     def get_keyword_parameters(self, owner, skip_names):
         template_sig = inspect.signature(self.get_target(owner).__call__)
+        # template_sig = inspect.signature(template_sig.bind(owner))
 
         return {
             name: p
@@ -165,23 +172,48 @@ class MethodTaggerDataclass:
 
 
 @dataclass
-class table_input(MethodTaggerDataclass):
+class rack_input_table(MethodTaggerDataclass):
     """tag a method defined in a Rack to support execution from a flat table.
     
     In practice, this often means a very long argument list. 
     
     Arguments:
-        input_table: location of the input table
+        table_path: location of the input table
+    """
 
-        pass_kwargs: replace variable keyword arguments (**kwargs) with the keyword arguments defined in this callable
+    table_path: str
+
+
+@dataclass
+class rack_kwargs_template(MethodTaggerDataclass):
+    """tag a method defined in a Rack to replace a **kwargs argument using the signature of the specified callable.
+    
+    In practice, this often means a very long argument list. 
+    
+    Arguments:
+        callable_template: replace variable keyword arguments (**kwargs) with the keyword arguments defined in this callable
 
         skip: list of column names to omit
     """
 
-    input_table: Any
-    pass_kwargs: callable = None
-    skip: tuple = tuple()
+    template: callable = None
 
+
+class rack_kwargs_skip(MethodTaggerDataclass):
+    """tag a method defined in a Rack to replace a **kwargs argument using the signature of the specified callable.
+    
+    In practice, this often means a very long argument list. 
+    
+    Arguments:
+        callable_template: replace variable keyword arguments (**kwargs) with the keyword arguments defined in this callable
+
+        skip: list of column names to omit
+    """
+
+    skip: list = None
+
+    def __init__(self, *arg_names):
+        self.skip = dict(skip=arg_names)
 
 class RackMethod(util.Ownable):
     """a wrapper that is applied behind the scenes in Rack classes to support introspection"""
@@ -202,12 +234,12 @@ class RackMethod(util.Ownable):
         if isinstance(obj, RackMethod):
             self._wrapped = obj._wrapped
             self._kwdefaults = dict(obj._kwdefaults)
-            self._pass_kwargs = obj._pass_kwargs
+            self._callable_template = obj._callable_template
             self._tags = obj._tags
         else:
             self._wrapped = obj
             self._kwdefaults = kwdefaults
-            self._pass_kwargs = CallSignatureTemplate(tags.pop("pass_kwargs", None))
+            self._callable_template = CallSignatureTemplate(tags.pop("template", None))
             self._tags = tags
 
         # self.__call__.__name__  = self.__name__ = obj.__name__
@@ -241,7 +273,7 @@ class RackMethod(util.Ownable):
     def _apply_signature(self):
         """updates self.__signature__
         
-        __owner_subclass__ must have been called first to do introspection on self._pass_kwargs.
+        __owner_subclass__ must have been called first to do introspection on self._callable_template.
         """
         self.__call__ = util.copy_func(self.__call__)
 
@@ -269,7 +301,7 @@ class RackMethod(util.Ownable):
         # replace the **kwargs with specific keywords from the template function
         skip_param_names = list(self._tags.get("skip", []))
 
-        if self._pass_kwargs.get_target(self._owner) is not None:
+        if self._callable_template.get_target(self._owner) is not None:
             for kws_name, param in params.items():
                 if param.kind is param.VAR_KEYWORD:
                     break
@@ -279,7 +311,7 @@ class RackMethod(util.Ownable):
                 )
 
             try:
-                template_params = self._pass_kwargs.get_keyword_parameters(
+                template_params = self._callable_template.get_keyword_parameters(
                     self._owner, skip_param_names
                 )
             except TypeError:
@@ -304,12 +336,23 @@ class RackMethod(util.Ownable):
         # remember only named keywords, not "*args" and "**kwargs" in call signatures
         self._parameters = list(_filter_signature_parameters(sig.parameters).values())
 
-    def set_kwdefault(self, name, value):
-        self._kwdefaults[name] = value
+    def set_kwdefault(self, name, new_default):
+        self._kwdefaults[name] = new_default
 
         sig = self.__call__.__signature__
-        update = {name: sig.parameters[name].replace(default=value)}
-        sig = sig.replace(parameters=dict(sig.parameters, **update).values())
+        parameters = dict(sig.parameters)
+
+        p = parameters[name]
+
+        # if there was no default before, delete now to bump this
+        # parameter the end of the dictionary. this ensures no
+        # default-less parameters come before default parameters.
+        if p.default is EMPTY and new_default is not EMPTY:
+            del parameters[name]
+            p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
+        parameters[name] = p.replace(default=new_default)
+
+        sig = sig.replace(parameters=parameters.values())
         self.__call__.__signature__ = sig
 
         # if value is EMPTY:
@@ -411,8 +454,6 @@ class BoundSequence(util.Ownable):
     a new Rack object. its keyword arguments are aggregated
     from all of the methods called by the Sequence.
     """
-
-    INDEX_COLUMN_NAME = "step_name"
 
     cleanup_func = None
     exception_allowlist = NeverRaisedException
@@ -705,7 +746,7 @@ class Owner:
         cls._propagate_ownership()
 
     @classmethod
-    def _propagate_ownership(cls):
+    def _propagate_ownership(cls, copy=None):
         cls._ownables = {}
 
         # prepare and register owned attributes
@@ -718,7 +759,10 @@ class Owner:
             if not isinstance(obj, util.Ownable):
                 continue
 
-            need_copy = isinstance(getattr(super(), name, None), util.Ownable)
+            if copy is None:
+                need_copy = isinstance(getattr(super(), name, None), util.Ownable)
+            else:
+                need_copy = copy
 
             # prepare these first, so they are available to owned classes on __owner_subclass__
             if isinstance(obj, core.Device):
@@ -766,6 +810,7 @@ class Owner:
             raise TypeError(
                 f"cannot update unrecognized attributes {unrecognized} of {clsname}"
             )
+
         self._ownables = dict(self._ownables, **update_ownables)
 
         # update devices
@@ -942,8 +987,11 @@ class Sequence(util.Ownable):
     cleanup_func = None
     exception_allowlist = NeverRaisedException
 
-    def __init__(self, *specification):
+    def __init__(self, *specification, input_table=None):
         self.spec = [standardize_spec_step(spec) for spec in specification]
+        self._tags = dict(
+            table_path=input_table
+        )
 
     def return_on_exceptions(self, exception_or_exceptions, cleanup_func=None):
         """ Configures calls to the bound Sequence to swallow the specified exceptions raised by
@@ -998,6 +1046,7 @@ class Sequence(util.Ownable):
             dependencies=self._dependency_map(spec),
             cleanup_func=self.cleanup_func,
             exception_allowlist=self.exception_allowlist,
+            _tags=self._tags,
             __name__=self.__name__,
             __qualname__=type(owner).__qualname__ + "." + self.__name__,
             __objclass__=self.__objclass__,
@@ -1262,8 +1311,10 @@ class _use_module_path:
 
 def import_as_rack(
     import_string: str,
+    *,
+    # working_dir: str,
     cls_name: str = None,
-    append_path: list = None,
+    append_path: list = [],
     base_cls: type = Rack,
     replace_attrs: list = ["__doc__", "__module__"],
 ):
@@ -1301,17 +1352,14 @@ def import_as_rack(
 
         return type_ok and name_ok
 
-    if append_path is not None:
+
+    # start_dir = Path('.').absolute()
+    # os.chdir(working_dir)
+    if append_path:
         with _use_module_path(append_path):
             module = importlib.import_module(import_string)
     else:
         module = importlib.import_module(import_string)
-
-    # spec = importlib.util.spec_from_file_location(
-    #     Path(module_name).stem, str(module_name)
-    # )
-    # module = importlib.util.module_from_spec(spec)
-    # spec.loader.exec_module(module)
 
     if cls_name is not None:
         # work with the class specified in the module

@@ -5,8 +5,9 @@ import inspect
 import os
 from pathlib import Path
 import pandas as pd
+from numbers import Number
 
-from ._rack import Rack, Sequence, BoundSequence, import_as_rack, update_parameter_dict
+from ._rack import Rack, RackMethod, Sequence, BoundSequence, import_as_rack, update_parameter_dict
 from . import util
 
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
@@ -23,6 +24,9 @@ _yaml.indent(mapping=4, sequence=4)
 
 RACK_CONFIG_FILENAME = "config.yaml"
 EMPTY = inspect.Parameter.empty
+
+# csv files that define sequences for function execution
+INDEX_COLUMN_NAME = "step_name"
 
 _FIELD_SOURCE = "source"
 _FIELD_DEVICES = "devices"
@@ -55,7 +59,7 @@ def _quote_strings_recursive(cm):
     return ret
 
 
-def _search_method_parameters(rack_cls):
+def _search_method_parameters(rack_cls_or_obj):
     """finds parameters of methods in rack_cls and its children recursively.
 
     Arguments:
@@ -68,7 +72,7 @@ def _search_method_parameters(rack_cls):
     parameters = {}
     methods = {}
 
-    for rack in rack_cls._owners.values():
+    for rack in rack_cls_or_obj._owners.values():
         # recurse into child racks
         if not isinstance(rack, Rack):
             continue
@@ -80,8 +84,12 @@ def _search_method_parameters(rack_cls):
         for name, callables in m.items():
             methods.setdefault(name, {}).update(callables)
 
-    for method in rack_cls._methods.values():
-        # methods owned directly by rack_cls
+    if inspect.isclass(rack_cls_or_obj):
+        rack = rack_cls_or_obj()
+    else:
+        rack = rack_cls_or_obj
+
+    for method in rack._methods.values():
         p = dict(list(method.extended_signature().parameters.items()))  # skip 'self'
 
         update_parameter_dict(parameters, p)
@@ -119,10 +127,15 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
             )
 
         elif annot is not EMPTY and not isinstance(default, annot):
-            raise TypeError(
-                f"the keyword default configuration at key '{name}' with value "
-                f"'{default}' conflicts with annotated type '{annot.__qualname__}'"
-            )
+            if isinstance(default, Number) and issubclass(annot, Number):
+                # allow casting for numbers
+                default = annot(default)
+                
+            else:
+                raise TypeError(
+                    f"the keyword default configuration at key '{name}' with value "
+                    f"'{default}' conflicts with annotated type '{annot.__qualname__}'"
+                )
 
         # update the call signature
         for short_name, method in methods[name].items():
@@ -132,9 +145,9 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
         util.logger.debug(f"applied defaults {defaults_in}")
 
 
-def make_sequence_stub(
+def write_table_stub(
     rack: Rack, name: str, path: Path, with_defaults: bool = False
-) -> pd.DataFrame:
+):
 
     """forms an empty DataFrame containing the headers needed for Sequence
     csv files.
@@ -145,17 +158,20 @@ def make_sequence_stub(
         with_defaults: whether to include columns when method parameters have defaults
 
     """
-    root_path = Path(path)
 
-    seq = getattr(rack, name)
-    if not isinstance(seq, BoundSequence):
-        raise TypeError(f"{seq} is not a bound Sequence object")
+    func = getattr(rack, name)
+    if not callable(func):
+        raise TypeError(f"{func} is not callable")
+    try:
+        sig = inspect.signature(func)
+    except ValueError:
+        sig = inspect.signature(func.__call__)
 
     # pick out the desired column names based on with_defaults
-    params = inspect.signature(seq.__call__).parameters
+    params = sig.parameters
     columns = [
         name
-        for name, param in params.items()
+        for name, param in list(params.items())[1:]
         if with_defaults or param.default is EMPTY
     ]
 
@@ -170,8 +186,7 @@ def make_sequence_stub(
         defaults = []
 
     df = pd.DataFrame(defaults, columns=columns)
-    df.index.name = BoundSequence.INDEX_COLUMN_NAME
-    path = root_path / f"{seq.__name__}.csv"
+    df.index.name = INDEX_COLUMN_NAME
     df.to_csv(path)
     util.logger.debug(f"writing csv template to {repr(path)}")
 
@@ -233,7 +248,6 @@ def _map_devices(cls):
 
     return cm
 
-
 def dump_rack(
     rack: Rack,
     output_path: Path,
@@ -241,6 +255,7 @@ def dump_rack(
     pythonpath: Path = None,
     exist_ok: bool = False,
     with_defaults: bool = False,
+    skip_tables: bool = False
 ):
     if not isinstance(rack, Rack):
         raise TypeError(f"'rack' argument must be an instance of labbench.Rack")
@@ -281,11 +296,25 @@ def dump_rack(
 
         _yaml.dump(cm, stream)
 
-    for name, obj in rack.__dict__.items():
-        if isinstance(obj, BoundSequence):
-            obj.to_template(output_path / f"{obj.__name__}.csv")
-            # make_sequence_stub(rack, name, output_path, with_defaults=with_defaults)
+    
+    if not skip_tables:
+        for name, obj in rack.__dict__.items():
+            if not callable(obj):
+                continue
 
+            table_path = getattr(obj, '_tags', {}).get('table_path', None)
+
+            if table_path is not None:
+                # write_csv_template(obj, output_path/table_path)
+                # obj.to_template(output_path / f"{obj.__name__}.csv")
+                write_table_stub(rack, name, output_path/table_path, with_defaults=with_defaults)
+
+
+def read_yaml_config(config_path: str):
+    with open(config_path, "r") as f:
+        config = _yaml.load(f)
+        util.logger.debug(f'loaded configuration from "{str(config_path)}"')
+    return config
 
 def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack:
     """instantiates a Rack object from a config directory created by dump_rack.
@@ -294,9 +323,7 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
     """
 
     config_path = Path(output_path) / RACK_CONFIG_FILENAME
-    with open(config_path, "r") as f:
-        config = _yaml.load(f)
-        util.logger.debug(f'loaded configuration from "{str(output_path)}"')
+    config = read_yaml_config(config_path)
 
     if "import_string" not in config[_FIELD_SOURCE]:
         raise KeyError(f"import_string missing from '{str(config_path)}'")
@@ -311,27 +338,24 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
         # TODO: support extensions to python path?
     )
 
-    annot_types = rack_cls.__annotations__
     if apply:
-        # instantiate Devices
-        devices = {
-            name: annot_types[name](**params)
-            for name, params in config[_FIELD_DEVICES].items()
-        }
-
+        os.chdir(output_path)
         _adjust_sequence_defaults(rack_cls, config[_FIELD_KEYWORD_DEFAULTS], **defaults)
 
-    else:
-        # instantiate Devices with defaults set in the source code (or blank arguments if unset)
-        devices = {
-            name: rack_cls._devices.get(name, annot_type())
-            for name, annot_type in annot_types.items()
-        }
 
     rack_cls._propagate_ownership()
 
-    obj = rack_cls(**devices)
+    obj = rack_cls()
 
-    os.chdir(output_path)
+    if apply:
+        for name, params in config[_FIELD_DEVICES].items():
+            try:
+                owned_obj = getattr(obj, name)
+            except AttributeError:
+                objname = type(obj).__qualname__
+                raise IOError(f"{config_path} refers to a device '{name}' that does not exist in {objname}")
+
+            for param_name, param_value in params.items():
+                setattr(owned_obj, param_name, param_value)
 
     return obj

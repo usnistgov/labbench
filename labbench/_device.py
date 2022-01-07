@@ -40,7 +40,7 @@ from . import util
 from . import property as property_
 from . import value
 
-from ._traits import HasTraits, Trait, Undefined, BoundedNumber, observe, unobserve
+from ._traits import HasTraits, Trait, Undefined, BoundedNumber, observe, unobserve, hold_trait_notifications
 
 __all__ = ["Device", "list_devices", "property", "value", "datareturn", "trait_info"]
 
@@ -223,9 +223,10 @@ class Device(HasTraits, util.Ownable):
 
         super().__init__()
 
-        for name, init_value in values.items():
-            if init_value != self._traits[name].default:
-                setattr(self, name, init_value)
+        with hold_trait_notifications(self):
+            for name, init_value in values.items():
+                if init_value != self._traits[name].default:
+                    setattr(self, name, init_value)
 
         util.Ownable.__init__(self)
 
@@ -399,7 +400,14 @@ class Device(HasTraits, util.Ownable):
 
     ### Object boilerplate
     def __del__(self):
-        self.close()
+        try:
+            isopen = self.isopen
+        except AttributeError:
+            # the object failed to instantiate properly
+            isopen = False
+
+        if isopen:
+            self.close()
 
     def __repr__(self):
         name = self.__class__.__qualname__

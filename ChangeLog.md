@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Many bugfixes in the cli
 - Corrected an exception to the call signature of Rack methods
 - All trait events are now logged
+- Numerous small bugfixes
 
 ## [0.22.2 - 2021-11-09]
 ### Changed

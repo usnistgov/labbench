@@ -630,6 +630,20 @@ class Trait:
 Trait.__init_subclass__()
 
 
+@contextmanager
+def hold_trait_notifications(owner):
+    def skip_notify(name, value, type, cache):
+        old = owner.__cache__.setdefault(name, Undefined)
+
+        msg = dict(new=value, old=old, owner=owner, name=name, type=type, cache=cache)
+
+        owner.__cache__[name] = value
+
+    original, owner.__notify__ = owner.__notify__, skip_notify
+    yield
+    owner.__notify__ = original
+
+
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
@@ -697,21 +711,6 @@ class HasTraits(metaclass=HasTraitsMeta):
                 cls._datareturn_attrs.append(name)
             elif trait.role == Trait.ROLE_PROPERTY:
                 cls._property_attrs.append(name)
-
-    # @contextmanager
-    # def _hold_notifications(self, names=Undefined):
-    #     """ pause notifications for the specified traits
-    #         inside this context. names is a list of trait
-    #         names, or Undefined (default) to pause all traits.
-    #     """
-    #     if names is Undefined:
-    #         names = list(self._traits.keys())
-    #     elif isinstance(names, str):
-    #         names = [names]
-
-    #     pre,self._holds=self._holds, names
-    #     yield
-    #     self._holds=pre
 
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache):
@@ -970,7 +969,7 @@ class RemappingCorrectionMixIn(DependentTrait):
     def lookup_cal(self, uncal, owner):
         """look up and return the calibrated value, given the uncalibrated value"""
         owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
-        if owner_cal["by_uncal"] is None:
+        if owner_cal.get("by_uncal", None) is None:
             return None
 
         try:
@@ -1032,7 +1031,6 @@ class RemappingCorrectionMixIn(DependentTrait):
     @util.hide_in_traceback
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
-            # print(f'{type(owner)}, {owner_cls}, {getattr(self, "__objclass__", None)}')
             return self
 
         # by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
@@ -1098,25 +1096,39 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         super().__init_owner_instance__(owner)
 
         observe(
-            owner, self._on_path_trait_update, name=self.path_trait.name, type_="set"
-        )
-        if self.path_trait.default is not None:
-            getattr(owner, self.path_trait.name)  # trigger an update
-
-        observe(
             owner,
-            self._on_index_value_update,
-            name=self.index_lookup_trait.name,
-            type_="set",
+            self._on_cal_update_event,
+            name=[self.path_trait.name, self.index_lookup_trait.name],
+            type_="set"
         )
-        if self.index_lookup_trait.default is not None:
-            getattr(owner, self.index_lookup_trait.name)  # trigger an update
 
-    def _on_path_trait_update(self, msg):
-        return self._load_calibration_table(msg["owner"], msg["new"])
+    def _on_cal_update_event(self, msg):
+        owner = msg['owner']
 
-    def _on_index_value_update(self, msg):
-        return self._update_index_value(msg["owner"], msg["new"])
+        if msg['name'] == self.path_trait.name:
+            path = msg['new']
+            index = getattr(owner, self.index_lookup_trait.name)
+
+            ret = self._load_calibration_table(owner, path)
+            self._update_index_value(owner, index)
+
+            return ret
+
+        elif msg['name'] == self.index_lookup_trait.name:
+            path = getattr(owner, self.path_trait.name)
+            index = msg['new']
+
+            if self._CAL_TABLE_KEY not in owner._calibrations.get(self.name, {}):
+                self._load_calibration_table(owner, path)
+
+            ret = self._update_index_value(owner, index)
+
+            return ret
+
+        else:
+            raise KeyError(f"unsupported trait name {msg['name']}")
+
+        # return self._update_index_value(msg["owner"], msg["new"])
 
     def _load_calibration_table(self, owner, path):
         """ stash the calibration table from disk
@@ -1238,10 +1250,7 @@ class TransformMixIn(DependentTrait):
 
     def __get__(self, owner, owner_cls=None):
         if owner is None or owner_cls is not self.__objclass__:
-            # print('return self: ', self, owner, owner_cls)
             return self
-        # else:
-        # print('return value: ', self, owner, owner_cls)
 
         base_value = self._trait_dependencies["base"].__get__(owner, owner_cls)
 

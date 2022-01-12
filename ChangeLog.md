@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Corrected an exception to the call signature of Rack methods
 - All trait events are now logged
 - Numerous small bugfixes
+- Corrected misreporting 'min' and 'max' as None
 
 ## [0.22.2 - 2021-11-09]
 ### Changed

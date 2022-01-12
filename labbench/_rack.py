@@ -371,10 +371,10 @@ class RackMethod(util.Ownable):
 
         # self.introspect()
 
-    def extended_signature(self):
+    def extended_signature(self, name_map={}):
         """maps extended keyword argument names into a copy of self.__call__.__signature__"""
         sig = self.__call__.__signature__
-        ext_names = self.extended_arguments()
+        ext_names = self.extended_arguments(name_map)
 
         param_list = list(_filter_signature_parameters(sig.parameters).values())
 
@@ -384,7 +384,11 @@ class RackMethod(util.Ownable):
             ]
         )
 
-    def extended_arguments(self):
+    def extended_arguments(self, name_map={}):
+        """ returns a list of argument names from 
+        `name_map` (when specified) or by prepending the owner's
+        name as a prefix
+        """
         sig = self.__call__.__signature__
         if hasattr(self._owner, "__name__"):
             prefix = self._owner.__name__ + "_"
@@ -392,16 +396,28 @@ class RackMethod(util.Ownable):
             prefix = ""
 
         names = list(sig.parameters.keys())[1:]
-        return [prefix + name for name in names]
+        return [
+            name_map.get(name, prefix + name)
+            for name in names
+        ]
 
     @util.hide_in_traceback
-    def extended_argname_call(self, *args, **kws):
+    def call_by_extended_argnames(self, *args, **kws):
         """rename keywords from the long form used by an owning class"""
-        i = len(self._owner.__name__) + 1
+        prefix = self._owner.__name__ + '_'
+        i = len(prefix)
 
+        # TODO: this will break in certain special cases.
+        # there should be an explicit dictionary mapping
+        # into the extended arg name instead of guesswork
         # remove the leading name of the owner
-        kws = {k[i:]: v for k, v in kws.items()}
-        return inspect.signature(self.__call__).bind(self, *args, **kws)
+        kws = {
+            (k[i:] if k.startswith(prefix) else k): v
+            for k, v in kws.items()
+        }
+        # inspect.signature(self.__call__).bind(self, *args, **kws)
+        return self.__call__(self, *args, **kws)
+
 
     @util.hide_in_traceback
     def __call__(self, *args, **kws):
@@ -515,12 +531,16 @@ class BoundSequence(util.Ownable):
         """ """
 
         available = set(kwargs.keys())
+        shared_names = self._tags['shared_names']
+        name_map = dict(zip(shared_names, shared_names))
 
         def call(func):
             # make a Call object with the subset of `kwargs`
-            keys = available.intersection(func.extended_arguments())
+            
+            keys = available.intersection(func.extended_arguments(name_map))
             params = {k: kwargs[k] for k in keys}
-            return util.Call(func.extended_argname_call, **params)
+            ret = util.Call(func.call_by_extended_argnames, **params)
+            return ret
 
         kws_out = {}
 
@@ -987,10 +1007,11 @@ class Sequence(util.Ownable):
     cleanup_func = None
     exception_allowlist = NeverRaisedException
 
-    def __init__(self, *specification, input_table=None):
+    def __init__(self, *specification, shared_names=[], input_table=None):
         self.spec = [standardize_spec_step(spec) for spec in specification]
         self._tags = dict(
-            table_path=input_table
+            table_path=input_table,
+            shared_names = shared_names
         )
 
     def return_on_exceptions(self, exception_or_exceptions, cleanup_func=None):
@@ -1068,9 +1089,13 @@ class Sequence(util.Ownable):
             self=inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY)
         )
 
+        shared_names = self._tags['shared_names']
+        name_map = dict(zip(shared_names, shared_names))
         for funcs in spec:
             for func in funcs:
-                update_parameter_dict(params, func.extended_signature())
+                update_parameter_dict(
+                    params, func.extended_signature(name_map=name_map)
+                )
 
         cls.__call__.__signature__ = inspect.Signature(parameters=params.values())
 

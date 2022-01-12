@@ -1125,7 +1125,7 @@ class CSVLogger(RelationalTableLogger):
         tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
-    root_file = "root.csv"
+    root_filename = "root.csv"
     nonscalar_file_type = "csv"
 
     def open(self):
@@ -1146,7 +1146,7 @@ class CSVLogger(RelationalTableLogger):
 
         self.path.mkdir(parents=True, exist_ok=self._append)
 
-        file_path = self.path / self.root_file
+        file_path = self.path / self.root_filename
         try:
             # test access by starting the root table
             file_path.touch(exist_ok=self._append)
@@ -1186,7 +1186,7 @@ class CSVLogger(RelationalTableLogger):
         self.df.sort_index(inplace=True)
         self.last_index = self.df.index[-1]
 
-        with open(self.path / self.root_file, "a") as f:
+        with open(self.path / self.root_filename, "a") as f:
             self.df.to_csv(f, header=isfirst, index=False)
 
 

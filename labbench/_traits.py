@@ -1213,16 +1213,21 @@ class TransformMixIn(DependentTrait):
                 self._forward(base_bounds[1]),
             ]
         else:
-            other_bounds = [
-                other_trait._min(owner),
-                other_trait._max(owner),
-            ]
+            other_value = getattr(owner, other_trait.name)
+            # other_bounds = [
+            #     other_trait._min(owner),
+            #     other_trait._max(owner),
+            # ]
 
+            # trial_bounds = [
+            #     self._forward(base_bounds[0], other_bounds[0]),
+            #     self._forward(base_bounds[0], other_bounds[1]),
+            #     self._forward(base_bounds[1], other_bounds[0]),
+            #     self._forward(base_bounds[1], other_bounds[1]),
+            # ]
             trial_bounds = [
-                self._forward(base_bounds[0], other_bounds[0]),
-                self._forward(base_bounds[0], other_bounds[1]),
-                self._forward(base_bounds[1], other_bounds[0]),
-                self._forward(base_bounds[1], other_bounds[1]),
+                self._forward(base_bounds[0], other_value),
+                self._forward(base_bounds[1], other_value),
             ]
 
         if None in trial_bounds:

@@ -52,7 +52,7 @@ from ._backends import (
     VISADevice,
     Win32ComDevice,
 )
-from ._data import CSVLogger, HDFLogger, SQLiteLogger, read
+from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
 from ._device import Device, list_devices, trait_info
 from ._host import Email
 from ._rack import Rack, Sequence, import_as_rack, find_owned_rack_by_type, rack_input_table, rack_kwargs_skip, rack_kwargs_template

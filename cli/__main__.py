@@ -173,6 +173,8 @@ def run(csv_path, notebook=False):
     config_dir = csv_path.parent
     sequence_name = csv_path.stem
 
+    relative_csv_path = csv_path.relative_to(config_dir)
+
     # delay the labbench import so that e.g. --help is faster
     import labbench as lb
 
@@ -193,7 +195,7 @@ def run(csv_path, notebook=False):
     # instantiate the rack, binding the Sequence method
     with rack:
         # ...and run the sequence object
-        row_iterator = bound_seq.iterate_from_csv(csv_path)
+        row_iterator = bound_seq.iterate_from_csv(relative_csv_path)
         for i, (row, result) in enumerate(row_iterator):
             pass
 

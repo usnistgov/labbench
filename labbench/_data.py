@@ -502,16 +502,17 @@ class MungeToTar(MungerBase):
 class Aggregator(util.Ownable):
     """Passive aggregation of data from Device property trait and value traits traits and methods in Rack instances"""
 
-    def __init__(self, persistent_state: bool = True):
+    PERSISTENT_TRAIT_ROLES = (_traits.Trait.ROLE_VALUE,)
+
+    def __init__(self):
         # registry of names to use for trait owners
         self.name_map = {}
         self.trait_rules = dict(always={}, never={})
 
         # pending data
-        self._pending_states = {}  # pending = dict(state={}, value traits={}, rack={})
-        self._pending_values = {}
+        self._pending_temporary = {}  # pending = dict(state={}, value traits={}, rack={})
+        self._pending_persistent = {}
         self._pending_rack = {}
-        self._persistent_state = persistent_state
 
         # cached data
         self.metadata = {}
@@ -525,10 +526,20 @@ class Aggregator(util.Ownable):
         # catch return data as well
         _rack.notify.observe_returns(self._receive_rack_data)
         _rack.notify.observe_calls(self._receive_rack_data)
+        _rack.notify.observe_call_iteration(self._receive_rack_iteration)
 
     def disable(self):
-        _rack.notify.observe_returns(self._receive_rack_data)
-        _rack.notify.observe_calls(self._receive_rack_data)
+        _rack.notify.unobserve_returns(self._receive_rack_data)
+        _rack.notify.unobserve_calls(self._receive_rack_data)
+        _rack.notify.unobserve_call_iteration(self._receive_rack_iteration)
+
+    def is_persistent_trait(self, device, attr):
+        if not isinstance(device, core.Device):
+            return False
+
+        trait = device._traits[attr]
+
+        return trait.role in self.PERSISTENT_TRAIT_ROLES or trait.cache
 
     def get(self) -> dict:
         """Return a dictionary of observed Device trait data and calls and returns in Rack instances. A get is
@@ -544,29 +555,29 @@ class Aggregator(util.Ownable):
             # Perform gets for each property trait called out in self.trait_rules['always']
             if device in self.trait_rules["always"].keys():
                 for attr in self.trait_rules["always"][device]:
-                    if isinstance(device, core.Device):
-                        self._pending_states[self.key(name, attr)] = getattr(
+                    if self.is_persistent_trait(device, attr):
+                        self._pending_persistent[self.key(name, attr)] = getattr(
                             device, attr
                         )
                     else:
-                        self._pending_values[self.key(name, attr)] = getattr(
+                        self._pending_temporary[self.key(name, attr)] = getattr(
                             device, attr
                         )
 
             # Remove keys corresponding with self.trait_rules['never']
             if device in self.trait_rules["never"].keys():
                 for attr in self.trait_rules["never"][device]:
-                    if isinstance(device, core.Device):
-                        self._pending_states.pop(self.key(name, attr), None)
+                    if self.is_persistent_trait(device, attr):
+                        self._pending_persistent.pop(self.key(name, attr), None)
                     else:
-                        self._pending_values.pop(self.key(name, attr), None)
+                        self._pending_temporary.pop(self.key(name, attr), None)
 
         # start by aggregating the trait data, and checking for conflicts with keys in the Rack data
-        aggregated = dict(self._pending_values, **self._pending_states)
+        aggregated = dict(self._pending_persistent, **self._pending_temporary)
         key_conflicts = set(aggregated).intersection(self._pending_rack)
         if len(key_conflicts) > 0:
             self.critical(
-                f"key conflicts in aggregated data - Rack data is overwriting trait data for {key_conflicts}"
+                f"key name conflict in aggregated data - Rack data is overwriting trait data for {key_conflicts}"
             )
 
         # combine the data
@@ -575,8 +586,7 @@ class Aggregator(util.Ownable):
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
         # value traits traits are locally cached, so it is safe to keep them in the next step
         self._pending_rack = {}
-        if not self._persistent_state:
-            self._pending_states = {}
+        self._pending_temporary = {}
 
         return aggregated
 
@@ -602,9 +612,11 @@ class Aggregator(util.Ownable):
 
         self.name_map.update([(v, k) for k, v in mapping.items()])
 
-    def _receive_rack_data(self, row_data: dict):
+    def _receive_rack_data(self, msg: dict):
         """called by an owning Rack notifying that managed procedural steps have returned data"""
         # trait data or previous returned data may cause problems here. perhaps this should be an exception?
+
+        row_data = msg['new']
 
         key_conflicts = set(row_data).intersection(self._pending_rack)
         if len(key_conflicts) > 0:
@@ -613,11 +625,34 @@ class Aggregator(util.Ownable):
             )
         self._pending_rack.update(row_data)
 
+    def _receive_rack_iteration(self, msg: dict):
+        """called by an owning Rack notifying that managed procedural steps have returned data"""
+        # trait data or previous returned data may cause problems here. perhaps this should be an exception?
+
+        iter_info = msg['new']
+        row_data = {}
+
+        row_data[msg['owner']._owned_name + '_call_index'] = iter_info['index']
+        if iter_info['step_name']:
+            row_data[msg['owner']._owned_name + '_step_name'] = iter_info['step_name']
+
+        # TODO: should there be some kind of conflict check for this?
+        # key_conflicts = set(row_data).intersection(self._pending_persistent)
+        # if len(key_conflicts) > 0:
+        #     self._logger.warning(
+        #         f"Rack call overwrites prior data with existing keys {key_conflicts}"
+        #     )
+
+        for name in row_data.keys():
+            self._pending_persistent.pop(name, None)
+
+        self._pending_persistent = dict(row_data, **self._pending_persistent)
+
     def _receive_trait_update(self, msg: dict):
         """called by trait owners on changes observed
 
         Arguments:
-            change (dict): callback info dictionary generated by traitlets
+            msg (dict): callback info dictionary generated by traitlets
         Returns:
             None
         """
@@ -631,10 +666,10 @@ class Aggregator(util.Ownable):
 
         if msg["cache"]:
             self.metadata[self.key(name, attr)] = msg["new"]
-        elif isinstance(msg["owner"], core.Device):
-            self._pending_states[self.key(name, attr)] = msg["new"]
+        elif self.is_persistent_trait(msg['owner'], msg['name']):
+            self._pending_persistent[self.key(name, attr)] = msg["new"]
         else:
-            self._pending_values[self.key(name, attr)] = msg["new"]
+            self._pending_temporary[self.key(name, attr)] = msg["new"]
 
     def _update_name_map(self, rack_or_devices):
         """ "map each Device to a name in devices.values() by introspection"""
@@ -840,11 +875,10 @@ class RelationalTableLogger(
         metadata_dirname="metadata",
         tar=False,
         git_commit_in=None,
-        persistent_state=True,
         # **metadata
     ):
 
-        self.aggregator = Aggregator(persistent_state=persistent_state)
+        self.aggregator = Aggregator()
 
         super().__init__()
 
@@ -995,6 +1029,7 @@ class RelationalTableLogger(
             self.pending = [
                 self.munge(self.last_index + i, proc(row)) for i, row in pending
             ]
+            self.last_index += len(self.pending)-1
             self._write_root()
             self.clear()
 
@@ -1178,13 +1213,14 @@ class CSVLogger(RelationalTableLogger):
         isfirst = self.df is None
         pending = pd.DataFrame(self.pending)
         pending.index.name = self.index_label
-        pending.index += self.last_index
+        pending.index = pending.index + self.last_index
+
         if isfirst:
             self.df = pending
         else:
-            self.df = self.df.append(pending).loc[self.last_index :]
+            self.df = self.df.append(pending).loc[self.last_index:]
         self.df.sort_index(inplace=True)
-        self.last_index = self.df.index[-1]
+        self.last_index = self.df.index[-1]+1
 
         with open(self.path / self.root_filename, "a") as f:
             self.df.to_csv(f, header=isfirst, index=False)
@@ -1356,7 +1392,6 @@ class HDFLogger(RelationalTableLogger):
         append=False,
         key_fmt="{id} {host_time}",
         git_commit_in=None,
-        persistent_state=True,
         # **metadata
     ):
         if str(path).endswith(".h5"):
@@ -1368,7 +1403,6 @@ class HDFLogger(RelationalTableLogger):
             path=path,
             append=append,
             git_commit_in=git_commit_in,
-            persistent_state=persistent_state,
         )
 
         # Switch to the HDF munger

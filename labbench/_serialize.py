@@ -304,6 +304,9 @@ def dump_rack(
 
             table_path = getattr(obj, '_tags', {}).get('table_path', None)
 
+            if table_path is None and not hasattr(Rack, name):
+                table_path = name+'.csv'
+
             if table_path is not None:
                 # write_csv_template(obj, output_path/table_path)
                 # obj.to_template(output_path / f"{obj.__name__}.csv")

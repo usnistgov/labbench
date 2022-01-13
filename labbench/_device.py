@@ -171,7 +171,7 @@ class Device(HasTraits, util.Ownable):
 
     """
 
-    resource = value.str(allow_none=True, help="device address or URI")
+    resource = value.str(allow_none=True, cache=True, help="device address or URI")
     concurrency = value.bool(
         True, sets=False, help="True if the device supports threading"
     )

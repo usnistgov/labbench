@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - All trait events are now logged
 - Numerous small bugfixes
 - Corrected misreporting 'min' and 'max' as None
+- Device.resource is now defined with cache=True
 
 ## [0.22.2 - 2021-11-09]
 ### Changed

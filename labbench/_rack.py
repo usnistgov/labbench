@@ -74,27 +74,51 @@ class notify:
     """Singleton notification handler shared by all Rack instances"""
 
     # the global mapping of references to notification callbacks
-    _handlers = dict(returns=set(), calls=set())
+    _handlers = dict(returns=set(), calls=set(), iteration=set())
 
     @classmethod
     def clear(cls):
-        cls._handlers = dict(returns=set(), calls=set())
+        cls._handlers = dict(returns=set(), calls=set(), iteration=set())
 
     @classmethod
-    def return_event(cls, returned: dict):
+    def return_event(cls, owner, returned: dict):
         if not isinstance(returned, dict):
             raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
         for handler in cls._handlers["returns"]:
-            handler(returned)
+            handler(dict(
+                name=owner._owned_name,
+                owner=owner,
+                old=None,
+                new=returned
+            ))
 
     @classmethod
-    def call_event(cls, parameters: dict):
+    def call_event(cls, owner, parameters: dict):
         if not isinstance(parameters, dict):
             raise TypeError(
                 f"parameters data was {repr(parameters)}, which is not a dict"
             )
         for handler in cls._handlers["calls"]:
-            handler(parameters)
+            handler(dict(
+                name=owner._owned_name,
+                owner=owner,
+                old=None,
+                new=parameters
+            ))
+
+    @classmethod
+    def call_iteration_event(cls, owner, index: int, step_name: str=None, total_count: int=None):
+        for handler in cls._handlers["iteration"]:
+            handler(dict(
+                name=owner._owned_name,
+                owner=owner,
+                old=None,
+                new=dict(
+                    index=index,
+                    step_name=step_name,
+                    total_count=total_count
+                ),
+            ))
 
     @classmethod
     def observe_returns(cls, handler):
@@ -109,6 +133,12 @@ class notify:
         cls._handlers["calls"].add(handler)
 
     @classmethod
+    def observe_call_iteration(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers["iteration"].add(handler)
+
+    @classmethod
     def unobserve_returns(cls, handler):
         if not callable(handler):
             raise AttributeError(f"{repr(handler)} is not callable")
@@ -119,6 +149,12 @@ class notify:
         if not callable(handler):
             raise AttributeError(f"{repr(handler)} is not callable")
         cls._handlers["calls"].remove(handler)
+
+    @classmethod
+    def unobserve_call_iteration(cls, handler):
+        if not callable(handler):
+            raise AttributeError(f"{repr(handler)} is not callable")
+        cls._handlers["iteration"].remove(handler)
 
 
 class CallSignatureTemplate:
@@ -213,7 +249,7 @@ class rack_kwargs_skip(MethodTaggerDataclass):
     skip: list = None
 
     def __init__(self, *arg_names):
-        self.skip = dict(skip=arg_names)
+        self.skip = arg_names
 
 class RackMethod(util.Ownable):
     """a wrapper that is applied behind the scenes in Rack classes to support introspection"""
@@ -235,12 +271,12 @@ class RackMethod(util.Ownable):
             self._wrapped = obj._wrapped
             self._kwdefaults = dict(obj._kwdefaults)
             self._callable_template = obj._callable_template
-            self._tags = obj._tags
+            self.tags = obj.tags
         else:
             self._wrapped = obj
             self._kwdefaults = kwdefaults
             self._callable_template = CallSignatureTemplate(tags.pop("template", None))
-            self._tags = tags
+            self.tags = tags
 
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
@@ -251,6 +287,21 @@ class RackMethod(util.Ownable):
         self._apply_signature()
 
         setattr(owner, name, self)
+
+    def iterate_from_csv(self, path):
+        """call the BoundSequence for each row in a csv table.
+        keyword argument names are taken from the column header
+        (0th row). keyword values are taken from corresponding column in
+        each row.
+        """
+        table = pd.read_csv(path, index_col=0)
+        for i, row in enumerate(table.index):
+            util.logger.info(
+                f"{self._owned_name} from '{str(path)}' "
+                f"- '{row}' ({i+1}/{len(table.index)})"
+            )
+            notify.call_iteration_event(self, i, row, len(table.index))
+            yield row, self(**table.loc[row].to_dict())
 
     debug = None
 
@@ -299,7 +350,7 @@ class RackMethod(util.Ownable):
         params = dict(sig.parameters)
 
         # replace the **kwargs with specific keywords from the template function
-        skip_param_names = list(self._tags.get("skip", []))
+        skip_param_names = list(self.tags.get("skip", []))
 
         if self._callable_template.get_target(self._owner) is not None:
             for kws_name, param in params.items():
@@ -385,15 +436,20 @@ class RackMethod(util.Ownable):
         )
 
     def extended_arguments(self, name_map={}):
-        """ returns a list of argument names from 
-        `name_map` (when specified) or by prepending the owner's
-        name as a prefix
+        """ returns a list of argument names from in the owned context.
+
+        Arguments:
+            name_map (dict): name remapping, overriding self.tags
         """
+        # TODO: should these all have 'owner' as a name, to specify the context?
         sig = self.__call__.__signature__
         if hasattr(self._owner, "__name__"):
             prefix = self._owner.__name__ + "_"
         else:
             prefix = ""
+
+        shared_names = self.tags.get('shared_names', [])
+        name_map = dict(dict(zip(shared_names, shared_names)), **name_map)
 
         names = list(sig.parameters.keys())[1:]
         return [
@@ -405,16 +461,21 @@ class RackMethod(util.Ownable):
     def call_by_extended_argnames(self, *args, **kws):
         """rename keywords from the long form used by an owning class"""
         prefix = self._owner.__name__ + '_'
-        i = len(prefix)
+        prefix_start = len(prefix)
 
-        # TODO: this will break in certain special cases.
+        # TODO: this will break in some keyword name edge-cases.
         # there should be an explicit dictionary mapping
         # into the extended arg name instead of guesswork
         # remove the leading name of the owner
         kws = {
-            (k[i:] if k.startswith(prefix) else k): v
+            (k[prefix_start:] if k.startswith(prefix) else k): v
             for k, v in kws.items()
         }
+
+        if len(kws) > 0:
+            # notify_params = {name_prefix + k: v for k, v in kws.items()}
+            notify.call_event(self, kws)
+
         # inspect.signature(self.__call__).bind(self, *args, **kws)
         return self.__call__(self, *args, **kws)
 
@@ -435,10 +496,10 @@ class RackMethod(util.Ownable):
         #     )
 
         # notify observers about the parameters passed
-        name_prefix = "_".join((self._owner._owned_name or "").split(".")[1:]) + "_"
-        if len(kws) > 0:
-            notify_params = {name_prefix + k: v for k, v in kws.items()}
-            notify.call_event(notify_params)
+        # name_prefix = "_".join((self._owner._owned_name or "").split(".")[1:]) + "_"
+        # if len(kws) > 0:
+        #     # notify_params = {name_prefix + k: v for k, v in kws.items()}
+        #     notify.call_event(kws)
 
         # invoke the wrapped function
         t0 = time.perf_counter()
@@ -450,9 +511,9 @@ class RackMethod(util.Ownable):
         # notify observers about the returned value
         if ret is not None:
             need_notify = (
-                ret if isinstance(ret, dict) else {name_prefix + self.__name__: ret}
+                ret if isinstance(ret, dict) else {self._owned_name: ret}
             )
-            notify.return_event(need_notify)
+            notify.return_event(self, need_notify)
 
         return {} if ret is None else ret
 
@@ -525,19 +586,20 @@ class BoundSequence(util.Ownable):
                 f"{self._owned_name} from '{str(path)}' "
                 f"- '{row}' ({i+1}/{len(table.index)})"
             )
+            notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
 
     def _step(self, spec, kwargs):
         """ """
 
         available = set(kwargs.keys())
-        shared_names = self._tags['shared_names']
+        shared_names = self.tags['shared_names']
         name_map = dict(zip(shared_names, shared_names))
 
         def call(func):
             # make a Call object with the subset of `kwargs`
             
-            keys = available.intersection(func.extended_arguments(name_map))
+            keys = available.intersection(func.extended_arguments(name_map=name_map))
             params = {k: kwargs[k] for k in keys}
             ret = util.Call(func.call_by_extended_argnames, **params)
             return ret
@@ -1009,9 +1071,9 @@ class Sequence(util.Ownable):
 
     def __init__(self, *specification, shared_names=[], input_table=None):
         self.spec = [standardize_spec_step(spec) for spec in specification]
-        self._tags = dict(
+        self.tags = dict(
             table_path=input_table,
-            shared_names = shared_names
+            shared_names = shared_names,
         )
 
     def return_on_exceptions(self, exception_or_exceptions, cleanup_func=None):
@@ -1067,7 +1129,7 @@ class Sequence(util.Ownable):
             dependencies=self._dependency_map(spec),
             cleanup_func=self.cleanup_func,
             exception_allowlist=self.exception_allowlist,
-            _tags=self._tags,
+            tags=self.tags,
             __name__=self.__name__,
             __qualname__=type(owner).__qualname__ + "." + self.__name__,
             __objclass__=self.__objclass__,
@@ -1089,7 +1151,7 @@ class Sequence(util.Ownable):
             self=inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY)
         )
 
-        shared_names = self._tags['shared_names']
+        shared_names = self.tags['shared_names']
         name_map = dict(zip(shared_names, shared_names))
         for funcs in spec:
             for func in funcs:

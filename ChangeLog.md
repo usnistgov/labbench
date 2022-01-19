@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Numerous small bugfixes
 - Corrected misreporting 'min' and 'max' as None
 - Device.resource is now defined with cache=True
+- the CLI tool now drops to a pdb prompt on exceptions in `run` or `open`
+- decode bytes to UTF-8 in metadata summary export, to avoid a json error
+- exceptions are now raised after all parent `close` methods have been invoked in Rack or Device
 
 ## [0.22.2 - 2021-11-09]
 ### Changed

@@ -27,6 +27,45 @@ def empty_rack(cls):
     return cls(**init_kws)
 
 
+def post_mortem_debug(note=None, exc_info=None):
+    import pdb
+    import traceback
+    import labbench as lb
+
+    if exc_info is None:
+        exc_info = sys.exc_info()
+    ex = exc_info[1]
+
+    if (
+        isinstance(ex, lb.util.ConcurrentException)
+        and len(ex.thread_exceptions) > 0
+    ):
+
+        if isinstance(ex.thread_exceptions, (list,tuple)):
+            ex.thread_exceptions = dict(enumerate(ex.thread_exceptions))
+
+        for i, (name, thread_exc_info) in enumerate(ex.thread_exceptions.items()):
+            progress_msg = (note or '')+'\n'
+            progress_msg += f''
+            
+            progress_msg += f'debug thread {i+1} of {len(ex.thread_exceptions)}\n'
+            if name != i:
+                progress_msg += f'thread name "{name}"'
+
+            post_mortem_debug(note, exc_info=thread_exc_info)
+
+        return
+
+    else:
+        traceback.print_exception(*exc_info)
+
+        sys.stderr.write("\nentering pdb prompt because the above exception was raised. use 'exit' to exit.\n")
+        if note is not None:
+            sys.stderr.write(note+'\n')
+
+        pdb.post_mortem(exc_info[2])
+
+
 def do_cli():
     try:
         cli()
@@ -168,7 +207,10 @@ def reset(path, with_defaults=False):
     type=bool,
     help="show formatted progress when run in a notebook",
 )
-def run(csv_path, notebook=False):
+@click.option(
+    "--verbose", type=bool, is_flag=True, default=False, help="include labbench internals in tracebacks"
+)
+def run(csv_path, notebook=False, verbose=False):
     csv_path = Path(csv_path)
     config_dir = csv_path.parent
     sequence_name = csv_path.stem
@@ -178,7 +220,8 @@ def run(csv_path, notebook=False):
     # delay the labbench import so that e.g. --help is faster
     import labbench as lb
 
-    lb._force_full_traceback(True)
+    if verbose:
+        lb._force_full_traceback(True)
 
     # instantiate a Rack from config.yaml
     rack = lb.load_rack(config_dir, apply=True)
@@ -192,12 +235,27 @@ def run(csv_path, notebook=False):
     # in case it does not exist
     bound_seq = getattr(rack, sequence_name)
 
-    # instantiate the rack, binding the Sequence method
-    with rack:
-        # ...and run the sequence object
-        row_iterator = bound_seq.iterate_from_csv(relative_csv_path)
-        for i, (row, result) in enumerate(row_iterator):
-            pass
+    return_code = 0
+    ex = None
+    try:
+        with rack:
+            try:
+                # ...and run the sequence object
+                row_iterator = bound_seq.iterate_from_csv(relative_csv_path)
+                for i, (row, result) in enumerate(row_iterator):
+                    pass
+            except BaseException as e:
+                ex = e
+                post_mortem_debug('any open devices and racks will be closed after the pdb session.')
+                return_code = 1
+                raise
+    except BaseException as e:
+        if return_code == 0 or e is not ex:
+            post_mortem_debug('devices and racks have already been closed.')
+            return_code = 1
+        # otherwise, the post mortem has already been done
+
+    return return_code
 
 
 @cli.command(
@@ -226,9 +284,15 @@ def open(config_dir, verbose=False):
     rack = lb.load_rack(config_dir, apply=True)
 
     # instantiate the rack, binding the Sequence method
-    with rack:
-        pass
 
+    try:
+        with rack:
+            pass
+    except:
+        post_mortem_debug('devices and racks have already been closed.')
+        return 1
+    else:
+        return 0
 
 if __name__ == "__main__":
     do_cli()

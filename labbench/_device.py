@@ -359,18 +359,24 @@ class Device(HasTraits, util.Ownable):
             except BaseException:
                 all_ex.append(sys.exc_info())
 
-        # Print tracebacks for any suppressed exceptions
-        for ex in all_ex[::-1]:
-            # If ThreadEndedByMaster was raised, assume the error handling in
-            # util.concurrently will print the error message
-            if ex[0] is not util.ThreadEndedByMaster:
-                depth = len(tuple(traceback.walk_tb(ex[2])))
-                traceback.print_exception(*ex, limit=-(depth - 1))
-                sys.stderr.write("(Exception suppressed to continue close)\n\n")
+        try:
+            # Print tracebacks for any suppressed exceptions
+            for ex in all_ex[::-1]:
+                # If ThreadEndedByMaster was raised, assume the error handling in
+                # util.concurrently will print the error message
+                if ex[0] is not util.ThreadEndedByMaster:
+                    depth = len(tuple(traceback.walk_tb(ex[2])))
+                    traceback.print_exception(*ex, limit=-(depth - 1))
+                    sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
-        self.isopen
+            self.isopen
 
-        self._logger.debug("closed")
+            self._logger.debug("closed")
+        finally:
+            if len(all_ex) > 0:
+                ex = util.ConcurrentException(f'multiple exceptions while closing {self}')
+                ex.thread_exceptions = all_ex
+                raise ex
 
     @classmethod
     def __imports__(cls):

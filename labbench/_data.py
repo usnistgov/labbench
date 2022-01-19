@@ -118,6 +118,7 @@ class MungerBase(core.Device):
                 if (
                     len(value) > self.text_relational_min
                     or name in self.force_relational
+                    or isinstance(value, bytes)
                 ):
                     row[name] = self._from_text(name, value, index, row)
 
@@ -359,6 +360,17 @@ class MungeToDirectory(MungerBase):
         return relpath
 
     def _write_metadata(self, metadata):
+        def recursive_dict_fix(d):
+            d = dict(d)
+            for name, obj in dict(d).items():
+                if isinstance(obj, Path):
+                    d[name] = str(obj)
+                elif isinstance(obj, bytes):
+                    d[name] = obj.decode()
+                elif isinstance(obj, dict):
+                    d[name] = recursive_dict_fix(obj)
+            return d
+
         for k, v in metadata.items():
             stream = self._open_metadata(k + ".json", "w")
             if hasattr(stream, "overwrite"):
@@ -367,12 +379,14 @@ class MungeToDirectory(MungerBase):
             if isinstance(v, pd.DataFrame):
                 v = v.to_dict()["Value"]
             if isinstance(v, dict):
-                for name, obj in v.items():
-                    if isinstance(obj, Path):
-                        v[name] = str(obj)
+                v = recursive_dict_fix(v)
 
-            # with io.TextIOWrapper(stream, newline='\n') as buf:
-            json.dump(v, stream, indent=True, sort_keys=True)
+            try:
+                # with io.TextIOWrapper(stream, newline='\n') as buf:
+                json.dump(v, stream, indent=True, sort_keys=True)
+            except:
+                print(f'offending value: {repr(k)}={repr(v)}')
+                raise
 
 
 class TarFileIO(io.BytesIO):
@@ -898,6 +912,7 @@ class RelationalTableLogger(
             # **metadata
         )
 
+        self.last_row = 0
         self.pending = []
         self.path = Path(path)
         self._append = append

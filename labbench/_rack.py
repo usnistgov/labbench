@@ -660,9 +660,14 @@ class OwnerContextAdapter:
             if ex[0] is not util.ThreadEndedByMaster:
                 depth = len(tuple(traceback.walk_tb(ex[2])))
                 traceback.print_exception(*ex, limit=-(depth - 1))
-                sys.stderr.write("(Exception suppressed to continue close)\n\n")
+                # sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
         getattr(self._owner, "_logger", util.logger).debug("closed")
+
+        if len(all_ex) > 0:
+            ex = util.ConcurrentException(f'multiple exceptions while closing {self}')
+            ex.thread_exceptions = all_ex
+            raise ex
 
     def __repr__(self):
         return repr(self._owner)

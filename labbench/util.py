@@ -80,7 +80,6 @@ logger = logging.LoggerAdapter(
     ),  # description of origin within labbench (for screen logs only)
 )
 
-
 # show deprecation warnings only once
 class LabbenchDeprecationWarning(DeprecationWarning):
     pass
@@ -229,6 +228,7 @@ class Ownable:
 
 class ConcurrentException(Exception):
     """Raised on concurrency errors in `labbench.concurrently`"""
+    thread_exceptions = []
 
 
 class OwnerThreadException(ThreadError):
@@ -913,9 +913,11 @@ class MultipleContexts:
             exc_info = list(self.exc.values())[0]
             raise exc_info[1]
         elif len(self.exc) > 1:
-            raise ConcurrentException(
+            ex = ConcurrentException(
                 f"exceptions raised in {len(self.exc)} contexts are printed inline"
             )
+            ex.thread_exceptions = self.exc
+            raise ex
         if exc != (None, None, None):
             # sys.exc_info() may have been
             # changed by one of the exit methods
@@ -1206,7 +1208,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                     sys.stderr.write("\nthread error (fixme to print message)")
                     sys.stderr.write("\n")
 
-            raise ConcurrentException(f"{len(tracebacks)} call(s) raised exceptions")
+            ex = ConcurrentException(f"{len(tracebacks)} call(s) raised exceptions")
+            ex.thread_exceptions = tracebacks
+            raise ex
 
     return results
 

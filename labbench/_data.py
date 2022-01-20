@@ -385,7 +385,7 @@ class MungeToDirectory(MungerBase):
                 # with io.TextIOWrapper(stream, newline='\n') as buf:
                 json.dump(v, stream, indent=True, sort_keys=True)
             except:
-                print(f'offending value: {repr(k)}={repr(v)}')
+                print(f"offending value: {repr(k)}={repr(v)}")
                 raise
 
 
@@ -524,7 +524,9 @@ class Aggregator(util.Ownable):
         self.trait_rules = dict(always={}, never={})
 
         # pending data
-        self._pending_temporary = {}  # pending = dict(state={}, value traits={}, rack={})
+        self._pending_temporary = (
+            {}
+        )  # pending = dict(state={}, value traits={}, rack={})
         self._pending_persistent = {}
         self._pending_rack = {}
 
@@ -632,7 +634,7 @@ class Aggregator(util.Ownable):
         """called by an owning Rack notifying that managed procedural steps have returned data"""
         # trait data or previous returned data may cause problems here. perhaps this should be an exception?
 
-        row_data = msg['new']
+        row_data = msg["new"]
 
         key_conflicts = set(row_data).intersection(self._pending_rack)
         if len(key_conflicts) > 0:
@@ -645,20 +647,16 @@ class Aggregator(util.Ownable):
         """called by an owning Rack notifying that managed procedural steps have returned data"""
         # trait data or previous returned data may cause problems here. perhaps this should be an exception?
 
-        iter_info = msg['new']
+        iter_info = msg["new"]
         row_data = {}
         if len(self._iter_index_names) > 0:
             self._iter_index_names.setdefault(
-                msg['owner'],
-                'index_' + msg['owner']._owned_name
+                msg["owner"], "index_" + msg["owner"]._owned_name
             )
         else:
-            self._iter_index_names.setdefault(
-                msg['owner'],
-                'index'
-            )
+            self._iter_index_names.setdefault(msg["owner"], "index")
 
-        row_data[self._iter_index_names[msg['owner']]] = iter_info['index']
+        row_data[self._iter_index_names[msg["owner"]]] = iter_info["index"]
         # if iter_info['step_name']:
         #     row_data[msg['owner']._owned_name + '_step_name'] = iter_info['step_name']
 
@@ -692,7 +690,7 @@ class Aggregator(util.Ownable):
 
         if msg["cache"]:
             self.metadata[self.key(name, attr)] = msg["new"]
-        elif self.is_persistent_trait(msg['owner'], msg['name']):
+        elif self.is_persistent_trait(msg["owner"], msg["name"]):
             self._pending_persistent[self.key(name, attr)] = msg["new"]
         else:
             self._pending_temporary[self.key(name, attr)] = msg["new"]
@@ -1056,7 +1054,7 @@ class RelationalTableLogger(
             self.pending = [
                 self.munge(self.last_index + i, proc(row)) for i, row in pending
             ]
-            self.last_index += len(self.pending)-1
+            self.last_index += len(self.pending) - 1
             self._write_root()
             self.clear()
 
@@ -1245,9 +1243,9 @@ class CSVLogger(RelationalTableLogger):
         if isfirst:
             self.df = pending
         else:
-            self.df = self.df.append(pending).loc[self.last_index:]
+            self.df = self.df.append(pending).loc[self.last_index :]
         self.df.sort_index(inplace=True)
-        self.last_index = self.df.index[-1]+1
+        self.last_index = self.df.index[-1] + 1
 
         with open(self.path / self.root_filename, "a") as f:
             self.df.to_csv(f, header=isfirst, index=False)
@@ -1427,9 +1425,7 @@ class HDFLogger(RelationalTableLogger):
             path = Path(str(path) + ".h5")
 
         super().__init__(
-            path=path,
-            append=append,
-            git_commit_in=git_commit_in,
+            path=path, append=append, git_commit_in=git_commit_in,
         )
 
         # Switch to the HDF munger

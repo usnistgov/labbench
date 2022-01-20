@@ -228,6 +228,7 @@ class Ownable:
 
 class ConcurrentException(Exception):
     """Raised on concurrency errors in `labbench.concurrently`"""
+
     thread_exceptions = []
 
 

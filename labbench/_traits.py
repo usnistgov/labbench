@@ -1045,9 +1045,12 @@ class RemappingCorrectionMixIn(DependentTrait):
         else:
             ret = cal
 
-        if hasattr(self, 'name'):
+        if hasattr(self, "name"):
             owner.__notify__(
-                self.name, ret, "get", cache=self.cache or (self.role == self.ROLE_VALUE)
+                self.name,
+                ret,
+                "get",
+                cache=self.cache or (self.role == self.ROLE_VALUE),
             )
 
         return ret
@@ -1077,9 +1080,12 @@ class RemappingCorrectionMixIn(DependentTrait):
             # execute the set
             self._trait_dependencies["base"].__set__(owner, uncal)
 
-        if hasattr(self, 'name'):
+        if hasattr(self, "name"):
             owner.__notify__(
-                self.name, cal, "set", cache=self.cache or (self.role == self.ROLE_VALUE)
+                self.name,
+                cal,
+                "set",
+                cache=self.cache or (self.role == self.ROLE_VALUE),
             )
 
 
@@ -1099,14 +1105,14 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             owner,
             self._on_cal_update_event,
             name=[self.path_trait.name, self.index_lookup_trait.name],
-            type_="set"
+            type_="set",
         )
 
     def _on_cal_update_event(self, msg):
-        owner = msg['owner']
+        owner = msg["owner"]
 
-        if msg['name'] == self.path_trait.name:
-            path = msg['new']
+        if msg["name"] == self.path_trait.name:
+            path = msg["new"]
             index = getattr(owner, self.index_lookup_trait.name)
 
             ret = self._load_calibration_table(owner, path)
@@ -1114,9 +1120,9 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
             return ret
 
-        elif msg['name'] == self.index_lookup_trait.name:
+        elif msg["name"] == self.index_lookup_trait.name:
             path = getattr(owner, self.path_trait.name)
-            index = msg['new']
+            index = msg["new"]
 
             if self._CAL_TABLE_KEY not in owner._calibrations.get(self.name, {}):
                 self._load_calibration_table(owner, path)
@@ -1265,9 +1271,12 @@ class TransformMixIn(DependentTrait):
         else:
             ret = self._forward(base_value)
 
-        if hasattr(self, 'name'):
+        if hasattr(self, "name"):
             owner.__notify__(
-                self.name, ret, "get", cache=self.cache or (self.role == self.ROLE_VALUE)
+                self.name,
+                ret,
+                "get",
+                cache=self.cache or (self.role == self.ROLE_VALUE),
             )
 
         return ret
@@ -1289,9 +1298,12 @@ class TransformMixIn(DependentTrait):
         # set the value of the base trait with the reverse-transformed value
         base_trait.__set__(owner, base_value)
 
-        if hasattr(self, 'name'):
+        if hasattr(self, "name"):
             owner.__notify__(
-                self.name, value, "set", cache=self.cache or (self.role == self.ROLE_VALUE)
+                self.name,
+                value,
+                "set",
+                cache=self.cache or (self.role == self.ROLE_VALUE),
             )
 
 

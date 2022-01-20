@@ -40,7 +40,15 @@ from . import util
 from . import property as property_
 from . import value
 
-from ._traits import HasTraits, Trait, Undefined, BoundedNumber, observe, unobserve, hold_trait_notifications
+from ._traits import (
+    HasTraits,
+    Trait,
+    Undefined,
+    BoundedNumber,
+    observe,
+    unobserve,
+    hold_trait_notifications,
+)
 
 __all__ = ["Device", "list_devices", "property", "value", "datareturn", "trait_info"]
 
@@ -127,18 +135,18 @@ def log_trait_activity(msg):
 
     # print('logger debug!', msg)
 
-    owner = msg['owner']
-    trait_name = msg['name']
+    owner = msg["owner"]
+    trait_name = msg["name"]
 
-    if msg['type'] == 'set':
-        label = owner._traits[trait_name].label or ' '
+    if msg["type"] == "set":
+        label = owner._traits[trait_name].label or " "
         if label:
-            label = ' {label} '
+            label = " {label} "
         owner._logger.debug(f'{repr(msg["new"])}{label} → trait "{trait_name}"')
-    elif msg['type'] == 'get':
+    elif msg["type"] == "get":
         label = owner._traits[trait_name].label
         if label:
-            label = ' {label} '
+            label = " {label} "
         owner._logger.debug(f'trait "{trait_name}" → {repr(msg["new"])}{label}')
     else:
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')
@@ -374,7 +382,9 @@ class Device(HasTraits, util.Ownable):
             self._logger.debug("closed")
         finally:
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(f'multiple exceptions while closing {self}')
+                ex = util.ConcurrentException(
+                    f"multiple exceptions while closing {self}"
+                )
                 ex.thread_exceptions = all_ex
                 raise ex
 

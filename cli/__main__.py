@@ -36,19 +36,16 @@ def post_mortem_debug(note=None, exc_info=None):
         exc_info = sys.exc_info()
     ex = exc_info[1]
 
-    if (
-        isinstance(ex, lb.util.ConcurrentException)
-        and len(ex.thread_exceptions) > 0
-    ):
+    if isinstance(ex, lb.util.ConcurrentException) and len(ex.thread_exceptions) > 0:
 
-        if isinstance(ex.thread_exceptions, (list,tuple)):
+        if isinstance(ex.thread_exceptions, (list, tuple)):
             ex.thread_exceptions = dict(enumerate(ex.thread_exceptions))
 
         for i, (name, thread_exc_info) in enumerate(ex.thread_exceptions.items()):
-            progress_msg = (note or '')+'\n'
-            progress_msg += f''
-            
-            progress_msg += f'debug thread {i+1} of {len(ex.thread_exceptions)}\n'
+            progress_msg = (note or "") + "\n"
+            progress_msg += f""
+
+            progress_msg += f"debug thread {i+1} of {len(ex.thread_exceptions)}\n"
             if name != i:
                 progress_msg += f'thread name "{name}"'
 
@@ -59,9 +56,11 @@ def post_mortem_debug(note=None, exc_info=None):
     else:
         traceback.print_exception(*exc_info)
 
-        sys.stderr.write("\nentering pdb prompt because the above exception was raised. use 'exit' to exit.\n")
+        sys.stderr.write(
+            "\nentering pdb prompt because the above exception was raised. use 'exit' to exit.\n"
+        )
         if note is not None:
-            sys.stderr.write(note+'\n')
+            sys.stderr.write(note + "\n")
 
         pdb.post_mortem(exc_info[2])
 
@@ -89,7 +88,8 @@ def cli():
     the force flag is set. When compiling PYFILE, python imports follow PYTHONPATH as normal.""",
 )
 @click.argument(
-    "import_string", type=str#, help='python import string for the module where the Rack is defined'
+    "import_string",
+    type=str,  # , help='python import string for the module where the Rack is defined'
 )
 @click.option(
     "--cls", type=str, help="use this Rack in PYFILE instead of the module namespace"
@@ -114,10 +114,15 @@ def cli():
     help="include sequence columns that have default values",
 )
 def init(
-    import_string, cls=None, pythonpath=None, output=None, force=False, with_defaults=False
+    import_string,
+    cls=None,
+    pythonpath=None,
+    output=None,
+    force=False,
+    with_defaults=False,
 ):
     if pythonpath is None:
-        pythonpath = '.'
+        pythonpath = "."
 
     # delay the labbench import so that e.g. --help is faster
     import labbench as lb
@@ -208,7 +213,11 @@ def reset(path, with_defaults=False):
     help="show formatted progress when run in a notebook",
 )
 @click.option(
-    "--verbose", type=bool, is_flag=True, default=False, help="include labbench internals in tracebacks"
+    "--verbose",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="include labbench internals in tracebacks",
 )
 def run(csv_path, notebook=False, verbose=False):
     csv_path = Path(csv_path)
@@ -246,12 +255,14 @@ def run(csv_path, notebook=False, verbose=False):
                     pass
             except BaseException as e:
                 ex = e
-                post_mortem_debug('any open devices and racks will be closed after the pdb session.')
+                post_mortem_debug(
+                    "any open devices and racks will be closed after the pdb session."
+                )
                 return_code = 1
                 raise
     except BaseException as e:
         if return_code == 0 or e is not ex:
-            post_mortem_debug('devices and racks have already been closed.')
+            post_mortem_debug("devices and racks have already been closed.")
             return_code = 1
         # otherwise, the post mortem has already been done
 
@@ -269,7 +280,11 @@ def run(csv_path, notebook=False, verbose=False):
     "config_dir", type=click.Path(exists=True)
 )  # , help='path to the config directory')
 @click.option(
-    "--verbose", type=bool, is_flag=True, default=False, help="include labbench internals in tracebacks"
+    "--verbose",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="include labbench internals in tracebacks",
 )
 def open(config_dir, verbose=False):
     config_dir = Path(config_dir)
@@ -289,10 +304,11 @@ def open(config_dir, verbose=False):
         with rack:
             pass
     except:
-        post_mortem_debug('devices and racks have already been closed.')
+        post_mortem_debug("devices and racks have already been closed.")
         return 1
     else:
         return 0
+
 
 if __name__ == "__main__":
     do_cli()

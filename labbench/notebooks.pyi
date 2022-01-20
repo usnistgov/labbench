@@ -6,11 +6,10 @@ from ._traits import observe as observe
 from .util import show_messages as show_messages
 from ipywidgets import HTML as HTML, IntProgress as IntProgress, VBox as VBox
 from typing import Any
+
 skip_traits: Any
 
-def trait_table(device):
-    ...
-
+def trait_table(device): ...
 
 class TextareaLogHandler(logging.StreamHandler):
     log_format: str
@@ -20,19 +19,12 @@ class TextareaLogHandler(logging.StreamHandler):
     stream: Any
     widget: Any
     last_time: Any
+    def __init__(self, level=...) -> None: ...
+    def emit(self, record): ...
 
-    def __init__(self, level=...) -> None:
-        ...
-
-    def emit(self, record):
-        ...
-
-
-class panel():
+class panel:
     widget: Any
     ncols: int
     devices: Any
     children: Any
-
-    def __new__(cls, source: int=..., ncols: int=...):
-        ...
+    def __new__(cls, source: int = ..., ncols: int = ...): ...

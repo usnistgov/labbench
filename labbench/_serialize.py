@@ -7,7 +7,14 @@ from pathlib import Path
 import pandas as pd
 from numbers import Number
 
-from ._rack import Rack, RackMethod, Sequence, BoundSequence, import_as_rack, update_parameter_dict
+from ._rack import (
+    Rack,
+    RackMethod,
+    Sequence,
+    BoundSequence,
+    import_as_rack,
+    update_parameter_dict,
+)
 from . import util
 
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
@@ -130,7 +137,7 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
             if isinstance(default, Number) and issubclass(annot, Number):
                 # allow casting for numbers
                 default = annot(default)
-                
+
             else:
                 raise TypeError(
                     f"the keyword default configuration at key '{name}' with value "
@@ -145,9 +152,7 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
         util.logger.debug(f"applied defaults {defaults_in}")
 
 
-def write_table_stub(
-    rack: Rack, name: str, path: Path, with_defaults: bool = False
-):
+def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = False):
 
     """forms an empty DataFrame containing the headers needed for Sequence
     csv files.
@@ -248,6 +253,7 @@ def _map_devices(cls):
 
     return cm
 
+
 def dump_rack(
     rack: Rack,
     output_path: Path,
@@ -255,7 +261,7 @@ def dump_rack(
     pythonpath: Path = None,
     exist_ok: bool = False,
     with_defaults: bool = False,
-    skip_tables: bool = False
+    skip_tables: bool = False,
 ):
     if not isinstance(rack, Rack):
         raise TypeError(f"'rack' argument must be an instance of labbench.Rack")
@@ -296,21 +302,22 @@ def dump_rack(
 
         _yaml.dump(cm, stream)
 
-    
     if not skip_tables:
         for name, obj in rack.__dict__.items():
             if not callable(obj):
                 continue
 
-            table_path = getattr(obj, '_tags', {}).get('table_path', None)
+            table_path = getattr(obj, "_tags", {}).get("table_path", None)
 
             if table_path is None and not hasattr(Rack, name):
-                table_path = name+'.csv'
+                table_path = name + ".csv"
 
             if table_path is not None:
                 # write_csv_template(obj, output_path/table_path)
                 # obj.to_template(output_path / f"{obj.__name__}.csv")
-                write_table_stub(rack, name, output_path/table_path, with_defaults=with_defaults)
+                write_table_stub(
+                    rack, name, output_path / table_path, with_defaults=with_defaults
+                )
 
 
 def read_yaml_config(config_path: str):
@@ -318,6 +325,7 @@ def read_yaml_config(config_path: str):
         config = _yaml.load(f)
         util.logger.debug(f'loaded configuration from "{str(config_path)}"')
     return config
+
 
 def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack:
     """instantiates a Rack object from a config directory created by dump_rack.
@@ -345,7 +353,6 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
         os.chdir(output_path)
         _adjust_sequence_defaults(rack_cls, config[_FIELD_KEYWORD_DEFAULTS], **defaults)
 
-
     rack_cls._propagate_ownership()
 
     obj = rack_cls()
@@ -356,7 +363,9 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
                 owned_obj = getattr(obj, name)
             except AttributeError:
                 objname = type(obj).__qualname__
-                raise IOError(f"{config_path} refers to a device '{name}' that does not exist in {objname}")
+                raise IOError(
+                    f"{config_path} refers to a device '{name}' that does not exist in {objname}"
+                )
 
             for param_name, param_value in params.items():
                 setattr(owned_obj, param_name, param_value)

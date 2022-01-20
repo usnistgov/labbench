@@ -528,6 +528,8 @@ class Aggregator(util.Ownable):
         self._pending_persistent = {}
         self._pending_rack = {}
 
+        self._iter_index_names = {}
+
         # cached data
         self.metadata = {}
 
@@ -645,10 +647,20 @@ class Aggregator(util.Ownable):
 
         iter_info = msg['new']
         row_data = {}
+        if len(self._iter_index_names) > 0:
+            self._iter_index_names.setdefault(
+                msg['owner'],
+                'index_' + msg['owner']._owned_name
+            )
+        else:
+            self._iter_index_names.setdefault(
+                msg['owner'],
+                'index'
+            )
 
-        row_data[msg['owner']._owned_name + '_call_index'] = iter_info['index']
-        if iter_info['step_name']:
-            row_data[msg['owner']._owned_name + '_step_name'] = iter_info['step_name']
+        row_data[self._iter_index_names[msg['owner']]] = iter_info['index']
+        # if iter_info['step_name']:
+        #     row_data[msg['owner']._owned_name + '_step_name'] = iter_info['step_name']
 
         # TODO: should there be some kind of conflict check for this?
         # key_conflicts = set(row_data).intersection(self._pending_persistent)

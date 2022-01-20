@@ -576,11 +576,11 @@ class Aggregator(util.Ownable):
             if device in self.trait_rules["always"].keys():
                 for attr in self.trait_rules["always"][device]:
                     if self.is_persistent_trait(device, attr):
-                        self._pending_persistent[self.key(name, attr)] = getattr(
+                        self._pending_traits_persistent[self.key(name, attr)] = getattr(
                             device, attr
                         )
                     else:
-                        self._pending_temporary[self.key(name, attr)] = getattr(
+                        self._pending_traits_volatile[self.key(name, attr)] = getattr(
                             device, attr
                         )
 
@@ -588,20 +588,25 @@ class Aggregator(util.Ownable):
             if device in self.trait_rules["never"].keys():
                 for attr in self.trait_rules["never"][device]:
                     if self.is_persistent_trait(device, attr):
-                        self._pending_persistent.pop(self.key(name, attr), None)
+                        self._pending_traits_persistent.pop(self.key(name, attr), None)
                     else:
-                        self._pending_temporary.pop(self.key(name, attr), None)
+                        self._pending_traits_volatile.pop(self.key(name, attr), None)
+
+        aggregated_output = dict(index=self._rack_input_index)
 
         # start by aggregating the trait data, and checking for conflicts with keys in the Rack data
-        aggregated_output = dict(self._pending_traits_persistent, **self._pending_traits_volatile)
+        aggregated_output.update(self._pending_traits_persistent)
+        aggregated_output.update(self._pending_traits_volatile)
+
+        # check namespace conflicts and pull in rack outputs
         key_conflicts = set(aggregated_output).intersection(self._pending_rack_output)
         if len(key_conflicts) > 0:
             self.critical(
                 f"key name conflict in aggregated data - Rack data is overwriting trait data for {key_conflicts}"
             )
+        aggregated_output.update(self._pending_rack_output)
 
-        # combine the data
-        aggregated_output = dict(aggregated_output, **self._pending_rack_output)
+        # and the rack inputs
         aggregated_input = dict(self._pending_rack_input)
 
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
@@ -677,7 +682,7 @@ class Aggregator(util.Ownable):
         #     row_data[msg['owner']._owned_name + '_step_name'] = iter_info['step_name']
 
         # TODO: should there be some kind of conflict check for this?
-        # key_conflicts = set(row_data).intersection(self._pending_persistent)
+        # key_conflicts = set(row_data).intersection(self._pending_traits_persistent)
         # if len(key_conflicts) > 0:
         #     self._logger.warning(
         #         f"Rack call overwrites prior data with existing keys {key_conflicts}"

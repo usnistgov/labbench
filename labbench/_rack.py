@@ -76,12 +76,30 @@ class notify:
     # the global mapping of references to notification callbacks
     _handlers = dict(returns=set(), calls=set(), iteration=set())
 
+    _owner_hold_list = set()
+
     @classmethod
     def clear(cls):
         cls._handlers = dict(returns=set(), calls=set(), iteration=set())
 
     @classmethod
+    def hold_owner_notifications(cls, *owners):
+        for owner in owners:
+            cls._owner_hold_list.add(owner)
+
+    @classmethod
+    def allow_owner_notifications(cls, *owners):
+        for owner in owners:
+            try:
+                cls._owner_hold_list.remove(owner)
+            except KeyError:
+                pass
+
+    @classmethod
     def return_event(cls, owner, returned: dict):
+        if owner in cls._owner_hold_list:
+            return
+            
         if not isinstance(returned, dict):
             raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
         for handler in cls._handlers["returns"]:
@@ -89,6 +107,9 @@ class notify:
 
     @classmethod
     def call_event(cls, owner, parameters: dict):
+        if owner in cls._owner_hold_list:
+            return
+            
         if not isinstance(parameters, dict):
             raise TypeError(
                 f"parameters data was {repr(parameters)}, which is not a dict"
@@ -100,6 +121,9 @@ class notify:
     def call_iteration_event(
         cls, owner, index: int, step_name: str = None, total_count: int = None
     ):
+        if owner in cls._owner_hold_list:
+            return
+
         for handler in cls._handlers["iteration"]:
             handler(
                 dict(
@@ -521,6 +545,8 @@ class BoundSequence(util.Ownable):
 
         ret = {}
 
+        notify.call_event(self, kwargs)
+
         try:
             for i, sequence in enumerate(self.sequence):
                 step_kws = self._step(sequence, kwargs)
@@ -614,39 +640,51 @@ class OwnerContextAdapter:
         display_name = getattr(self, "_owned_name", type(self).__name__)
 
     def __enter__(self):
-        cls = type(self._owner)
-        for opener in core.trace_methods(cls, "open", Owner)[::-1]:
-            opener(self._owner)
+        try:
+            hold = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
+            notify.hold_owner_notifications(*hold)
+            cls = type(self._owner)
+            for opener in core.trace_methods(cls, "open", Owner)[::-1]:
+                opener(self._owner)
 
-        # self._owner.open()
-        getattr(self._owner, "_logger", util.logger).debug("opened")
+            # self._owner.open()
+            getattr(self._owner, "_logger", util.logger).debug("opened")
+
+        finally:
+            notify.allow_owner_notifications(*hold)
 
     def __exit__(self, *exc_info):
-        cls = type(self._owner)
-        methods = core.trace_methods(cls, "close", Owner)
+        try:
+            holds = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
+            notify.hold_owner_notifications(*holds)
+            cls = type(self._owner)
+            methods = core.trace_methods(cls, "close", Owner)
 
-        all_ex = []
-        for closer in methods:
-            try:
-                closer(self._owner)
-            except BaseException:
-                all_ex.append(sys.exc_info())
+            all_ex = []
+            for closer in methods:
+                try:
+                    closer(self._owner)
+                except BaseException:
+                    all_ex.append(sys.exc_info())
 
-        # Print tracebacks for any suppressed exceptions
-        for ex in all_ex[::-1]:
-            # If ThreadEndedByMaster was raised, assume the error handling in
-            # util.concurrently will print the error message
-            if ex[0] is not util.ThreadEndedByMaster:
-                depth = len(tuple(traceback.walk_tb(ex[2])))
-                traceback.print_exception(*ex, limit=-(depth - 1))
-                # sys.stderr.write("(Exception suppressed to continue close)\n\n")
+            # Print tracebacks for any suppressed exceptions
+            for ex in all_ex[::-1]:
+                # If ThreadEndedByMaster was raised, assume the error handling in
+                # util.concurrently will print the error message
+                if ex[0] is not util.ThreadEndedByMaster:
+                    depth = len(tuple(traceback.walk_tb(ex[2])))
+                    traceback.print_exception(*ex, limit=-(depth - 1))
+                    # sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
-        getattr(self._owner, "_logger", util.logger).debug("closed")
+            getattr(self._owner, "_logger", util.logger).debug("closed")
 
-        if len(all_ex) > 0:
-            ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
-            ex.thread_exceptions = all_ex
-            raise ex
+        finally:
+            notify.allow_owner_notifications(*holds)            
+
+            if len(all_ex) > 0:
+                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
+                ex.thread_exceptions = all_ex
+                raise ex
 
     def __repr__(self):
         return repr(self._owner)

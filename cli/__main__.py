@@ -204,7 +204,7 @@ def reset(path, with_defaults=False):
     the context of the current working directory and PYTHONPATH.""",
 )
 @click.argument(
-    "csv_path", type=click.Path(exists=True)
+    "csv_path", type=click.Path(exists=True, dir_okay=False)
 )  # , help='path to the config directory')
 @click.option(
     "--notebook",

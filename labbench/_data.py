@@ -381,12 +381,8 @@ class MungeToDirectory(MungerBase):
             if isinstance(v, dict):
                 v = recursive_dict_fix(v)
 
-            try:
-                # with io.TextIOWrapper(stream, newline='\n') as buf:
-                json.dump(v, stream, indent=True, sort_keys=True)
-            except:
-                print(f"offending value: {repr(k)}={repr(v)}")
-                raise
+            # with io.TextIOWrapper(stream, newline='\n') as buf:
+            json.dump(v, stream, indent=True, sort_keys=True)
 
 
 class TarFileIO(io.BytesIO):
@@ -514,7 +510,7 @@ class MungeToTar(MungerBase):
 
 
 class Aggregator(util.Ownable):
-    """Passive aggregation of data from Device property trait and value traits traits and methods in Rack instances"""
+    """Passive aggregation of data from Device property trait and value traits traits, and from calls to methods in Rack instances"""
 
     PERSISTENT_TRAIT_ROLES = (_traits.Trait.ROLE_VALUE,)
 
@@ -524,13 +520,17 @@ class Aggregator(util.Ownable):
         self.trait_rules = dict(always={}, never={})
 
         # pending data
-        self._pending_temporary = (
+        self._pending_traits_volatile = (
             {}
         )  # pending = dict(state={}, value traits={}, rack={})
-        self._pending_persistent = {}
-        self._pending_rack = {}
+        self._pending_traits_persistent = {}
+        self._pending_rack_output = {}
+        self._pending_rack_input = {}
 
-        self._iter_index_names = {}
+        self._rack_toplevel_caller = None
+        self._rack_input_index = 0
+
+        # self._iter_index_names = {}
 
         # cached data
         self.metadata = {}
@@ -542,14 +542,14 @@ class Aggregator(util.Ownable):
 
     def enable(self):
         # catch return data as well
-        _rack.notify.observe_returns(self._receive_rack_data)
-        _rack.notify.observe_calls(self._receive_rack_data)
-        _rack.notify.observe_call_iteration(self._receive_rack_iteration)
+        _rack.notify.observe_returns(self._receive_rack_output)
+        _rack.notify.observe_calls(self._receive_rack_input)
+        # _rack.notify.observe_call_iteration(self._receive_rack_iteration)
 
     def disable(self):
-        _rack.notify.unobserve_returns(self._receive_rack_data)
-        _rack.notify.unobserve_calls(self._receive_rack_data)
-        _rack.notify.unobserve_call_iteration(self._receive_rack_iteration)
+        _rack.notify.unobserve_returns(self._receive_rack_output)
+        _rack.notify.unobserve_calls(self._receive_rack_input)
+        # _rack.notify.unobserve_call_iteration(self._receive_rack_input)
 
     def is_persistent_trait(self, device, attr):
         if not isinstance(device, core.Device):
@@ -559,8 +559,10 @@ class Aggregator(util.Ownable):
 
         return trait.role in self.PERSISTENT_TRAIT_ROLES or trait.cache
 
-    def get(self) -> dict:
-        """Return a dictionary of observed Device trait data and calls and returns in Rack instances. A get is
+    def get(self) -> list([dict, dict]):
+        """return an aggregated dictionary output data (from Device traits and Rack method returns)
+        and an aggregated dictionary of input data (keyword arguments passed to the toplevel Rack method).
+        A get is
         also performed on each Device trait that is configured as "always" with `self.observe`, and any traits
         labeled "never" are removed.
 
@@ -591,22 +593,24 @@ class Aggregator(util.Ownable):
                         self._pending_temporary.pop(self.key(name, attr), None)
 
         # start by aggregating the trait data, and checking for conflicts with keys in the Rack data
-        aggregated = dict(self._pending_persistent, **self._pending_temporary)
-        key_conflicts = set(aggregated).intersection(self._pending_rack)
+        aggregated_output = dict(self._pending_traits_persistent, **self._pending_traits_volatile)
+        key_conflicts = set(aggregated_output).intersection(self._pending_rack_output)
         if len(key_conflicts) > 0:
             self.critical(
                 f"key name conflict in aggregated data - Rack data is overwriting trait data for {key_conflicts}"
             )
 
         # combine the data
-        aggregated = dict(aggregated, **self._pending_rack)
+        aggregated_output = dict(aggregated_output, **self._pending_rack_output)
+        aggregated_input = dict(self._pending_rack_input)
 
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
         # value traits traits are locally cached, so it is safe to keep them in the next step
-        self._pending_rack = {}
-        self._pending_temporary = {}
+        self._pending_rack_output = {}
+        self._pending_traits_volatile = {}
+        # self._pending_rack_input = {}
 
-        return aggregated
+        return aggregated_output, aggregated_input
 
     def key(self, device_name, state_name):
         """Generate a name for a trait based on the names of
@@ -630,33 +634,45 @@ class Aggregator(util.Ownable):
 
         self.name_map.update([(v, k) for k, v in mapping.items()])
 
-    def _receive_rack_data(self, msg: dict):
+    def _receive_rack_output(self, msg: dict):
         """called by an owning Rack notifying that managed procedural steps have returned data"""
         # trait data or previous returned data may cause problems here. perhaps this should be an exception?
 
         row_data = msg["new"]
 
-        key_conflicts = set(row_data).intersection(self._pending_rack)
+        key_conflicts = set(row_data).intersection(self._pending_rack_output)
         if len(key_conflicts) > 0:
             self._logger.warning(
                 f"Rack call overwrites prior data with existing keys {key_conflicts}"
             )
-        self._pending_rack.update(row_data)
+        self._pending_rack_output.update(row_data)
 
-    def _receive_rack_iteration(self, msg: dict):
+    def _receive_rack_input(self, msg: dict):
         """called by an owning Rack notifying that managed procedural steps have returned data"""
         # trait data or previous returned data may cause problems here. perhaps this should be an exception?
 
-        iter_info = msg["new"]
-        row_data = {}
-        if len(self._iter_index_names) > 0:
-            self._iter_index_names.setdefault(
-                msg["owner"], "index_" + msg["owner"]._owned_name
-            )
-        else:
-            self._iter_index_names.setdefault(msg["owner"], "index")
+        if self._rack_toplevel_caller is None:
+            # take the first call as the top-level caller
+            self._rack_toplevel_caller = msg['owner']
 
-        row_data[self._iter_index_names[msg["owner"]]] = iter_info["index"]
+        elif self._rack_toplevel_caller != msg['owner']:
+            # only track calls to the top-level caller
+            return
+
+        else:
+            self._rack_input_index += 1
+
+        iter_info = msg["new"]
+        row_data = dict(index=self._rack_input_index)
+
+        # if len(self._iter_index_names) > 0:
+        #     self._iter_index_names.setdefault(
+        #         msg["owner"], "index_" + msg["owner"]._owned_name
+        #     )
+        # else:
+        #     self._iter_index_names.setdefault(msg["owner"], "index")
+
+        # row_data[self._iter_index_names[msg["owner"]]] = iter_info["index"]
         # if iter_info['step_name']:
         #     row_data[msg['owner']._owned_name + '_step_name'] = iter_info['step_name']
 
@@ -667,10 +683,7 @@ class Aggregator(util.Ownable):
         #         f"Rack call overwrites prior data with existing keys {key_conflicts}"
         #     )
 
-        for name in row_data.keys():
-            self._pending_persistent.pop(name, None)
-
-        self._pending_persistent = dict(row_data, **self._pending_persistent)
+        self._pending_rack_input = dict(row_data, **msg['new'])
 
     def _receive_trait_update(self, msg: dict):
         """called by trait owners on changes observed
@@ -691,9 +704,9 @@ class Aggregator(util.Ownable):
         if msg["cache"]:
             self.metadata[self.key(name, attr)] = msg["new"]
         elif self.is_persistent_trait(msg["owner"], msg["name"]):
-            self._pending_persistent[self.key(name, attr)] = msg["new"]
+            self._pending_traits_persistent[self.key(name, attr)] = msg["new"]
         else:
-            self._pending_temporary[self.key(name, attr)] = msg["new"]
+            self._pending_traits_volatile[self.key(name, attr)] = msg["new"]
 
     def _update_name_map(self, rack_or_devices):
         """ "map each Device to a name in devices.values() by introspection"""
@@ -773,7 +786,7 @@ class Aggregator(util.Ownable):
             always = tuple(always)
         else:
             raise ValueError(
-                "argument 'always' must be a string or iterable of strings"
+                "argument 'always' must be a str or iterable of str"
             )
 
         if isinstance(never, str):
@@ -782,7 +795,7 @@ class Aggregator(util.Ownable):
             never = tuple(never)
         else:
             raise ValueError(
-                "argument 'never' must be a string, or iterable of strings"
+                "argument 'never' must be a str or iterable of str"
             )
 
         # if isinstance(role, (str,bytes)):
@@ -862,7 +875,7 @@ class Aggregator(util.Ownable):
 class RelationalTableLogger(
     Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)
 ):
-    """Abstract base class for loggers that queue dictionaries of data before writing
+    """Base class for loggers that queue dictionaries of data before writing
     to disk. This extends :class:`Aggregator` to support
 
     #. queuing aggregate property trait of devices by lists of dictionaries;
@@ -923,7 +936,8 @@ class RelationalTableLogger(
         )
 
         self.last_row = 0
-        self.pending = []
+        self.pending_output = []
+        self.pending_input = []
         self.path = Path(path)
         self._append = append
         self.set_row_preprocessor(None)
@@ -984,8 +998,8 @@ class RelationalTableLogger(
 
     def new_row(self, *args, **kwargs):
         """Add a new row of data to the list of rows that await writes
-        to disk, `self.pending`. This cache of pending data row is in
-        the dictionary `self.pending`.
+        to disk, `self.pending_output`. This cache of pending data row is in
+        the dictionary `self.pending_output`.
 
         The data row is represented as a dict in the form {'column_name': value}.
         This dict is formed here with
@@ -1002,13 +1016,13 @@ class RelationalTableLogger(
         in a separate file (as defined in :func:`set_path_format`), and the path
         to this file is stored in the table.
 
-        In order to write `self.pending` to disk, use :func:`self.write`.
+        In order to write `self.pending_output` to disk, use :func:`self.write`.
 
         :param bool copy=True: When `True` (the default), use a deep copy of `data` to avoid
         problems with overwriting references to data if `data` is reused during test. This takes some extra time; set to `False` to skip this copy operation.
 
         Returns:
-            the dictionary representation of the row added to `self.pending`.
+            the dictionary representation of the row added to `self.pending_output`.
         """
         do_copy = kwargs.pop("copy", None)
 
@@ -1021,10 +1035,10 @@ class RelationalTableLogger(
             row = {}
 
         # Pull in observed states
-        aggregated = dict(self.aggregator.get())
+        aggregated_output, aggregated_input = self.aggregator.get()
         if do_copy:
-            aggregated = copy.deepcopy(aggregated)
-        row.update(aggregated)
+            aggregated_output = copy.deepcopy(aggregated_output)
+        row.update(aggregated_output)
 
         # Pull in keyword arguments
         if do_copy:
@@ -1035,7 +1049,8 @@ class RelationalTableLogger(
 
         self._logger.debug(f"new data row has {len(row)} columns")
 
-        self.pending.append(row)
+        self.pending_output.append(row)
+        self.pending_input.append(aggregated_input)
 
     def write(self):
         """Commit any pending rows to the root database, converting
@@ -1046,15 +1061,26 @@ class RelationalTableLogger(
 
             None
         """
-        count = len(self.pending)
+        if len(self.pending_output) != len(self.pending_input):
+            util.logger.warning('the input and output have mismatched length')
+
+        count = max(len(self.pending_output), len(self.pending_input))
 
         if count > 0:
             proc = self._row_preprocessor
-            pending = enumerate(self.pending)
-            self.pending = [
-                self.munge(self.last_index + i, proc(row)) for i, row in pending
+
+            self.pending_output = [
+                self.munge(self.output_index + i, proc(row))
+                for i, row in enumerate(self.pending_output)
             ]
-            self.last_index += len(self.pending) - 1
+
+
+            self.pending_input = [
+                self.munge(self.output_index + i, proc(row))
+                for i, row in enumerate(self.pending_input)
+            ]
+
+            self.output_index += len(self.pending_output) - 1
             self._write_root()
             self.clear()
 
@@ -1074,8 +1100,7 @@ class RelationalTableLogger(
             self.write()
 
     def _write_root(self):
-        """Write pending data. This is an abstract base method (must be
-        implemented by inheriting classes)
+        """Write pending data. This must be implemented by inheriting classes.
 
         Returns:
             None
@@ -1084,7 +1109,8 @@ class RelationalTableLogger(
 
     def clear(self):
         """Remove any queued data that has been added by append."""
-        self.pending = []
+        self.pending_output = []
+        self.pending_input = []
 
     def set_relational_file_format(self, format):
         """Set the format to use for relational data files.
@@ -1148,7 +1174,7 @@ class RelationalTableLogger(
 
         self.clear()
 
-        self.last_index = 0
+        self.output_index = 0
         self._logger.debug(f"{self} is open")
         return self
 
@@ -1156,7 +1182,7 @@ class RelationalTableLogger(
         self.aggregator.disable()
         # try:
         self.write()
-        if self.last_index > 0:
+        if self.output_index > 0:
             self.munge.save_metadata(
                 self.aggregator.name_map,
                 self.aggregator.key,
@@ -1185,7 +1211,9 @@ class CSVLogger(RelationalTableLogger):
         tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
-    root_filename = "root.csv"
+    ROOT_FILE_NAME = OUTPUT_FILE_NAME = "outputs.csv"
+    INPUT_FILE_NAME = "inputs.csv"
+
     nonscalar_file_type = "csv"
 
     def open(self):
@@ -1204,23 +1232,26 @@ class CSVLogger(RelationalTableLogger):
         is an exception.
         """
 
+        self.tables = {}
+
         self.path.mkdir(parents=True, exist_ok=self._append)
 
-        file_path = self.path / self.root_filename
-        try:
-            # test access by starting the root table
-            file_path.touch(exist_ok=self._append)
-        except FileExistsError:
-            raise IOError(
-                f"root table already exists at '{file_path}', while append=False"
-            )
+        for file_name in self.OUTPUT_FILE_NAME, self.INPUT_FILE_NAME:
+            file_path = self.path / file_name
+            try:
+                # test access by starting the root table
+                file_path.touch(exist_ok=self._append)
+            except FileExistsError:
+                raise IOError(
+                    f"root table already exists at '{file_path}', while append=False"
+                )
 
-        if self._append and file_path.stat().st_size > 0:
-            # there's something here and we plan to append
-            self.df = pd.read_csv(file_path, nrows=1)
-            self.df.index.name = self.index_label
-        else:
-            self.df = None
+            if self._append and file_path.stat().st_size > 0:
+                # there's something here and we plan to append
+                self.tables[file_name] = pd.read_csv(file_path, nrows=1)
+                self.tables[file_name].index.name = self.index_label
+            else:
+                self.tables[file_name] = None
 
     def close(self):
         self._write_root()
@@ -1233,22 +1264,26 @@ class CSVLogger(RelationalTableLogger):
         the preexisting file; subsequent calls append.
         """
 
-        if len(self.pending) == 0:
-            return
-        isfirst = self.df is None
-        pending = pd.DataFrame(self.pending)
-        pending.index.name = self.index_label
-        pending.index = pending.index + self.last_index
+        def append_csv(path_to_csv, df):
+            if len(df) == 0:
+                return
+            isfirst = self.tables[path_to_csv.name] is None
+            pending = pd.DataFrame(df)
+            pending.index.name = self.index_label
+            pending.index = pending.index + self.output_index
 
-        if isfirst:
-            self.df = pending
-        else:
-            self.df = self.df.append(pending).loc[self.last_index :]
-        self.df.sort_index(inplace=True)
-        self.last_index = self.df.index[-1] + 1
+            if isfirst:
+                self.tables[path_to_csv.name] = pending
+            else:
+                self.tables[path_to_csv.name] = self.tables[path_to_csv.name].append(pending).loc[self.output_index :]
+            self.tables[path_to_csv.name].sort_index(inplace=True)
+            self.output_index = self.tables[path_to_csv.name].index[-1] + 1
 
-        with open(self.path / self.root_filename, "a") as f:
-            self.df.to_csv(f, header=isfirst, index=False)
+            with open(path_to_csv, "a") as f:
+                self.tables[path_to_csv.name].to_csv(f, header=isfirst, index=False)
+
+        append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
+        append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
 
 
 class MungeToHDF(Device):
@@ -1408,6 +1443,9 @@ class HDFLogger(RelationalTableLogger):
 
     """
 
+    KEY_OUTPUT = 'output'
+    KEY_INPUT = 'input'
+
     nonscalar_file_type = "csv"
 
     def __init__(
@@ -1459,20 +1497,27 @@ class HDFLogger(RelationalTableLogger):
         the preexisting file; subsequent calls append.
         """
 
-        if len(self.pending) == 0:
-            return
-        isfirst = self.df is None
-        pending = pd.DataFrame(self.pending)
-        pending.index.name = self.index_label
-        pending.index += self.last_index
-        if isfirst:
-            self.df = pending
-        else:
-            self.df = self.df.append(pending).loc[self.last_index :]
-        self.df.sort_index(inplace=True)
-        self.last_index = self.df.index[-1]
+        def write_table(key, data):
+            print('write table! ', key, data)
+            if len(data) == 0:
+                return
+            isfirst = self.df is None
+            pending = pd.DataFrame(data)
+            pending.index.name = self.index_label
+            pending.index += self.output_index
+            if isfirst:
+                print('first!')
+                self.df = pending
+            else:
+                print(self.df.columns, pending.columns)
+                self.df = self.df.append(pending).loc[self.output_index :]
+            self.df.sort_index(inplace=True)
+            self.output_index = self.df.index[-1]
 
-        self.df.to_hdf(self.path, key="root", append=self._append)
+            self.df.to_hdf(self.path, key=key, append=self._append)
+
+        write_table(self.KEY_OUTPUT, self.pending_output)
+        write_table(self.KEY_INPUT, self.pending_input)
 
 
 class SQLiteLogger(RelationalTableLogger):
@@ -1495,12 +1540,12 @@ class SQLiteLogger(RelationalTableLogger):
     """
 
     index_label = "id"  # Don't change this or sqlite breaks :(
-    root_filename = "root.db"
-    table_name = "root"
+    ROOT_FILE_NAME = "root.db"
+    OUTPUT_TABLE_NAME = "output"
     _columns = None
     inprogress = {}
     committed = {}
-    last_index = 0
+    output_index = 0
     _engine = None
 
     def open(self):
@@ -1540,7 +1585,7 @@ class SQLiteLogger(RelationalTableLogger):
         #        if not self.path.lower().endswith('.db'):
         #            self.path += '.db'
         os.makedirs(self.path, exist_ok=True)
-        path = os.path.join(self.path, self.root_filename)
+        path = os.path.join(self.path, self.ROOT_FILE_NAME)
 
         # Create an engine via sqlalchemy
         from sqlalchemy import create_engine  # database connection
@@ -1550,11 +1595,11 @@ class SQLiteLogger(RelationalTableLogger):
         if os.path.exists(path):
             if self._append:
                 # read the last row to 1) list the columns and 2) get index
-                query = f"select * from {self.table_name} order by {self.index_label} desc limit 1"
+                query = f"select * from {self.OUTPUT_TABLE_NAME} order by {self.index_label} desc limit 1"
 
                 df = pd.read_sql_query(query, self._engine, index_col=self.index_label)
                 self._columns = df.columns
-                self.last_index = df.index[-1] + 1
+                self.output_index = df.index[-1] + 1
             else:
                 raise IOError(
                     f"root table already exists at '{path}', but append=False"
@@ -1578,13 +1623,13 @@ class SQLiteLogger(RelationalTableLogger):
         the preexisting file; subsequent calls append.
         """
 
-        if len(self.pending) == 0:
+        if len(self.pending_output) == 0:
             return
 
         # Put together a DataFrame from self.pending that is guaranteed
         # to include the columns defined in self._columns
-        traits = pd.DataFrame(self.pending)
-        traits.index = traits.index + self.last_index
+        traits = pd.DataFrame(self.pending_output)
+        traits.index = traits.index + self.output_index
         blank = pd.DataFrame(columns=self._columns)
 
         # Check for new columns, and insert into the database
@@ -1599,7 +1644,7 @@ class SQLiteLogger(RelationalTableLogger):
             self._logger.debug(f"inserting new column '{c}'")
             column_type = self._sql_type_name(traits[c])
             with self._engine.connect() as con:
-                query = f"alter table {self.table_name} add column {c} {column_type} default NULL"
+                query = f"alter table {self.OUTPUT_TABLE_NAME} add column {c} {column_type} default NULL"
                 con.execute(query)
 
         # Form the new database row
@@ -1612,7 +1657,7 @@ class SQLiteLogger(RelationalTableLogger):
         # Append to db
         try:
             df.to_sql(
-                self.table_name,
+                self.OUTPUT_TABLE_NAME,
                 self._engine,
                 if_exists="append",
                 index=True,
@@ -1624,7 +1669,7 @@ class SQLiteLogger(RelationalTableLogger):
         except BaseException as e:
             raise e
 
-        self.last_index += 1
+        self.output_index += 1
 
     def key(self, name, attr):
         """The key determines the SQL column name. df.to_sql does not seem
@@ -1707,7 +1752,7 @@ def to_feather(data, path):
 
 def read_sqlite(
     path,
-    table_name="root",
+    table_name=SQLiteLogger.OUTPUT_TABLE_NAME,
     columns=None,
     nrows=None,
     index_col=RelationalTableLogger.index_label,

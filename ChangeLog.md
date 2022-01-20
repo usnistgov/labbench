@@ -4,10 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
-## [0.23 - unreleased]
+## [0.23 - 2022-01-19]
 ### Added
-- `lb.trait_info` returns a dictionary of all trait definitions in a `lb.Device` instance
-- new `calibrate_from_table` and `calibrate_from_expression` methods in numeric trait types
+- `lb.trait_info` function: returns a dictionary of all trait definitions in a `lb.Device` instance
+- numeric trait types now have `calibrate_from_table` and `calibrate_from_expression` methods 
 
 ### Changed
 - The cli is now packaged in the cli directory to skip some unecessary imports

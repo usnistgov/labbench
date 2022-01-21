@@ -141,12 +141,12 @@ def log_trait_activity(msg):
     if msg["type"] == "set":
         label = owner._traits[trait_name].label or " "
         if label:
-            label = " {label} "
+            label = f" {label} "
         owner._logger.debug(f'{repr(msg["new"])}{label} → trait "{trait_name}"')
     elif msg["type"] == "get":
         label = owner._traits[trait_name].label
         if label:
-            label = " {label} "
+            label = f" {label} "
         owner._logger.debug(f'trait "{trait_name}" → {repr(msg["new"])}{label}')
     else:
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')

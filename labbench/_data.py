@@ -607,7 +607,8 @@ class Aggregator(util.Ownable):
         aggregated_output.update(self._pending_rack_output)
 
         # and the rack inputs
-        aggregated_input = dict(self._pending_rack_input)
+        aggregated_input = dict(index=self._rack_input_index)
+        aggregated_input.update(self._pending_rack_input)
 
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
         # value traits traits are locally cached, so it is safe to keep them in the next step

@@ -988,6 +988,7 @@ class RemappingCorrectionMixIn(DependentTrait):
          `self.allow_none` evaluates False, ValueError is raised.
         """
         owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+
         if owner_cal["by_uncal"] is None:
             return None
 
@@ -1172,6 +1173,18 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
         read(path)
 
+    def _touch_table(self, owner):
+        # make sure that calibrations have been initialized
+        table = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+
+        if table is None:
+            path = getattr(owner, self.path_trait.name)
+            index = getattr(owner, self.index_lookup_trait.name)
+
+            if None not in (path, index):
+                setattr(owner, self.path_trait.name, path)
+                setattr(owner, self.index_lookup_trait.name, index)
+
     def _update_index_value(self, owner, index_value):
         """update the calibration on change of index_value"""
         cal = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
@@ -1194,18 +1207,14 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
-        # make sure that calibrations have been applied
-        table = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
-
-        if table is None:
-            path = getattr(owner, self.path_trait.name)
-            index = getattr(owner, self.index_lookup_trait.name)
-
-            if None not in (path, index):
-                setattr(owner, self.path_trait.name, path)
-                setattr(owner, self.index_lookup_trait.name, index)
+        self._touch_table(owner)
 
         return super().__get__(owner, owner_cls)
+
+    @util.hide_in_traceback
+    def __set__(self, owner, cal):
+        self._touch_table(owner)
+        super().__set__(owner, cal)
 
 
 

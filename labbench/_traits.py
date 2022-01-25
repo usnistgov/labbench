@@ -1112,6 +1112,9 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         owner = msg["owner"]
 
         if msg["name"] == self.path_trait.name:
+            # if msg['new'] == msg['old']:
+            #     return
+
             path = msg["new"]
             index = getattr(owner, self.index_lookup_trait.name)
 
@@ -1121,6 +1124,8 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             return ret
 
         elif msg["name"] == self.index_lookup_trait.name:
+            # if msg['new'] == msg['old']:
+            #     return
             path = getattr(owner, self.path_trait.name)
             index = msg["new"]
 
@@ -1183,6 +1188,25 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             txt = f"calibrated at {index_value/1e6:0.3f} MHz"
 
         self.set_mapping(cal, owner=owner)
+
+    @util.hide_in_traceback
+    def __get__(self, owner, owner_cls=None):
+        if owner is None or owner_cls is not self.__objclass__:
+            return self
+
+        # make sure that calibrations have been applied
+        table = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+
+        if table is None:
+            path = getattr(owner, self.path_trait.name)
+            index = getattr(owner, self.index_lookup_trait.name)
+
+            if None not in (path, index):
+                setattr(owner, self.path_trait.name, path)
+                setattr(owner, self.index_lookup_trait.name, index)
+
+        return super().__get__(owner, owner_cls)
+
 
 
 class TransformMixIn(DependentTrait):

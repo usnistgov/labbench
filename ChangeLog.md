@@ -4,11 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
-## [unreleased]
-
+## [0.23.1 - 2022-01-25]
 ### Changed
 - A separate log of the Rack input parameters at the time of each new_row is now output in data loggers
-- 
+- Corrected a calibration bug in which calibrate_from_table was not initialized
 
 ## [0.23 - 2022-01-19]
 ### Added

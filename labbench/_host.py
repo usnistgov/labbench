@@ -258,7 +258,7 @@ class Host(core.Device):
         try:
             repo = git.Repo(".", search_parent_directories=True)
             self._logger.debug("running in git repository")
-            if repo.active_branch == self.git_commit_in:
+            if self.git_commit_in is not None and repo.active_branch == self.git_commit_in:
                 repo.index.commit("start of measurement")
                 self._logger.debug("git commit finished")
         except git.NoSuchPathError:

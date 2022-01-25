@@ -152,7 +152,7 @@ show_messages("info")
 def _inject_logger_metadata(obj):
     d = dict(
         object=repr(obj), origin=type(obj).__qualname__, owned_name=obj._owned_name,
-    )
+    )  
 
     if d["owned_name"] is not None:
         d["label"] = d["owned_name"]
@@ -792,7 +792,6 @@ class Call(object):
 
                 ret[name] = func
             except:
-                print(name_func_pairs, name, func)
                 raise
 
         return ret

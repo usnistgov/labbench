@@ -1219,6 +1219,8 @@ class CSVLogger(RelationalTableLogger):
 
     ROOT_FILE_NAME = OUTPUT_FILE_NAME = "outputs.csv"
     INPUT_FILE_NAME = "inputs.csv"
+    output_index = 0
+    tables = {}
 
     nonscalar_file_type = "csv"
 
@@ -1237,7 +1239,6 @@ class CSVLogger(RelationalTableLogger):
         the file is closed when exiting the `with` block, even if there
         is an exception.
         """
-
         self.tables = {}
 
         self.path.mkdir(parents=True, exist_ok=self._append)
@@ -1256,8 +1257,10 @@ class CSVLogger(RelationalTableLogger):
                 # there's something here and we plan to append
                 self.tables[file_name] = pd.read_csv(file_path, nrows=1)
                 self.tables[file_name].index.name = self.index_label
+                self.output_index = len(self.tables[file_name])
             else:
                 self.tables[file_name] = None
+                self.output_index = 0
 
     def close(self):
         self._write_root()
@@ -1273,7 +1276,7 @@ class CSVLogger(RelationalTableLogger):
         def append_csv(path_to_csv, df):
             if len(df) == 0:
                 return
-            isfirst = self.tables[path_to_csv.name] is None
+            isfirst = self.tables.get(path_to_csv.name,None) is None
             pending = pd.DataFrame(df)
             pending.index.name = self.index_label
             pending.index = pending.index + self.output_index
@@ -1283,7 +1286,9 @@ class CSVLogger(RelationalTableLogger):
             else:
                 self.tables[path_to_csv.name] = self.tables[path_to_csv.name].append(pending).loc[self.output_index :]
             self.tables[path_to_csv.name].sort_index(inplace=True)
-            self.output_index = self.tables[path_to_csv.name].index[-1] + 1
+            self.output_index = self.tables[path_to_csv.name].index[-1]
+
+            self.path.mkdir(exist_ok=True, parents=True)
 
             with open(path_to_csv, "a") as f:
                 self.tables[path_to_csv.name].to_csv(f, header=isfirst, index=False)

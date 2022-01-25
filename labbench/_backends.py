@@ -225,12 +225,13 @@ class ShellBackend(Device):
             lines = ret.decode().splitlines()
             show_count = min(40, len(lines))
             remaining = max(0, len(lines) - show_count)
-            for line in lines[: show_count // 2]:
-                self._logger.debug(f"► {line}")
+
+            logger_msgs = [f"► {line}" for line in lines[: show_count // 2]]
             if remaining > 0:
-                self._logger.debug(f"…{remaining} more lines")
+                logger_msgs.append(f"…{remaining} more lines")
             for line in lines[-show_count // 2 :]:
-                self._logger.debug(f"► {line}")
+                logger_msgs.append(f"► {line}")
+            self._logger.debug('\n'.join(logger_msgs))
         return ret
 
     def _background_piped(

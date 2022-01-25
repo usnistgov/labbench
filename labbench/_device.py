@@ -135,6 +135,9 @@ def log_trait_activity(msg):
 
     # print('logger debug!', msg)
 
+    if msg['name'] == 'isopen':
+        return
+
     owner = msg["owner"]
     trait_name = msg["name"]
 
@@ -142,12 +145,21 @@ def log_trait_activity(msg):
         label = owner._traits[trait_name].label or " "
         if label:
             label = f" {label} "
-        owner._logger.debug(f'{repr(msg["new"])}{label} → trait "{trait_name}"')
+        value = repr(msg["new"])
+        if len(value) > 180:
+            value = f'<data of type {type(msg["new"]).__qualname__}>'
+        owner._logger.debug(f'set trait "{trait_name}" → {value}{label}')
     elif msg["type"] == "get":
-        label = owner._traits[trait_name].label
-        if label:
-            label = f" {label} "
-        owner._logger.debug(f'trait "{trait_name}" → {repr(msg["new"])}{label}')
+        if msg['new'] != msg['old']:
+            label = owner._traits[trait_name].label
+            if label:
+                label = f" {label} "
+
+            value = repr(msg["new"])
+            if len(value) > 180:
+                value = f'<data of type {type(msg["new"]).__qualname__}>'
+
+            owner._logger.debug(f'get trait "{trait_name}" == {value}{label}')
     else:
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')
 

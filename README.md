@@ -224,8 +224,8 @@ The following types of backend classes are implemented to streamline development
 |Name|Contact|
 |---|---|
 |Dan Kuester (maintainer)|<daniel.kuester@nist.gov>|
-|Shane Allman|shane.allman@nist.gov|
-|Paul Blanchard|paul.blanchard@nist.gov|
+|Shane Allman|Formerly with NIST|
+|Paul Blanchard|Formerly with NIST|
 |Yao Ma|<yao.ma@nist.gov>|
 
 _<a name="myfootnote1">[1]</a> Certain commercial equipment, instruments, or

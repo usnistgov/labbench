@@ -182,9 +182,9 @@ Start in an installation of your favorite python>=3.7 distribution.
 * To install the current version, open a command prompt and type
   ```pip install labbench```
 * To install the "stable" version (master branch) from git, open a command prompt and type
-  ```pip install git+https://github.nist.gov/usnistgov/labbench```
+  ```pip install git+https://github.com/usnistgov/labbench```
 * To install the "bleeding edge" development version (develop branch) from git, open a command prompt and type
-  ```pip install git+https://github.nist.gov/usnistgov/labbench@develop```
+  ```pip install git+https://github.com/usnistgov/labbench@develop```
 
 If you plan to use VISA devices, install an NI VISA [[1](#myfootnote1)] runtime.
 

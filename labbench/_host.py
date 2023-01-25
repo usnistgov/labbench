@@ -28,13 +28,11 @@ import datetime
 import io
 import json
 import logging
-import os
 import socket
 import sys
 import time
 
 from . import _device as core
-from . import datareturn
 from . import property as property_
 from . import util, value
 

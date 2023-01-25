@@ -44,8 +44,6 @@ import re
 
 # for common types
 from pathlib import Path
-import numpy as np
-import pandas as pd
 
 Undefined = inspect.Parameter.empty
 
@@ -1726,16 +1724,16 @@ class Path(Trait, type=Path):
         return path
 
 
-class PandasDataFrame(NonScalar, type=pd.DataFrame):
-    pass
+# class PandasDataFrame(NonScalar, type=pd.DataFrame):
+#     pass
 
 
-class PandasSeries(NonScalar, type=pd.Series):
-    pass
+# class PandasSeries(NonScalar, type=pd.Series):
+#     pass
 
 
-class NumpyArray(NonScalar, type=np.ndarray):
-    pass
+# class NumpyArray(NonScalar, type=np.ndarray):
+#     pass
 
 
 class NetworkAddress(Unicode):

@@ -4,7 +4,6 @@ import importlib
 import inspect
 import os
 from pathlib import Path
-import pandas as pd
 from numbers import Number
 
 from ._rack import (
@@ -163,6 +162,8 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
         with_defaults: whether to include columns when method parameters have defaults
 
     """
+
+    import pandas as pd
 
     func = getattr(rack, name)
     if not callable(func):

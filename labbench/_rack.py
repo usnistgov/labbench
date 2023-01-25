@@ -30,15 +30,10 @@ from ctypes import ArgumentError
 from dataclasses import dataclass
 import importlib
 import inspect
-import os
 import sys
 import time
 import traceback
-from functools import wraps, partial
-from pathlib import Path
-from typing import Any
-
-import pandas as pd
+from functools import wraps
 
 from . import _device as core
 from . import util as util
@@ -304,6 +299,7 @@ class RackMethod(util.Ownable):
         (0th row). keyword values are taken from corresponding column in
         each row.
         """
+        import pandas as pd
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
             util.logger.info(
@@ -571,6 +567,8 @@ class BoundSequence(util.Ownable):
 
     @classmethod
     def to_template(cls, path):
+        import pandas as pd
+
         if path is None:
             path = f"{cls.__name__} template.csv"
         util.logger.debug(f"writing csv template to {repr(path)}")
@@ -585,6 +583,7 @@ class BoundSequence(util.Ownable):
         (0th row). keyword values are taken from corresponding column in
         each row.
         """
+        import pandas as pd
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
             util.logger.info(

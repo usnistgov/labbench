@@ -28,7 +28,6 @@ from ._device import Device
 from . import property as property_
 from . import value
 from ._traits import observe
-from ._traits import unobserve
 from . import util
 
 from collections import OrderedDict
@@ -37,15 +36,11 @@ import inspect
 import os
 import psutil
 import serial
-import pyvisa
-import pyvisa.constants
 from queue import Queue, Empty
-import re
 import socket
 import select
 import sys
 from threading import Thread, Event
-import warnings
 
 # sentinel values unless they are imported later
 win32com = None
@@ -1017,6 +1012,8 @@ class VISADevice(Device):
     def __imports__(cls):
         global pyvisa
         import pyvisa
+        import pyvisa.constants
+
 
     # Overload methods as needed to implement RemoteDevice
     def open(self):

@@ -67,16 +67,16 @@ class Path(_traits.Path):
     pass
 
 
-class DataFrame(_traits.PandasDataFrame):
-    pass
+# class DataFrame(_traits.PandasDataFrame):
+#     pass
 
 
-class Series(_traits.PandasSeries):
-    pass
+# class Series(_traits.PandasSeries):
+#     pass
 
 
-class ndarray(_traits.NumpyArray):
-    pass
+# class ndarray(_traits.NumpyArray):
+#     pass
 
 
 class NetworkAddress(_traits.NetworkAddress):

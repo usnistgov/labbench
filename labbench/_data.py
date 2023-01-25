@@ -24,11 +24,10 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from contextlib import suppress, ExitStack, contextmanager
-from re import L
+from contextlib import suppress, contextmanager
 from . import _device, _traits, _rack
 from ._device import Device
-from ._traits import observe, Trait
+from ._traits import observe
 from ._rack import Owner, Rack
 from . import _host
 from . import _device as core
@@ -39,9 +38,7 @@ import inspect
 import io
 import json
 from numbers import Number
-import numpy as np
 import os
-import pandas as pd
 from pathlib import Path
 import pickle
 import shutil
@@ -131,6 +128,13 @@ class MungerBase(core.Device):
                 row[name] = self._from_sequence(name, value, index, row)
 
         return row
+
+    @classmethod
+    def __imports__(cls):
+        global np, pd
+
+        import numpy as np
+        import pandas as pd
 
     def save_metadata(self, name, key_func, **extra):
         def process_value(value, key_name):

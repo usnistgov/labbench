@@ -54,6 +54,8 @@ def ast_signature(args, defaults, annotations):
     annotations = {k: nameit(v) for k, v in annotations.items() if v is not Undefined}
 
     return ast.arguments(
+        posonlyargs=[],
+        kw_defaults=[],
         args=[ast_arg(a, annotations.get(a, None)) for a in args],
         vararg=None,
         kwarg=None,  # ast.arg(arg='values', annotation=ast.Name(id='Any', ctx=ast.Load())),

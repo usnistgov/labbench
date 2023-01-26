@@ -24,4 +24,4 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-__version__ = "0.23.3"
+__version__ = "0.23.4"

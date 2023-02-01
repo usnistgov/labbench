@@ -1,0 +1,77 @@
+[tool]
+[tool.pdm]
+version = { source = "file", path = "labbench/_version.py" }
+
+[tool.pdm.dev-dependencies]
+lint = [
+    "flake8",
+    "black",
+    "ast_decompiler",
+    "mypy",
+]
+test = ["pytest", "pytest-cov"]
+doc = ["sphinx(>=1.6)", "recommonmark"]
+
+[project]
+name = "labbench"
+dynamic = ["version"]
+description = """\
+    A set of python tools for clear, concise, and explainable laboratory automation. Code\
+    that achieves these goals should read like a pseudocode expression of the experimental\
+    procedure. Objects for control over equipment (or other software) should only expose a\
+    clear set of automation capabilities to make laboratory automation more robust and less\
+    frustrating.
+
+    The labbench module supports this goal through an object protocol and support functions.\
+    These separate repetitive and error-prone boilerplate code, Use of these capabilities\
+    among multiple experimental runs also helps to produced data sets with consistent\
+    structure.\
+"""
+
+authors = [
+    {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
+    {name = "Shane Allman"},
+    {name = "Paul Blanchard"},
+    {name = "Yao Ma", email = "yao.ma@nist.gov"}
+]
+
+maintainers = [
+    {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
+]
+
+dependencies = [
+    "coloredlogs>=7.0",
+    "feather-format>=0.4.0",
+    "GitPython>=2.0",
+    "numpy>=1.0",
+    "pandas>=1.00",
+    "psutil>=5.0",
+    "pyserial>=3.0",
+    "pyvisa>=1.8",
+    "sqlalchemy>=2.0.1",
+    "pyarrow>=11.0.0",
+    "ruamel-yaml>=0.17.21",
+    "validators>=0.20.0",
+    "pywin32; sys_platform == 'win32'",
+    "comtypes; sys_platform == 'win32'",
+    "pythonnet; sys_platform == 'win32'",
+]
+
+requires-python = ">=3.7"
+readme = "README.md"
+license = {text = "NIST"}
+
+[project.urls]
+homepage = "https://github.com/usnistgov/labbench"
+repository = "https://github.com/usnistgov/labbench"
+documentation = "https://pages.nist.gov/labbench"
+changelog = "https://github.com/usnistgov/labbench/blob/master/ChangeLog.md"
+
+[build-system]
+requires = [
+    "pdm-pep517>=1.0",
+]
+build-backend = "pdm.pep517.api"
+
+[project.scripts]
+labbench = "cli.__main__:do_cli"

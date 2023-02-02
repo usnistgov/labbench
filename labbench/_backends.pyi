@@ -276,6 +276,9 @@ class VISADevice(Device):
         def __exit__(self, exctype, excinst, exctb):
             ...
 
+def set_default_visa_backend(name) -> None:
+    ...
+
 
 class SimulatedVISADevice(VISADevice):
 
@@ -294,10 +297,6 @@ class Win32ComDevice(Device):
     def __init__(self, resource: str='str'):
         ...
     com_object: Incomplete
-
-    @classmethod
-    def __imports__(cls) -> None:
-        ...
     backend: Incomplete
 
     def open(self):

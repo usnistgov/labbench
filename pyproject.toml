@@ -1,17 +1,3 @@
-[tool]
-[tool.pdm]
-version = { source = "file", path = "labbench/_version.py" }
-
-[tool.pdm.dev-dependencies]
-lint = [
-    "flake8",
-    "black",
-    "ast_decompiler",
-    "mypy",
-]
-test = ["pytest", "pytest-cov"]
-doc = ["sphinx(>=1.6)", "recommonmark"]
-
 [project]
 name = "labbench"
 dynamic = ["version"]
@@ -67,11 +53,23 @@ repository = "https://github.com/usnistgov/labbench"
 documentation = "https://pages.nist.gov/labbench"
 changelog = "https://github.com/usnistgov/labbench/blob/master/ChangeLog.md"
 
-[build-system]
-requires = [
-    "pdm-pep517>=1.0",
-]
-build-backend = "pdm.pep517.api"
-
 [project.scripts]
 labbench = "cli.__main__:do_cli"
+
+[build-system]
+requires = ["pdm-pep517>=1.0"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm]
+version = { source = "file", path = "labbench/_version.py" }
+
+[tool.pdm.dev-dependencies]
+lint = [
+    "flake8",
+    "black",
+    "ast_decompiler",
+    "mypy",
+]
+test = ["pytest", "pytest-cov"]
+doc = ["sphinx>=1.6", "recommonmark"]

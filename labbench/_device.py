@@ -34,6 +34,7 @@ from copy import deepcopy
 import inspect
 import sys
 import traceback
+from warnings import warn
 
 from . import util
 from . import property as property_
@@ -234,7 +235,9 @@ class Device(HasTraits, util.Ownable):
     def __init__(self, resource=Undefined, **values):
         """Update default values with these arguments on instantiation."""
 
-        self.__imports__()        
+        if hasattr(self, '__imports__'):
+            warn('the use of __imports__ has been deprecated. switch to importing each backend-specific module in each method that uses it.')
+            self.__imports__()
 
         # validate presence of required arguments
         inspect.signature(self.__init__).bind(resource, **values)
@@ -331,8 +334,6 @@ class Device(HasTraits, util.Ownable):
         cls.__doc__ += "\nValue Attributes:\n" + value_docs
         cls.__doc__ += "\nProperty Attributes:\n" + property_docs
 
-        # cls.__imports__()
-
     @util.hide_in_traceback
     @wraps(open)
     def __open_wrapper__(self):
@@ -400,10 +401,6 @@ class Device(HasTraits, util.Ownable):
                 )
                 ex.thread_exceptions = all_ex
                 raise ex
-
-    @classmethod
-    def __imports__(cls):
-        pass
 
     @util.hide_in_traceback
     def __enter__(self):

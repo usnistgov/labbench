@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
 
+## [0.24.0 - unreleased]
+### Added
+- `set_default_visa_backend` allows changing the global visa default, for example to `pyvisa-py` to with the "@py" argument
+
+### Changed
+- Switch to pyproject.toml via pdm for packaging and build
+
+### Deprecated
+- Deprecated `__imports__` from Device objects to avoid dangerous use of `globals`. Each expensive or platform-specific module import should now be performed inside the method that accesses it. 
+
 ## [0.23.4 - 2023-01-26]
 ### Changed
 - Delayed some imports of backend-specific libraries and pandas in order to reduce labbench import time

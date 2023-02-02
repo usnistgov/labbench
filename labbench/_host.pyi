@@ -92,10 +92,6 @@ class Host(core.Device):
     def open(self) -> None:
         ...
 
-    @classmethod
-    def __imports__(self) -> None:
-        ...
-
     def close(self) -> None:
         ...
 

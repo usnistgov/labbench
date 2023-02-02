@@ -14,10 +14,6 @@ class ShellBackend(Device):
         ...
     binary_path: Incomplete
     timeout: Incomplete
-
-    @classmethod
-    def __imports__(cls) -> None:
-        ...
     backend: Incomplete
 
     def open(self) -> None:
@@ -201,10 +197,6 @@ class TelnetDevice(Device):
         ...
     resource: Incomplete
     timeout: Incomplete
-
-    @classmethod
-    def __imports__(cls) -> None:
-        ...
     backend: Incomplete
 
     def open(self) -> None:
@@ -229,10 +221,6 @@ class VISADevice(Device):
     options: Incomplete
 
     def status_byte(self):
-        ...
-
-    @classmethod
-    def __imports__(cls) -> None:
         ...
     backend: Incomplete
 

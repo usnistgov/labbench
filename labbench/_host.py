@@ -241,6 +241,8 @@ class Host(core.Device):
 
     def open(self):
         """The host setup method tries to commit current changes to the tree"""
+        import git
+
         log_formatter = JSONFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
@@ -276,12 +278,6 @@ class Host(core.Device):
             if name.startswith("git"):
                 getattr(self, name)
 
-    @classmethod
-    def __imports__(self):
-        global git, pip
-        import git
-        import pip
-
     def close(self):
         try:
             self.backend["logger"].removeHandler(self.backend["log_handler"])
@@ -301,6 +297,7 @@ class Host(core.Device):
     def __python_module_versions(self):
         """Enumerate the versions of installed python modules"""
         import pandas as pd
+        import pip
 
         versions = dict(
             [str(d).lower().split(" ") for d in pip.get_installed_distributions()]
@@ -336,6 +333,8 @@ class Host(core.Device):
     @property_.str(cache=True)
     def git_commit_id(self):
         """Try to determine the current commit hash of the current git repo"""
+        import git
+
         try:
             commit = self.backend["repo"].commit()
             return commit.hexsha

@@ -39,6 +39,7 @@ import serial
 from queue import Queue, Empty
 import socket
 import select
+import subprocess as sp
 import sys
 from threading import Thread, Event
 
@@ -85,11 +86,6 @@ class ShellBackend(Device):
     #     default=0, min=0,
     #     sets=False, help='minimum extra command line arguments needed to run'
     # )
-
-    @classmethod
-    def __imports__(cls):
-        global sp
-        import subprocess as sp
 
     def open(self):
         """The :meth:`open` method implements opening in the
@@ -910,15 +906,12 @@ class TelnetDevice(Device):
     resource = value.NetworkAddress("127.0.0.1:23", help="server host address")
     timeout = value.float(2, min=0, label="s", help="connection timeout")
 
-    @classmethod
-    def __imports__(cls):
-        global Telnet
-        from telnetlib import Telnet
-
     def open(self):
         """Open a telnet connection to the host defined
         by the string in self.resource
         """
+        from telnetlib import Telnet
+
         host, *port = self.resource.split(":")
 
         if len(port) > 0:
@@ -931,7 +924,6 @@ class TelnetDevice(Device):
     def close(self):
         """Disconnect the telnet connection"""
         self.backend.close()
-
 
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
@@ -1008,13 +1000,6 @@ class VISADevice(Device):
             "operating": bool(code & 0b10000000),
         }
 
-    @classmethod
-    def __imports__(cls):
-        global pyvisa
-        import pyvisa
-        import pyvisa.constants
-
-
     # Overload methods as needed to implement RemoteDevice
     def open(self):
         """opens the instrument.
@@ -1038,6 +1023,8 @@ class VISADevice(Device):
         this is called automatically and does not need
         to be invoked.
         """
+        import pyvisa
+
         if not self.isopen or self.backend is None:
             return
 
@@ -1226,22 +1213,27 @@ class VISADevice(Device):
         """
 
         def __exit__(self, exctype, excinst, exctb):
+            import pyvisa
+
             EXC = pyvisa.errors.VisaIOError
             CODE = pyvisa.errors.StatusCode.error_timeout
 
             return exctype == EXC and excinst.error_code == CODE
 
     def _release_remote_control(self):
+        import pyvisa
+        import pyvisa.constants
+
         # From instrument and pyvisa docs
         self.backend.visalib.viGpibControlREN(
             self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
         )
 
-    @classmethod
-    def _get_rm(cls):
-        cls.__imports__()
+    def _get_rm(self):
+        import pyvisa
+        import pyvisa.constants
 
-        backend_name = cls._rm.default
+        backend_name = self._rm
 
         if backend_name in ("@ivi", "@ni"):
             is_ivi = True
@@ -1264,6 +1256,11 @@ class VISADevice(Device):
 
         return rm
 
+def set_default_visa_backend(name):
+    if name not in VISADevice._rm.only:
+        raise ValueError(f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}")
+    VISADevice._rm.default = name
+
 
 class SimulatedVISADevice(VISADevice, _rm="@sim"):
     """Base class for wrapping simulated VISA devices with pyvisa.
@@ -1282,7 +1279,7 @@ class SimulatedVISADevice(VISADevice, _rm="@sim"):
 
     @classmethod
     def _get_rm(cls):
-        cls.__imports__()
+        import pyvisa
 
         backend_name = f"{cls.yaml_source.default}@sim"
 
@@ -1313,14 +1310,10 @@ class Win32ComDevice(Device, concurrency=True):
         default="", sets=False, help="the win32com object string"
     )  # Must be a module
 
-    @classmethod
-    def __imports__(cls):
-        global win32com
-        import win32com
-        import win32com.client
-
     def open(self):
         """Connect to the win32 com object"""
+        import win32com
+        import win32com.client
 
         def should_sandbox(obj):
             try:

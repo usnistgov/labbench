@@ -51,6 +51,7 @@ from ._backends import (
     TelnetDevice,
     VISADevice,
     Win32ComDevice,
+    set_default_visa_backend
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
 from ._device import Device, list_devices, trait_info

@@ -96,6 +96,8 @@ class MungerBase(core.Device):
         Returns:
             the row dictionary, replacing special entries with the relative path to the saved data file
         """
+        import pandas as pd
+        import numpy as np
 
         def is_path(v):
             if not isinstance(v, str):
@@ -129,14 +131,10 @@ class MungerBase(core.Device):
 
         return row
 
-    @classmethod
-    def __imports__(cls):
-        global np, pd
-
-        import numpy as np
-        import pandas as pd
 
     def save_metadata(self, name, key_func, **extra):
+        import pandas as pd
+
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 if len(value) > self.text_relational_min:
@@ -179,6 +177,7 @@ class MungerBase(core.Device):
         Returns:
             the path to the file, relative to the directory that contains the root database
         """
+        import pandas as pd
 
         def write(stream, ext, value):
             if ext == "csv":
@@ -364,6 +363,8 @@ class MungeToDirectory(MungerBase):
         return relpath
 
     def _write_metadata(self, metadata):
+        import pandas as pd
+
         def recursive_dict_fix(d):
             d = dict(d)
             for name, obj in dict(d).items():
@@ -497,6 +498,8 @@ class MungeToTar(MungerBase):
             self._logger.warning(f"could not remove old file or directory {old_path}")
 
     def _write_metadata(self, metadata):
+        import pandas as pd
+
         for k, v in metadata.items():
             stream = self._open_metadata(k + ".json", "w")
             if hasattr(stream, "overwrite"):
@@ -1243,6 +1246,8 @@ class CSVLogger(RelationalTableLogger):
         the file is closed when exiting the `with` block, even if there
         is an exception.
         """
+        import pandas as pd
+
         self.tables = {}
 
         self.path.mkdir(parents=True, exist_ok=self._append)
@@ -1276,6 +1281,7 @@ class CSVLogger(RelationalTableLogger):
         If the class was created with overwrite=True, then the first call to _write_root() will overwrite
         the preexisting file; subsequent calls append.
         """
+        import pandas as pd
 
         def append_csv(path_to_csv, df):
             if len(df) == 0:
@@ -1376,6 +1382,8 @@ class MungeToHDF(Device):
         return row
 
     def save_metadata(self, name, key_func, **extra):
+        import pandas as pd
+
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 return value
@@ -1410,6 +1418,7 @@ class MungeToHDF(Device):
         Returns:
             the path to the file, relative to the directory that contains the root database
         """
+        import pandas as pd
 
         key = self._get_key(name, index, row)
 
@@ -1511,6 +1520,7 @@ class HDFLogger(RelationalTableLogger):
         If the class was created with overwrite=True, then the first call to _write_root() will overwrite
         the preexisting file; subsequent calls append.
         """
+        import pandas as pd
 
         def write_table(key, data):
             print('write table! ', key, data)
@@ -1578,6 +1588,8 @@ class SQLiteLogger(RelationalTableLogger):
         the file is closed when exiting the `with` block, even if there
         is an exception.
         """
+        from sqlalchemy import create_engine  # database connection
+        import pandas as pd
 
         if self.path.exists():
             root = str(self.path.absolute())
@@ -1603,8 +1615,6 @@ class SQLiteLogger(RelationalTableLogger):
         path = os.path.join(self.path, self.ROOT_FILE_NAME)
 
         # Create an engine via sqlalchemy
-        from sqlalchemy import create_engine  # database connection
-
         self._engine = create_engine("sqlite:///{}".format(path))
 
         if os.path.exists(path):
@@ -1637,6 +1647,8 @@ class SQLiteLogger(RelationalTableLogger):
         If the class was created with overwrite=True, then the first call to _write_root() will overwrite
         the preexisting file; subsequent calls append.
         """
+        import pandas as pd
+
 
         if len(self.pending_output) == 0:
             return
@@ -1724,6 +1736,7 @@ class SQLiteLogger(RelationalTableLogger):
         and it contains NA values, this infers the datatype of the not-NA
         values.  Needed for inserting typed data containing NULLs, GH8778.
         """
+        import pandas as pd
 
         col_for_inference = col
         if col.dtype == "object":
@@ -1751,6 +1764,7 @@ def to_feather(data, path):
 
     iname, data.index.name = data.index.name, None
     cname, data.columns.name = data.columns.name, None
+    
     try:
         if not (
             data.index.is_monotonic
@@ -1783,7 +1797,7 @@ def read_sqlite(
     Returns:
         pandas.DataFrame instance containing data loaded from `path`
     """
-
+    import pandas as pd
     from sqlalchemy import create_engine
 
     engine = create_engine(f"sqlite:///{path}")
@@ -1808,6 +1822,7 @@ def read(path_or_buf, columns=None, nrows=None, format="auto", **kws):
         pandas.DataFrame instance containing data read from file
     """
 
+    import pandas as pd
     from pyarrow.feather import read_feather
 
     reader_guess = {
@@ -1937,6 +1952,7 @@ def read_relational(
         the expanded dataframe
 
     """
+    import pandas as pd
 
     # if not isinstance(root, (pd.DataFrame,pd.Series)):
     #     raise ValueError('expected root to be a DataFrame instance, but it is {} instead'\

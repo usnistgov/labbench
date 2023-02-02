@@ -31,10 +31,6 @@ class MungerBase(core.Device):
     def __call__(self, index, row):
         ...
 
-    @classmethod
-    def __imports__(cls) -> None:
-        ...
-
     def save_metadata(self, name, key_func, **extra):
         ...
 

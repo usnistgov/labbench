@@ -40,12 +40,14 @@ dependencies = [
     "validators>=0.20.0",
     "pywin32; sys_platform == 'win32'",
     "comtypes; sys_platform == 'win32'",
-    "pythonnet; sys_platform == 'win32'",
 ]
 
 requires-python = ">=3.7"
 readme = "README.md"
 license = {text = "NIST"}
+
+[project.optional-dependencies]
+dotnet = ["pythonnet"]
 
 [project.urls]
 homepage = "https://github.com/usnistgov/labbench"

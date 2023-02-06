@@ -1,13 +1,14 @@
 [project]
 name = "labbench"
-dynamic = ["version"]
+version = "0.24.0"
+
 description = """\
     A set of python tools for clear, concise, and explainable laboratory automation. Code\
     that achieves these goals should read like a pseudocode expression of the experimental\
     procedure. Objects for control over equipment (or other software) should only expose a\
     clear set of automation capabilities to make laboratory automation more robust and less\
-    frustrating.
-
+    frustrating.\
+    \
     The labbench module supports this goal through an object protocol and support functions.\
     These separate repetitive and error-prone boilerplate code, Use of these capabilities\
     among multiple experimental runs also helps to produced data sets with consistent\
@@ -25,6 +26,10 @@ maintainers = [
     {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
 ]
 
+requires-python = ">=3.7"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+
 dependencies = [
     "coloredlogs>=7.0",
     "feather-format>=0.4.0",
@@ -40,12 +45,9 @@ dependencies = [
     "sqlalchemy>=2.0.1",
     "validators>=0.20.0",
     "pywin32; sys_platform == 'win32'",
-    "comtypes; sys_platform == 'win32'",
+    "comtypes; sys_platform == 'win32'"
 ]
 
-requires-python = ">=3.7"
-readme = "README.md"
-license = {text = "NIST"}
 
 [project.optional-dependencies]
 dotnet = ["pythonnet"]
@@ -64,8 +66,10 @@ requires = ["pdm-pep517>=1.0"]
 build-backend = "pdm.pep517.api"
 
 [tool]
-[tool.pdm]
-version = { source = "file", path = "labbench/_version.py" }
+[tool.pdm.version]
+source = "scm"
+write_to = "labbench/_version.py"
+write_template = "__version__ = '{}'"
 
 [tool.pdm.dev-dependencies]
 lint = [

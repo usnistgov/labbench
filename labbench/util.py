@@ -55,21 +55,25 @@ __all__ = [  # "misc"
     "Ownable",
 ]
 
-from contextlib import contextmanager, _GeneratorContextManager
-from functools import wraps
-from queue import Queue, Empty
-from threading import Thread, ThreadError, Event
-from typing import Callable
-
+import ast
 import builtins
 import hashlib
 import inspect
 import logging
-import psutil
+import re
 import sys
+import textwrap
 import time
+import types
 import traceback
+from contextlib import _GeneratorContextManager, contextmanager
+from functools import wraps
+from queue import Empty, Queue
+from threading import Event, Thread, ThreadError
+from typing import Callable
 from warnings import simplefilter
+
+import psutil
 
 import_t0 = time.perf_counter()
 
@@ -84,10 +88,7 @@ logger = logging.LoggerAdapter(
 class LabbenchDeprecationWarning(DeprecationWarning):
     pass
 
-
 simplefilter("once", LabbenchDeprecationWarning)
-import weakref
-
 
 def show_messages(minimum_level, colors=True):
     """Configure screen debug message output for any messages as least as important as indicated by `level`.
@@ -133,7 +134,7 @@ def show_messages(minimum_level, colors=True):
     # - %(pathname)s:%(lineno)d'
 
     if colors:
-        from coloredlogs import ColoredFormatter, DEFAULT_FIELD_STYLES
+        from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
 
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
         styles = dict(DEFAULT_FIELD_STYLES, label=dict(color="blue"),)
@@ -244,8 +245,6 @@ concurrency_count = 0
 stop_request_event = Event()
 
 sys._debug_tb = False
-
-import types
 
 TRACEBACK_HIDE_TAG = "🦙 hide from traceback 🦙"
 
@@ -1577,11 +1576,6 @@ class ConfigStore:
         df.columns.name = "Value"
         df.index.name = "Parameter"
         return df
-
-
-import ast
-import textwrap
-import re
 
 
 def accessed_attributes(method):

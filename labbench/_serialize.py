@@ -152,7 +152,6 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
 
 
 def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = False):
-
     """forms an empty DataFrame containing the headers needed for Sequence
     csv files.
 
@@ -225,7 +224,8 @@ def _map_devices(cls):
     for dev_name, dev in cls._devices.items():
         cm[dev_name] = CommentedMap()
         cm.yaml_set_comment_before_after_key(
-            dev_name, before="\n",
+            dev_name,
+            before="\n",
         )
 
         for value_name in dev._value_attrs:
@@ -286,7 +286,8 @@ def dump_rack(
         )
 
         cm.yaml_set_comment_before_after_key(
-            _FIELD_SOURCE, before="orient the python interpreter to the source",
+            _FIELD_SOURCE,
+            before="orient the python interpreter to the source",
         )
 
         cm.yaml_set_comment_before_after_key(
@@ -330,7 +331,7 @@ def read_yaml_config(config_path: str):
 
 def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack:
     """instantiates a Rack object from a config directory created by dump_rack.
-    
+
     After instantiation, the current working directory is changed to output_path.
     """
 

@@ -84,11 +84,14 @@ logger = logging.LoggerAdapter(
     ),  # description of origin within labbench (for screen logs only)
 )
 
+
 # show deprecation warnings only once
 class LabbenchDeprecationWarning(DeprecationWarning):
     pass
 
+
 simplefilter("once", LabbenchDeprecationWarning)
+
 
 def show_messages(minimum_level, colors=True):
     """Configure screen debug message output for any messages as least as important as indicated by `level`.
@@ -137,7 +140,10 @@ def show_messages(minimum_level, colors=True):
         from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
 
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
-        styles = dict(DEFAULT_FIELD_STYLES, label=dict(color="blue"),)
+        styles = dict(
+            DEFAULT_FIELD_STYLES,
+            label=dict(color="blue"),
+        )
         formatter = ColoredFormatter(log_fmt, style="{", field_styles=styles)
     else:
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
@@ -152,8 +158,10 @@ show_messages("info")
 
 def _inject_logger_metadata(obj):
     d = dict(
-        object=repr(obj), origin=type(obj).__qualname__, owned_name=obj._owned_name,
-    )  
+        object=repr(obj),
+        origin=type(obj).__qualname__,
+        owned_name=obj._owned_name,
+    )
 
     if d["owned_name"] is not None:
         d["label"] = d["owned_name"]
@@ -184,7 +192,8 @@ class Ownable:
 
     def __init__(self):
         self._logger = logging.LoggerAdapter(
-            logger.logger, extra=_inject_logger_metadata(self),
+            logger.logger,
+            extra=_inject_logger_metadata(self),
         )
 
     def __set_name__(self, owner_cls, name):
@@ -1011,7 +1020,6 @@ def enter_or_call(flexible_caller, objs, kws):
     # or (2) all callables. Decide what type of operation to proceed with.
     runner = None
     for i, (k, obj) in enumerate(candidates):
-
         # pass through dictionary objects from nested calls
         if isdictducktype(obj.__class__):
             dicts.append(candidates.pop(i))
@@ -1150,7 +1158,6 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         # if there was an exception that wasn't us ending the thread,
         # show messages
         if called.traceback is not None:
-
             tb = traceback_skip(called.traceback, 1)
 
             if called.traceback[0] is not ThreadEndedByMaster:

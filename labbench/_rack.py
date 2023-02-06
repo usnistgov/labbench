@@ -94,7 +94,7 @@ class notify:
     def return_event(cls, owner, returned: dict):
         if owner in cls._owner_hold_list:
             return
-            
+
         if not isinstance(returned, dict):
             raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
         for handler in cls._handlers["returns"]:
@@ -104,7 +104,7 @@ class notify:
     def call_event(cls, owner, parameters: dict):
         if owner in cls._owner_hold_list:
             return
-            
+
         if not isinstance(parameters, dict):
             raise TypeError(
                 f"parameters data was {repr(parameters)}, which is not a dict"
@@ -199,7 +199,7 @@ class CallSignatureTemplate:
 
 
 class MethodTaggerDataclass:
-    """ subclasses decorated with @dataclass will operate as decorators that stash annotated keywords here into the pending attribute dict """
+    """subclasses decorated with @dataclass will operate as decorators that stash annotated keywords here into the pending attribute dict"""
 
     pending = {}
 
@@ -214,9 +214,9 @@ class MethodTaggerDataclass:
 @dataclass
 class rack_input_table(MethodTaggerDataclass):
     """tag a method defined in a Rack to support execution from a flat table.
-    
-    In practice, this often means a very long argument list. 
-    
+
+    In practice, this often means a very long argument list.
+
     Arguments:
         table_path: location of the input table
     """
@@ -227,9 +227,9 @@ class rack_input_table(MethodTaggerDataclass):
 @dataclass
 class rack_kwargs_template(MethodTaggerDataclass):
     """tag a method defined in a Rack to replace a **kwargs argument using the signature of the specified callable.
-    
-    In practice, this often means a very long argument list. 
-    
+
+    In practice, this often means a very long argument list.
+
     Arguments:
         callable_template: replace variable keyword arguments (**kwargs) with the keyword arguments defined in this callable
 
@@ -241,9 +241,9 @@ class rack_kwargs_template(MethodTaggerDataclass):
 
 class rack_kwargs_skip(MethodTaggerDataclass):
     """tag a method defined in a Rack to replace a **kwargs argument using the signature of the specified callable.
-    
-    In practice, this often means a very long argument list. 
-    
+
+    In practice, this often means a very long argument list.
+
     Arguments:
         callable_template: replace variable keyword arguments (**kwargs) with the keyword arguments defined in this callable
 
@@ -300,6 +300,7 @@ class RackMethod(util.Ownable):
         each row.
         """
         import pandas as pd
+
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
             util.logger.info(
@@ -329,7 +330,7 @@ class RackMethod(util.Ownable):
 
     def _apply_signature(self):
         """updates self.__signature__
-        
+
         __owner_subclass__ must have been called first to do introspection on self._callable_template.
         """
         self.__call__ = util.copy_func(self.__call__)
@@ -442,7 +443,7 @@ class RackMethod(util.Ownable):
         )
 
     def extended_arguments(self, name_map={}):
-        """ returns a list of argument names from in the owned context.
+        """returns a list of argument names from in the owned context.
 
         Arguments:
             name_map (dict): name remapping, overriding self.tags
@@ -584,6 +585,7 @@ class BoundSequence(util.Ownable):
         each row.
         """
         import pandas as pd
+
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
             util.logger.info(
@@ -640,7 +642,9 @@ class OwnerContextAdapter:
 
     def __enter__(self):
         try:
-            hold = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
+            hold = [
+                o for o in self._owner._ownables.values() if isinstance(o, RackMethod)
+            ]
             notify.hold_owner_notifications(*hold)
             cls = type(self._owner)
             for opener in core.trace_methods(cls, "open", Owner)[::-1]:
@@ -654,7 +658,9 @@ class OwnerContextAdapter:
 
     def __exit__(self, *exc_info):
         try:
-            holds = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
+            holds = [
+                o for o in self._owner._ownables.values() if isinstance(o, RackMethod)
+            ]
             notify.hold_owner_notifications(*holds)
             cls = type(self._owner)
             methods = core.trace_methods(cls, "close", Owner)
@@ -678,10 +684,12 @@ class OwnerContextAdapter:
             getattr(self._owner, "_logger", util.logger).debug("closed")
 
         finally:
-            notify.allow_owner_notifications(*holds)            
+            notify.allow_owner_notifications(*holds)
 
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
+                ex = util.ConcurrentException(
+                    f"multiple exceptions while closing {self}"
+                )
                 ex.thread_exceptions = all_ex
                 raise ex
 
@@ -1082,7 +1090,7 @@ def standardize_spec_step(sequence):
 class Sequence(util.Ownable):
     """An experimental procedure defined with methods in Rack instances. The input is a specification for sequencing these
     steps, including support for threading.
-    
+
     Sequence are meant to be defined as attributes of Rack subclasses in instances of the Rack subclasses.
     """
 
@@ -1092,10 +1100,13 @@ class Sequence(util.Ownable):
 
     def __init__(self, *specification, shared_names=[], input_table=None):
         self.spec = [standardize_spec_step(spec) for spec in specification]
-        self.tags = dict(table_path=input_table, shared_names=shared_names,)
+        self.tags = dict(
+            table_path=input_table,
+            shared_names=shared_names,
+        )
 
     def return_on_exceptions(self, exception_or_exceptions, cleanup_func=None):
-        """ Configures calls to the bound Sequence to swallow the specified exceptions raised by
+        """Configures calls to the bound Sequence to swallow the specified exceptions raised by
         constitent steps. If an exception is swallowed, subsequent steps
         Sequence are not executed. The dictionary of return values from each Step is returned with
         an additional 'exception' key indicating the type of the exception that occurred.
@@ -1523,7 +1534,7 @@ def import_as_rack(
 def find_owned_rack_by_type(
     parent_rack: Rack, target_type: Rack, include_parent: bool = True
 ):
-    """ return a rack instance of `target_type` owned by `parent_rack`. if there is
+    """return a rack instance of `target_type` owned by `parent_rack`. if there is
     not exactly 1 for `target_type`, TypeError is raised.
     """
     # TODO: add this to labbench

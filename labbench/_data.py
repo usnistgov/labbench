@@ -131,7 +131,6 @@ class MungerBase(core.Device):
 
         return row
 
-
     def save_metadata(self, name, key_func, **extra):
         import pandas as pd
 
@@ -151,7 +150,6 @@ class MungerBase(core.Device):
 
         summary = dict(extra)
         for owner, owner_name in name.items():
-
             for trait_name, trait in owner._traits.items():
                 if trait.role == _traits.Trait.ROLE_VALUE or trait.cache:
                     summary[key_func(owner_name, trait_name)] = getattr(
@@ -459,7 +457,6 @@ class MungeToTar(MungerBase):
         return TarFileIO(self.tarfile, dirpath, mode=mode)
 
     def open(self):
-
         if not os.path.exists(self.resource):
             with suppress(FileExistsError):
                 os.makedirs(self.resource)
@@ -666,9 +663,9 @@ class Aggregator(util.Ownable):
 
         if self._rack_toplevel_caller is None:
             # take the first call as the top-level caller
-            self._rack_toplevel_caller = msg['owner']
+            self._rack_toplevel_caller = msg["owner"]
 
-        elif self._rack_toplevel_caller != msg['owner']:
+        elif self._rack_toplevel_caller != msg["owner"]:
             # only track calls to the top-level caller
             return
 
@@ -696,7 +693,7 @@ class Aggregator(util.Ownable):
         #         f"Rack call overwrites prior data with existing keys {key_conflicts}"
         #     )
 
-        self._pending_rack_input = dict(row_data, **msg['new'])
+        self._pending_rack_input = dict(row_data, **msg["new"])
 
     def _receive_trait_update(self, msg: dict):
         """called by trait owners on changes observed
@@ -798,18 +795,14 @@ class Aggregator(util.Ownable):
         elif hasattr(always, "__iter__"):
             always = tuple(always)
         else:
-            raise ValueError(
-                "argument 'always' must be a str or iterable of str"
-            )
+            raise ValueError("argument 'always' must be a str or iterable of str")
 
         if isinstance(never, str):
             never = (never,)
         elif hasattr(never, "__iter__"):
             never = tuple(never)
         else:
-            raise ValueError(
-                "argument 'never' must be a str or iterable of str"
-            )
+            raise ValueError("argument 'never' must be a str or iterable of str")
 
         # if isinstance(role, (str,bytes)):
         #     role = [role]
@@ -927,7 +920,6 @@ class RelationalTableLogger(
         git_commit_in=None,
         # **metadata
     ):
-
         self.aggregator = Aggregator()
 
         super().__init__()
@@ -1075,7 +1067,7 @@ class RelationalTableLogger(
             None
         """
         if len(self.pending_output) != len(self.pending_input):
-            util.logger.warning('the input and output have mismatched length')
+            util.logger.warning("the input and output have mismatched length")
 
         count = max(len(self.pending_output), len(self.pending_input))
 
@@ -1086,7 +1078,6 @@ class RelationalTableLogger(
                 self.munge(self.output_index + i, proc(row))
                 for i, row in enumerate(self.pending_output)
             ]
-
 
             self.pending_input = [
                 self.munge(self.output_index + i, proc(row))
@@ -1100,7 +1091,7 @@ class RelationalTableLogger(
     @contextmanager
     @util.hide_in_traceback
     def context(self, *args, **kws):
-        """ calls `self.new_row(*args, **kws); self.write()` on context exit.
+        """calls `self.new_row(*args, **kws); self.write()` on context exit.
 
         This is meant as a convenience for defining execution behavior in
         table inputs for Racks.
@@ -1286,7 +1277,7 @@ class CSVLogger(RelationalTableLogger):
         def append_csv(path_to_csv, df):
             if len(df) == 0:
                 return
-            isfirst = self.tables.get(path_to_csv.name,None) is None
+            isfirst = self.tables.get(path_to_csv.name, None) is None
             pending = pd.DataFrame(df)
             pending.index.name = self.index_label
             pending.index = pending.index + self.output_index
@@ -1294,7 +1285,11 @@ class CSVLogger(RelationalTableLogger):
             if isfirst:
                 self.tables[path_to_csv.name] = pending
             else:
-                self.tables[path_to_csv.name] = self.tables[path_to_csv.name].append(pending).loc[self.output_index :]
+                self.tables[path_to_csv.name] = (
+                    self.tables[path_to_csv.name]
+                    .append(pending)
+                    .loc[self.output_index :]
+                )
             self.tables[path_to_csv.name].sort_index(inplace=True)
             self.output_index = self.tables[path_to_csv.name].index[-1]
 
@@ -1375,7 +1370,7 @@ class MungeToHDF(Device):
 
             else:
                 self._logger.warning(
-                    fr"unrecognized type for row entry '{name}' with type {repr(value)}"
+                    rf"unrecognized type for row entry '{name}' with type {repr(value)}"
                 )
                 row[name] = value
 
@@ -1439,7 +1434,6 @@ class MungeToHDF(Device):
         return key
 
     def _from_external_file(self, name, old_path, index=0, row=None, ntries=10):
-
         with open(old_path, "rb") as f:
             return f.read()
 
@@ -1467,8 +1461,8 @@ class HDFLogger(RelationalTableLogger):
 
     """
 
-    KEY_OUTPUT = 'output'
-    KEY_INPUT = 'input'
+    KEY_OUTPUT = "output"
+    KEY_INPUT = "input"
 
     nonscalar_file_type = "csv"
 
@@ -1487,7 +1481,9 @@ class HDFLogger(RelationalTableLogger):
             path = Path(str(path) + ".h5")
 
         super().__init__(
-            path=path, append=append, git_commit_in=git_commit_in,
+            path=path,
+            append=append,
+            git_commit_in=git_commit_in,
         )
 
         # Switch to the HDF munger
@@ -1523,7 +1519,7 @@ class HDFLogger(RelationalTableLogger):
         import pandas as pd
 
         def write_table(key, data):
-            print('write table! ', key, data)
+            print("write table! ", key, data)
             if len(data) == 0:
                 return
             isfirst = self.df is None
@@ -1531,7 +1527,7 @@ class HDFLogger(RelationalTableLogger):
             pending.index.name = self.index_label
             pending.index += self.output_index
             if isfirst:
-                print('first!')
+                print("first!")
                 self.df = pending
             else:
                 print(self.df.columns, pending.columns)
@@ -1649,7 +1645,6 @@ class SQLiteLogger(RelationalTableLogger):
         """
         import pandas as pd
 
-
         if len(self.pending_output) == 0:
             return
 
@@ -1764,7 +1759,7 @@ def to_feather(data, path):
 
     iname, data.index.name = data.index.name, None
     cname, data.columns.name = data.columns.name, None
-    
+
     try:
         if not (
             data.index.is_monotonic
@@ -1882,7 +1877,6 @@ class MungeTarReader:
 
         for k in key, key.replace("\\", "/").replace("//", "/"):
             try:
-
                 ext = os.path.splitext(key)[1][1:]
                 return read(self.tarfile.extractfile(k), format=ext, *args, **kws)
             except KeyError as e:

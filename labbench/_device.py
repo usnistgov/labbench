@@ -135,7 +135,7 @@ def log_trait_activity(msg):
 
     # print('logger debug!', msg)
 
-    if msg['name'] == 'isopen':
+    if msg["name"] == "isopen":
         return
 
     owner = msg["owner"]
@@ -150,7 +150,7 @@ def log_trait_activity(msg):
             value = f'<data of type {type(msg["new"]).__qualname__}>'
         owner._logger.debug(f'set trait "{trait_name}" → {value}{label}')
     elif msg["type"] == "get":
-        if msg['new'] != msg['old']:
+        if msg["new"] != msg["old"]:
             label = owner._traits[trait_name].label
             if label:
                 label = f" {label} "
@@ -235,8 +235,10 @@ class Device(HasTraits, util.Ownable):
     def __init__(self, resource=Undefined, **values):
         """Update default values with these arguments on instantiation."""
 
-        if hasattr(self, '__imports__'):
-            warn('the use of __imports__ has been deprecated. switch to importing each backend-specific module in each method that uses it.')
+        if hasattr(self, "__imports__"):
+            warn(
+                "the use of __imports__ has been deprecated. switch to importing each backend-specific module in each method that uses it."
+            )
             self.__imports__()
 
         # validate presence of required arguments
@@ -267,7 +269,6 @@ class Device(HasTraits, util.Ownable):
         super().__init_subclass__()
 
         for trait_name, new_default in value_defaults.items():
-
             trait = getattr(cls, trait_name, None)
 
             if trait is None or trait.role != Trait.ROLE_VALUE:
@@ -458,15 +459,16 @@ Device.__init_subclass__()
 
 
 def trait_info(device: Device, name: str) -> dict:
-    """ returns the keywords used to define the trait attribute named `name` in `device`
-    """
+    """returns the keywords used to define the trait attribute named `name` in `device`"""
 
     trait = device._traits[name]
     info = dict(trait.kws)
 
     if isinstance(trait, BoundedNumber):
         info.update(
-            min=trait._min(device), max=trait._max(device), step=trait.step,
+            min=trait._min(device),
+            max=trait._max(device),
+            step=trait.step,
         )
 
     return info

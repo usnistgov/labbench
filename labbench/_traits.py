@@ -610,7 +610,7 @@ class Trait:
             return owner._owned_name + "." + self.name
 
     def update(self, obj=None, **attrs):
-        """ returns `self` or (if `obj` is None) or `other`, after updating its keyword
+        """returns `self` or (if `obj` is None) or `other`, after updating its keyword
         parameters with `attrs`
         """
         if obj is None:
@@ -1141,8 +1141,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         # return self._update_index_value(msg["owner"], msg["new"])
 
     def _load_calibration_table(self, owner, path):
-        """ stash the calibration table from disk
-        """
+        """stash the calibration table from disk"""
         import pandas as pd
         from pathlib import Path
 
@@ -1213,7 +1212,6 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
     def __set__(self, owner, cal):
         self._touch_table(owner)
         super().__set__(owner, cal)
-
 
 
 class TransformMixIn(DependentTrait):
@@ -1378,7 +1376,9 @@ class BoundedNumber(Trait):
 
     path_trait: Any = None  # TODO: should be a Unicode string trait
 
-    index_lookup_trait: Any = None  # TODO: this is a trait that should almost certainly be a BoundedNumber
+    index_lookup_trait: Any = (
+        None  # TODO: this is a trait that should almost certainly be a BoundedNumber
+    )
 
     table_index_column: str = None
 
@@ -1405,7 +1405,10 @@ class BoundedNumber(Trait):
 
         ret = TableCorrectionMixIn.derive(
             self,
-            dict(path_trait=path_trait, index_lookup_trait=index_lookup_trait,),
+            dict(
+                path_trait=path_trait,
+                index_lookup_trait=index_lookup_trait,
+            ),
             help=help,
             label=self.label if label is Undefined else label,
             sets=self.sets,

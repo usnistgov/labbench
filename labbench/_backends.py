@@ -222,7 +222,7 @@ class ShellBackend(Device):
                 logger_msgs.append(f"…{remaining} more lines")
             for line in lines[-show_count // 2 :]:
                 logger_msgs.append(f"► {line}")
-            self._logger.debug('\n'.join(logger_msgs))
+            self._logger.debug("\n".join(logger_msgs))
         return ret
 
     def _background_piped(
@@ -925,6 +925,7 @@ class TelnetDevice(Device):
         """Disconnect the telnet connection"""
         self.backend.close()
 
+
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
 
@@ -1256,9 +1257,12 @@ class VISADevice(Device):
 
         return rm
 
+
 def set_default_visa_backend(name):
     if name not in VISADevice._rm.only:
-        raise ValueError(f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}")
+        raise ValueError(
+            f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}"
+        )
     VISADevice._rm.default = name
 
 

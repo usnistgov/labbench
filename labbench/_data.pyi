@@ -10,43 +10,22 @@ EMPTY: Incomplete
 INSPECT_SKIP_FILES: Incomplete
 
 class MungerBase(core.Device):
-    def __init__(
-        self,
-        resource: str = "WindowsPath",
-        text_relational_min: str = "int",
-        force_relational: str = "list",
-        dirname_fmt: str = "str",
-        nonscalar_file_type: str = "str",
-        metadata_dirname: str = "str",
-    ): ...
     resource: Incomplete
     text_relational_min: Incomplete
     force_relational: Incomplete
     dirname_fmt: Incomplete
     nonscalar_file_type: Incomplete
     metadata_dirname: Incomplete
-
     def __call__(self, index, row): ...
     def save_metadata(self, name, key_func, **extra): ...
 
-class MungeToDirectory(MungerBase):
-    def __init__(
-        self,
-        resource: str = "WindowsPath",
-        text_relational_min: str = "int",
-        force_relational: str = "list",
-        dirname_fmt: str = "str",
-        nonscalar_file_type: str = "str",
-        metadata_dirname: str = "str",
-    ): ...
-    ...
+class MungeToDirectory(MungerBase): ...
 
 class TarFileIO(io.BytesIO):
     tarfile: Incomplete
     overwrite: bool
     name: Incomplete
     mode: Incomplete
-
     def __init__(
         self, open_tarfile, relname, mode: str = ..., overwrite: bool = ...
     ) -> None: ...
@@ -54,18 +33,8 @@ class TarFileIO(io.BytesIO):
     def close(self) -> None: ...
 
 class MungeToTar(MungerBase):
-    def __init__(
-        self,
-        resource: str = "WindowsPath",
-        text_relational_min: str = "int",
-        force_relational: str = "list",
-        dirname_fmt: str = "str",
-        nonscalar_file_type: str = "str",
-        metadata_dirname: str = "str",
-    ): ...
     tarname: str
     tarfile: Incomplete
-
     def open(self) -> None: ...
     def close(self) -> None: ...
 
@@ -74,7 +43,6 @@ class Aggregator(util.Ownable):
     name_map: Incomplete
     trait_rules: Incomplete
     metadata: Incomplete
-
     def __init__(self) -> None: ...
     def enable(self) -> None: ...
     def disable(self) -> None: ...
@@ -93,7 +61,6 @@ class RelationalTableLogger(Owner, util.Ownable):
     pending_output: Incomplete
     pending_input: Incomplete
     path: Incomplete
-
     def __init__(
         self,
         path: Incomplete | None = ...,
@@ -118,7 +85,6 @@ class RelationalTableLogger(Owner, util.Ownable):
     def set_relational_file_format(self, format) -> None: ...
     def set_path_format(self, format) -> None: ...
     output_index: int
-
     def open(self): ...
     def close(self) -> None: ...
 
@@ -129,16 +95,13 @@ class CSVLogger(RelationalTableLogger):
     output_index: int
     tables: Incomplete
     nonscalar_file_type: str
-
     def open(self) -> None: ...
     def close(self) -> None: ...
 
 class MungeToHDF(Device):
-    def __init__(self, resource: str = "WindowsPath", key_fmt: str = "str"): ...
     resource: Incomplete
     key_fmt: Incomplete
     backend: Incomplete
-
     def open(self) -> None: ...
     def close(self) -> None: ...
     def __call__(self, index, row): ...
@@ -149,7 +112,6 @@ class HDFLogger(RelationalTableLogger):
     KEY_INPUT: str
     nonscalar_file_type: str
     munge: Incomplete
-
     def __init__(
         self,
         path,
@@ -159,7 +121,6 @@ class HDFLogger(RelationalTableLogger):
         git_commit_in: Incomplete | None = ...,
     ) -> None: ...
     df: Incomplete
-
     def open(self) -> None: ...
     def close(self) -> None: ...
 
@@ -170,7 +131,6 @@ class SQLiteLogger(RelationalTableLogger):
     inprogress: Incomplete
     committed: Incomplete
     output_index: int
-
     def open(self) -> None: ...
     def close(self) -> None: ...
     def key(self, name, attr): ...
@@ -194,13 +154,11 @@ def read(
 class MungeTarReader:
     tarnames: Incomplete
     tarfile: Incomplete
-
     def __init__(self, path, tarname: str = ...) -> None: ...
     def __call__(self, key, *args, **kws): ...
 
 class MungeDirectoryReader:
     path: Incomplete
-
     def __init__(self, path) -> None: ...
     def __call__(self, key, *args, **kws): ...
 

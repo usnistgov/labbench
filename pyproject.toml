@@ -50,6 +50,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dotnet = ["pythonnet"]
+notebooks = ["notebook", "jupyter"]
 
 [project.urls]
 homepage = "https://github.com/usnistgov/labbench"
@@ -79,6 +80,7 @@ lint = [
 ]
 test = ["pytest", "pytest-cov"]
 doc = ["sphinx>=1.6", "recommonmark"]
+
 
 [tool.black]
 line-length = 88

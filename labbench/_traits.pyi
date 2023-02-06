@@ -10,24 +10,10 @@ class ThisType: ...
 
 class HasTraitsMeta(type):
     __cls_namespace__: Incomplete
-
     @classmethod
     def __prepare__(cls, names, bases, **kws): ...
 
 class Trait:
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     ROLE_VALUE: str
     ROLE_PROPERTY: str
     ROLE_DATARETURN: str
@@ -48,13 +34,12 @@ class Trait:
     kws: Incomplete
     metadata: Incomplete
     remap_inbound: Incomplete
-
+    def __init__(self, *args, **kws) -> None: ...
     @classmethod
     def __init_subclass__(cls, type=...) -> None: ...
     def copy(self, new_type: Incomplete | None = ..., **update_kws): ...
     __objclass__: Incomplete
     name: Incomplete
-
     def __set_name__(self, owner_cls, name) -> None: ...
     def __init_owner_subclass__(self, owner_cls) -> None: ...
     def __init_owner_instance__(self, owner) -> None: ...
@@ -76,7 +61,6 @@ class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__: Incomplete
     __cls_namespace__: Incomplete
     __cache__: Incomplete
-
     def __init__(self, **values) -> None: ...
     def __init_subclass__(cls) -> None: ...
     def __notify__(self, name, value, type, cache) -> None: ...
@@ -86,19 +70,6 @@ class HasTraits(metaclass=HasTraitsMeta):
     def __set_value__(self, name, value) -> None: ...
 
 class Any(Trait):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
     def to_pythonic(self, value): ...
 
@@ -107,19 +78,6 @@ def unobserve(obj, handler) -> None: ...
 def find_trait_in_mro(cls): ...
 
 class DependentTrait(Trait):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     def __set_name__(self, owner_cls, name) -> None: ...
     @classmethod
     def derive(
@@ -127,23 +85,8 @@ class DependentTrait(Trait):
     ): ...
 
 class RemappingCorrectionMixIn(DependentTrait):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-        mapping=None,
-    ): ...
     mapping: Any
     EMPTY_STORE: Incomplete
-
     def __init_owner_instance__(self, owner) -> None: ...
     def lookup_cal(self, uncal, owner): ...
     def find_uncal(self, cal, owner): ...
@@ -157,77 +100,28 @@ class RemappingCorrectionMixIn(DependentTrait):
     def __set__(self, owner, cal) -> None: ...
 
 class TableCorrectionMixIn(RemappingCorrectionMixIn):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-        mapping=None,
-        table_index_column: str = None,
-    ): ...
     path_trait: Incomplete
     index_lookup_trait: Incomplete
     table_index_column: str
-
     def __init_owner_instance__(self, owner) -> None: ...
     def __get__(self, owner, owner_cls: Incomplete | None = ...): ...
     def __set__(self, owner, cal) -> None: ...
 
 class TransformMixIn(DependentTrait):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     def __init_owner_instance__(self, owner) -> None: ...
     def __owner_event__(self, msg) -> None: ...
     def __get__(self, owner, owner_cls: Incomplete | None = ...): ...
     def __set__(self, owner, value_request) -> None: ...
 
 class BoundedNumber(Trait):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = True,
-        remap: dict = {},
-        min=None,
-        max=None,
-        path_trait=None,
-        index_lookup_trait=None,
-        table_index_column: str = None,
-    ): ...
     default: ThisType
     allow_none: bool
     min: ThisType
     max: ThisType
-
     def validate(self, value, owner: Incomplete | None = ...): ...
     path_trait: Any
     index_lookup_trait: Any
     table_index_column: str
-
     def calibrate_from_table(
         self,
         path_trait,
@@ -256,266 +150,55 @@ class BoundedNumber(Trait):
     def __neg__(self): ...
     def __add__(self, other): ...
     __radd__: Incomplete
-
     def __sub__(self, other): ...
     def __rsub__(self, other): ...
     def __mul__(self, other): ...
     __rmul__: Incomplete
-
     def __truediv__(self, other): ...
     def __rdiv__(self, other): ...
 
 class NonScalar(Any):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
 
-class Int(BoundedNumber):
-    def __init__(
-        default: int = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = True,
-        remap: dict = {},
-        min: int = None,
-        max: int = None,
-        path_trait=None,
-        index_lookup_trait=None,
-        table_index_column: str = None,
-    ): ...
-    ...
+class Int(BoundedNumber): ...
 
 class Float(BoundedNumber):
-    def __init__(
-        default: float = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = True,
-        remap: dict = {},
-        min: float = None,
-        max: float = None,
-        path_trait=None,
-        index_lookup_trait=None,
-        table_index_column: str = None,
-        step: float = None,
-    ): ...
     step: ThisType
-
     def validate(self, value, owner: Incomplete | None = ...): ...
 
 class Complex(Trait):
-    def __init__(
-        default: complex = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     allow_none: bool
 
 class Bool(Trait):
-    def __init__(
-        default: bool = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     allow_none: bool
-
     def validate(self, value, owner: Incomplete | None = ...): ...
 
 class String(Trait):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-        case: bool = True,
-    ): ...
     case: bool
-
     def contains(self, iterable, value): ...
 
 class Unicode(String):
-    def __init__(
-        default: str = "",
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-        case: bool = True,
-    ): ...
     default: ThisType
-
     def validate(self, value, owner: Incomplete | None = ...): ...
 
 class Bytes(String):
-    def __init__(
-        default: bytes = b"",
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-        case: bool = True,
-    ): ...
     default: ThisType
 
 class Iterable(Trait):
-    def __init__(
-        default=None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
 
-class Dict(Iterable):
-    def __init__(
-        default: dict = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
-    ...
-
-class List(Iterable):
-    def __init__(
-        default: list = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
-    ...
+class Dict(Iterable): ...
+class List(Iterable): ...
 
 class Tuple(Iterable):
-    def __init__(
-        default: tuple = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = False,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-    ): ...
     sets: bool
 
 class Path(Trait):
-    def __init__(
-        default: Path = None,
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-        must_exist: bool = False,
-    ): ...
     must_exist: bool
-
     def validate(self, value, owner: Incomplete | None = ...): ...
 
 class NetworkAddress(Unicode):
-    def __init__(
-        default: str = "",
-        key=None,
-        func: _CallableType = None,
-        help: str = "",
-        label: str = "",
-        sets: bool = True,
-        gets: bool = True,
-        cache: bool = False,
-        only: tuple = (),
-        allow_none: bool = False,
-        remap: dict = {},
-        case: bool = True,
-        accept_port: bool = True,
-    ): ...
     accept_port: bool
-
     def validate(self, value, owner: Incomplete | None = ...): ...
 
 VALID_TRAIT_ROLES: Incomplete

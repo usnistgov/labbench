@@ -19,7 +19,6 @@ class TextareaLogHandler(logging.StreamHandler):
     stream: Incomplete
     widget: Incomplete
     last_time: Incomplete
-
     def __init__(self, level=...) -> None: ...
     def emit(self, record): ...
 
@@ -28,5 +27,4 @@ class panel:
     ncols: int
     devices: Incomplete
     children: Incomplete
-
     def __new__(cls, source: int = ..., ncols: int = ...): ...

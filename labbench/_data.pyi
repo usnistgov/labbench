@@ -26,7 +26,9 @@ class TarFileIO(io.BytesIO):
     overwrite: bool
     name: Incomplete
     mode: Incomplete
-    def __init__(self, open_tarfile, relname, mode: str = ..., overwrite: bool = ...) -> None: ...
+    def __init__(
+        self, open_tarfile, relname, mode: str = ..., overwrite: bool = ...
+    ) -> None: ...
     def __del__(self) -> None: ...
     def close(self) -> None: ...
 
@@ -59,7 +61,19 @@ class RelationalTableLogger(Owner, util.Ownable):
     pending_output: Incomplete
     pending_input: Incomplete
     path: Incomplete
-    def __init__(self, path: Incomplete | None = ..., *, append: bool = ..., text_relational_min: int = ..., force_relational=..., dirname_fmt: str = ..., nonscalar_file_type: str = ..., metadata_dirname: str = ..., tar: bool = ..., git_commit_in: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        path: Incomplete | None = ...,
+        *,
+        append: bool = ...,
+        text_relational_min: int = ...,
+        force_relational=...,
+        dirname_fmt: str = ...,
+        nonscalar_file_type: str = ...,
+        metadata_dirname: str = ...,
+        tar: bool = ...,
+        git_commit_in: Incomplete | None = ...,
+    ) -> None: ...
     def __copy__(self): ...
     def __owner_init__(self, owner) -> None: ...
     def observe(self, devices, changes: bool = ..., always=..., never=...) -> None: ...
@@ -98,7 +112,14 @@ class HDFLogger(RelationalTableLogger):
     KEY_INPUT: str
     nonscalar_file_type: str
     munge: Incomplete
-    def __init__(self, path, *, append: bool = ..., key_fmt: str = ..., git_commit_in: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        path,
+        *,
+        append: bool = ...,
+        key_fmt: str = ...,
+        git_commit_in: Incomplete | None = ...,
+    ) -> None: ...
     df: Incomplete
     def open(self) -> None: ...
     def close(self) -> None: ...
@@ -115,8 +136,20 @@ class SQLiteLogger(RelationalTableLogger):
     def key(self, name, attr): ...
 
 def to_feather(data, path) -> None: ...
-def read_sqlite(path, table_name=..., columns: Incomplete | None = ..., nrows: Incomplete | None = ..., index_col=...): ...
-def read(path_or_buf, columns: Incomplete | None = ..., nrows: Incomplete | None = ..., format: str = ..., **kws): ...
+def read_sqlite(
+    path,
+    table_name=...,
+    columns: Incomplete | None = ...,
+    nrows: Incomplete | None = ...,
+    index_col=...,
+): ...
+def read(
+    path_or_buf,
+    columns: Incomplete | None = ...,
+    nrows: Incomplete | None = ...,
+    format: str = ...,
+    **kws,
+): ...
 
 class MungeTarReader:
     tarnames: Incomplete
@@ -132,4 +165,12 @@ class MungeDirectoryReader:
 class MungeReader:
     def __new__(cls, path): ...
 
-def read_relational(path, expand_col, root_cols: Incomplete | None = ..., target_cols: Incomplete | None = ..., root_nrows: Incomplete | None = ..., root_format: str = ..., prepend_column_name: bool = ...): ...
+def read_relational(
+    path,
+    expand_col,
+    root_cols: Incomplete | None = ...,
+    target_cols: Incomplete | None = ...,
+    root_nrows: Incomplete | None = ...,
+    root_format: str = ...,
+    prepend_column_name: bool = ...,
+): ...

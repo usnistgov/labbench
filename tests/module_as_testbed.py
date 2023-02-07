@@ -12,7 +12,7 @@ from emulate import EmulatedVISADevice
 
 
 class LaggyInstrument(EmulatedVISADevice):
-    """ A mock "instrument"
+    """A mock "instrument"
     with value and property traits to
     demonstrate the process of value trait
     up a measurement.
@@ -32,8 +32,7 @@ class LaggyInstrument(EmulatedVISADevice):
         self.perf["open"] = time.perf_counter() - t0
 
     def fetch(self):
-        """ Return the argument after a 1s delay
-        """
+        """Return the argument after a 1s delay"""
         lb.logger.info(f"{self}.fetch start")
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
@@ -44,8 +43,7 @@ class LaggyInstrument(EmulatedVISADevice):
         return {self.resource: self.resource}
 
     def none(self):
-        """ Return None
-        """
+        """Return None"""
         return None
 
     def close(self):

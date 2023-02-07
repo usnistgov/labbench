@@ -19,7 +19,6 @@ def labbench_name_remapping():
 
 
 def port_v21_to_v22(path, write=False):
-
     name_remapping = labbench_name_remapping()
 
     def repl_remap(expr, *which):

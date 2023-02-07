@@ -42,9 +42,9 @@ METADATA = dict(power=1.21e9, potato=7)
 
 
 class EmulatedInstrument(EmulatedVISADevice):
-    """ This "instrument" makes mock data and instrument property traits to
-        demonstrate we can show the process of value trait
-        up a measurement.
+    """This "instrument" makes mock data and instrument property traits to
+    demonstrate we can show the process of value trait
+    up a measurement.
     """
 
     # values
@@ -62,8 +62,7 @@ class EmulatedInstrument(EmulatedVISADevice):
     atten = lb.property.float(key="POW", min=0, max=100, step=0.5)
 
     def trigger(self):
-        """ This would tell the instrument to start a measurement
-        """
+        """This would tell the instrument to start a measurement"""
         pass
 
     def method(self):
@@ -71,8 +70,7 @@ class EmulatedInstrument(EmulatedVISADevice):
 
     @lb.datareturn.DataFrame
     def fetch_trace(self, N=101):
-        """ Generate N points of junk data as a pandas series.
-        """
+        """Generate N points of junk data as a pandas series."""
         self.trace_index = self.trace_index + 1
 
         series = pd.Series(
@@ -88,7 +86,6 @@ class EmulatedInstrument(EmulatedVISADevice):
 class TestDB(unittest.TestCase):
     def test_state_wrapper_type(self):
         with EmulatedInstrument() as m, lb.SQLiteLogger(path) as db:
-
             self.assertEqual(m.param, int_start)
             m.param = int_stop
             self.assertEqual(m.param, int_stop)
@@ -100,7 +97,6 @@ if __name__ == "__main__":
     path = f"test db/{np.random.bytes(8).hex()}"
 
     with EmulatedInstrument() as inst, lb.SQLiteLogger(path, tar=False) as db:
-
         db.observe(inst, changes=True, always="sweep_aperture")
 
         inst.fetch_trace()

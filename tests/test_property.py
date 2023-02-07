@@ -292,7 +292,7 @@ class TestProperty:
 
     def test_get_default(self):
         """
-        Ensure that values are returned, typing is correct, and 
+        Ensure that values are returned, typing is correct, and
         """
         with self.TestDevice() as m:
             m.clear_counts()

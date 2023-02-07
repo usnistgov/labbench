@@ -153,7 +153,7 @@ class Trait:
                     raise ValueError("duplicate 'func' argument")
                 kws["func"] = args[0]
             else:
-                raise ValueError(f"no positional arguments supported")
+                raise ValueError("no positional arguments supported")
 
         self.kws = dict(kws)
         self.metadata = {}
@@ -208,7 +208,7 @@ class Trait:
             raise
 
         if len(kws["remap"]) != len(self.remap_inbound):
-            raise ValueError(f"'remap' has duplicate values")
+            raise ValueError("'remap' has duplicate values")
 
         # set value traits
         for k, v in kws.items():
@@ -262,7 +262,7 @@ class Trait:
         obj._returner = self._returner
         return obj
 
-    ### Descriptor methods (called automatically by the owning class or instance)
+    # Descriptor methods (called automatically by the owning class or instance)
     def __set_name__(self, owner_cls, name):
         """Immediately after an owner class is instantiated, it calls this
         method for each of its attributes that implements this method.
@@ -296,7 +296,7 @@ class Trait:
                 f"tried to combine a default value and a decorator implementation in {self}"
             )
         elif self.role == self.ROLE_DATARETURN and len(self._decorated_funcs) == 0:
-            raise AttributeError(f"decorate a method to tag its return data")
+            raise AttributeError("decorate a method to tag its return data")
         elif len(self._decorated_funcs) == 0:
             return
 
@@ -388,7 +388,7 @@ class Trait:
                 )
 
         else:
-            raise AttributeError(f"data return traits cannot be set")
+            raise AttributeError("data return traits cannot be set")
 
         owner.__notify__(self.name, value, "set", cache=self.cache)
 
@@ -443,7 +443,7 @@ class Trait:
             if self.key is None:
                 # otherwise, 'get'
                 objname = owner.__class__.__qualname__
-                ownername = self.__repr__(owner_inst=owner)
+                # ownername = self.__repr__(owner_inst=owner)
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
@@ -536,7 +536,7 @@ class Trait:
     def contains(self, iterable, value):
         return value in iterable
 
-    ### Decorator methods
+    # Decorator methods
     @util.hide_in_traceback
     def __call__(self, func):
         """use the Trait as a decorator, which ties this Trait instance to evaluate a property or method in the
@@ -560,8 +560,7 @@ class Trait:
         # return self to ensure `self` is the value assigned in the class definition
         return self
 
-    ### introspection
-    ###
+    # introspection
     def doc(self):
         params = self.doc_params(omit=["help", "default"])
         typename = "Any" if self.type is None else self.type.__qualname__
@@ -630,7 +629,7 @@ Trait.__init_subclass__()
 @contextmanager
 def hold_trait_notifications(owner):
     def skip_notify(name, value, type, cache):
-        old = owner.__cache__.setdefault(name, Undefined)
+        # old = owner.__cache__.setdefault(name, Undefined)
         # msg = dict(new=value, old=old, owner=owner, name=name, type=type, cache=cache)
 
         owner.__cache__[name] = value
@@ -664,7 +663,7 @@ class HasTraits(metaclass=HasTraitsMeta):
         cls._property_attrs = []
         cls._value_attrs = []
         cls._datareturn_attrs = []
-        parent_traits = getattr(cls.__mro__[1], "_traits", {})
+        # parent_traits = getattr(cls.__mro__[1], "_traits", {})
 
         # annotations = getattr(cls, '__annotations__', {})
 
@@ -834,7 +833,7 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
         elif msg["type"] not in type_:
             return
         elif isinstance(msg["new"], Trait):
-            raise TypeError(f"Trait instance returned as a callback value")
+            raise TypeError("Trait instance returned as a callback value")
         handler(msg)
 
     if isinstance(obj, HasTraits):
@@ -998,7 +997,7 @@ class RemappingCorrectionMixIn(DependentTrait):
         """
 
         if owner is None:
-            raise ValueError(f"must pass owner to set_mapping")
+            raise ValueError("must pass owner to set_mapping")
 
         import pandas as pd
 
@@ -1054,7 +1053,7 @@ class RemappingCorrectionMixIn(DependentTrait):
 
     @util.hide_in_traceback
     def __set__(self, owner, cal):
-        owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+        # owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
         self._validate_trait_dependencies(owner, False, "set")
 
         # start with type conversion and validation on the requested calibrated value
@@ -1141,7 +1140,6 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
     def _load_calibration_table(self, owner, path):
         """stash the calibration table from disk"""
         import pandas as pd
-        from pathlib import Path
 
         def read(path):
             # quick read
@@ -1185,15 +1183,16 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         cal = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
 
         if cal is None:
-            txt = f"index_value change has no effect because calibration_data has not been set"
+            txt = "index_value change has no effect because calibration_data has not been set"
         elif index_value is None:
             cal = None
-            txt = f"set {owner}.{self.index_lookup_trait.name} to enable calibration"
+            txt = "set {owner}.{self.index_lookup_trait.name} to enable calibration"
         else:
             # pull in the calibration mapping specific to this index_value
             i_freq = cal.index.get_loc(index_value, "nearest")
             cal = cal.iloc[i_freq]
-            txt = f"calibrated at {index_value/1e6:0.3f} MHz"
+            txt = f"calibrated to {index_value} {self.label}"
+        owner._logger.debug(txt)
 
         self.set_mapping(cal, owner=owner)
 
@@ -1434,7 +1433,7 @@ class BoundedNumber(Trait):
                     break
             else:
                 raise TypeError(
-                    f"the trait being calibrated must also be the first trait in the calibration expression"
+                    "calibration target trait must the first trait in the calibration expression"
                 )
 
         return self.update(
@@ -1597,9 +1596,9 @@ class NonScalar(Any):
     @util.hide_in_traceback
     def validate(self, value, owner=None):
         if isinstance(value, (bytes, str)):
-            raise ValueError(f"given text data but expected a non-scalar data")
+            raise ValueError("given text data but expected a non-scalar data")
         if not hasattr(value, "__iter__") and not hasattr(value, "__len__"):
-            raise ValueError(f"expected non-scalar data but given a non-iterable")
+            raise ValueError("expected non-scalar data but given a non-iterable")
         return value
 
 

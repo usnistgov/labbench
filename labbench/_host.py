@@ -266,7 +266,7 @@ class Host(core.Device):
                 self._logger.debug("git commit finished")
         except git.NoSuchPathError:
             repo = None
-            self._logger.info(f"not running in a git repository")
+            self._logger.info("not running in a git repository")
 
         self.backend = {
             "logger": logger,

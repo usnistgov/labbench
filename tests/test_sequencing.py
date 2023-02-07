@@ -44,8 +44,7 @@ lb._force_full_traceback(True)
 
 
 class LaggyInstrument(EmulatedVISADevice):
-    """A mock "instrument" to measure time response in (a)sync operations
-    """
+    """A mock "instrument" to measure time response in (a)sync operations"""
 
     delay = lb.value.float(0, min=0, help="connection time")
     fetch_time = lb.value.float(0, min=0, help="fetch time")
@@ -62,8 +61,7 @@ class LaggyInstrument(EmulatedVISADevice):
         self._logger.info(f"{self} connected")
 
     def fetch(self):
-        """ Return the argument after a 1s delay
-        """
+        """Return the argument after a 1s delay"""
         lb.logger.info(f"{self}.fetch start")
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
@@ -75,8 +73,7 @@ class LaggyInstrument(EmulatedVISADevice):
         return {self.resource: self.resource}
 
     def none(self):
-        """ Return None
-        """
+        """Return None"""
         return None
 
     def close(self):
@@ -102,12 +99,12 @@ class TestConcurrency(unittest.TestCase):
 
     @contextmanager
     def assert_delay(self, expected_delay):
-        """ Time a block of code using a with statement like this:
-    
+        """Time a block of code using a with statement like this:
+
         >>> with stopwatch('sleep statement'):
         >>>     time.sleep(2)
         sleep statement time elapsed 1.999s.
-    
+
         :param desc: text for display that describes the event being timed
         :type desc = str
         :return: context manager

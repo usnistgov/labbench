@@ -24,28 +24,26 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from ._device import Device
-from . import property as property_
-from . import value
-from ._traits import observe
-from . import util
-
-from collections import OrderedDict
 import contextlib
+import importlib
 import inspect
 import os
-import psutil
-import serial
-from queue import Queue, Empty
-import socket
 import select
+import socket
 import subprocess as sp
 import sys
-from threading import Thread, Event
+from collections import OrderedDict
+from pathlib import Path
+from queue import Empty, Queue
+from threading import Event, Thread
 
-# sentinel values unless they are imported later
-win32com = None
-pyvisa = None
+import psutil
+import serial
+
+from . import property as property_
+from . import util, value
+from ._device import Device
+from ._traits import observe
 
 
 class ShellBackend(Device):
@@ -136,7 +134,7 @@ class ShellBackend(Device):
             )
 
         if respawn:
-            raise ValueError(f"respawn argument requires pipe=True and background=True")
+            raise ValueError("respawn argument requires pipe=True and background=True")
 
         if pipe and not background:
             return self._run_piped(
@@ -147,9 +145,9 @@ class ShellBackend(Device):
             )
         else:
             if background:
-                raise ValueError(f"background argument requires pipe=True")
+                raise ValueError("background argument requires pipe=True")
             if check_stderr:
-                raise ValueError(f"check_stderr requires pipe=True")
+                raise ValueError("check_stderr requires pipe=True")
 
             return self._run_simple(*argv, check_return=check_return, timeout=timeout)
 
@@ -358,7 +356,7 @@ class ShellBackend(Device):
                     # this would require a remap parameter in value traits, which are not supported (should they be?)
                     # (better to use string?)
                     raise ValueError(
-                        f"don't know how to map a Bool onto a string argument as specified by None mapping"
+                        "cannot map a Bool onto a string argument specified by None mapping"
                     )
 
                 elif trait_value:
@@ -428,7 +426,7 @@ class ShellBackend(Device):
 
         if not self.isopen:
             raise ConnectionError(
-                f"an open connection is necessary to read stdout from the background process"
+                "open the device to read stdout from the background process"
             )
 
         try:
@@ -518,10 +516,6 @@ class ShellBackend(Device):
             pass
 
 
-import importlib
-from pathlib import Path
-
-
 class DotNetDevice(Device):
     """Base class for .NET library wrappers based on pythonnet.
 
@@ -562,14 +556,14 @@ class DotNetDevice(Device):
         clr.AddReference("System.Reflection")
 
         # more frustration for static linters
-        from System.Reflection import Assembly
         import System
+        from System.Reflection import Assembly
 
         try:
             contents = importlib.util.find_spec(library.__package__).loader.get_data(
                 str(dll_path)
             )
-        except:
+        except BaseException:
             with open(dll_path, "rb") as f:
                 contents = f.read()
 
@@ -583,9 +577,6 @@ class DotNetDevice(Device):
 
         # do the actual import
         self.dll = importlib.import_module(dll_path.stem)
-
-    def open(self):
-        pass
 
 
 class LabviewSocketInterface(Device):
@@ -1290,7 +1281,7 @@ class SimulatedVISADevice(VISADevice, _rm="@sim"):
         try:
             rm = pyvisa.ResourceManager(backend_name)
         except OSError as e:
-            e.args[0] += f"is pyvisa-sim installed?"
+            e.args[0] += "is pyvisa-sim installed?"
             raise e
 
         return rm

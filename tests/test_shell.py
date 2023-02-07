@@ -53,10 +53,10 @@ class Shell_Python(lb.ShellBackend):
         )
 
     def _commandline(self, **flags):
-        """ Form a list of commandline argument strings for foreground
-            or background calls.
+        """Form a list of commandline argument strings for foreground
+        or background calls.
 
-            :returns: tuple of string
+        :returns: tuple of string
         """
 
         # validate the set of flags

@@ -1,20 +1,12 @@
 """functions and CLI tools for mapping labbench objects onto config directories"""
 
-import importlib
 import inspect
 import os
-from pathlib import Path
 from numbers import Number
+from pathlib import Path
 
-from ._rack import (
-    Rack,
-    RackMethod,
-    Sequence,
-    BoundSequence,
-    import_as_rack,
-    update_parameter_dict,
-)
 from . import util
+from ._rack import Rack, import_as_rack, update_parameter_dict
 
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
 # using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
@@ -116,9 +108,9 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
 
     defaults_in = dict(defaults_in, **override_defaults)
 
-    sequences = [
-        obj for obj in rack_cls._ownables.values() if isinstance(obj, Sequence)
-    ]
+    # sequences = [
+    #     obj for obj in rack_cls._ownables.values() if isinstance(obj, Sequence)
+    # ]
 
     for name, default in dict(defaults_in).items():
         if default == params[name].default:
@@ -265,7 +257,7 @@ def dump_rack(
     skip_tables: bool = False,
 ):
     if not isinstance(rack, Rack):
-        raise TypeError(f"'rack' argument must be an instance of labbench.Rack")
+        raise TypeError("'rack' argument must be an instance of labbench.Rack")
 
     cls = type(rack)
 

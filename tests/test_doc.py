@@ -49,8 +49,7 @@ class Child(lb.Device):
 
 
 class Mock(lb.Device):
-    """ Helpful driver wrapper
-    """
+    """Helpful driver wrapper"""
 
     child0 = Child("addr0")
     child1 = Child("addr1")

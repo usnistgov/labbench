@@ -47,8 +47,7 @@ import numpy as np
 
 
 class LaggyInstrument(EmulatedVISADevice):
-    """ A fake "instrument" with traits and fetch methods
-    """
+    """A fake "instrument" with traits and fetch methods"""
 
     # Connection and driver value traits
     delay = lb.value.float(0, min=0, help="connection time")
@@ -66,8 +65,7 @@ class LaggyInstrument(EmulatedVISADevice):
         self.perf["open"] = time.perf_counter() - t0
 
     def fetch(self):
-        """ Return the argument after a 1s delay
-        """
+        """Return the argument after a 1s delay"""
         import pandas as pd
 
         lb.logger.info(f"{self}.fetch start")
@@ -80,8 +78,7 @@ class LaggyInstrument(EmulatedVISADevice):
         return {self.resource: self.resource}
 
     def none(self):
-        """ Return None
-        """
+        """Return None"""
         return None
 
     def close(self):

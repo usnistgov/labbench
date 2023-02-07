@@ -637,8 +637,7 @@ class OwnerContextAdapter:
     def __init__(self, owner):
         self._owner = owner
         self._owned_name = getattr(owner, "_owned_name", repr(owner))
-
-        display_name = getattr(self, "_owned_name", type(self).__name__)
+        # display_name = getattr(self, "_owned_name", type(self).__name__)
 
     def __enter__(self):
         try:

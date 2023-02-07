@@ -2,11 +2,8 @@ import sys
 
 sys.path.insert(0, ".")
 
-from pathlib import Path
-import re
 import importlib
-from copy import deepcopy
-from glob import glob
+from pathlib import Path
 
 from labbench import Device, Rack
 from labbench._traits import Trait, Undefined
@@ -14,12 +11,13 @@ from labbench._traits import Trait, Undefined
 VALID_PARENTS = Device, Rack, Trait
 
 import ast
-from ast_decompiler import decompile
-from inspect import isclass
-import labbench as lb
-from labbench._traits import Trait, Undefined, ThisType, Any
-from labbench import Rack, Device
 import typing
+from inspect import isclass
+
+from ast_decompiler import decompile
+
+from labbench import Device, Rack
+from labbench._traits import Any, ThisType
 
 
 def nameit(obj):
@@ -111,7 +109,7 @@ def update_stubs(path, mod_name, sub_name):
         # scrub any existing __init__ stub
         for child in list(cls_def.body):
             if getattr(child, "name", None) == method_name:
-                _prev = child
+                # _prev = child
                 cls_def.body.remove(child)
                 break
 
@@ -171,7 +169,6 @@ if __name__ == "__main__":
 
     # now step through to replace __init__ keyword arguments
     for path in root.rglob("*.pyi"):
-
         if str(path).endswith("notebook.py"):
             continue
 

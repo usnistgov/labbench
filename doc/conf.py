@@ -139,8 +139,7 @@ autodoc_default_flags = ["inherited-members"]
 
 
 def maybe_skip_member(app, what, name, obj, skip, options):
-    """ Skip extra cruft from Device.state objects
-    """
+    """Skip extra cruft from Device.state objects"""
     if skip:
         return True
     from traitlets import TraitType
@@ -214,8 +213,8 @@ def maybe_skip_member(app, what, name, obj, skip, options):
 # to make output paths compatible with github
 def change_pathto(app, pagename, templatename, context, doctree):
     """
-    Replace pathto helper to change paths to folders with a leading
-underscore.
+        Replace pathto helper to change paths to folders with a leading
+    underscore.
     """
     pathto = context.get("pathto")
 

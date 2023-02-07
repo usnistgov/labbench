@@ -7,11 +7,13 @@ yaml = Path(__file__).with_name("sim_visa.yaml")
 
 
 class PowerSupply(lb._backends.SimulatedVISADevice, yaml_source=yaml):
-    """wrapper for a fake PowerSupply VISA device
-    """
+    """wrapper for a fake PowerSupply VISA device"""
 
     voltage = lb.property.float(
-        key=":VOLT:IMM:AMPL", min=1, max=6, help="output voltage setting",
+        key=":VOLT:IMM:AMPL",
+        min=1,
+        max=6,
+        help="output voltage setting",
     )
 
     current = lb.property.float(
@@ -23,7 +25,9 @@ class PowerSupply(lb._backends.SimulatedVISADevice, yaml_source=yaml):
     )
 
     output_enabled = lb.property.bool(
-        key="OUTP", remap={True: "1", False: "0"}, help="supply output control",
+        key="OUTP",
+        remap={True: "1", False: "0"},
+        help="supply output control",
     )
 
     def fetch_trace(self):
@@ -33,14 +37,20 @@ class PowerSupply(lb._backends.SimulatedVISADevice, yaml_source=yaml):
 
 
 class SpectrumAnalyzer(lb._backends.SimulatedVISADevice, yaml_source=yaml):
-    """ a fake Spectrum Analyzer that returns fixed trace data
-    """
+    """a fake Spectrum Analyzer that returns fixed trace data"""
 
     frequency = lb.property.float(
-        key=":FREQ", min=10e6, max=18e9, help="center frequency",
+        key=":FREQ",
+        min=10e6,
+        max=18e9,
+        help="center frequency",
     )
 
-    sweeps = lb.value.int(1, min=1, help="number of traces to acquire",)
+    sweeps = lb.value.int(
+        1,
+        min=1,
+        help="number of traces to acquire",
+    )
 
     def fetch_trace(self):
         trace = self.query_ascii_values("TRACE?", float, container=pd.DataFrame)

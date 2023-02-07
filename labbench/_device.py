@@ -30,7 +30,6 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from functools import wraps
-from copy import deepcopy
 import inspect
 import sys
 import traceback
@@ -50,7 +49,7 @@ from ._traits import (
     hold_trait_notifications,
 )
 
-__all__ = ["Device", "list_devices", "property", "value", "datareturn", "trait_info"]
+__all__ = ["Device", "list_devices", "property", "value", "trait_info"]
 
 
 def trace_methods(cls, name, until_cls=None):
@@ -80,7 +79,7 @@ def list_devices(depth=1):
     argument of the first function argument, in case this is
     a method in a class.
     """
-    from inspect import getouterframes, currentframe
+    from inspect import currentframe
 
     f = frame = currentframe()
     for i in range(depth):
@@ -351,11 +350,11 @@ class Device(HasTraits, util.Ownable):
         try:
             for opener in trace_methods(self.__class__, "open", Device)[::-1]:
                 opener(self)
-        except:
+        except BaseException:
             self.backend = DisconnectedBackend(self)
             raise
 
-        self._logger.debug(f"opened")
+        self._logger.debug("opened")
 
         # Force an update to self.isopen
         self.isopen
@@ -425,7 +424,7 @@ class Device(HasTraits, util.Ownable):
             e.args = tuple(args)
             raise e
 
-    ### Object boilerplate
+    # Object boilerplate
     def __del__(self):
         try:
             isopen = self.isopen
@@ -449,7 +448,7 @@ class Device(HasTraits, util.Ownable):
         """is the backend ready?"""
         try:
             return DisconnectedBackend not in self.backend.__class__.__mro__
-        except:
+        except BaseException:
             # Run into this sometimes on reloading a module or ipython shell:
             # the namespace is gone. we just assume disconnected
             return False

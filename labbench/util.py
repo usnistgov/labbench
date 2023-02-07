@@ -45,7 +45,7 @@ __all__ = [  # "misc"
     "until_timeout",
     "sleep",
     "stopwatch",
-    "timeout_iter"
+    "timeout_iter",
     # wrapper helpers
     "copy_func",
     # traceback scrubbing
@@ -56,7 +56,6 @@ __all__ = [  # "misc"
 ]
 
 import ast
-import builtins
 import hashlib
 import inspect
 import logging
@@ -94,10 +93,10 @@ simplefilter("once", LabbenchDeprecationWarning)
 
 
 def show_messages(minimum_level, colors=True):
-    """Configure screen debug message output for any messages as least as important as indicated by `level`.
+    """filters logging messages displayed to the console by importance
 
     Arguments:
-        minimum_level: One of 'debug', 'warning', 'error', or None. If None, there will be no output.
+        minimum_level: 'debug', 'warning', 'error', or None (to disable all output)
     Returns:
         None
     """
@@ -110,11 +109,12 @@ def show_messages(minimum_level, colors=True):
         "error": logging.ERROR,
         "info": logging.INFO,
         None: None,
+        False: None,
     }
 
     if minimum_level not in err_map and not isinstance(minimum_level, int):
         raise ValueError(
-            f"message level must be a flag {tuple(err_map.keys())} or an integer, not {repr(minimum_level)}"
+            f"message level must be a flag {tuple(err_map)} or an integer, not {repr(minimum_level)}"
         )
 
     level = (
@@ -330,7 +330,7 @@ class _filtered_exc_info:
 
             return etype, evalue, start_tb
 
-        except BaseException as e:
+        except BaseException:
             raise
 
 
@@ -362,84 +362,6 @@ def copy_func(
         getattr(new, attr).update(getattr(func, attr))
 
     return new
-
-
-# TODO: remove this
-def withsignature(
-    cls,
-    name: str,
-    fields: list,
-    defaults: dict,
-    positional: int = None,
-    annotations: dict = {},
-):
-    """Replace cls.__init__ with a wrapper function with an explicit
-    call signature, replacing the actual call signature that can be
-    dynamic __init__(self, *args, **kws) call signature.
-
-    :fields: iterable of names of each call signature argument
-    :
-    """
-    # Is the existing cls.__init__ already a __init__ wrapper?
-    wrapped = getattr(cls, name)
-    orig_doc = getattr(wrapped, "__origdoc__", cls.__init__.__doc__)
-    reuse = hasattr(wrapped, "__dynamic__")
-
-    defaults = tuple(defaults.items())
-
-    if positional is None:
-        positional = len(fields)
-
-    # Generate a code object with the adjusted signature
-    code = wrapper.__code__
-
-    if tuple(sys.version_info)[:2] >= (3, 8):
-        # there is a new co_posonlyargs argument since 3.8 - use the new .replace
-        # to be less brittle to future signature changes
-        code = code.replace(
-            co_argcount=1 + positional,  # to include self
-            co_posonlyargcount=0,
-            co_kwonlyargcount=len(fields) - positional,
-            co_nlocals=len(fields) + 1,  # to include self
-            co_varnames=("self",) + tuple(fields),
-        )
-    else:
-        code = types.CodeType(
-            1 + positional,  # co_argcount
-            len(fields) - positional,  # co_kwonlyargcount
-            len(fields) + 1,  # co_nlocals
-            code.co_stacksize,
-            code.co_flags,
-            code.co_code,
-            code.co_consts,
-            code.co_names,
-            ("self",) + tuple(fields),  # co_varnames
-            code.co_filename,
-            code.co_name,
-            code.co_firstlineno,
-            code.co_lnotab,
-            code.co_freevars,
-            code.co_cellvars,
-        )
-
-    # Generate the new wrapper function and its signature
-    __globals__ = getattr(wrapped, "__globals__", builtins.__dict__)
-    import functools
-
-    wrapper = types.FunctionType(code, __globals__, wrapped.__name__)
-
-    wrapper.__doc__ = wrapped.__doc__
-    wrapper.__qualname__ = wrapped.__qualname__
-    wrapper.__defaults__ = tuple((v for k, v in defaults[:positional]))
-    wrapper.__kwdefaults__ = {k: v for k, v in defaults[positional:]}
-    wrapper.__annotations__ = annotations
-    wrapper.__dynamic__ = True
-
-    if not reuse:
-        setattr(cls, name + "_wrapped", wrapped)
-    setattr(cls, name, wrapper)
-
-    wrapper.__doc__ = wrapper.__origdoc__ = orig_doc
 
 
 if not hasattr(sys.exc_info, "lb_wrapped"):
@@ -799,7 +721,7 @@ class Call(object):
                     raise KeyError(msg)
 
                 ret[name] = func
-            except:
+            except BaseException:
                 raise
 
         return ret
@@ -863,7 +785,7 @@ class MultipleContexts:
             # proceed only if there have been no exceptions
             try:
                 context.__enter__()  # start of a context entry thread
-            except:
+            except BaseException:
                 self.abort = True
                 self.exc[name] = sys.exc_info()
                 raise
@@ -894,7 +816,7 @@ class MultipleContexts:
 
                 try:
                     context.__exit__(None, None, None)
-                except:
+                except BaseException:
                     exc = sys.exc_info()
                     traceback.print_exc()
 
@@ -1035,7 +957,7 @@ def enter_or_call(flexible_caller, objs, kws):
         ]
 
         if thisone is None:
-            msg = f"each argument must be a callable and/or a context manager, "
+            msg = "each argument must be a callable and/or a context manager, "
 
             if k is None:
                 msg += f"but given {repr(obj)}"
@@ -1047,9 +969,7 @@ def enter_or_call(flexible_caller, objs, kws):
             runner = thisone
         else:
             if thisone not in (runner, "both"):
-                raise TypeError(
-                    f"cannot run a mixture of context managers and callables"
-                )
+                raise TypeError("cannot mix context managers and callables")
 
     # Enforce uniqueness in the (callable or context manager) object
     candidate_objs = [c[1] for c in candidates]
@@ -1312,10 +1232,10 @@ def sequentially(*objs, **kws):
     argument may be callables in  case they are executed (and each flag value is treated as defaults).
 
     Arguments:
-        objs:  each argument may be a callable (function, or class that defines a __call__ method), or context manager (such as a Device instance)
-        kws: dictionary of further callables or context managers, with names set by the dictionary key
-        nones: if True, include dictionary entries for calls that return None (default is False); left as another entry in `kws` if callable or a context manager
-        flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
+        objs:  callables or context managers or Device instances for connections
+        kws: dictionary of additional callables or Device instances for connections
+        nones: `True` to include dictionary entries for calls that return None (default: False)
+        flatten: `True` to flatten any `dict` return values into the return dictionary
     Returns:
         a dictionary keyed on the object name containing the return value of each function
     :rtype: dictionary of keyed by function
@@ -1603,7 +1523,7 @@ def accessed_attributes(method):
     source = inspect.getsource(method)
 
     # filter out lines that start with comments, which have no tokens and confuse textwrap.dedent
-    source = "\n".join(re.findall("^[\ \t\r\n]*[^\#].*", source, re.MULTILINE))
+    source = "\n".join(re.findall("^[ \t\r\n]*[^#].*", source, re.MULTILINE))
 
     parsed = ast.parse(textwrap.dedent(source))
     if len(parsed.body) > 1:

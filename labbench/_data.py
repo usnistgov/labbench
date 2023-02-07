@@ -42,7 +42,6 @@ import os
 from pathlib import Path
 import pickle
 import shutil
-import tarfile
 import warnings
 
 EMPTY = inspect._empty
@@ -107,27 +106,27 @@ class MungerBase(core.Device):
             except ValueError:
                 return False
 
-        for name, value in row.items():
-            if is_path(value):
+        for name, v in row.items():
+            if is_path(v):
                 # Path to a datafile to move into the dataset
-                row[name] = self._from_external_file(name, value, index, row)
+                row[name] = self._from_external_file(name, v, index, row)
 
-            elif isinstance(value, (str, bytes)):
+            elif isinstance(v, (str, bytes)):
                 # A long string that should be written to a text file
                 if (
-                    len(value) > self.text_relational_min
+                    len(v) > self.text_relational_min
                     or name in self.force_relational
-                    or isinstance(value, bytes)
+                    or isinstance(v, bytes)
                 ):
-                    row[name] = self._from_text(name, value, index, row)
+                    row[name] = self._from_text(name, v, index, row)
 
-            elif isinstance(value, (np.ndarray, pd.Series, pd.DataFrame)):
+            elif isinstance(v, (np.ndarray, pd.Series, pd.DataFrame)):
                 # vector, table, matrix, etc.
-                row[name] = self._from_ndarraylike(name, value, index, row)
+                row[name] = self._from_ndarraylike(name, v, index, row)
 
-            elif hasattr(value, "__len__") or hasattr(value, "__iter__"):
+            elif hasattr(v, "__len__") or hasattr(v, "__iter__"):
                 # tuple, list, or other iterable
-                row[name] = self._from_sequence(name, value, index, row)
+                row[name] = self._from_sequence(name, v, index, row)
 
         return row
 
@@ -419,6 +418,8 @@ class TarFileIO(io.BytesIO):
         #        tarpath = os.path.join(self.tarbase, self.tarname)
         #        f = tarfile.open(tarpath, 'a')
 
+        import tarfile
+
         try:
             if not self.overwrite and self.name in self.tarfile.getnames():
                 raise IOError(f"{self.name} already exists in {self.tarfile.name}")
@@ -457,6 +458,8 @@ class MungeToTar(MungerBase):
         return TarFileIO(self.tarfile, dirpath, mode=mode)
 
     def open(self):
+        import tarfile
+
         if not os.path.exists(self.resource):
             with suppress(FileExistsError):
                 os.makedirs(self.resource)
@@ -672,7 +675,7 @@ class Aggregator(util.Ownable):
         else:
             self._rack_input_index += 1
 
-        iter_info = msg["new"]
+        # iter_info = msg["new"]
         row_data = dict(index=self._rack_input_index)
 
         # if len(self._iter_index_names) > 0:
@@ -1167,7 +1170,7 @@ class RelationalTableLogger(
         """
 
         if self.path is None:
-            raise TypeError(f"cannot open dB while path is None")
+            raise TypeError("cannot open dB while path is None")
 
         self.observe(self.munge, never=self.munge._traits)
         self.observe(self.host, always=["time", "log"])
@@ -1329,7 +1332,7 @@ class MungeToHDF(Device):
     def open(self):
         import h5py
 
-        self.backend = h5 = h5py.File(self.resource, "a")
+        self.backend = h5py.File(self.resource, "a")
 
     def close(self):
         self.backend.close()
@@ -1354,25 +1357,25 @@ class MungeToHDF(Device):
             except ValueError:
                 return False
 
-        for name, value in row.items():
+        for name, v in row.items():
             # A path outside the relational database tree
-            if is_path(value):
+            if is_path(v):
                 # A file or directory that should be moved in
-                row[name] = self._from_external_file(name, value, index, row)
+                row[name] = self._from_external_file(name, v, index, row)
 
             # A long string that should be written to a text file
-            elif isinstance(value, (str, bytes, Number)):
-                row[name] = value
+            elif isinstance(v, (str, bytes, Number)):
+                row[name] = v
 
-            elif hasattr(value, "__len__") or hasattr(value, "__iter__"):
+            elif hasattr(v, "__len__") or hasattr(v, "__iter__"):
                 # vector, table, matrix, etc.
-                row[name] = self._from_nonscalar(name, value, index, row)
+                row[name] = self._from_nonscalar(name, v, index, row)
 
             else:
                 self._logger.warning(
-                    rf"unrecognized type for row entry '{name}' with type {repr(value)}"
+                    rf"unrecognized type for row entry '{name}' with type {repr(v)}"
                 )
-                row[name] = value
+                row[name] = v
 
         return row
 
@@ -1852,7 +1855,9 @@ def read(path_or_buf, columns=None, nrows=None, format="auto", **kws):
     try:
         reader = reader_guess[format]
     except KeyError as e:
-        raise Exception(f"couldn't guess a reader from extension of file {path_or_buf}")
+        raise Exception(
+            f"couldn't guess a reader from extension of file {path_or_buf}"
+        ) from e
 
     if reader == read_sqlite:
         return reader(path_or_buf, columns=columns, nrows=nrows, **kws)

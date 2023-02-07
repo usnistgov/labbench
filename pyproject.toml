@@ -74,13 +74,12 @@ write_template = "__version__ = '{}'"
 [tool.pdm.dev-dependencies]
 lint = [
     "flake8",
-    "black",
+    "black[jupyter]",
     "ast_decompiler",
     "mypy",
 ]
 test = ["pytest", "pytest-cov"]
 doc = ["sphinx>=1.6", "recommonmark"]
-
 
 [tool.black]
 line-length = 88

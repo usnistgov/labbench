@@ -2,8 +2,7 @@ import labbench as lb
 
 
 class EmulatedVISADevice(lb.Device):
-    """ Act as a VISA device without dispatching any visa keys
-    """
+    """Act as a VISA device without dispatching any visa keys"""
 
     # Settings
     read_termination = lb.value.str("\n", help="end-of-receive termination character")
@@ -12,19 +11,19 @@ class EmulatedVISADevice(lb.Device):
     # States
     @lb.property.str(key="*IDN", sets=False, cache=True)
     def identity(self):
-        """ identity string reported by the instrument """
+        """identity string reported by the instrument"""
         return self.__class__.__qualname__
 
     @lb.property.str(key="*OPT", sets=False, cache=True)
     def options(self):
-        """ options reported by the instrument """
+        """options reported by the instrument"""
 
         param_strs = (f"{s}={getattr(self,s)}" for s in self._value_attrs)
         return ",".join(param_strs)
 
     @lb.property.dict(key="*STB", sets=False)
     def status_byte(self):
-        """ VISA status byte reported by the instrument """
+        """VISA status byte reported by the instrument"""
         return {
             "error queue not empty": False,
             "questionable state": False,

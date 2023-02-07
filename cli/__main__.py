@@ -18,7 +18,7 @@ EMPTY = inspect.Parameter.empty
 
 
 def empty_rack(cls):
-    """instantiate cls, filling in owned objects that have no default value """
+    """instantiate cls, filling in owned objects that have no default value"""
     init_params = inspect.signature(cls).parameters
     init_kws = {
         name: cls.__annotations__[name]() if param.default is EMPTY else param.default
@@ -37,7 +37,6 @@ def post_mortem_debug(note=None, exc_info=None):
     ex = exc_info[1]
 
     if isinstance(ex, lb.util.ConcurrentException) and len(ex.thread_exceptions) > 0:
-
         if isinstance(ex.thread_exceptions, (list, tuple)):
             ex.thread_exceptions = dict(enumerate(ex.thread_exceptions))
 

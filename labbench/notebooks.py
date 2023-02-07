@@ -36,13 +36,10 @@ import logging
 import time
 from io import StringIO
 import numbers
-import builtins
 
 import pandas as pd
-import numpy as np
 
 import ipywidgets as widgets
-from ipywidgets import IntProgress, HTML, VBox
 from IPython.display import display
 
 skip_traits = {VISADevice: ["identity"], Host: ["log"], core.Device: ["isopen"]}

@@ -5,7 +5,6 @@ from ._rack import Rack as Rack
 from ._traits import observe as observe
 from .util import show_messages as show_messages
 from _typeshed import Incomplete
-from ipywidgets import HTML as HTML, IntProgress as IntProgress, VBox as VBox
 
 skip_traits: Incomplete
 

@@ -40,7 +40,6 @@ from contextlib import contextmanager
 from inspect import isclass
 import inspect
 import numbers
-import re
 
 # for common types
 from pathlib import Path
@@ -248,7 +247,7 @@ class Trait:
         # util.wrap_attribute(cls, '__init__', __init__, tuple(annots.keys()), cls._arg_defaults, 1, annots)
 
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
-        cls.__slots__ = [n for n in dir(cls) if not n.startswith("_")] + [
+        cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
             "metadata",
             "kind",
             "name",
@@ -632,8 +631,7 @@ Trait.__init_subclass__()
 def hold_trait_notifications(owner):
     def skip_notify(name, value, type, cache):
         old = owner.__cache__.setdefault(name, Undefined)
-
-        msg = dict(new=value, old=old, owner=owner, name=name, type=type, cache=cache)
+        # msg = dict(new=value, old=old, owner=owner, name=name, type=type, cache=cache)
 
         owner.__cache__[name] = value
 

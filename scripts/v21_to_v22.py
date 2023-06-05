@@ -65,7 +65,7 @@ def port_v21_to_v22(path, write=False):
         text,
     )
 
-    text, n4 = re.subn(rf"\.settings([\.\,\[\]\s])", rf"\1", text)
+    text, n4 = re.subn(r"\.settings([\.\,\[\]\s])", r"\1", text)
 
     text, n3 = re.subn(
         rf"(\s*{py_object_name})\s*:\s*([^=\s\#\n\r\{{\}}\,\\\(\)]+)(\s*[\#\n\r]+)",

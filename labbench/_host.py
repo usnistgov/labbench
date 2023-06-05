@@ -242,6 +242,8 @@ class Host(core.Device):
     def open(self):
         """The host setup method tries to commit current changes to the tree"""
         import git
+        import pandas as pd
+        import pip
 
         log_formatter = JSONFormatter()
         stream = LogStreamBuffer()

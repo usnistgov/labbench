@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Switch to pyproject.toml via pdm for packaging and build
 - `pythonnet` is now an optional dependency
+- minimum python version bumped to 3.8
+- added support for python 3.11
 
 ### Deprecated
 - Deprecated `__imports__` from Device objects to avoid dangerous use of `globals`. Each expensive or platform-specific module import should now be performed inside the method that accesses it. 

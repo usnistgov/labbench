@@ -301,6 +301,11 @@ class MungerBase(core.Device):
     def _import_from_file(self, old_path, dest):
         raise NotImplementedError
 
+    def open(self):
+        # make sure these are fresh in the module cache
+        import pandas as pd
+        import numpy as np
+
 
 class MungeToDirectory(MungerBase):
     """Implement data munging into subdirectories."""

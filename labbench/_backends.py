@@ -38,7 +38,6 @@ from queue import Empty, Queue
 from threading import Event, Thread
 
 import psutil
-import serial
 
 from . import property as property_
 from . import util, value
@@ -694,6 +693,8 @@ class SerialDevice(Device):
         """Connect to the serial device with the VISA resource string defined
         in self.resource
         """
+        import serial
+
         keys = "timeout", "parity", "stopbits", "xonxoff", "rtscts", "dsrdtr"
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(self.resource, self.baud_rate, **params)

@@ -61,7 +61,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.graphviz",
-    "sphinxcontrib.napoleon",  # support for numpy- and google-style docstrings
+    "sphinx.ext.napoleon",  # support for numpy- and google-style docstrings
     # 'nbsphinx',
     # 'sphinx.ext.mathjax',
     "recommonmark"

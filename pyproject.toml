@@ -80,8 +80,9 @@ dev = [
     "mypy",
     "pytest",
     "pytest-cov",
-    "sphinx>=1.6",
-    "recommonmark"
+    "sphinx>=7.0.1",
+    "recommonmark",
+    "ipywidgets"
 ]
 
 [tool.black]
@@ -89,3 +90,7 @@ line-length = 88
 target-version = ["py38", "py39", "py310", "py311"]
 include = '\.pyi?$'
 
+[tool.pdm.scripts]
+build-html = {cmd = "sphinx-build -b html doc public"}
+build-latex = {cmd = "sphinx-build -b latex doc public"}
+build-rst = {cmd = "sphinx-apidoc -F . -o doc"}

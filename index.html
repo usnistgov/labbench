@@ -1,19 +1,17 @@
+<!DOCTYPE html>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Welcome to labbench-github’s documentation! &#8212; labbench v0.20</title>
-    <link rel="stylesheet" href="static/nature.css" type="text/css" />
-    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Welcome to labbench-github’s documentation! &#8212; labbench vgit</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
     <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
   </head><body>
@@ -22,7 +20,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>NIST Pages Template</title>
   <meta name="viewport" content="width=device-width">
-  <meta name="description" content="labbench v0.20">
+  <meta name="description" content="labbench vgit">
   <link rel="canonical" href="./">
   <link rel="shortcut icon" href="/favicon.ico">
 
@@ -61,7 +59,8 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="labbench.html">labbench v0.20</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="labbench.html">labbench vgit</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Welcome to labbench-github’s documentation!</a></li> 
       </ul>
     </div>  
 
@@ -70,45 +69,267 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-labbench-github-s-documentation">
-<h1>Welcome to labbench-github’s documentation!<a class="headerlink" href="#welcome-to-labbench-github-s-documentation" title="Permalink to this headline">¶</a></h1>
+  <section id="welcome-to-labbench-github-s-documentation">
+<h1>Welcome to labbench-github’s documentation!<a class="headerlink" href="#welcome-to-labbench-github-s-documentation" title="Permalink to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="labbench.html">labbench package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.backends">labbench.backends module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.core">labbench.core module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.data">labbench.data module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.host">labbench.host module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.notebooks">labbench.notebooks module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-labbench.util">labbench.util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.CSVLogger"><code class="docutils literal notranslate"><span class="pre">CSVLogger</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.CSVLogger.open"><code class="docutils literal notranslate"><span class="pre">CSVLogger.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Call"><code class="docutils literal notranslate"><span class="pre">Call</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Call.set_queue"><code class="docutils literal notranslate"><span class="pre">Call.set_queue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Call.wrap_list_to_dict"><code class="docutils literal notranslate"><span class="pre">Call.wrap_list_to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Device"><code class="docutils literal notranslate"><span class="pre">Device</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Device.close"><code class="docutils literal notranslate"><span class="pre">Device.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Device.open"><code class="docutils literal notranslate"><span class="pre">Device.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.DotNetDevice"><code class="docutils literal notranslate"><span class="pre">DotNetDevice</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.DotNetDevice.open"><code class="docutils literal notranslate"><span class="pre">DotNetDevice.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Email"><code class="docutils literal notranslate"><span class="pre">Email</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Email.close"><code class="docutils literal notranslate"><span class="pre">Email.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Email.open"><code class="docutils literal notranslate"><span class="pre">Email.open()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Email.send_summary"><code class="docutils literal notranslate"><span class="pre">Email.send_summary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.HDFLogger"><code class="docutils literal notranslate"><span class="pre">HDFLogger</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.HDFLogger.open"><code class="docutils literal notranslate"><span class="pre">HDFLogger.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.LabviewSocketInterface"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.LabviewSocketInterface.clear"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface.clear()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.LabviewSocketInterface.close"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.LabviewSocketInterface.open"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface.open()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.LabviewSocketInterface.read"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface.read()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.LabviewSocketInterface.set_key"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface.set_key()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.LabviewSocketInterface.write"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Rack"><code class="docutils literal notranslate"><span class="pre">Rack</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.SQLiteLogger"><code class="docutils literal notranslate"><span class="pre">SQLiteLogger</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SQLiteLogger.key"><code class="docutils literal notranslate"><span class="pre">SQLiteLogger.key()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SQLiteLogger.open"><code class="docutils literal notranslate"><span class="pre">SQLiteLogger.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Sequence"><code class="docutils literal notranslate"><span class="pre">Sequence</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Sequence.exception_allowlist"><code class="docutils literal notranslate"><span class="pre">Sequence.exception_allowlist</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Sequence.return_on_exceptions"><code class="docutils literal notranslate"><span class="pre">Sequence.return_on_exceptions()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.SerialDevice"><code class="docutils literal notranslate"><span class="pre">SerialDevice</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialDevice.close"><code class="docutils literal notranslate"><span class="pre">SerialDevice.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialDevice.from_hwid"><code class="docutils literal notranslate"><span class="pre">SerialDevice.from_hwid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialDevice.list_ports"><code class="docutils literal notranslate"><span class="pre">SerialDevice.list_ports()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialDevice.open"><code class="docutils literal notranslate"><span class="pre">SerialDevice.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice.clear"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.clear()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice.close"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice.configure"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.configure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice.fetch"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.fetch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice.running"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.running()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice.start"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.start()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.SerialLoggingDevice.stop"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.stop()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.ShellBackend"><code class="docutils literal notranslate"><span class="pre">ShellBackend</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.ShellBackend.clear_stdout"><code class="docutils literal notranslate"><span class="pre">ShellBackend.clear_stdout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.ShellBackend.close"><code class="docutils literal notranslate"><span class="pre">ShellBackend.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.ShellBackend.kill"><code class="docutils literal notranslate"><span class="pre">ShellBackend.kill()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.ShellBackend.open"><code class="docutils literal notranslate"><span class="pre">ShellBackend.open()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.ShellBackend.read_stdout"><code class="docutils literal notranslate"><span class="pre">ShellBackend.read_stdout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.ShellBackend.running"><code class="docutils literal notranslate"><span class="pre">ShellBackend.running()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.ShellBackend.write_stdin"><code class="docutils literal notranslate"><span class="pre">ShellBackend.write_stdin()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.TelnetDevice"><code class="docutils literal notranslate"><span class="pre">TelnetDevice</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.TelnetDevice.close"><code class="docutils literal notranslate"><span class="pre">TelnetDevice.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.TelnetDevice.open"><code class="docutils literal notranslate"><span class="pre">TelnetDevice.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.VISADevice"><code class="docutils literal notranslate"><span class="pre">VISADevice</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.close"><code class="docutils literal notranslate"><span class="pre">VISADevice.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.get_key"><code class="docutils literal notranslate"><span class="pre">VISADevice.get_key()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.list_resources"><code class="docutils literal notranslate"><span class="pre">VISADevice.list_resources()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.open"><code class="docutils literal notranslate"><span class="pre">VISADevice.open()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.overlap_and_block"><code class="docutils literal notranslate"><span class="pre">VISADevice.overlap_and_block()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.preset"><code class="docutils literal notranslate"><span class="pre">VISADevice.preset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.query"><code class="docutils literal notranslate"><span class="pre">VISADevice.query()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.set_key"><code class="docutils literal notranslate"><span class="pre">VISADevice.set_key()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.suppress_timeout"><code class="docutils literal notranslate"><span class="pre">VISADevice.suppress_timeout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.wait"><code class="docutils literal notranslate"><span class="pre">VISADevice.wait()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.write"><code class="docutils literal notranslate"><span class="pre">VISADevice.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Win32ComDevice"><code class="docutils literal notranslate"><span class="pre">Win32ComDevice</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Win32ComDevice.open"><code class="docutils literal notranslate"><span class="pre">Win32ComDevice.open()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.concurrently"><code class="docutils literal notranslate"><span class="pre">concurrently()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.find_owned_rack_by_type"><code class="docutils literal notranslate"><span class="pre">find_owned_rack_by_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.import_as_rack"><code class="docutils literal notranslate"><span class="pre">import_as_rack()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.list_devices"><code class="docutils literal notranslate"><span class="pre">list_devices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.load_rack"><code class="docutils literal notranslate"><span class="pre">load_rack()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.observe"><code class="docutils literal notranslate"><span class="pre">observe()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.rack_input_table"><code class="docutils literal notranslate"><span class="pre">rack_input_table</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.rack_kwargs_skip"><code class="docutils literal notranslate"><span class="pre">rack_kwargs_skip</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.rack_kwargs_template"><code class="docutils literal notranslate"><span class="pre">rack_kwargs_template</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.read"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.read_relational"><code class="docutils literal notranslate"><span class="pre">read_relational()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.retry"><code class="docutils literal notranslate"><span class="pre">retry()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.sequentially"><code class="docutils literal notranslate"><span class="pre">sequentially()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.show_messages"><code class="docutils literal notranslate"><span class="pre">show_messages()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.sleep"><code class="docutils literal notranslate"><span class="pre">sleep()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.stopwatch"><code class="docutils literal notranslate"><span class="pre">stopwatch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.timeout_iter"><code class="docutils literal notranslate"><span class="pre">timeout_iter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.trait_info"><code class="docutils literal notranslate"><span class="pre">trait_info()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.unobserve"><code class="docutils literal notranslate"><span class="pre">unobserve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.until_timeout"><code class="docutils literal notranslate"><span class="pre">until_timeout()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench-datareturn-module">labbench.datareturn module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.NetworkAddress"><code class="docutils literal notranslate"><span class="pre">NetworkAddress</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.Path"><code class="docutils literal notranslate"><span class="pre">Path</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#labbench.datareturn.Path.must_exist"><code class="docutils literal notranslate"><span class="pre">Path.must_exist</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.bool"><code class="docutils literal notranslate"><span class="pre">bool</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.bytes"><code class="docutils literal notranslate"><span class="pre">bytes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.complex"><code class="docutils literal notranslate"><span class="pre">complex</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.dict"><code class="docutils literal notranslate"><span class="pre">dict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.float"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.int"><code class="docutils literal notranslate"><span class="pre">int</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.list"><code class="docutils literal notranslate"><span class="pre">list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.str"><code class="docutils literal notranslate"><span class="pre">str</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.datareturn.tuple"><code class="docutils literal notranslate"><span class="pre">tuple</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench-property-module">labbench.property module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.Call"><code class="docutils literal notranslate"><span class="pre">Call</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#labbench.util.Call.set_queue"><code class="docutils literal notranslate"><span class="pre">Call.set_queue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#labbench.util.Call.wrap_list_to_dict"><code class="docutils literal notranslate"><span class="pre">Call.wrap_list_to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.ConcurrentException"><code class="docutils literal notranslate"><span class="pre">ConcurrentException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.ConfigStore"><code class="docutils literal notranslate"><span class="pre">ConfigStore</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#labbench.util.ConfigStore.all"><code class="docutils literal notranslate"><span class="pre">ConfigStore.all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#labbench.util.ConfigStore.frame"><code class="docutils literal notranslate"><span class="pre">ConfigStore.frame()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.LabbenchDeprecationWarning"><code class="docutils literal notranslate"><span class="pre">LabbenchDeprecationWarning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.Ownable"><code class="docutils literal notranslate"><span class="pre">Ownable</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.ThreadEndedByMaster"><code class="docutils literal notranslate"><span class="pre">ThreadEndedByMaster</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.ThreadSandbox"><code class="docutils literal notranslate"><span class="pre">ThreadSandbox</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.check_hanging_thread"><code class="docutils literal notranslate"><span class="pre">check_hanging_thread()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.concurrently"><code class="docutils literal notranslate"><span class="pre">concurrently()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.copy_func"><code class="docutils literal notranslate"><span class="pre">copy_func()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.hash_caller"><code class="docutils literal notranslate"><span class="pre">hash_caller()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.kill_by_name"><code class="docutils literal notranslate"><span class="pre">kill_by_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.retry"><code class="docutils literal notranslate"><span class="pre">retry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.sequentially"><code class="docutils literal notranslate"><span class="pre">sequentially()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.show_messages"><code class="docutils literal notranslate"><span class="pre">show_messages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.sleep"><code class="docutils literal notranslate"><span class="pre">sleep()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.stopwatch"><code class="docutils literal notranslate"><span class="pre">stopwatch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.timeout_iter"><code class="docutils literal notranslate"><span class="pre">timeout_iter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.util.until_timeout"><code class="docutils literal notranslate"><span class="pre">until_timeout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench-value-module">labbench.value module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id0"><code class="docutils literal notranslate"><span class="pre">Call</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id29"><code class="docutils literal notranslate"><span class="pre">Call.set_queue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id30"><code class="docutils literal notranslate"><span class="pre">Call.wrap_list_to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id31"><code class="docutils literal notranslate"><span class="pre">ConcurrentException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id32"><code class="docutils literal notranslate"><span class="pre">ConfigStore</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id33"><code class="docutils literal notranslate"><span class="pre">ConfigStore.all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id34"><code class="docutils literal notranslate"><span class="pre">ConfigStore.frame()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id35"><code class="docutils literal notranslate"><span class="pre">LabbenchDeprecationWarning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id36"><code class="docutils literal notranslate"><span class="pre">Ownable</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id37"><code class="docutils literal notranslate"><span class="pre">ThreadEndedByMaster</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id38"><code class="docutils literal notranslate"><span class="pre">ThreadSandbox</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id39"><code class="docutils literal notranslate"><span class="pre">check_hanging_thread()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id40"><code class="docutils literal notranslate"><span class="pre">concurrently()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id41"><code class="docutils literal notranslate"><span class="pre">copy_func()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id42"><code class="docutils literal notranslate"><span class="pre">hash_caller()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id43"><code class="docutils literal notranslate"><span class="pre">kill_by_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id44"><code class="docutils literal notranslate"><span class="pre">retry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id45"><code class="docutils literal notranslate"><span class="pre">sequentially()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id46"><code class="docutils literal notranslate"><span class="pre">show_messages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id47"><code class="docutils literal notranslate"><span class="pre">sleep()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id48"><code class="docutils literal notranslate"><span class="pre">stopwatch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id49"><code class="docutils literal notranslate"><span class="pre">timeout_iter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id50"><code class="docutils literal notranslate"><span class="pre">until_timeout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.html#module-1">labbench.util module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id51"><code class="docutils literal notranslate"><span class="pre">Call</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id52"><code class="docutils literal notranslate"><span class="pre">Call.set_queue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id53"><code class="docutils literal notranslate"><span class="pre">Call.wrap_list_to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id54"><code class="docutils literal notranslate"><span class="pre">ConcurrentException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id55"><code class="docutils literal notranslate"><span class="pre">ConfigStore</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id56"><code class="docutils literal notranslate"><span class="pre">ConfigStore.all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="labbench.html#id57"><code class="docutils literal notranslate"><span class="pre">ConfigStore.frame()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id58"><code class="docutils literal notranslate"><span class="pre">LabbenchDeprecationWarning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id59"><code class="docutils literal notranslate"><span class="pre">Ownable</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id60"><code class="docutils literal notranslate"><span class="pre">ThreadEndedByMaster</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id61"><code class="docutils literal notranslate"><span class="pre">ThreadSandbox</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id62"><code class="docutils literal notranslate"><span class="pre">check_hanging_thread()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id63"><code class="docutils literal notranslate"><span class="pre">concurrently()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id64"><code class="docutils literal notranslate"><span class="pre">copy_func()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id65"><code class="docutils literal notranslate"><span class="pre">hash_caller()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id66"><code class="docutils literal notranslate"><span class="pre">kill_by_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id67"><code class="docutils literal notranslate"><span class="pre">retry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id68"><code class="docutils literal notranslate"><span class="pre">sequentially()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id69"><code class="docutils literal notranslate"><span class="pre">show_messages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id70"><code class="docutils literal notranslate"><span class="pre">sleep()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id71"><code class="docutils literal notranslate"><span class="pre">stopwatch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id72"><code class="docutils literal notranslate"><span class="pre">timeout_iter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#id73"><code class="docutils literal notranslate"><span class="pre">until_timeout()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
 </ul>
 </div>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading">¶</a></h1>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
+</section>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="labbench.html">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="labbench.html">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">Welcome to labbench-github’s documentation!</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -117,17 +338,15 @@
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -141,7 +360,8 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="labbench.html">labbench v0.20</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="labbench.html">labbench vgit</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Welcome to labbench-github’s documentation!</a></li> 
       </ul>
     </div>
 <hr \>

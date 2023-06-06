@@ -1,0 +1,96 @@
+[project]
+name = "labbench"
+version = "0.24.0"
+
+description = """\
+    A set of python tools for clear, concise, and explainable laboratory automation. Code\
+    that achieves these goals should read like a pseudocode expression of the experimental\
+    procedure. Objects for control over equipment (or other software) should only expose a\
+    clear set of automation capabilities to make laboratory automation more robust and less\
+    frustrating.\
+    \
+    The labbench module supports this goal through an object protocol and support functions.\
+    These separate repetitive and error-prone boilerplate code, Use of these capabilities\
+    among multiple experimental runs also helps to produced data sets with consistent\
+    structure.\
+"""
+
+authors = [
+    {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
+    {name = "Shane Allman"},
+    {name = "Paul Blanchard"},
+    {name = "Yao Ma", email = "yao.ma@nist.gov"}
+]
+
+maintainers = [
+    {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
+]
+
+requires-python = ">=3.8,<3.12"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+
+dependencies = [
+    "coloredlogs>=7.0",
+    "feather-format>=0.4.0",
+    "GitPython>=2.0",
+    "pandas>=1.2.0,<2.0",
+    "psutil>=5.0",
+    "pyserial>=3.0",
+    "pyarrow>=11.0.0",
+    "pyvisa>=1.8",
+    "pyvisa-py>=0.6",
+    "ruamel-yaml>=0.17.21",
+    "sqlalchemy>=2.0.1",
+    "validators>=0.20.0",
+    "pywin32; sys_platform == 'win32'",
+    "comtypes; sys_platform == 'win32'",
+    "numpy>=1.19",
+]
+
+[project.optional-dependencies]
+dotnet = ["pythonnet"]
+jupyter = ["notebook", "jupyter", "ipywidgets", "ipython"]
+
+[project.urls]
+homepage = "https://github.com/usnistgov/labbench"
+repository = "https://github.com/usnistgov/labbench"
+documentation = "https://pages.nist.gov/labbench"
+changelog = "https://github.com/usnistgov/labbench/blob/master/ChangeLog.md"
+
+[project.scripts]
+labbench = "cli.__main__:do_cli"
+
+[build-system]
+requires = ["pdm-pep517>=1.0"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm.version]
+source = "scm"
+write_to = "labbench/_version.py"
+write_template = "__version__ = '{}'"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "black[jupyter]",
+    "ipython",
+    "flake8",
+    "ast_decompiler",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "sphinx>=7.0.1",
+    "recommonmark",
+    "ipywidgets"
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311"]
+include = '\.pyi?$'
+
+[tool.pdm.scripts]
+build-html = {cmd = "sphinx-build -b html doc public"}
+build-latex = {cmd = "sphinx-build -b latex doc public"}
+build-rst = {cmd = "sphinx-apidoc -F . -o doc"}

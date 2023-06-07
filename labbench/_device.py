@@ -319,21 +319,6 @@ class Device(HasTraits, util.Ownable):
         value_docs = "".join((f"    {t.doc()}\n" for t in settable_values.values()))
         cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
 
-        # update the class docstring
-        property_docs = "".join(
-            (f"    {getattr(cls, name).doc()}\n" for name in cls._property_attrs)
-        )
-
-        if cls.__doc__ is None:
-            # use the static doc written for the parent
-            cls.__baredoc__ = cls.__baredoc__
-        else:
-            cls.__baredoc__ = cls.__doc__
-
-        cls.__doc__ = str(cls.__baredoc__)  # <- copy so we can +=
-        cls.__doc__ += "\nValue Attributes:\n" + value_docs
-        cls.__doc__ += "\nProperty Attributes:\n" + property_docs
-
     @util.hide_in_traceback
     @wraps(open)
     def __open_wrapper__(self):

@@ -561,14 +561,26 @@ class Trait:
         return self
 
     # introspection
-    def doc(self):
-        params = self.doc_params(omit=["help", "default"])
+    ### introspection
+    ###
+    def doc(self, as_argument=False):
         typename = "Any" if self.type is None else self.type.__qualname__
 
-        doc = f"{self.name} ({typename}): {self.help}"
-        if len(params) > 0:
-            doc += f" ({params})"
+        if self.label:
+            typename += f" ({self.label})"
 
+        params = self.doc_params(omit=["help", "default", "label"])
+        if as_argument:
+            doc = f"{self.name} ({typename}): {self.help}"
+            if len(params) > 0:
+                doc += f" where ({params})"
+
+        else:
+            # as property
+            doc = f"{typename}: {self.help}"
+
+            if len(params) > 0:
+                doc += f"\n\nConstraints:\n    {params}"
         return doc
 
     def doc_params(self, omit=["help"]):

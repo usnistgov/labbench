@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Addressed warning emitted by subprocess module on use of ShellBackend 
+- Set __doc__ for traits, and remove the list of traits from Device __init__ docstrings
 
 ### Deprecated
 

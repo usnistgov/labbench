@@ -80,7 +80,7 @@ dev = [
     "mypy",
     "pytest",
     "pytest-cov",
-    "sphinx>=7.0.1",
+    "sphinx>=4.5",
     "recommonmark",
     "ipywidgets"
 ]

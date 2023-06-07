@@ -118,7 +118,7 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "**.ipynb_checkpoints", "setup*"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -259,7 +259,6 @@ pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
-
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -502,7 +501,7 @@ epub_copyright = copyright
 # epub_post_files = []
 
 # A list of files that should not be packed into the epub file.
-epub_exclude_files = ["search.html"]
+# epub_exclude_files = ["search.html"]
 
 # The depth of the table of contents in toc.ncx.
 # epub_tocdepth = 3

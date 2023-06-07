@@ -11,7 +11,6 @@ Welcome to labbench-github's documentation!
    :caption: Contents:
 
    labbench
-   setup
 
 
 Indices and tables

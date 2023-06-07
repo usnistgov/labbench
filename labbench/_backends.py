@@ -308,7 +308,6 @@ class ShellBackend(Device):
                 list(cmdl),
                 stdout=sp.PIPE,
                 startupinfo=si,
-                bufsize=1,
                 creationflags=sp.CREATE_NEW_PROCESS_GROUP,
                 stderr=sp.PIPE,
             )

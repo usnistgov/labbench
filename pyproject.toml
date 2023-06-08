@@ -5,11 +5,7 @@ version = "0.25.0"
 description = """\
     A set of python tools for clear, concise, and explainable laboratory automation. Code\
     that achieves these goals should read like a pseudocode expression of the experimental\
-    procedure. Objects for control over equipment (or other software) should only expose a\
-    clear set of automation capabilities to make laboratory automation more robust and less\
-    frustrating.\
-    \
-    The labbench module supports this goal through an object protocol and support functions.\
+    procedure. The labbench module supports this goal through an object protocol and support functions.\
     These separate repetitive and error-prone boilerplate code, Use of these capabilities\
     among multiple experimental runs also helps to produced data sets with consistent\
     structure.\

@@ -82,7 +82,8 @@ dev = [
     "pytest-cov",
     "sphinx>=4.5",
     "recommonmark",
-    "ipywidgets"
+    "ipywidgets",
+    "twine>=4.0.2",
 ]
 
 [tool.black]

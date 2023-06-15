@@ -1038,7 +1038,7 @@ class VISADevice(Device):
     @classmethod
     def list_resources(cls):
         """autodetects and returns a list of valid resource strings"""
-        return cls._get_rm().list_resources()
+        return cls()._get_rm().list_resources()
 
     def write(self, msg: str):
         """sends an SCPI message to the device.

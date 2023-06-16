@@ -1,3 +1,9 @@
+[![PyPI Latest Release](https://img.shields.io/pypi/v/labbench.svg)](https://pypi.org/project/labbench/)
+[![DOI](https://zenodo.org/badge/DOI/10.18434/M32122.svg)](https://doi.org/10.18434/M32122)
+[![License](https://img.shields.io/badge/license-NIST-brightgreen)](https://github.com/usnistgov/labbench/blob/master/LICENSE.md)
+[![Downloads](https://static.pepy.tech/badge/labbench)](https://pepy.tech/project/labbench)
+[![Last commit](https://img.shields.io/github/last-commit/usnistgov/labbench)](https://pypi.org/project/labbench/)
+
 # labbench
 This is a set of python tools for writing laboratory automation scripts that are
 clear, concise, and explainable.

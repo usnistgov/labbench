@@ -42,6 +42,7 @@ dependencies = [
     "pywin32; sys_platform == 'win32'",
     "comtypes; sys_platform == 'win32'",
     "numpy>=1.19",
+    "h5py>=3.8.0",
 ]
 
 [project.optional-dependencies]

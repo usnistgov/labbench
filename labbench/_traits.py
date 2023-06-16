@@ -561,8 +561,6 @@ class Trait:
         return self
 
     # introspection
-    ### introspection
-    ###
     def doc(self, as_argument=False):
         typename = "Any" if self.type is None else self.type.__qualname__
 

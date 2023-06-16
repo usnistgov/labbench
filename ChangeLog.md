@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.27 - unreleased]
 ### Changed
 - Moved `setup.cfg` to `.flake8` since it is only used for that configuration
+- Corrected missing h5py dependency
 
 ## [0.26 - 2023-06-15]
 ### Changed

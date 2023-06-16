@@ -1,6 +1,6 @@
 [project]
 name = "labbench"
-version = "0.26.0"
+version = "0.27.0"
 
 description = """\
     A set of python tools for clear, concise, and explainable laboratory automation. Code\
@@ -42,7 +42,7 @@ dependencies = [
     "pywin32; sys_platform == 'win32'",
     "comtypes; sys_platform == 'win32'",
     "numpy>=1.19",
-    "h5py>=3.8.0",
+    "h5py>=3",
 ]
 
 [project.optional-dependencies]

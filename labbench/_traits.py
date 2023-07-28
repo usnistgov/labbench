@@ -59,8 +59,8 @@ class HasTraitsMeta(type):
 
     @classmethod
     def __prepare__(cls, names, bases, **kws):
-        """Prepare copies of cls._traits, to ensure that any traits defined
-        in the definition don't clobber parents' traits.
+        """Prepare copies of cls._traits, to ensure that all traits can be adjusted
+        afterward without impacting the parent class.
         """
         ns = dict()
         if len(bases) >= 1:
@@ -360,7 +360,7 @@ class Trait:
 
             elif self.key is not None:
                 # otherwise, use the owner's set_key
-                owner._key.set(owner, self.key, value, self.name)
+                owner._key.set(owner, self.key, value, self)
 
             else:
                 objname = owner.__class__.__qualname__ + "." + self.name
@@ -389,12 +389,14 @@ class Trait:
         # instance, and owning class is a match for what we were told in __set_name__.
         # otherwise, someone else is trying to access `self` and we
         # shouldn't get in their way.
-        if owner is None or owner_cls.__dict__.get(
-            self.name, None
-        ) is not self.__objclass__.__dict__.get(self.name):
-            # the __dict__ acrobatics avoids a recursive __get__ loop
+        if owner is None:
+            # escape an infinite recursion loop before accessing any class members
             return self
 
+        cls_getter = owner_cls.__dict__.get(self.name, None)
+        objclass_getter = self.__objclass__.__dict__.get(self.name)
+        if cls_getter is not objclass_getter:
+            return self
         elif self.role == self.ROLE_DATARETURN:
             # inject the labbench Trait hooks into the return value
             @wraps(self._returner)
@@ -429,7 +431,7 @@ class Trait:
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
-            value = owner._key.get(owner, self.key, self.name)
+            value = owner._key.get(owner, self.key, self)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -595,18 +597,22 @@ class Trait:
         else:
             return owner._owned_name + "." + self.name
 
-    def update(self, obj=None, **attrs):
+    def update(self, obj=None, /, **attrs):
         """returns `self` or (if `obj` is None) or `other`, after updating its keyword
         parameters with `attrs`
         """
         if obj is None:
             obj = self
-        invalid_params = set(attrs).difference(obj.__dict__)
-        if len(invalid_params) > 0:
-            raise AttributeError(
-                f"{obj} does not have the parameter(s) {invalid_params}"
-            )
+        # invalid_params = set(attrs).difference(obj.__dict__)
+        # if len(invalid_params) > 0:
+        #     raise AttributeError(
+        #         f"{obj} does not have the parameter(s) {invalid_params}"
+        #     )
+        
+        # validate by trying to make a copy
+        obj.copy(**attrs)
 
+        # apply
         obj.__dict__.update(attrs)
         return obj
 
@@ -627,40 +633,38 @@ def hold_trait_notifications(owner):
     owner.__notify__ = original
 
 
-class BackendPropertiesAdapter:
-    def __new__(cls, _ownercls=None, /, *args, **kws):
-        """permit use as a class decorator"""
+class BackendPropertyAdapter:
+    def __new__(cls, *args, **kws):
+        """set up use as a class decorator"""
 
-        # triggers __init__
-        obj = super().__new__(cls, *args, **kws)
+        obj = super().__new__(cls)
 
-        if _ownercls is None:
-            # not a decorator
-            return obj
+        if len(args) == 1 and len(kws) == 0 and issubclass(args[0], HasTraits):
+            # instantiated as a decorator without arguments - do the decoration
+            obj.__init__()
+            return obj(args[0])
         else:
-            # decorator
-            _ownercls._keys = obj
-            return _ownercls
+            # instantiated with arguments - decoration happens later
+            obj.__init__(*args, **kws)
+            return obj
 
-    def __init__(self, _ownercls=None, /, *args, **kws):
-        if _ownercls is not None:
-            # decorator
-            _ownercls._keys = self
+    def __call__(self, owner_cls):
+        # do the decorating
+        owner_cls._keys = self
+        return owner_cls
 
-    """ callback operations to get or set device attributes based on a key shortcut """
-
-    def get(self, trait_owner, key, name=None):
+    def get(self, trait_owner, key, trait=None):
         raise NotImplementedError(
             f'key adapter does not implement "get" {repr(type(self))}'
         )
 
-    def set(self, trait_owner, key, value, name=None):
+    def set(self, trait_owner, key, value, trait=None):
         raise NotImplementedError(
             f'key adapter does not implement "set" {repr(type(self))}'
         )
 
 
-class MessageProperties(BackendPropertiesAdapter):
+class MessagePropertyAdapter(BackendPropertyAdapter):
     """Device class decorator that implements automatic API that triggers API messages for labbench properties.
 
     Example usage:
@@ -668,20 +672,20 @@ class MessageProperties(BackendPropertiesAdapter):
     ```python
         import labbench as lb
 
-        @lb.MessageProperties(query_fmt='{key}?', write_fmt='{key} {value}')
+        @lb.MessagePropertyAdapter(query_fmt='{key}?', write_fmt='{key} {value}')
         class MyDevice(lb.Device):
             pass
     ```
 
     Decorated classes connect traits that are defined with the `key` keyword to trigger
     backend API calls based on the key. The implementation of the `set` and `get` methods
-    in subclasses of MessageProperties determines how the key is used to generate API calls.
+    in subclasses of MessagePropertyAdapter determines how the key is used to generate API calls.
     """
 
     def __init__(
-        self, _ownercls=None, /, query_fmt="{key}?", write_fmt="{key} {value}", remap={}
+        self, query_fmt="{key}?", write_fmt="{key} {value}", remap={}
     ):
-        super().__init__(_ownercls)
+        super().__init__()
 
         self.query_fmt = query_fmt
         self.write_fmt = write_fmt
@@ -700,7 +704,7 @@ class MessageProperties(BackendPropertiesAdapter):
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
-    _keys = BackendPropertiesAdapter()
+    _keys = BackendPropertyAdapter()
 
     def __init__(self, **values):
         # who is informed on new get or set values
@@ -717,16 +721,14 @@ class HasTraits(metaclass=HasTraitsMeta):
                 self.__cache__[name] = trait.default
 
     @util.hide_in_traceback
-    def __init_subclass__(
-        cls, key_adapter: Union[BackendPropertiesAdapter, None] = None
-    ):
+    def __init_subclass__(cls):
+        MANAGED_ROLES = Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
+
         cls._traits = dict(getattr(cls, "_traits", {}))
         cls._property_attrs = []
         cls._value_attrs = []
         cls._datareturn_attrs = []
 
-        if key_adapter is not None:
-            cls._keys = key_adapter
         # parent_traits = getattr(cls.__mro__[1], "_traits", {})
 
         # annotations = getattr(cls, '__annotations__', {})
@@ -736,10 +738,7 @@ class HasTraits(metaclass=HasTraitsMeta):
             obj = getattr(cls, name)
 
             if not isinstance(obj, Trait):
-                if trait.role in (
-                    Trait.ROLE_PROPERTY,
-                    Trait.ROLE_DATARETURN,
-                ) and callable(obj):
+                if trait.role in MANAGED_ROLES and callable(obj):
                     # if it's a method, decorate it
                     cls._traits[name] = trait(obj)
                 else:
@@ -879,6 +878,50 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
         obj.__notify_list__[handler] = wrapped
     else:
         raise TypeError("object to observe must be an instance of Device")
+
+
+def adjust_child_trait(trait_or_name: Union[Trait, str], **trait_params):
+    """ decorate a Device or HasTraits class to adjust the parameters of one of its traits.
+  
+    This can be applied to inherited classes that need traits that vary the
+    parameters of a trait defined in a parent. Multiple decorators can be applied to the
+    same class definition.
+
+    Arguments:
+        trait_or_name: a Trait instance or the name of a trait in the class
+        trait_params: keyword arguments that are valid for the corresponding trait type
+
+    Examples:
+    ```
+        import labbench as lb
+
+        class BaseInstrument(lb.VISADevice):
+            center_frequency = lb.property.float(key='FREQ', label='Hz')
+
+        @lb.adjust_child_trait(BaseInstrument.center_frequency, min=10, max=50e9)
+        class Instrument50GHzModel(lb.VISADevice):
+            pass
+    ```
+    """
+    if isinstance(trait_or_name, Trait):
+        name = trait_or_name.name
+    elif isinstance(trait_or_name, str):
+        name = trait_or_name
+    else:
+        raise TypeError('trait_or_name must be an instance of Trait or str')
+
+    @util.hide_in_traceback
+    def apply_adjusted_trait(owner_cls: HasTraits):
+        if not issubclass(owner_cls, HasTraits):
+            raise TypeError("mutate_trait must decorate a class defined with Traits")
+        if name not in owner_cls.__dict__:
+            raise ValueError(f'no trait named "{name}" in {repr(owner_cls)}')
+
+        trait = getattr(owner_cls, name)
+        trait.update(**trait_params)
+        return owner_cls
+
+    return apply_adjusted_trait
 
 
 def unobserve(obj, handler):

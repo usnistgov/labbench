@@ -52,8 +52,8 @@ from ._backends import (
     TelnetDevice,
     VISADevice,
     Win32ComDevice,
-    LabviewSocketProperties,
-    VISAProperties,
+    LabviewSocketPropertyAdapter,
+    VISAPropertyAdapter,
     set_default_visa_backend,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
@@ -73,8 +73,9 @@ from ._traits import (
     Undefined,
     observe,
     unobserve,
-    BackendPropertiesAdapter,
-    MessageProperties,
+    adjust_child_trait,
+    BackendPropertyAdapter,
+    MessagePropertyAdapter,
 )
 from ._version import __version__
 

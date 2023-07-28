@@ -1,6 +1,29 @@
 import labbench as lb
 
+class EmulatedVISAPropertyAdapter(lb.VISAPropertyAdapter):
+    def get(self, device, key, trait):
+        import numpy as np
 
+        if trait.type is bool:
+            if len(self.remap) > 0:
+                return np.random.choice(self.value_map.values())
+            else:
+                return np.random.choice(("TRUE", "FALSE"))
+
+        elif trait.type is str:
+            return "text"
+
+        elif trait.type is float:
+            return str(np.random.uniform(low=trait.min, high=trait.max))
+
+        else:
+            raise TypeError("No emulated values implemented for trait {repr(trait)}")
+
+    def set(self, device, key, value, trait):
+        pass
+
+
+@EmulatedVISAPropertyAdapter
 class EmulatedVISADevice(lb.Device):
     """Act as a VISA device without dispatching any visa keys"""
 
@@ -33,26 +56,3 @@ class EmulatedVISADevice(lb.Device):
             "master status summary": False,
             "operating": True,
         }
-
-    def get_key(self, key, name=None):
-        import numpy as np
-
-        trait = self._traits[name]
-
-        if trait.type is bool:
-            if trait.remap:
-                return np.random.choice(trait.remap.values())
-            else:
-                return np.random.choice(("TRUE", "FALSE"))
-
-        elif trait.type is str:
-            return "text"
-
-        elif trait.type is float:
-            return str(np.random.uniform(low=trait.min, high=trait.max))
-
-        else:
-            raise TypeError("No emulated values implemented for trait {repr(trait)}")
-
-    def set_key(self, key, value, name=None):
-        pass

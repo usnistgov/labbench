@@ -2,11 +2,21 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
+and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+
+## [0.28 - unreleased]
+### Added
+- compartmentalize backend property implementation into `BackendPropertyAdapter`, a backend-specific decorator
+- implement `VISAPropertyAdapter` and `LabviewSocketPropertyAdapter`
+- `adjust_child_trait` allows the adjustment of arbitrary child traits in `Device` subclasses
+
+### Changed
+- remove the `remap` keyword from `Trait` (now implemented by `BackendPropertyAdapter`, for backends that support it)
+- support has been removed for adjusting `Device` child class trait default values by passing keyword arguments. use `adjust_child_trait` decorator instead.
 
 ## [0.27 - 2023-06-16]
 ### Changed
-- Moved `setup.cfg` to `.flake8` since it is only used for that configuration
+- Moved flake8 config from `setup.cfg` to `.flake8` since it is only used for that configuration
 - Corrected missing h5py dependency
 
 ## [0.26 - 2023-06-15]

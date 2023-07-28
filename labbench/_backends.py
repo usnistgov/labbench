@@ -42,7 +42,8 @@ import psutil
 from . import property as property_
 from . import util, value
 from ._device import Device
-from ._traits import observe, BackendPropertiesAdapter, MessageProperties
+from ._traits import (BackendPropertyAdapter, MessagePropertyAdapter,
+                      adjust_child_trait, observe)
 
 
 class ShellBackend(Device):
@@ -567,13 +568,13 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
-class LabviewSocketProperties(MessageProperties):
-    def set(self, device, key, value, name):
+class LabviewSocketPropertyAdapter(MessagePropertyAdapter):
+    def set(self, device, key, value, trait):
         """Send a formatted command string to implement property trait control."""
         device.write(f"{key} {value}")
 
 
-@LabviewSocketProperties
+@LabviewSocketPropertyAdapter
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
@@ -910,7 +911,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-class VISAProperties(MessageProperties):
+class VISAPropertyAdapter(MessagePropertyAdapter):
     """Device class decorator that automates SCPI command string interactions for labbench properties.
 
     Example usage:
@@ -918,7 +919,7 @@ class VISAProperties(MessageProperties):
     ```python
         import labbench as lb
 
-        @lb.VISAProperties(query_fmt='{key}?', write_fmt='{key} {value}')
+        @lb.VISAPropertyAdapter(query_fmt='{key}?', write_fmt='{key} {value}')
         class MyDevice(lb.VISADevice):
             pass
     ```
@@ -928,7 +929,7 @@ class VISAProperties(MessageProperties):
     with the `'{key}?'` format, and writes formatted as f'{key} {value}'.
     """
 
-    def get(self, device: Device, scpi_key: str, name=None):
+    def get(self, device: Device, scpi_key: str, trait=None):
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
         The command message string is formatted as f'{scpi_key}?'.
@@ -945,7 +946,7 @@ class VISAProperties(MessageProperties):
         value_str = device.query(self.query_fmt.format(key=scpi_key)).rstrip()
         return self.message_map.get(value_str, value_str)
 
-    def set(self, device: Device, scpi_key: str, value, name=None):
+    def set(self, device: Device, scpi_key: str, value, trait=None):
         """writes an SCPI message to set a parameter with a name key
         to `value`.
 
@@ -962,7 +963,7 @@ class VISAProperties(MessageProperties):
         device.write(self.write_fmt.format(key=scpi_key, value=value_str))
 
 
-@VISAProperties(query_fmt="{key}?", write_fmt="{key} {value}")
+@VISAPropertyAdapter(query_fmt="{key}?", write_fmt="{key} {value}")
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
 
@@ -1266,7 +1267,8 @@ def set_default_visa_backend(name):
     VISADevice._rm.default = name
 
 
-class SimulatedVISADevice(VISADevice, _rm="@sim"):
+@adjust_child_trait(VISADevice._rm, default='@sim')
+class SimulatedVISADevice(VISADevice):
     """Base class for wrapping simulated VISA devices with pyvisa.
 
     See also:
@@ -1296,7 +1298,8 @@ class SimulatedVISADevice(VISADevice, _rm="@sim"):
         return rm
 
 
-class Win32ComDevice(Device, concurrency=True):
+@adjust_child_trait(Device.concurrency, default=True)
+class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 
     a dedicated background thread. Set concurrency=True to decide whether

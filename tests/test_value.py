@@ -33,7 +33,6 @@ import labbench as lb
 
 lb._force_full_traceback(True)
 
-remap = {True: "ON", False: "OFF"}
 flag_start = False
 
 

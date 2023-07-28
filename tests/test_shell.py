@@ -31,7 +31,6 @@ import labbench as lb
 
 lb = importlib.reload(lb)
 
-remap = {True: "ON", False: "OFF"}
 flag_start = False
 
 

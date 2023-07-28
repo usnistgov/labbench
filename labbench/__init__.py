@@ -57,7 +57,7 @@ from ._backends import (
     set_default_visa_backend,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
-from ._device import Device, list_devices, trait_info
+from ._device import Device, list_devices, trait_info, mutate_trait
 from ._host import Email
 from ._rack import (
     Rack,
@@ -73,7 +73,6 @@ from ._traits import (
     Undefined,
     observe,
     unobserve,
-    mutate_trait,
     BackendPropertyAdapter,
     MessagePropertyAdapter,
 )

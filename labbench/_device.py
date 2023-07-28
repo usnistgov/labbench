@@ -34,6 +34,7 @@ import inspect
 import sys
 import traceback
 from warnings import warn
+from typing import Union
 
 from . import util
 from . import property as property_
@@ -266,7 +267,11 @@ class Device(HasTraits, util.Ownable):
     @util.hide_in_traceback
     def __init_subclass__(cls):
         super().__init_subclass__()
+        cls.__update_signature__()
 
+    @classmethod
+    @util.hide_in_traceback
+    def __update_signature__(cls):
         # Generate a signature for documentation and code autocomplete
         params = [
             inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
@@ -425,6 +430,51 @@ class Device(HasTraits, util.Ownable):
 
 
 Device.__init_subclass__()
+
+
+def mutate_trait(trait_or_name: Union[Trait, str], **trait_params):
+    """decorate a Device class to adjust the parameters of one of its traits.
+
+    This can be applied to inherited classes that need traits that vary the
+    parameters of a trait defined in a parent. Multiple decorators can be applied to the
+    same class definition.
+
+    Arguments:
+        trait_or_name: a Trait instance or the name of a trait in the class
+        trait_params: keyword arguments that are valid for the corresponding trait type
+
+    Examples:
+    ```
+        import labbench as lb
+
+        class BaseInstrument(lb.VISADevice):
+            center_frequency = lb.property.float(key='FREQ', label='Hz')
+
+        @lb.mutate_trait(BaseInstrument.center_frequency, min=10, max=50e9)
+        class Instrument50GHzModel(lb.VISADevice):
+            pass
+    ```
+    """
+    if isinstance(trait_or_name, Trait):
+        name = trait_or_name.name
+    elif isinstance(trait_or_name, str):
+        name = trait_or_name
+    else:
+        raise TypeError("trait_or_name must be an instance of Trait or str")
+
+    @util.hide_in_traceback
+    def apply_adjusted_trait(owner_cls: Device):
+        if not issubclass(owner_cls, Device):
+            raise TypeError("mutate_trait must decorate a Device class definition")
+        if name not in owner_cls.__dict__:
+            raise ValueError(f'no trait named "{name}" in {repr(owner_cls)}')
+
+        trait = getattr(owner_cls, name)
+        trait.update(**trait_params)
+        owner_cls.__update_signature__()
+        return owner_cls
+
+    return apply_adjusted_trait
 
 
 def trait_info(device: Device, name: str) -> dict:

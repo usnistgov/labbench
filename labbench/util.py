@@ -342,8 +342,8 @@ def copy_func(
     """returns a copy of func with specified attributes (following the inspect.wraps arguments).
 
     This is similar to wrapping `func` with `lambda *args, **kws: func(*args, **kws)`, except
-    the returned callable contains a duplicate of the bytecode in `func`. The idea that the
-    returned copy has fresh to __doc__, __signature__, etc., which can be changed without
+    the returned callable contains a duplicate of the bytecode in `func`. The idea is that the
+    returned copy has fresh to __doc__, __signature__, etc., which can be changed
     independently of `func`.
     """
 

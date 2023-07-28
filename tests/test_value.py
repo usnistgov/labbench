@@ -29,9 +29,6 @@ import importlib
 import sys
 import pandas as pd
 import numpy as np
-
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
 import labbench as lb
 
 lb._force_full_traceback(True)

@@ -1,5 +1,6 @@
 import labbench as lb
 
+
 class EmulatedVISAPropertyAdapter(lb.VISAPropertyAdapter):
     def get(self, device, key, trait):
         import numpy as np

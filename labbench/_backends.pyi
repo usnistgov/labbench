@@ -1,54 +1,88 @@
 import contextlib
 from . import util as util, value as value
 from ._device import Device as Device
-from ._traits import observe as observe
+from ._traits import (
+    BackendPropertyAdapter as BackendPropertyAdapter,
+    MessagePropertyAdapter as MessagePropertyAdapter,
+    mutate_trait as mutate_trait,
+    observe as observe,
+)
 from _typeshed import Incomplete
 from collections.abc import Generator
 
+
 class ShellBackend(Device):
-    def __init__(
-        self, resource: str = "str", binary_path: str = "NoneType", timeout: str = "int"
-    ): ...
+
+    def __init__(self, resource: str='str', binary_path: str='NoneType', timeout: str='int'):
+        ...
     binary_path: Incomplete
     timeout: Incomplete
     backend: Incomplete
 
-    def open(self) -> None: ...
+    def open(self) -> None:
+        ...
+
     def run(
         self,
         *argv,
-        pipe: bool = ...,
-        background: bool = ...,
-        check_return: bool = ...,
-        check_stderr: bool = ...,
-        respawn: bool = ...,
-        timeout: Incomplete | None = ...,
-    ): ...
-    def read_stdout(self, wait_for: int = ...): ...
-    def write_stdin(self, text) -> None: ...
-    def kill(self) -> None: ...
-    def running(self): ...
-    def clear_stdout(self) -> None: ...
-    def close(self) -> None: ...
+        pipe: bool=...,
+        background: bool=...,
+        check_return: bool=...,
+        check_stderr: bool=...,
+        respawn: bool=...,
+        timeout: Incomplete | None=...
+    ):
+        ...
+
+    def read_stdout(self, wait_for: int=...):
+        ...
+
+    def write_stdin(self, text) -> None:
+        ...
+
+    def kill(self) -> None:
+        ...
+
+    def running(self):
+        ...
+
+    def clear_stdout(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
 
 class DotNetDevice(Device):
-    def __init__(self, resource: str = "str"): ...
+
+    def __init__(self, resource: str='str'):
+        ...
     library: Incomplete
     dll_name: Incomplete
     dll: Incomplete
 
-    def open(self) -> None: ...
+    def open(self) -> None:
+        ...
+
+
+class LabviewSocketPropertyAdapter(MessagePropertyAdapter):
+
+    def set(self, device, key, value, trait) -> None:
+        ...
+
 
 class LabviewSocketInterface(Device):
+
     def __init__(
         self,
-        resource: str = "str",
-        tx_port: str = "int",
-        rx_port: str = "int",
-        delay: str = "int",
-        timeout: str = "int",
-        rx_buffer_size: str = "int",
-    ): ...
+        resource: str='str',
+        tx_port: str='int',
+        rx_port: str='int',
+        delay: str='int',
+        timeout: str='int',
+        rx_buffer_size: str='int'
+    ):
+        ...
     resource: Incomplete
     tx_port: Incomplete
     rx_port: Incomplete
@@ -57,26 +91,37 @@ class LabviewSocketInterface(Device):
     rx_buffer_size: Incomplete
     backend: Incomplete
 
-    def open(self) -> None: ...
-    def close(self) -> None: ...
-    def write(self, msg) -> None: ...
-    def set_key(self, key, value, name) -> None: ...
-    def read(self, convert_func: Incomplete | None = ...): ...
-    def clear(self) -> None: ...
+    def open(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
+    def write(self, msg) -> None:
+        ...
+
+    def read(self, convert_func: Incomplete | None=...):
+        ...
+
+    def clear(self) -> None:
+        ...
+
 
 class SerialDevice(Device):
+
     def __init__(
         self,
-        resource: str = "str",
-        timeout: str = "int",
-        write_termination: str = "bytes",
-        baud_rate: str = "int",
-        parity: str = "bytes",
-        stopbits: str = "int",
-        xonxoff: str = "bool",
-        rtscts: str = "bool",
-        dsrdtr: str = "bool",
-    ): ...
+        resource: str='str',
+        timeout: str='int',
+        write_termination: str='bytes',
+        baud_rate: str='int',
+        parity: str='bytes',
+        stopbits: str='int',
+        xonxoff: str='bool',
+        rtscts: str='bool',
+        dsrdtr: str='bool'
+    ):
+        ...
     resource: Incomplete
     timeout: Incomplete
     write_termination: Incomplete
@@ -88,107 +133,177 @@ class SerialDevice(Device):
     dsrdtr: Incomplete
     backend: Incomplete
 
-    def open(self) -> None: ...
-    def close(self) -> None: ...
+    def open(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
     @classmethod
-    def from_hwid(cls, hwid: Incomplete | None = ..., *args, **connection_params): ...
+    def from_hwid(cls, hwid: Incomplete | None=..., *args, **connection_params):
+        ...
+
     @staticmethod
-    def list_ports(hwid: Incomplete | None = ...): ...
+    def list_ports(hwid: Incomplete | None=...):
+        ...
+
 
 class SerialLoggingDevice(SerialDevice):
+
     def __init__(
         self,
-        resource: str = "str",
-        timeout: str = "int",
-        write_termination: str = "bytes",
-        baud_rate: str = "int",
-        parity: str = "bytes",
-        stopbits: str = "int",
-        xonxoff: str = "bool",
-        rtscts: str = "bool",
-        dsrdtr: str = "bool",
-        poll_rate: str = "float",
-        data_format: str = "bytes",
-        stop_timeout: str = "float",
-        max_queue_size: str = "int",
-    ): ...
+        resource: str='str',
+        timeout: str='int',
+        write_termination: str='bytes',
+        baud_rate: str='int',
+        parity: str='bytes',
+        stopbits: str='int',
+        xonxoff: str='bool',
+        rtscts: str='bool',
+        dsrdtr: str='bool',
+        poll_rate: str='float',
+        data_format: str='bytes',
+        stop_timeout: str='float',
+        max_queue_size: str='int'
+    ):
+        ...
     poll_rate: Incomplete
     data_format: Incomplete
     stop_timeout: Incomplete
     max_queue_size: Incomplete
 
-    def configure(self) -> None: ...
-    def start(self) -> None: ...
-    def stop(self) -> None: ...
-    def running(self): ...
-    def fetch(self): ...
-    def clear(self) -> None: ...
-    def close(self) -> None: ...
+    def configure(self) -> None:
+        ...
+
+    def start(self) -> None:
+        ...
+
+    def stop(self) -> None:
+        ...
+
+    def running(self):
+        ...
+
+    def fetch(self):
+        ...
+
+    def clear(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
 
 class TelnetDevice(Device):
-    def __init__(self, resource: str = "str", timeout: str = "int"): ...
+
+    def __init__(self, resource: str='str', timeout: str='int'):
+        ...
     resource: Incomplete
     timeout: Incomplete
     backend: Incomplete
 
-    def open(self) -> None: ...
-    def close(self) -> None: ...
+    def open(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
+
+class VISAPropertyAdapter(MessagePropertyAdapter):
+
+    def get(self, device: Device, scpi_key: str, trait: Incomplete | None=...):
+        ...
+
+    def set(self, device: Device, scpi_key: str, value, trait: Incomplete | None=...):
+        ...
+
 
 class VISADevice(Device):
+
     def __init__(
         self,
-        resource: str = "str",
-        read_termination: str = "str",
-        write_termination: str = "str",
-    ): ...
+        resource: str='str',
+        read_termination: str='str',
+        write_termination: str='str'
+    ):
+        ...
     read_termination: Incomplete
     write_termination: Incomplete
     identity: Incomplete
     options: Incomplete
 
-    def status_byte(self): ...
+    def status_byte(self):
+        ...
     backend: Incomplete
 
-    def open(self) -> None: ...
-    def close(self) -> None: ...
+    def open(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
     @classmethod
-    def list_resources(cls): ...
-    def write(self, msg: str): ...
-    def query(self, msg: str, timeout: Incomplete | None = ...) -> str: ...
+    def list_resources(cls):
+        ...
+
+    def write(self, msg: str):
+        ...
+
+    def query(self, msg: str, timeout: Incomplete | None=...) -> str:
+        ...
+
     def query_ascii_values(
         self,
         msg: str,
         type_,
-        separator: str = ...,
+        separator: str=...,
         container=...,
-        delay: Incomplete | None = ...,
-        timeout: Incomplete | None = ...,
-    ): ...
-    def get_key(self, scpi_key, name: Incomplete | None = ...): ...
-    def set_key(self, scpi_key, value, name: Incomplete | None = ...) -> None: ...
-    def wait(self) -> None: ...
-    def preset(self) -> None: ...
-    def overlap_and_block(
-        self, timeout: Incomplete | None = ..., quiet: bool = ...
-    ) -> Generator[None, None, None,]: ...
+        delay: Incomplete | None=...,
+        timeout: Incomplete | None=...
+    ):
+        ...
+
+    def wait(self) -> None:
+        ...
+
+    def preset(self) -> None:
+        ...
+
+    def overlap_and_block(self, timeout: Incomplete | None=..., quiet: bool=...) -> Generator[
+        None,
+        None,
+        None,
+    ]:
+        ...
+
 
     class suppress_timeout(contextlib.suppress):
-        def __exit__(self, exctype, excinst, exctb): ...
 
-def set_default_visa_backend(name) -> None: ...
+        def __exit__(self, exctype, excinst, exctb):
+            ...
+
+def set_default_visa_backend(name) -> None:
+    ...
+
 
 class SimulatedVISADevice(VISADevice):
+
     def __init__(
         self,
-        resource: str = "str",
-        read_termination: str = "str",
-        write_termination: str = "str",
-    ): ...
+        resource: str='str',
+        read_termination: str='str',
+        write_termination: str='str'
+    ):
+        ...
     yaml_source: Incomplete
 
+
 class Win32ComDevice(Device):
-    def __init__(self, resource: str = "str"): ...
+
+    def __init__(self, resource: str='str'):
+        ...
     com_object: Incomplete
     backend: Incomplete
 
-    def open(self): ...
+    def open(self):
+        ...

@@ -29,9 +29,6 @@ import importlib
 import sys
 import time
 from contextlib import contextmanager
-
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
 import labbench as lb
 import numpy as np
 

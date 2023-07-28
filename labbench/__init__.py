@@ -73,7 +73,7 @@ from ._traits import (
     Undefined,
     observe,
     unobserve,
-    adjust_child_trait,
+    mutate_trait,
     BackendPropertyAdapter,
     MessagePropertyAdapter,
 )

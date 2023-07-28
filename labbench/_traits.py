@@ -608,7 +608,7 @@ class Trait:
         #     raise AttributeError(
         #         f"{obj} does not have the parameter(s) {invalid_params}"
         #     )
-        
+
         # validate by trying to make a copy
         obj.copy(**attrs)
 
@@ -682,9 +682,7 @@ class MessagePropertyAdapter(BackendPropertyAdapter):
     in subclasses of MessagePropertyAdapter determines how the key is used to generate API calls.
     """
 
-    def __init__(
-        self, query_fmt="{key}?", write_fmt="{key} {value}", remap={}
-    ):
+    def __init__(self, query_fmt="{key}?", write_fmt="{key} {value}", remap={}):
         super().__init__()
 
         self.query_fmt = query_fmt
@@ -880,9 +878,9 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
         raise TypeError("object to observe must be an instance of Device")
 
 
-def adjust_child_trait(trait_or_name: Union[Trait, str], **trait_params):
-    """ decorate a Device or HasTraits class to adjust the parameters of one of its traits.
-  
+def mutate_trait(trait_or_name: Union[Trait, str], **trait_params):
+    """decorate a Device or HasTraits class to adjust the parameters of one of its traits.
+
     This can be applied to inherited classes that need traits that vary the
     parameters of a trait defined in a parent. Multiple decorators can be applied to the
     same class definition.
@@ -898,7 +896,7 @@ def adjust_child_trait(trait_or_name: Union[Trait, str], **trait_params):
         class BaseInstrument(lb.VISADevice):
             center_frequency = lb.property.float(key='FREQ', label='Hz')
 
-        @lb.adjust_child_trait(BaseInstrument.center_frequency, min=10, max=50e9)
+        @lb.mutate_trait(BaseInstrument.center_frequency, min=10, max=50e9)
         class Instrument50GHzModel(lb.VISADevice):
             pass
     ```
@@ -908,7 +906,7 @@ def adjust_child_trait(trait_or_name: Union[Trait, str], **trait_params):
     elif isinstance(trait_or_name, str):
         name = trait_or_name
     else:
-        raise TypeError('trait_or_name must be an instance of Trait or str')
+        raise TypeError("trait_or_name must be an instance of Trait or str")
 
     @util.hide_in_traceback
     def apply_adjusted_trait(owner_cls: HasTraits):

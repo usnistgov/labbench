@@ -42,8 +42,12 @@ import psutil
 from . import property as property_
 from . import util, value
 from ._device import Device
-from ._traits import (BackendPropertyAdapter, MessagePropertyAdapter,
-                      adjust_child_trait, observe)
+from ._traits import (
+    BackendPropertyAdapter,
+    MessagePropertyAdapter,
+    mutate_trait,
+    observe,
+)
 
 
 class ShellBackend(Device):
@@ -1267,7 +1271,7 @@ def set_default_visa_backend(name):
     VISADevice._rm.default = name
 
 
-@adjust_child_trait(VISADevice._rm, default='@sim')
+@mutate_trait(VISADevice._rm, default="@sim")
 class SimulatedVISADevice(VISADevice):
     """Base class for wrapping simulated VISA devices with pyvisa.
 
@@ -1298,7 +1302,7 @@ class SimulatedVISADevice(VISADevice):
         return rm
 
 
-@adjust_child_trait(Device.concurrency, default=True)
+@mutate_trait(Device.concurrency, default=True)
 class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 

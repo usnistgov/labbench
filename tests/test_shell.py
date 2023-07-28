@@ -27,9 +27,6 @@
 import unittest
 import importlib
 import sys
-
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
 import labbench as lb
 
 lb = importlib.reload(lb)

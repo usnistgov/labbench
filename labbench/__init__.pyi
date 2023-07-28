@@ -1,17 +1,14 @@
-from . import (
-    datareturn as datareturn,
-    property as property,
-    util as util,
-    value as value,
-)
+from . import datareturn as datareturn, property as property, util as util, value as value
 from ._backends import (
     DotNetDevice as DotNetDevice,
     LabviewSocketInterface as LabviewSocketInterface,
+    LabviewSocketPropertyAdapter as LabviewSocketPropertyAdapter,
     SerialDevice as SerialDevice,
     SerialLoggingDevice as SerialLoggingDevice,
     ShellBackend as ShellBackend,
     TelnetDevice as TelnetDevice,
     VISADevice as VISADevice,
+    VISAPropertyAdapter as VISAPropertyAdapter,
     Win32ComDevice as Win32ComDevice,
     set_default_visa_backend as set_default_visa_backend,
 )
@@ -22,11 +19,7 @@ from ._data import (
     read as read,
     read_relational as read_relational,
 )
-from ._device import (
-    Device as Device,
-    list_devices as list_devices,
-    trait_info as trait_info,
-)
+from ._device import Device as Device, list_devices as list_devices, trait_info as trait_info
 from ._host import Email as Email
 from ._rack import (
     Rack as Rack,
@@ -38,7 +31,14 @@ from ._rack import (
     rack_kwargs_template as rack_kwargs_template,
 )
 from ._serialize import dump_rack as dump_rack, load_rack as load_rack
-from ._traits import Undefined as Undefined, observe as observe, unobserve as unobserve
+from ._traits import (
+    BackendPropertyAdapter as BackendPropertyAdapter,
+    MessagePropertyAdapter as MessagePropertyAdapter,
+    Undefined as Undefined,
+    mutate_trait as mutate_trait,
+    observe as observe,
+    unobserve as unobserve,
+)
 from .util import (
     Call as Call,
     concurrently as concurrently,

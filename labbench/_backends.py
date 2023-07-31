@@ -1068,7 +1068,7 @@ class VISADevice(Device):
         if self.open_timeout is not None:
             kwargs.update(open_timeout=int(self.open_timeout * 1000))
 
-        if self.resource not in ('', None):
+        if self.resource not in ("", None):
             pass
         elif self.resource_pattern is not None:
             pattern = re.compile(self.resource_pattern, flags=re.IGNORECASE)
@@ -1087,6 +1087,8 @@ class VISADevice(Device):
             else:
                 msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.resource_pattern}"'
                 raise IOError(msg)
+        else:
+            raise ValueError(f'specify the resource or resource_pattern attributes to open {repr(self)} connection')
 
         self.backend = self._get_rm().open_resource(
             self.resource,

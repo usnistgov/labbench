@@ -28,6 +28,7 @@ import contextlib
 import importlib
 import inspect
 import os
+import re
 import select
 import socket
 import subprocess as sp
@@ -996,11 +997,18 @@ class VISADevice(Device):
     )
 
     open_timeout = value.float(
-        None, cache=True, allow_none=True, help="timeout for opening a connection to the instrument", label="s"
+        None,
+        cache=True,
+        allow_none=True,
+        help="timeout for opening a connection to the instrument",
+        label="s",
     )
 
     resource_pattern = value.str(
-        None, allow_none=True, cache=True, help="pattern to match in resource string for automatic connection"
+        None,
+        allow_none=True,
+        cache=True,
+        help="pattern to match in resource string for automatic connection",
     )
 
     timeout = value.float(
@@ -1051,7 +1059,7 @@ class VISADevice(Device):
         to be invoked.
         """
         from pyvisa import constants
-        
+
         self._opc = False
 
         kwargs = {}
@@ -1060,29 +1068,31 @@ class VISADevice(Device):
         if self.open_timeout is not None:
             kwargs.update(open_timeout=int(self.open_timeout * 1000))
 
-        if self.resource is not None:
-            resource = self.resource
+        if self.resource not in ('', None):
+            pass
         elif self.resource_pattern is not None:
+            pattern = re.compile(self.resource_pattern, flags=re.IGNORECASE)
+
             identities = {
                 res: idn
                 for res, idn in probe_visa_identities().items()
-                if self.resource_pattern.lower() in idn.lower()
+                if re.match(pattern, idn) is not None
             }
 
             if len(identities) == 0:
                 msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.resource_pattern}"'
                 raise IOError(msg)
             elif len(identities) == 1:
-                resource = list(identities.keys())[0]
+                self.resource = list(identities.keys())[0]
             else:
                 msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.resource_pattern}"'
                 raise IOError(msg)
 
         self.backend = self._get_rm().open_resource(
-            resource,
+            self.resource,
             read_termination=self.read_termination,
             write_termination=self.write_termination,
-            **kwargs
+            **kwargs,
         )
 
     def close(self):
@@ -1299,7 +1309,7 @@ def set_default_visa_backend(name):
 
 @util.TTLCache(timeout=3)
 @util.SingleThreadProducer
-def probe_visa_identities(skip_interfaces=['ASRL']):
+def probe_visa_identities(skip_interfaces=["ASRL"]):
     import pyvisa
 
     def check_idn(device: VISADevice):
@@ -1313,7 +1323,7 @@ def probe_visa_identities(skip_interfaces=['ASRL']):
             if name.lower().startswith(iface.lower()):
                 return False
         return True
-    
+
     devices = {
         res: VISADevice(res, open_timeout=0.25)
         for res in VISADevice.list_resources()

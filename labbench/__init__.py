@@ -55,7 +55,7 @@ from ._backends import (
     LabviewSocketPropertyAdapter,
     VISAPropertyAdapter,
     set_default_visa_backend,
-    probe_visa_identities
+    probe_visa_identities,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
 from ._device import Device, list_devices, trait_info, mutate_trait

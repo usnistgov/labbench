@@ -1553,7 +1553,7 @@ class TTLCache:
                 ret = self.last_value
 
             return ret
-        
+
         return wrapper_decorator
 
 

@@ -41,11 +41,9 @@ import psutil
 
 from . import property as property_
 from . import util, value
-from ._device import Device
+from ._device import Device, mutate_trait
 from ._traits import (
-    BackendPropertyAdapter,
     MessagePropertyAdapter,
-    mutate_trait,
     observe,
 )
 
@@ -56,7 +54,7 @@ class ShellBackend(Device):
     Data can be captured from standard output, and standard error pipes, and
     optionally run as a background thread.
 
-    After opening, `backend` is `None`. On a call to execute(), `backend`
+    After opening, `backend` is `None`. On a call to run(background=True), `backend`
     becomes is a subprocess instance. When EOF is reached on the executable's
     stdout, the backend resets to None.
 
@@ -73,21 +71,10 @@ class ShellBackend(Device):
     timeout = value.float(
         default=1,
         min=0,
-        help="wait time after close before killing the process",
+        help="wait time after close before killing background processes",
         label="s",
         cache=True,
     )
-
-    # flags = value.dict({}, help="flag map, e.g., dict(force='-f') to connect the class value trait 'force' to '-f'")
-
-    # arguments = value.list(
-    #     default=[], help='list of command line arguments to pass into the executable'
-    # )
-    #
-    # arguments_min = value.int(
-    #     default=0, min=0,
-    #     sets=False, help='minimum extra command line arguments needed to run'
-    # )
 
     def open(self):
         """The :meth:`open` method implements opening in the
@@ -1008,6 +995,18 @@ class VISADevice(Device):
         "\n", cache=True, help="end of line string to send after writes"
     )
 
+    open_timeout = value.float(
+        None, cache=True, allow_none=True, help="timeout for opening a connection to the instrument", label="s"
+    )
+
+    resource_pattern = value.str(
+        None, allow_none=True, cache=True, help="pattern to match in resource string for automatic connection"
+    )
+
+    timeout = value.float(
+        None, cache=True, allow_none=True, help="message response timeout", label="s"
+    )
+
     # Common VISA properties
     identity = property_.str(
         key="*IDN",
@@ -1051,12 +1050,39 @@ class VISADevice(Device):
         this is called automatically and does not need
         to be invoked.
         """
+        from pyvisa import constants
+        
         self._opc = False
 
+        kwargs = {}
+        if self.timeout is not None:
+            kwargs.update(timeout=int(self.timeout * 1000))
+        if self.open_timeout is not None:
+            kwargs.update(open_timeout=int(self.open_timeout * 1000))
+
+        if self.resource is not None:
+            resource = self.resource
+        elif self.resource_pattern is not None:
+            identities = {
+                res: idn
+                for res, idn in probe_visa_identities().items()
+                if self.resource_pattern.lower() in idn.lower()
+            }
+
+            if len(identities) == 0:
+                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.resource_pattern}"'
+                raise IOError(msg)
+            elif len(identities) == 1:
+                resource = list(identities.keys())[0]
+            else:
+                msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.resource_pattern}"'
+                raise IOError(msg)
+
         self.backend = self._get_rm().open_resource(
-            self.resource,
+            resource,
             read_termination=self.read_termination,
             write_termination=self.write_termination,
+            **kwargs
         )
 
     def close(self):
@@ -1269,6 +1295,41 @@ def set_default_visa_backend(name):
             f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}"
         )
     VISADevice._rm.default = name
+
+
+@util.TTLCache(timeout=3)
+@util.SingleThreadProducer
+def probe_visa_identities(skip_interfaces=['ASRL']):
+    import pyvisa
+
+    def check_idn(device: VISADevice):
+        try:
+            return device.identity
+        except pyvisa.errors.VisaIOError:
+            return None
+
+    def keep_interface(name):
+        for iface in skip_interfaces:
+            if name.lower().startswith(iface.lower()):
+                return False
+        return True
+    
+    devices = {
+        res: VISADevice(res, open_timeout=0.25)
+        for res in VISADevice.list_resources()
+        if keep_interface(res)
+    }
+
+    with util.concurrently(*list(devices.values()), catch=True):
+        calls = [
+            util.Call(check_idn, device).rename(res)
+            for res, device in devices.items()
+            if device.isopen
+        ]
+
+        identities = util.concurrently(*calls, catch=True)
+
+    return identities
 
 
 @mutate_trait(VISADevice._rm, default="@sim")

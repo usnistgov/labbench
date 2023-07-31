@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - compartmentalize backend property implementation into `BackendPropertyAdapter`, a backend-specific decorator
 - implement `VISAPropertyAdapter` and `LabviewSocketPropertyAdapter`
 - `adjust_child_trait` allows the adjustment of arbitrary child traits in `Device` subclasses
+- support for pattern-based automatic connection to VISA instruments with new `VISADevice.resource_pattern` value trait
 
 ### Changed
 - remove the `remap` keyword from `Trait` (now implemented by `BackendPropertyAdapter`, for backends that support it)

@@ -360,7 +360,7 @@ class Trait:
 
             elif self.key is not None:
                 # otherwise, use the owner's set_key
-                owner._key.set(owner, self.key, value, self)
+                owner._property_adapter.set(owner, self.key, value, self)
 
             else:
                 objname = owner.__class__.__qualname__ + "." + self.name
@@ -378,7 +378,7 @@ class Trait:
     def __get__(self, owner, owner_cls=None):
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
-        decorator function or the owner's get_key method to retrieve
+        decorator function or the owner's property adapter method to retrieve
         the result.
 
         Returns:
@@ -431,7 +431,7 @@ class Trait:
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
-            value = owner._key.get(owner, self.key, self)
+            value = owner._property_adapter.get(owner, self.key, self)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -650,7 +650,7 @@ class BackendPropertyAdapter:
 
     def __call__(self, owner_cls):
         # do the decorating
-        owner_cls._keys = self
+        owner_cls._property_adapter = self
         return owner_cls
 
     def get(self, trait_owner, key, trait=None):
@@ -702,7 +702,7 @@ class MessagePropertyAdapter(BackendPropertyAdapter):
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
-    _keys = BackendPropertyAdapter()
+    _property_adapter = BackendPropertyAdapter()
 
     def __init__(self, **values):
         # who is informed on new get or set values
@@ -876,50 +876,6 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
         obj.__notify_list__[handler] = wrapped
     else:
         raise TypeError("object to observe must be an instance of Device")
-
-
-def mutate_trait(trait_or_name: Union[Trait, str], **trait_params):
-    """decorate a Device or HasTraits class to adjust the parameters of one of its traits.
-
-    This can be applied to inherited classes that need traits that vary the
-    parameters of a trait defined in a parent. Multiple decorators can be applied to the
-    same class definition.
-
-    Arguments:
-        trait_or_name: a Trait instance or the name of a trait in the class
-        trait_params: keyword arguments that are valid for the corresponding trait type
-
-    Examples:
-    ```
-        import labbench as lb
-
-        class BaseInstrument(lb.VISADevice):
-            center_frequency = lb.property.float(key='FREQ', label='Hz')
-
-        @lb.mutate_trait(BaseInstrument.center_frequency, min=10, max=50e9)
-        class Instrument50GHzModel(lb.VISADevice):
-            pass
-    ```
-    """
-    if isinstance(trait_or_name, Trait):
-        name = trait_or_name.name
-    elif isinstance(trait_or_name, str):
-        name = trait_or_name
-    else:
-        raise TypeError("trait_or_name must be an instance of Trait or str")
-
-    @util.hide_in_traceback
-    def apply_adjusted_trait(owner_cls: HasTraits):
-        if not issubclass(owner_cls, HasTraits):
-            raise TypeError("mutate_trait must decorate a class defined with Traits")
-        if name not in owner_cls.__dict__:
-            raise ValueError(f'no trait named "{name}" in {repr(owner_cls)}')
-
-        trait = getattr(owner_cls, name)
-        trait.update(**trait_params)
-        return owner_cls
-
-    return apply_adjusted_trait
 
 
 def unobserve(obj, handler):

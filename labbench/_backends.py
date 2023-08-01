@@ -1241,7 +1241,7 @@ class VISADevice(Device):
         return rm
 
 
-def visa_list_resources(resourcemanager: str=None):
+def visa_list_resources(resourcemanager: str = None):
     """autodetects and returns a list of valid resource strings"""
     import pyvisa
 

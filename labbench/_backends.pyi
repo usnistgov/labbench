@@ -61,12 +61,6 @@ class DotNetDevice(Device):
         ...
 
 
-class LabviewSocketPropertyAdapter(MessagePropertyAdapter):
-
-    def set(self, device, key, value, trait) -> None:
-        ...
-
-
 class LabviewSocketInterface(Device):
 
     def __init__(
@@ -202,15 +196,6 @@ class TelnetDevice(Device):
         ...
 
     def close(self) -> None:
-        ...
-
-
-class VISAPropertyAdapter(MessagePropertyAdapter):
-
-    def get(self, device: Device, scpi_key: str, trait: Incomplete | None=...):
-        ...
-
-    def set(self, device: Device, scpi_key: str, value, trait: Incomplete | None=...):
         ...
 
 

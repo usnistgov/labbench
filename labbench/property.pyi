@@ -1,4 +1,5 @@
 from . import _traits
+from _typeshed import Incomplete
 
 
 class bool(_traits.Bool):
@@ -191,3 +192,41 @@ class NetworkAddress(_traits.NetworkAddress):
     ):
         ...
     ...
+
+
+class message_adapter(_traits.BackendPropertyAdapter):
+    query_fmt: Incomplete
+    write_fmt: Incomplete
+    write_func: Incomplete
+    query_func: Incomplete
+    value_map: Incomplete
+    message_map: Incomplete
+
+    def __init__(
+        self,
+        query_fmt: Incomplete | None=...,
+        write_fmt: Incomplete | None=...,
+        write_func: Incomplete | None=...,
+        query_func: Incomplete | None=...,
+        remap=...
+    ) -> None:
+        ...
+
+    def get(self, device: _traits.HasTraits, scpi_key: str, trait: Incomplete | None=...):
+        ...
+
+    def set(self, device: _traits.HasTraits, scpi_key: str, value, trait: Incomplete | None=...):
+        ...
+
+
+class visa_adapter(message_adapter):
+
+    def __init__(
+        self,
+        query_fmt: str=...,
+        write_fmt: str=...,
+        write_func: str=...,
+        query_func: str=...,
+        remap=...
+    ) -> None:
+        ...

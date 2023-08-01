@@ -52,8 +52,6 @@ from ._backends import (
     TelnetDevice,
     VISADevice,
     Win32ComDevice,
-    LabviewSocketPropertyAdapter,
-    VISAPropertyAdapter,
     set_default_visa_backend,
     probe_visa_identities,
 )

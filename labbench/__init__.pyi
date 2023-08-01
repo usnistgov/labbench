@@ -2,13 +2,11 @@ from . import datareturn as datareturn, property as property, util as util, valu
 from ._backends import (
     DotNetDevice as DotNetDevice,
     LabviewSocketInterface as LabviewSocketInterface,
-    LabviewSocketPropertyAdapter as LabviewSocketPropertyAdapter,
     SerialDevice as SerialDevice,
     SerialLoggingDevice as SerialLoggingDevice,
     ShellBackend as ShellBackend,
     TelnetDevice as TelnetDevice,
     VISADevice as VISADevice,
-    VISAPropertyAdapter as VISAPropertyAdapter,
     Win32ComDevice as Win32ComDevice,
     probe_visa_identities as probe_visa_identities,
     set_default_visa_backend as set_default_visa_backend,

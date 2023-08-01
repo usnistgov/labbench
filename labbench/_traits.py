@@ -642,10 +642,14 @@ class Trait:
 
         if default is not Undefined:
             if self.role != self.ROLE_VALUE:
-                raise ValueError("non-keyword arguments are allowed only for value traits")
-            if 'default' in trait_params.keys():
-                raise ValueError('"default" keyword argument conflicts with default value passed as non-keyword')
-            trait_params['default'] = default
+                raise ValueError(
+                    "non-keyword arguments are allowed only for value traits"
+                )
+            if "default" in trait_params.keys():
+                raise ValueError(
+                    '"default" keyword argument conflicts with default value passed as non-keyword'
+                )
+            trait_params["default"] = default
 
         def apply_adjusted_trait(owner_cls: HasTraits):
             if not issubclass(owner_cls, HasTraits):

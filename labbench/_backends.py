@@ -561,13 +561,7 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
-class LabviewSocketPropertyAdapter(MessagePropertyAdapter):
-    def set(self, device, key, value, trait):
-        """Send a formatted command string to implement property trait control."""
-        device.write(f"{key} {value}")
-
-
-@LabviewSocketPropertyAdapter
+@property_.message_adapter(write_fmt='{key} {value}', write_func='write')
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
@@ -904,59 +898,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-class VISAPropertyAdapter(MessagePropertyAdapter):
-    """Device class decorator that automates SCPI command string interactions for labbench properties.
-
-    Example usage:
-
-    ```python
-        import labbench as lb
-
-        @lb.VISAPropertyAdapter(query_fmt='{key}?', write_fmt='{key} {value}')
-        class MyDevice(lb.VISADevice):
-            pass
-    ```
-
-    This causes access to property traits defined with 'key=' to interact with the
-    VISA instrument. By default, messages in VISADevice objects trigger queries
-    with the `'{key}?'` format, and writes formatted as f'{key} {value}'.
-    """
-
-    def get(self, device: Device, scpi_key: str, trait=None):
-        """queries a parameter named `scpi_key` by sending an SCPI message string.
-
-        The command message string is formatted as f'{scpi_key}?'.
-        This is automatically called in wrapper objects on accesses to property traits that
-        defined with 'key=' (which then also cast to a pythonic type).
-
-        Arguments:
-            key (str): the name of the parameter to set
-            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
-
-        Returns:
-            response (str)
-        """
-        value_str = device.query(self.query_fmt.format(key=scpi_key)).rstrip()
-        return self.message_map.get(value_str, value_str)
-
-    def set(self, device: Device, scpi_key: str, value, trait=None):
-        """writes an SCPI message to set a parameter with a name key
-        to `value`.
-
-        The command message string is formatted as f'{scpi_key} {value}'. This
-        This is automatically called on assignment to property traits that
-        are defined with 'key='.
-
-        Arguments:
-            scpi_key (str): the name of the parameter to set
-            value (str): value to assign
-            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
-        """
-        value_str = self.value_map.get(value, value)
-        device.write(self.write_fmt.format(key=scpi_key, value=value_str))
-
-
-@VISAPropertyAdapter(query_fmt="{key}?", write_fmt="{key} {value}")
+@property_.visa_adapter(query_fmt="{key}?", write_fmt="{key} {value}")
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
 

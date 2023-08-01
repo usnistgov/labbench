@@ -58,7 +58,7 @@ from ._backends import (
     probe_visa_identities,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
-from ._device import Device, list_devices, trait_info, mutate_trait
+from ._device import Device, list_devices, trait_info
 from ._host import Email
 from ._rack import (
     Rack,

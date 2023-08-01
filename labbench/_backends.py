@@ -37,12 +37,13 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
+from typing import Dict
 
 import psutil
 
 from . import property as property_
 from . import util, value
-from ._device import Device, mutate_trait
+from ._device import Device
 from ._traits import (
     MessagePropertyAdapter,
     observe,
@@ -1004,11 +1005,11 @@ class VISADevice(Device):
         label="s",
     )
 
-    resource_pattern = value.str(
+    identity_pattern = value.str(
         None,
         allow_none=True,
         cache=True,
-        help="pattern to match in resource string for automatic connection",
+        help="identity regex pattern to match for automatic connection",
     )
 
     timeout = value.float(
@@ -1070,8 +1071,8 @@ class VISADevice(Device):
 
         if self.resource not in ("", None):
             pass
-        elif self.resource_pattern is not None:
-            pattern = re.compile(self.resource_pattern, flags=re.IGNORECASE)
+        elif self.identity_pattern is not None:
+            pattern = re.compile(self.identity_pattern, flags=re.IGNORECASE)
 
             identities = {
                 res: idn
@@ -1080,15 +1081,17 @@ class VISADevice(Device):
             }
 
             if len(identities) == 0:
-                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.resource_pattern}"'
+                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.identity_pattern}"'
                 raise IOError(msg)
             elif len(identities) == 1:
                 self.resource = list(identities.keys())[0]
             else:
-                msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.resource_pattern}"'
+                msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.identity_pattern}"'
                 raise IOError(msg)
         else:
-            raise ValueError(f'specify the resource or resource_pattern attributes to open {repr(self)} connection')
+            raise ValueError(
+                f"specify the resource or identity_pattern attributes to open {repr(self)} connection"
+            )
 
         self.backend = self._get_rm().open_resource(
             self.resource,
@@ -1311,7 +1314,7 @@ def set_default_visa_backend(name):
 
 @util.TTLCache(timeout=3)
 @util.SingleThreadProducer
-def probe_visa_identities(skip_interfaces=["ASRL"]):
+def probe_visa_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
     import pyvisa
 
     def check_idn(device: VISADevice):
@@ -1344,7 +1347,7 @@ def probe_visa_identities(skip_interfaces=["ASRL"]):
     return identities
 
 
-@mutate_trait(VISADevice._rm, default="@sim")
+@VISADevice._rm.adopt("@sim")
 class SimulatedVISADevice(VISADevice):
     """Base class for wrapping simulated VISA devices with pyvisa.
 
@@ -1375,7 +1378,7 @@ class SimulatedVISADevice(VISADevice):
         return rm
 
 
-@mutate_trait(Device.concurrency, default=True)
+@Device.concurrency.adopt(True)
 class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 

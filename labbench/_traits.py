@@ -616,6 +616,50 @@ class Trait:
         obj.__dict__.update(attrs)
         return obj
 
+    def adopt(self, default=Undefined, /, **trait_params):
+        """decorates a Device subclass to adjust parameters of this trait name.
+
+        This can be applied to inherited classes that need traits that vary the
+        parameters of a trait defined in a parent. Multiple decorators can be applied to the
+        same class definition.
+
+        Arguments:
+            default: the default value (for value traits only)
+            trait_params: keyword arguments that are valid for the corresponding trait type
+
+        Examples:
+        ```
+            import labbench as lb
+
+            class BaseInstrument(lb.VISADevice):
+                center_frequency = lb.property.float(key='FREQ', label='Hz')
+
+            @BaseInstrument.center_frequency.adopt(min=10, max=50e9)
+            class Instrument50GHzModel(lb.VISADevice):
+                pass
+        ```
+        """
+
+        if default is not Undefined:
+            if self.role != self.ROLE_VALUE:
+                raise ValueError("non-keyword arguments are allowed only for value traits")
+            if 'default' in trait_params.keys():
+                raise ValueError('"default" keyword argument conflicts with default value passed as non-keyword')
+            trait_params['default'] = default
+
+        def apply_adjusted_trait(owner_cls: HasTraits):
+            if not issubclass(owner_cls, HasTraits):
+                raise TypeError("adopt must decorate a Device class definition")
+            if self.name not in owner_cls.__dict__:
+                raise ValueError(f'no trait "{self.name}" in {repr(owner_cls)}')
+
+            trait = getattr(owner_cls, self.name)
+            trait.update(**trait_params)
+            owner_cls.__update_signature__()
+            return owner_cls
+
+        return apply_adjusted_trait
+
 
 Trait.__init_subclass__()
 

@@ -1018,7 +1018,7 @@ class VISADevice(Device):
 
             identities = {
                 res: idn
-                for res, idn in probe_visa_identities().items()
+                for res, idn in visa_list_identities().items()
                 if re.match(pattern, idn) is not None
             }
 
@@ -1068,11 +1068,6 @@ class VISADevice(Device):
 
         finally:
             self.backend.close()
-
-    @classmethod
-    def list_resources(cls):
-        """autodetects and returns a list of valid resource strings"""
-        return cls()._get_rm().list_resources()
 
     def write(self, msg: str):
         """sends an SCPI message to the device.
@@ -1246,17 +1241,32 @@ class VISADevice(Device):
         return rm
 
 
-def set_default_visa_backend(name):
-    if name not in VISADevice._rm.only:
-        raise ValueError(
-            f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}"
-        )
-    VISADevice._rm.default = name
+def visa_list_resources(resourcemanager: str=None):
+    """autodetects and returns a list of valid resource strings"""
+    import pyvisa
+
+    if resourcemanager is None:
+        rm = VISADevice()._get_rm()
+    else:
+        rm = pyvisa.ResourceManager(resourcemanager)
+
+    return rm.list_resources()
+
+
+def visa_default_resource_manager(name=None):
+    if name is None:
+        return VISADevice._rm.default
+    else:
+        if name not in VISADevice._rm.only:
+            raise ValueError(
+                f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}"
+            )
+        VISADevice._rm.default = name
 
 
 @util.TTLCache(timeout=3)
 @util.SingleThreadProducer
-def probe_visa_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
+def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
     import pyvisa
 
     def check_idn(device: VISADevice):

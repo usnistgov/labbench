@@ -1,9 +1,4 @@
-from . import (
-    datareturn as datareturn,
-    property as property,
-    util as util,
-    value as value,
-)
+from . import datareturn as datareturn, property as property, util as util, value as value
 from ._backends import (
     DotNetDevice as DotNetDevice,
     LabviewSocketInterface as LabviewSocketInterface,
@@ -13,8 +8,9 @@ from ._backends import (
     TelnetDevice as TelnetDevice,
     VISADevice as VISADevice,
     Win32ComDevice as Win32ComDevice,
-    probe_visa_identities as probe_visa_identities,
-    set_default_visa_backend as set_default_visa_backend,
+    visa_default_resource_manager as visa_default_resource_manager,
+    visa_list_identities as visa_list_identities,
+    visa_list_resources as visa_list_resources,
 )
 from ._data import (
     CSVLogger as CSVLogger,
@@ -23,11 +19,7 @@ from ._data import (
     read as read,
     read_relational as read_relational,
 )
-from ._device import (
-    Device as Device,
-    list_devices as list_devices,
-    trait_info as trait_info,
-)
+from ._device import Device as Device, list_devices as list_devices, trait_info as trait_info
 from ._host import Email as Email
 from ._rack import (
     Rack as Rack,

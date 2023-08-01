@@ -26,6 +26,7 @@
 
 from . import _traits
 
+
 class message_adapter(_traits.BackendPropertyAdapter):
     """Device class decorator that implements automatic API that triggers API messages for labbench properties.
 
@@ -59,7 +60,6 @@ class message_adapter(_traits.BackendPropertyAdapter):
         self.write_fmt = write_fmt
         self.write_func = write_func
         self.query_func = query_func
-        
 
         # ensure str type for messages; keys can be arbitrary python type
         if not all(isinstance(v, str) for v in remap.values()):
@@ -68,7 +68,7 @@ class message_adapter(_traits.BackendPropertyAdapter):
 
         if len(remap) > 0:
             # create the reverse mapping and ensure all values are unique
-            self.message_map = __builtins__['dict'](zip(remap.values(), remap.keys()))
+            self.message_map = __builtins__["dict"](zip(remap.values(), remap.keys()))
         else:
             self.message_map = {}
         if len(self.message_map) != len(self.value_map):

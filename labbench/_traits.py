@@ -360,7 +360,7 @@ class Trait:
 
             elif self.key is not None:
                 # otherwise, use the owner's set_key
-                owner._property_adapter.set(owner, self.key, value, self)
+                owner._property_keying.set(owner, self.key, value, self)
 
             else:
                 objname = owner.__class__.__qualname__ + "." + self.name
@@ -431,7 +431,7 @@ class Trait:
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
-            value = owner._property_adapter.get(owner, self.key, self)
+            value = owner._property_keying.get(owner, self.key, self)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -681,7 +681,7 @@ def hold_trait_notifications(owner):
     owner.__notify__ = original
 
 
-class BackendPropertyAdapter:
+class PropertyKeyingBase:
     def __new__(cls, *args, **kws):
         """set up use as a class decorator"""
 
@@ -698,7 +698,7 @@ class BackendPropertyAdapter:
 
     def __call__(self, owner_cls):
         # do the decorating
-        owner_cls._property_adapter = self
+        owner_cls._property_keying = self
         return owner_cls
 
     def get(self, trait_owner, key, trait=None):
@@ -712,45 +712,10 @@ class BackendPropertyAdapter:
         )
 
 
-class MessagePropertyAdapter(BackendPropertyAdapter):
-    """Device class decorator that implements automatic API that triggers API messages for labbench properties.
-
-    Example usage:
-
-    ```python
-        import labbench as lb
-
-        @lb.MessagePropertyAdapter(query_fmt='{key}?', write_fmt='{key} {value}')
-        class MyDevice(lb.Device):
-            pass
-    ```
-
-    Decorated classes connect traits that are defined with the `key` keyword to trigger
-    backend API calls based on the key. The implementation of the `set` and `get` methods
-    in subclasses of MessagePropertyAdapter determines how the key is used to generate API calls.
-    """
-
-    def __init__(self, query_fmt="{key}?", write_fmt="{key} {value}", remap={}):
-        super().__init__()
-
-        self.query_fmt = query_fmt
-        self.write_fmt = write_fmt
-
-        # ensure str type for messages; keys can be arbitrary python type
-        if not all(isinstance(v, str) for v in remap.values()):
-            raise TypeError("all values in remap dict must have type str")
-        self.value_map = remap
-
-        # create the reverse mapping and ensure all values are unique
-        self.message_map = dict(zip(remap.values(), remap.items()))
-        if len(self.message_map) != len(self.value_map):
-            raise ValueError("'remap' has duplicate values")
-
-
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
-    _property_adapter = BackendPropertyAdapter()
+    _property_keying = PropertyKeyingBase()
 
     def __init__(self, **values):
         # who is informed on new get or set values

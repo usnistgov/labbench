@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.28 - unreleased]
 ### Added
-- compartmentalize backend property implementation into `BackendPropertyAdapter`, a backend-specific decorator
-- implement `property.visa_adapter` and `property.message_adapter`
+- compartmentalize backend property implementation into `PropertyKeyingBase`, a backend-specific decorator
+- implement `property.visa_keying` and `property.message_keying`
 - `Trait.adopt` decorator adjusts parameters of inherited traits in `Device` subclasses
 - support for pattern-based automatic connection to VISA instruments with new `VISADevice.identity_pattern` value trait
 - `visa_list_identities` lists the '*IDN?' response for all devices that are enumerated by `visa_list_resources`
@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - support has been removed for adjusting `Device` child class trait default values by passing keyword arguments (use `Trait.adopt` decorators instead)
 
 ### Removed
-- `Trait.remap` (now implemented by `BackendPropertyAdapter`, for backends that support it)
+- `Trait.remap` (now implemented by `PropertyKeyingBase`, for backends that support it)
 - `VISADevice.list_resources` (now a separate function `visa_list_resources`)
 
 ## [0.27 - 2023-06-16]

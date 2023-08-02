@@ -1,7 +1,7 @@
 from . import _traits
 from _typeshed import Incomplete
 
-class message_adapter(_traits.BackendPropertyAdapter):
+class message_keying(_traits.PropertyKeyingBase):
     query_fmt: Incomplete
     write_fmt: Incomplete
     write_func: Incomplete
@@ -28,7 +28,7 @@ class message_adapter(_traits.BackendPropertyAdapter):
         trait: Incomplete | None = ...,
     ): ...
 
-class visa_adapter(message_adapter):
+class visa_keying(message_keying):
     def __init__(
         self,
         query_fmt: str = ...,

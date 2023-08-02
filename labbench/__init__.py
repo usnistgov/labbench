@@ -73,7 +73,7 @@ from ._traits import (
     Undefined,
     observe,
     unobserve,
-    BackendPropertyAdapter,
+    PropertyKeyingBase,
     MessagePropertyAdapter,
 )
 from ._version import __version__

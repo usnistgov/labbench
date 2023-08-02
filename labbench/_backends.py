@@ -561,7 +561,7 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
-@property_.message_adapter(write_fmt="{key} {value}", write_func="write")
+@property_.message_keying(write_fmt="{key} {value}", write_func="write")
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
@@ -898,7 +898,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-@property_.visa_adapter(query_fmt="{key}?", write_fmt="{key} {value}")
+@property_.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}")
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
 

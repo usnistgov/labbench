@@ -27,7 +27,7 @@
 from . import _traits
 
 
-class message_adapter(_traits.BackendPropertyAdapter):
+class message_keying(_traits.PropertyKeyingBase):
     """Device class decorator that implements automatic API that triggers API messages for labbench properties.
 
     Example usage:
@@ -35,7 +35,7 @@ class message_adapter(_traits.BackendPropertyAdapter):
     ```python
         import labbench as lb
 
-        @lb.message_adapter(query_fmt='{key}?', write_fmt='{key} {value}', query_func='get', write_func='set')
+        @lb.message_keying(query_fmt='{key}?', write_fmt='{key} {value}', query_func='get', write_func='set')
         class MyDevice(lb.Device):
             def set(self, set_msg: str):
                 # do set
@@ -119,7 +119,7 @@ class message_adapter(_traits.BackendPropertyAdapter):
         write_func(self.write_fmt.format(key=scpi_key, value=value_str))
 
 
-class visa_adapter(message_adapter):
+class visa_keying(message_keying):
     """Device class decorator that automates SCPI command string interactions for labbench properties.
 
     Example usage:
@@ -127,7 +127,7 @@ class visa_adapter(message_adapter):
     ```python
         import labbench as lb
 
-        @lb.property.visa_adapter(query_fmt='{key}?', write_fmt='{key} {value}')
+        @lb.property.visa_keying(query_fmt='{key}?', write_fmt='{key} {value}')
         class MyDevice(lb.VISADevice):
             pass
     ```

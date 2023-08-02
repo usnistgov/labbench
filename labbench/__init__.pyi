@@ -41,7 +41,7 @@ from ._rack import (
 )
 from ._serialize import dump_rack as dump_rack, load_rack as load_rack
 from ._traits import (
-    BackendPropertyAdapter as BackendPropertyAdapter,
+    PropertyKeyingBase as PropertyKeyingBase,
     MessagePropertyAdapter as MessagePropertyAdapter,
     Undefined as Undefined,
     observe as observe,

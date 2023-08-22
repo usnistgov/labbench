@@ -26,7 +26,6 @@ class Trait:
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ROLE_VALUE: str
     ROLE_PROPERTY: str
@@ -44,10 +43,8 @@ class Trait:
     cache: bool
     only: tuple
     allow_none: bool
-    remap: dict
     kws: Incomplete
     metadata: Incomplete
-    remap_inbound: Incomplete
 
     @classmethod
     def __init_subclass__(cls, type=...) -> None: ...
@@ -66,11 +63,28 @@ class Trait:
     def validate(self, value, owner: Incomplete | None = ...): ...
     def contains(self, iterable, value): ...
     def __call__(self, func): ...
-    def doc(self): ...
+    def doc(self, as_argument: bool = ...): ...
     def doc_params(self, omit=...): ...
     def update(self, obj: Incomplete | None = ..., **attrs): ...
+    def adopt(self, default=..., **trait_params): ...
 
 def hold_trait_notifications(owner) -> Generator[None, None, None]: ...
+
+class PropertyKeyingBase:
+    def __new__(cls, *args, **kws): ...
+    def __call__(self, owner_cls): ...
+    def get(self, trait_owner, key, trait: Incomplete | None = ...) -> None: ...
+    def set(self, trait_owner, key, value, trait: Incomplete | None = ...) -> None: ...
+
+class MessagePropertyAdapter(PropertyKeyingBase):
+    query_fmt: Incomplete
+    write_fmt: Incomplete
+    value_map: Incomplete
+    message_map: Incomplete
+
+    def __init__(
+        self, query_fmt: str = ..., write_fmt: str = ..., remap=...
+    ) -> None: ...
 
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__: Incomplete
@@ -80,8 +94,6 @@ class HasTraits(metaclass=HasTraitsMeta):
     def __init__(self, **values) -> None: ...
     def __init_subclass__(cls) -> None: ...
     def __notify__(self, name, value, type, cache) -> None: ...
-    def set_key(self, key, value, name: Incomplete | None = ...) -> None: ...
-    def get_key(self, key, name: Incomplete | None = ...) -> None: ...
     def __get_value__(self, name): ...
     def __set_value__(self, name, value) -> None: ...
 
@@ -97,7 +109,6 @@ class Any(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
     def to_pythonic(self, value): ...
@@ -118,7 +129,6 @@ class DependentTrait(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     def __set_name__(self, owner_cls, name) -> None: ...
     @classmethod
@@ -138,7 +148,6 @@ class RemappingCorrectionMixIn(DependentTrait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         mapping=None,
     ): ...
     mapping: Any
@@ -168,7 +177,6 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         mapping=None,
         table_index_column: str = None,
     ): ...
@@ -192,7 +200,6 @@ class TransformMixIn(DependentTrait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     def __init_owner_instance__(self, owner) -> None: ...
     def __owner_event__(self, msg) -> None: ...
@@ -211,7 +218,6 @@ class BoundedNumber(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        remap: dict = {},
         min=None,
         max=None,
         path_trait=None,
@@ -277,7 +283,6 @@ class NonScalar(Any):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
 
@@ -293,7 +298,6 @@ class Int(BoundedNumber):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        remap: dict = {},
         min: int = None,
         max: int = None,
         path_trait=None,
@@ -314,7 +318,6 @@ class Float(BoundedNumber):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        remap: dict = {},
         min: float = None,
         max: float = None,
         path_trait=None,
@@ -338,7 +341,6 @@ class Complex(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     allow_none: bool
 
@@ -354,7 +356,6 @@ class Bool(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     allow_none: bool
 
@@ -372,7 +373,6 @@ class String(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         case: bool = True,
     ): ...
     case: bool
@@ -391,7 +391,6 @@ class Unicode(String):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         case: bool = True,
     ): ...
     default: ThisType
@@ -410,7 +409,6 @@ class Bytes(String):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         case: bool = True,
     ): ...
     default: ThisType
@@ -427,7 +425,6 @@ class Iterable(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
 
@@ -443,7 +440,6 @@ class Dict(Iterable):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ...
 
@@ -459,7 +455,6 @@ class List(Iterable):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ...
 
@@ -475,7 +470,6 @@ class Tuple(Iterable):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     sets: bool
 
@@ -491,7 +485,6 @@ class Path(Trait):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         must_exist: bool = False,
     ): ...
     must_exist: bool
@@ -510,7 +503,6 @@ class NetworkAddress(Unicode):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         case: bool = True,
         accept_port: bool = True,
     ): ...

@@ -1,9 +1,13 @@
 import contextlib
 from . import util as util, value as value
 from ._device import Device as Device
-from ._traits import observe as observe
+from ._traits import (
+    MessagePropertyAdapter as MessagePropertyAdapter,
+    observe as observe,
+)
 from _typeshed import Incomplete
 from collections.abc import Generator
+from typing import Dict
 
 class ShellBackend(Device):
     def __init__(
@@ -60,7 +64,6 @@ class LabviewSocketInterface(Device):
     def open(self) -> None: ...
     def close(self) -> None: ...
     def write(self, msg) -> None: ...
-    def set_key(self, key, value, name) -> None: ...
     def read(self, convert_func: Incomplete | None = ...): ...
     def clear(self) -> None: ...
 
@@ -140,19 +143,24 @@ class VISADevice(Device):
         resource: str = "str",
         read_termination: str = "str",
         write_termination: str = "str",
+        open_timeout: str = "NoneType",
+        identity_pattern: str = "NoneType",
+        timeout: str = "NoneType",
     ): ...
     read_termination: Incomplete
     write_termination: Incomplete
+    open_timeout: Incomplete
+    identity_pattern: Incomplete
+    timeout: Incomplete
     identity: Incomplete
     options: Incomplete
 
     def status_byte(self): ...
+    resource: Incomplete
     backend: Incomplete
 
     def open(self) -> None: ...
     def close(self) -> None: ...
-    @classmethod
-    def list_resources(cls): ...
     def write(self, msg: str): ...
     def query(self, msg: str, timeout: Incomplete | None = ...) -> str: ...
     def query_ascii_values(
@@ -164,8 +172,6 @@ class VISADevice(Device):
         delay: Incomplete | None = ...,
         timeout: Incomplete | None = ...,
     ): ...
-    def get_key(self, scpi_key, name: Incomplete | None = ...): ...
-    def set_key(self, scpi_key, value, name: Incomplete | None = ...) -> None: ...
     def wait(self) -> None: ...
     def preset(self) -> None: ...
     def overlap_and_block(
@@ -175,7 +181,9 @@ class VISADevice(Device):
     class suppress_timeout(contextlib.suppress):
         def __exit__(self, exctype, excinst, exctb): ...
 
-def set_default_visa_backend(name) -> None: ...
+def visa_list_resources(resourcemanager: Incomplete | None = ...): ...
+def visa_default_resource_manager(name: Incomplete | None = ...): ...
+def visa_list_identities(skip_interfaces=...) -> Dict[str, str]: ...
 
 class SimulatedVISADevice(VISADevice):
     def __init__(
@@ -183,6 +191,9 @@ class SimulatedVISADevice(VISADevice):
         resource: str = "str",
         read_termination: str = "str",
         write_termination: str = "str",
+        open_timeout: str = "NoneType",
+        identity_pattern: str = "NoneType",
+        timeout: str = "NoneType",
     ): ...
     yaml_source: Incomplete
 

@@ -28,6 +28,7 @@ import contextlib
 import importlib
 import inspect
 import os
+import re
 import select
 import socket
 import subprocess as sp
@@ -36,13 +37,17 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
+from typing import Dict
 
 import psutil
 
 from . import property as property_
 from . import util, value
 from ._device import Device
-from ._traits import observe
+from ._traits import (
+    MessagePropertyAdapter,
+    observe,
+)
 
 
 class ShellBackend(Device):
@@ -51,7 +56,7 @@ class ShellBackend(Device):
     Data can be captured from standard output, and standard error pipes, and
     optionally run as a background thread.
 
-    After opening, `backend` is `None`. On a call to execute(), `backend`
+    After opening, `backend` is `None`. On a call to run(background=True), `backend`
     becomes is a subprocess instance. When EOF is reached on the executable's
     stdout, the backend resets to None.
 
@@ -68,21 +73,10 @@ class ShellBackend(Device):
     timeout = value.float(
         default=1,
         min=0,
-        help="wait time after close before killing the process",
+        help="wait time after close before killing background processes",
         label="s",
         cache=True,
     )
-
-    # flags = value.dict({}, help="flag map, e.g., dict(force='-f') to connect the class value trait 'force' to '-f'")
-
-    # arguments = value.list(
-    #     default=[], help='list of command line arguments to pass into the executable'
-    # )
-    #
-    # arguments_min = value.int(
-    #     default=0, min=0,
-    #     sets=False, help='minimum extra command line arguments needed to run'
-    # )
 
     def open(self):
         """The :meth:`open` method implements opening in the
@@ -479,16 +473,6 @@ class ShellBackend(Device):
         """
         self.read_stdout()
 
-    # def update_flags(self, **flags):
-    #     """ update and validate value traits
-    #     """
-
-    #     bad_flags = set(flags.keys()).difference(self._value_attrs)
-    #     if len(bad_flags) > 0:
-    #         raise AttributeError(f"{self} cannot set flag(s) '{tuple(bad_flags)}' with no corresponding value trait")
-
-    #     self.__dict__.update(flags)
-
     def close(self):
         self.kill()
 
@@ -577,6 +561,7 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
+@property_.message_keying(write_fmt="{key} {value}", write_func="write")
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
@@ -621,10 +606,6 @@ class LabviewSocketInterface(Device):
         self._logger.debug(f"write {repr(msg)}")
         self.backend["tx"].sendto(msg, (self.resource, self.tx_port))
         util.sleep(self.delay)
-
-    def set_key(self, key, value, name):
-        """Send a formatted command string to implement property trait control."""
-        self.write(f"{key} {value}")
 
     def read(self, convert_func=None):
         """Receive from the rx socket until `self.rx_buffer_size` samples
@@ -917,6 +898,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
+@property_.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}")
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
 
@@ -957,15 +939,26 @@ class VISADevice(Device):
         "\n", cache=True, help="end of line string to send after writes"
     )
 
-    _rm = value.str(
-        "@ivi",
-        only=("@ivi", "@py", "@sim"),
-        sets=False,
+    open_timeout = value.float(
+        None,
         cache=True,
-        help="the pyvisa resource manager backend for connections",
+        allow_none=True,
+        help="timeout for opening a connection to the instrument",
+        label="s",
     )
 
-    # States
+    identity_pattern = value.str(
+        None,
+        allow_none=True,
+        cache=True,
+        help="identity regex pattern to match for automatic connection",
+    )
+
+    timeout = value.float(
+        None, cache=True, allow_none=True, help="message response timeout", label="s"
+    )
+
+    # Common VISA properties
     identity = property_.str(
         key="*IDN",
         sets=False,
@@ -992,6 +985,14 @@ class VISADevice(Device):
             "operating": bool(code & 0b10000000),
         }
 
+    _rm = value.str(
+        "@ivi",
+        only=("@ivi", "@py", "@sim"),
+        sets=False,
+        cache=True,
+        help="the pyvisa resource manager backend for connections",
+    )
+
     # Overload methods as needed to implement RemoteDevice
     def open(self):
         """opens the instrument.
@@ -1000,12 +1001,45 @@ class VISADevice(Device):
         this is called automatically and does not need
         to be invoked.
         """
+        from pyvisa import constants
+
         self._opc = False
+
+        kwargs = {}
+        if self.timeout is not None:
+            kwargs.update(timeout=int(self.timeout * 1000))
+        if self.open_timeout is not None:
+            kwargs.update(open_timeout=int(self.open_timeout * 1000))
+
+        if self.resource not in ("", None):
+            pass
+        elif self.identity_pattern is not None:
+            pattern = re.compile(self.identity_pattern, flags=re.IGNORECASE)
+
+            identities = {
+                res: idn
+                for res, idn in visa_list_identities().items()
+                if re.match(pattern, idn) is not None
+            }
+
+            if len(identities) == 0:
+                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.identity_pattern}"'
+                raise IOError(msg)
+            elif len(identities) == 1:
+                self.resource = list(identities.keys())[0]
+            else:
+                msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.identity_pattern}"'
+                raise IOError(msg)
+        else:
+            raise ValueError(
+                f"specify the resource or identity_pattern attributes to open {repr(self)} connection"
+            )
 
         self.backend = self._get_rm().open_resource(
             self.resource,
             read_termination=self.read_termination,
             write_termination=self.write_termination,
+            **kwargs,
         )
 
     def close(self):
@@ -1034,11 +1068,6 @@ class VISADevice(Device):
 
         finally:
             self.backend.close()
-
-    @classmethod
-    def list_resources(cls):
-        """autodetects and returns a list of valid resource strings"""
-        return cls()._get_rm().list_resources()
 
     def write(self, msg: str):
         """sends an SCPI message to the device.
@@ -1116,43 +1145,6 @@ class VISADevice(Device):
         self._logger.debug(f"      -> {logmsg}")
 
         return ret
-
-    def get_key(self, scpi_key, name=None):
-        """queries a parameter named `scpi_key` by sending an SCPI message string.
-
-        The command message string is formatted as f'{scpi_key}?'.
-        This is automatically called in wrapper objects on accesses to property traits that
-        defined with 'key=' (which then also cast to a pythonic type).
-
-        Arguments:
-            scpi_key (str): the name of the parameter to set
-            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
-
-        Returns:
-            response (str)
-        """
-        if name is not None:
-            trait = self._traits[name]
-
-            if not all(isinstance(v, str) for v in trait.remap.values()):
-                raise TypeError("VISADevice requires remap values to have type str")
-
-        return self.query(scpi_key + "?").rstrip()
-
-    def set_key(self, scpi_key, value, name=None):
-        """writes an SCPI message to set a parameter with a name key
-        to `value`.
-
-        The command message string is formatted as f'{scpi_key} {value}'. This
-        This is automatically called on assignment to property traits that
-        are defined with 'key='.
-
-        Arguments:
-            scpi_key (str): the name of the parameter to set
-            value (str): value to assign
-            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
-        """
-        self.write(f"{scpi_key} {value}")
 
     def wait(self):
         """sends '*WAI' to wait for all commands to complete before continuing"""
@@ -1249,15 +1241,66 @@ class VISADevice(Device):
         return rm
 
 
-def set_default_visa_backend(name):
-    if name not in VISADevice._rm.only:
-        raise ValueError(
-            f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}"
-        )
-    VISADevice._rm.default = name
+def visa_list_resources(resourcemanager: str = None):
+    """autodetects and returns a list of valid resource strings"""
+    import pyvisa
+
+    if resourcemanager is None:
+        rm = VISADevice()._get_rm()
+    else:
+        rm = pyvisa.ResourceManager(resourcemanager)
+
+    return rm.list_resources()
 
 
-class SimulatedVISADevice(VISADevice, _rm="@sim"):
+def visa_default_resource_manager(name=None):
+    if name is None:
+        return VISADevice._rm.default
+    else:
+        if name not in VISADevice._rm.only:
+            raise ValueError(
+                f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}"
+            )
+        VISADevice._rm.default = name
+
+
+@util.TTLCache(timeout=3)
+@util.SingleThreadProducer
+def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
+    import pyvisa
+
+    def check_idn(device: VISADevice):
+        try:
+            return device.identity
+        except pyvisa.errors.VisaIOError:
+            return None
+
+    def keep_interface(name):
+        for iface in skip_interfaces:
+            if name.lower().startswith(iface.lower()):
+                return False
+        return True
+
+    devices = {
+        res: VISADevice(res, open_timeout=0.25)
+        for res in VISADevice.list_resources()
+        if keep_interface(res)
+    }
+
+    with util.concurrently(*list(devices.values()), catch=True):
+        calls = [
+            util.Call(check_idn, device).rename(res)
+            for res, device in devices.items()
+            if device.isopen
+        ]
+
+        identities = util.concurrently(*calls, catch=True)
+
+    return identities
+
+
+@VISADevice._rm.adopt("@sim")
+class SimulatedVISADevice(VISADevice):
     """Base class for wrapping simulated VISA devices with pyvisa.
 
     See also:
@@ -1287,7 +1330,8 @@ class SimulatedVISADevice(VISADevice, _rm="@sim"):
         return rm
 
 
-class Win32ComDevice(Device, concurrency=True):
+@Device.concurrency.adopt(True)
+class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 
     a dedicated background thread. Set concurrency=True to decide whether

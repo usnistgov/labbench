@@ -410,10 +410,6 @@ class Device(HasTraits, util.Ownable):
         if isopen:
             self.close()
 
-    @property
-    def myproperty(self) -> int:
-        """I can has documentation"""
-
     def __repr__(self):
         name = self.__class__.__qualname__
         if hasattr(self, "resource"):

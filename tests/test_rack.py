@@ -28,13 +28,7 @@
 
 from labbench.util import sequentially
 import sys
-
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
-
 import unittest
-import importlib
-
 import time
 
 try:

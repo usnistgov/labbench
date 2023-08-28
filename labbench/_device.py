@@ -34,6 +34,7 @@ import inspect
 import sys
 import traceback
 from warnings import warn
+from typing import Union
 
 from . import util
 from . import property as property_
@@ -264,24 +265,13 @@ class Device(HasTraits, util.Ownable):
 
     @classmethod
     @util.hide_in_traceback
-    def __init_subclass__(cls, **value_defaults):
+    def __init_subclass__(cls):
         super().__init_subclass__()
+        cls.__update_signature__()
 
-        for trait_name, new_default in value_defaults.items():
-            trait = getattr(cls, trait_name, None)
-
-            if trait is None or trait.role != Trait.ROLE_VALUE:
-                parent_name = cls.__mro__[1].__qualname__
-                raise AttributeError(
-                    f"there is no value trait {parent_name}.{trait_name}, cannot update its default"
-                )
-
-            cls._traits[trait_name] = trait.copy(default=new_default)
-            setattr(cls, trait_name, cls._traits[trait_name])
-
-        if len(value_defaults) > 0:
-            super().__init_subclass__()
-
+    @classmethod
+    @util.hide_in_traceback
+    def __update_signature__(cls):
         # Generate a signature for documentation and code autocomplete
         params = [
             inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),

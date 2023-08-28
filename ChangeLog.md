@@ -2,11 +2,28 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html) without the patch version.
+and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+
+## [0.28]
+### Added
+- compartmentalize backend property implementation into `PropertyKeyingBase`, a backend-specific decorator
+- implement `property.visa_keying` and `property.message_keying`
+- `Trait.adopt` decorator adjusts parameters of inherited traits in `Device` subclasses
+- support for pattern-based automatic connection to VISA instruments with new `VISADevice.identity_pattern` value trait
+- `visa_list_identities` lists the '*IDN?' response for all devices that are enumerated by `visa_list_resources`
+- `visa_list_resources` lists resources available for the default `VISADevice` resource manager
+
+### Changed
+- remove the `remap` keyword from `Trait` 
+- support has been removed for adjusting `Device` child class trait default values by passing keyword arguments (use `Trait.adopt` decorators instead)
+
+### Removed
+- `Trait.remap` (now implemented by `PropertyKeyingBase`, for backends that support it)
+- `VISADevice.list_resources` (now a separate function `visa_list_resources`)
 
 ## [0.27 - 2023-06-16]
 ### Changed
-- Moved `setup.cfg` to `.flake8` since it is only used for that configuration
+- Moved flake8 config from `setup.cfg` to `.flake8` since it is only used for that configuration
 - Corrected missing h5py dependency
 
 ## [0.26 - 2023-06-15]

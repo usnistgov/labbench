@@ -68,7 +68,7 @@ import traceback
 from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
-from threading import Event, Thread, ThreadError
+from threading import Event, Thread, ThreadError, RLock
 from typing import Callable
 from warnings import simplefilter
 
@@ -342,8 +342,8 @@ def copy_func(
     """returns a copy of func with specified attributes (following the inspect.wraps arguments).
 
     This is similar to wrapping `func` with `lambda *args, **kws: func(*args, **kws)`, except
-    the returned callable contains a duplicate of the bytecode in `func`. The idea that the
-    returned copy has fresh to __doc__, __signature__, etc., which can be changed without
+    the returned callable contains a duplicate of the bytecode in `func`. The idea is that the
+    returned copy has fresh to __doc__, __signature__, etc., which can be changed
     independently of `func`.
     """
 
@@ -665,6 +665,10 @@ class Call(object):
         self.args = args
         self.kws = kws
         self.queue = None
+
+    def rename(self, name):
+        self.name = name
+        return self
 
     def __repr__(self):
         args = ",".join(
@@ -1503,6 +1507,54 @@ class ConfigStore:
         df.columns.name = "Value"
         df.index.name = "Parameter"
         return df
+
+
+class SingleThreadProducer:
+    def __new__(cls, func):
+        obj = super().__new__(cls)
+        obj.func = func
+        obj.lock = RLock()
+        obj.retval = None
+        obj = wraps(func)(obj)
+        return obj
+
+    @hide_in_traceback
+    def __call__(self):
+        if self.lock.acquire(False):
+            # no other threads are running self.func; invoke it in this one
+            try:
+                ret = self.retval = self.func()
+            finally:
+                self.lock.release()
+        else:
+            # another thread is running self.func; return its result
+            self.lock.acquire(True)
+            ret = self.retval
+            self.lock.release()
+
+        return ret
+
+
+class TTLCache:
+    def __init__(self, timeout):
+        self.timeout = timeout
+        self.call_timestamp = None
+        self.last_value = None
+
+    def __call__(self, func):
+        @wraps(func)
+        @hide_in_traceback
+        def wrapper_decorator(*args, **kws):
+            time_elapsed = time.perf_counter() - (self.call_timestamp or 0)
+            if self.call_timestamp is None or time_elapsed > self.timeout:
+                ret = self.last_value = func(*args, **kws)
+                self.call_timestamp = time.perf_counter()
+            else:
+                ret = self.last_value
+
+            return ret
+
+        return wrapper_decorator
 
 
 def accessed_attributes(method):

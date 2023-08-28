@@ -25,13 +25,8 @@
 # licenses.
 
 import unittest
-import importlib
 import sys
-
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
 import labbench as lb
-from copy import copy
 
 lb._force_full_traceback(True)
 
@@ -100,10 +95,10 @@ class MockBase(lb.Device):
         return self._getter_counts.get(name, 0)
 
     def get_expected_remote_value(self, name, value):
-        return self.REMAP.get(name, {}).get(value, value)
+        return self._traits[name].type(value)
 
 
-class MockDecoratedProperty(MockBase):
+class MockDirectProperty(MockBase):
     PYTHONIC_VALUE_DEFAULT = {
         "int0": 3,
         "bool0": False,
@@ -120,8 +115,6 @@ class MockDecoratedProperty(MockBase):
         "str2": "hi",
     }
 
-    REMAP = dict(bool0={True: "ON", False: "OFF"})
-
     @lb.property.int(min=0, max=10)
     def int0(self, value):
         self.remote_values["int0"] = value
@@ -130,15 +123,7 @@ class MockDecoratedProperty(MockBase):
         self.add_get_count("int0")
         return self.remote_values["int0"]
 
-    @lb.property.bool(remap=REMAP["bool0"])
-    def bool0(self, value):
-        self.remote_values["bool0"] = value
-
-    def bool0(self):
-        self.add_get_count("bool0")
-        return self.remote_values["bool0"]
-
-    @lb.property.bool(remap=REMAP["bool0"])
+    @lb.property.bool()
     def bool0(self, value):
         self.remote_values["bool0"] = value
 
@@ -154,7 +139,7 @@ class MockDecoratedProperty(MockBase):
         self.add_get_count("str0")
         return self.remote_values["str0"]
 
-    @lb.property.str(key="str1", cache=True, remap={"python value": "device value"})
+    @lb.property.str(key="str1", cache=True)
     def str1(self, value):
         self.remote_values["str1"] = value
 
@@ -171,7 +156,20 @@ class MockDecoratedProperty(MockBase):
         return self.remote_values["str2"]
 
 
-class MockKeyedProperty(MockBase):
+class MockPropertyAdapter(lb.MessagePropertyAdapter):
+    def get(self, device, key, trait=None):
+        device.add_get_count(key)
+        v = self.remote_values[key]
+        return self.value_map.get(v, v)
+
+    def set(self, device, key, value, trait=None):
+        value = self.message_map.get(value, value)
+        device._last[key] = value
+        device.remote_values[key] = self.message_map.get(value, value)
+
+
+@MockPropertyAdapter(remap={True: "ON", False: "OFF", "python value": "device value"})
+class MockKeyedAdapterProperty(MockBase):
     # configure the emulated behavior of the fake instrument
     PYTHONIC_VALUE_DEFAULT = {
         "int0": 3,
@@ -189,27 +187,14 @@ class MockKeyedProperty(MockBase):
         "str2": "hi",
     }
 
-    REMAP = dict(bool0={True: "ON", False: "OFF"})
-
     int0 = lb.property.int(key="int0", min=0, max=10)
-    bool0 = lb.property.bool(key="bool0", remap=REMAP["bool0"])
+    bool0 = lb.property.bool(key="bool0")
     str0 = lb.property.str(key="str0", cache=True)
-    str1 = lb.property.str(
-        key="str1", cache=True, remap={"python value": "device value"}
-    )
+    str1 = lb.property.str(key="str1", cache=False)
     str2 = lb.property.str(key="str2", sets=False)
 
-    def get_key(self, key, name=None):
-        print("get ", name, key)
-        self.add_get_count(key)
-        return self.remote_values[key]
 
-    def set_key(self, key, value, name=None):
-        self._last[key] = value
-        self.remote_values[key] = self.get_expected_remote_value(name, value)
-
-
-class MockReturner(MockBase):
+class MockDataReturn(MockBase):
     @lb.datareturn.float()
     def fetch_float0(self, a, b, c):
         return a + b + c
@@ -305,16 +290,16 @@ class TestProperty:
 
 
 class TestDecoratedProperty(unittest.TestCase, TestProperty):
-    TestDevice = MockDecoratedProperty
+    TestDevice = MockDirectProperty
 
 
 class TestKeyedProperty(unittest.TestCase, TestProperty):
-    TestDevice = MockDecoratedProperty
+    TestDevice = MockDirectProperty
 
 
 class TestReturner(unittest.TestCase):
     def test_returner_type(self):
-        with MockReturner() as m:
+        with MockDataReturn() as m:
             self.assertEqual(m.fetch_float0(1, 2, 3), 6.0)
             self.assertEqual(m.fetch_float1(1, 2, 3), 6.0)
 

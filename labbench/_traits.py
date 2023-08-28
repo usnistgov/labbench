@@ -47,6 +47,7 @@ from pathlib import Path
 Undefined = inspect.Parameter.empty
 
 T = typing.TypeVar("T")
+from typing import Union
 
 
 class ThisType(typing.Generic[T]):
@@ -58,8 +59,8 @@ class HasTraitsMeta(type):
 
     @classmethod
     def __prepare__(cls, names, bases, **kws):
-        """Prepare copies of cls._traits, to ensure that any traits defined
-        in the definition don't clobber parents' traits.
+        """Prepare copies of cls._traits, to ensure that all traits can be adjusted
+        afterward without impacting the parent class.
         """
         ns = dict()
         if len(bases) >= 1:
@@ -92,7 +93,7 @@ class Trait:
 
     Arguments:
         default: the default value of the trait (value traits only)
-        key: some types of Device take this input to determine automation behavior
+        key: specify automatic implementation with the Device (backend-specific)
 
         help: the Trait docstring
         label: a label for the quantity, such as units
@@ -106,8 +107,6 @@ class Trait:
 
     Arguments:
         allow_none: permit None values in addition to the specified type
-        remap: a lookup table that maps the python type (keys) to a potentially different backend values (values) ,
-                  in places of the to_pythonic and from_pythonic methods (property traits only)
 
     """
 
@@ -131,7 +130,6 @@ class Trait:
     cache: bool = False
     only: tuple = tuple()
     allow_none: bool = False
-    remap: dict = {}
 
     # If the trait is used for a state, it can operate as a decorator to
     # implement communication with a device
@@ -168,7 +166,7 @@ class Trait:
 
         # check role and related parameter dependencies
         if self.role == self.ROLE_VALUE:
-            invalid_args = ("remap", "key", "func")
+            invalid_args = ("key", "func")
         elif self.role == self.ROLE_PROPERTY:
             invalid_args = ("default", "func")
         elif self.role == self.ROLE_DATARETURN:
@@ -197,18 +195,6 @@ class Trait:
         if self.role in (self.ROLE_DATARETURN, self.ROLE_PROPERTY):
             # default Undefined so that cache will fill them in
             self.default = Undefined
-
-        # Replace self.from_pythonic and self.to_pythonic with lookups in self.remap (if defined)
-        try:
-            if len(kws["remap"]) > 0:
-                self.remap_inbound = {v: k for k, v in kws["remap"].items()}
-            else:
-                self.remap_inbound = {}
-        except KeyError:
-            raise
-
-        if len(kws["remap"]) != len(self.remap_inbound):
-            raise ValueError("'remap' has duplicate values")
 
         # set value traits
         for k, v in kws.items():
@@ -367,10 +353,6 @@ class Trait:
             owner.__set_value__(self.name, value)
 
         elif self.role == self.ROLE_PROPERTY:
-            # convert to the outbound representation
-            if len(self.remap) > 0:
-                value = self.remap.get(value, value)
-
             # send to the device
             if self._setter is not None:
                 # from the function decorated by this trait
@@ -378,7 +360,7 @@ class Trait:
 
             elif self.key is not None:
                 # otherwise, use the owner's set_key
-                owner.set_key(self.key, value, self.name)
+                owner._property_keying.set(owner, self.key, value, self)
 
             else:
                 objname = owner.__class__.__qualname__ + "." + self.name
@@ -396,7 +378,7 @@ class Trait:
     def __get__(self, owner, owner_cls=None):
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
-        decorator function or the owner's get_key method to retrieve
+        decorator function or the owner's property adapter method to retrieve
         the result.
 
         Returns:
@@ -407,12 +389,14 @@ class Trait:
         # instance, and owning class is a match for what we were told in __set_name__.
         # otherwise, someone else is trying to access `self` and we
         # shouldn't get in their way.
-        if owner is None or owner_cls.__dict__.get(
-            self.name, None
-        ) is not self.__objclass__.__dict__.get(self.name):
-            # the __dict__ acrobatics avoids a recursive __get__ loop
+        if owner is None:
+            # escape an infinite recursion loop before accessing any class members
             return self
 
+        cls_getter = owner_cls.__dict__.get(self.name, None)
+        objclass_getter = self.__objclass__.__dict__.get(self.name)
+        if cls_getter is not objclass_getter:
+            return self
         elif self.role == self.ROLE_DATARETURN:
             # inject the labbench Trait hooks into the return value
             @wraps(self._returner)
@@ -439,7 +423,7 @@ class Trait:
             value = self._getter(owner)
 
         else:
-            # otherwise, get with owner.get_key, if available
+            # otherwise, get with the key owner's key adapter, if available
             if self.key is None:
                 # otherwise, 'get'
                 objname = owner.__class__.__qualname__
@@ -447,11 +431,7 @@ class Trait:
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
-            value = owner.get_key(self.key, self.name)
-
-        # apply remapping as appropriate for the trait
-        if len(self.remap_inbound) > 0:
-            value = self.remap_inbound.get(value, value)
+            value = owner._property_keying.get(owner, self.key, self)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -624,20 +604,72 @@ class Trait:
         else:
             return owner._owned_name + "." + self.name
 
-    def update(self, obj=None, **attrs):
+    def update(self, obj=None, /, **attrs):
         """returns `self` or (if `obj` is None) or `other`, after updating its keyword
         parameters with `attrs`
         """
         if obj is None:
             obj = self
-        invalid_params = set(attrs).difference(obj.__dict__)
-        if len(invalid_params) > 0:
-            raise AttributeError(
-                f"{obj} does not have the parameter(s) {invalid_params}"
-            )
+        # invalid_params = set(attrs).difference(obj.__dict__)
+        # if len(invalid_params) > 0:
+        #     raise AttributeError(
+        #         f"{obj} does not have the parameter(s) {invalid_params}"
+        #     )
 
+        # validate by trying to make a copy
+        obj.copy(**attrs)
+
+        # apply
         obj.__dict__.update(attrs)
         return obj
+
+    def adopt(self, default=Undefined, /, **trait_params):
+        """decorates a Device subclass to adjust parameters of this trait name.
+
+        This can be applied to inherited classes that need traits that vary the
+        parameters of a trait defined in a parent. Multiple decorators can be applied to the
+        same class definition.
+
+        Arguments:
+            default: the default value (for value traits only)
+            trait_params: keyword arguments that are valid for the corresponding trait type
+
+        Examples:
+        ```
+            import labbench as lb
+
+            class BaseInstrument(lb.VISADevice):
+                center_frequency = lb.property.float(key='FREQ', label='Hz')
+
+            @BaseInstrument.center_frequency.adopt(min=10, max=50e9)
+            class Instrument50GHzModel(lb.VISADevice):
+                pass
+        ```
+        """
+
+        if default is not Undefined:
+            if self.role != self.ROLE_VALUE:
+                raise ValueError(
+                    "non-keyword arguments are allowed only for value traits"
+                )
+            if "default" in trait_params.keys():
+                raise ValueError(
+                    '"default" keyword argument conflicts with default value passed as non-keyword'
+                )
+            trait_params["default"] = default
+
+        def apply_adjusted_trait(owner_cls: HasTraits):
+            if not issubclass(owner_cls, HasTraits):
+                raise TypeError("adopt must decorate a Device class definition")
+            if self.name not in owner_cls.__dict__:
+                raise ValueError(f'no trait "{self.name}" in {repr(owner_cls)}')
+
+            trait = getattr(owner_cls, self.name)
+            trait.update(**trait_params)
+            owner_cls.__update_signature__()
+            return owner_cls
+
+        return apply_adjusted_trait
 
 
 Trait.__init_subclass__()
@@ -656,9 +688,41 @@ def hold_trait_notifications(owner):
     owner.__notify__ = original
 
 
+class PropertyKeyingBase:
+    def __new__(cls, *args, **kws):
+        """set up use as a class decorator"""
+
+        obj = super().__new__(cls)
+
+        if len(args) == 1 and len(kws) == 0 and issubclass(args[0], HasTraits):
+            # instantiated as a decorator without arguments - do the decoration
+            obj.__init__()
+            return obj(args[0])
+        else:
+            # instantiated with arguments - decoration happens later
+            obj.__init__(*args, **kws)
+            return obj
+
+    def __call__(self, owner_cls):
+        # do the decorating
+        owner_cls._property_keying = self
+        return owner_cls
+
+    def get(self, trait_owner, key, trait=None):
+        raise NotImplementedError(
+            f'key adapter does not implement "get" {repr(type(self))}'
+        )
+
+    def set(self, trait_owner, key, value, trait=None):
+        raise NotImplementedError(
+            f'key adapter does not implement "set" {repr(type(self))}'
+        )
+
+
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
+    _property_keying = PropertyKeyingBase()
 
     def __init__(self, **values):
         # who is informed on new get or set values
@@ -676,10 +740,13 @@ class HasTraits(metaclass=HasTraitsMeta):
 
     @util.hide_in_traceback
     def __init_subclass__(cls):
+        MANAGED_ROLES = Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
+
         cls._traits = dict(getattr(cls, "_traits", {}))
         cls._property_attrs = []
         cls._value_attrs = []
         cls._datareturn_attrs = []
+
         # parent_traits = getattr(cls.__mro__[1], "_traits", {})
 
         # annotations = getattr(cls, '__annotations__', {})
@@ -689,10 +756,7 @@ class HasTraits(metaclass=HasTraitsMeta):
             obj = getattr(cls, name)
 
             if not isinstance(obj, Trait):
-                if trait.role in (
-                    Trait.ROLE_PROPERTY,
-                    Trait.ROLE_DATARETURN,
-                ) and callable(obj):
+                if trait.role in MANAGED_ROLES and callable(obj):
                     # if it's a method, decorate it
                     cls._traits[name] = trait(obj)
                 else:
@@ -734,31 +798,6 @@ class HasTraits(metaclass=HasTraitsMeta):
             handler(dict(msg))
 
         self.__cache__[name] = value
-
-    def set_key(self, key, value, name=None):
-        """implement this in subclasses to use `key` to set a parameter value from the
-        Device with self.backend.
-
-        property traits defined with "key=" call this to set values
-        in the backend.
-        """
-
-        clsname = self.__class__.__qualname__
-        raise NotImplementedError(
-            f"implement {clsname}.get_key for access to key/value parameters on the device"
-        )
-
-    def get_key(self, key, name=None):
-        """implement this in subclasses to use `key` to retreive a parameter value from the
-        Device with self.backend.
-
-        property traits defined with "key=" call this to retrieve values
-        from the backend.
-        """
-        clsname = self.__class__.__qualname__
-        raise NotImplementedError(
-            f"implement {clsname}.get_key for access key/value parameters on the device"
-        )
 
     @util.hide_in_traceback
     def __get_value__(self, name):
@@ -1078,12 +1117,11 @@ class RemappingCorrectionMixIn(DependentTrait):
 
         # lookup the uncalibrated value that results in the nearest calibrated result
         uncal = self.find_uncal(cal, owner)
+        base = self._trait_dependencies["base"]
 
         if uncal is None:
-            self._trait_dependencies["base"].__set__(owner, cal)
-        elif uncal != type(self._trait_dependencies["base"]).validate(
-            self, uncal, owner
-        ):
+            base.__set__(owner, cal)
+        elif uncal != type(base).validate(self, uncal, owner):
             # raise an exception if the calibration table contains invalid
             # values, instead
             raise ValueError(

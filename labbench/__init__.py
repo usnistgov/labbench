@@ -52,7 +52,9 @@ from ._backends import (
     TelnetDevice,
     VISADevice,
     Win32ComDevice,
-    set_default_visa_backend,
+    visa_default_resource_manager,
+    visa_list_identities,
+    visa_list_resources,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
 from ._device import Device, list_devices, trait_info
@@ -67,7 +69,13 @@ from ._rack import (
     rack_kwargs_template,
 )
 from ._serialize import dump_rack, load_rack
-from ._traits import Undefined, observe, unobserve
+from ._traits import (
+    Undefined,
+    observe,
+    unobserve,
+    PropertyKeyingBase,
+    MessagePropertyAdapter,
+)
 from ._version import __version__
 
 # scrub __module__ for cleaner repr() and doc

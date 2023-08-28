@@ -10,7 +10,6 @@ class bool(_traits.Bool):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ...
 
@@ -24,7 +23,6 @@ class float(_traits.Float):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        remap: dict = {},
         min: float = None,
         max: float = None,
         path_trait=None,
@@ -44,7 +42,6 @@ class int(_traits.Int):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        remap: dict = {},
         min: int = None,
         max: int = None,
         path_trait=None,
@@ -63,7 +60,6 @@ class complex(_traits.Complex):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ...
 
@@ -77,7 +73,6 @@ class str(_traits.Unicode):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         case: bool = True,
     ): ...
     ...
@@ -92,7 +87,6 @@ class bytes(_traits.Bytes):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         case: bool = True,
     ): ...
     ...
@@ -107,7 +101,6 @@ class list(_traits.List):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ...
 
@@ -121,7 +114,6 @@ class tuple(_traits.Tuple):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ...
 
@@ -135,7 +127,6 @@ class dict(_traits.Dict):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
     ): ...
     ...
 
@@ -149,7 +140,6 @@ class Path(_traits.Path):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         must_exist: bool = False,
     ): ...
     ...
@@ -164,7 +154,6 @@ class NetworkAddress(_traits.NetworkAddress):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        remap: dict = {},
         case: bool = True,
         accept_port: bool = True,
     ): ...

@@ -45,7 +45,6 @@ from . import property as property_
 from . import util, value
 from ._device import Device
 from ._traits import (
-    MessagePropertyAdapter,
     observe,
 )
 

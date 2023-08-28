@@ -74,7 +74,6 @@ from ._traits import (
     observe,
     unobserve,
     PropertyKeyingBase,
-    MessagePropertyAdapter,
 )
 from ._version import __version__
 

@@ -561,7 +561,7 @@ class Trait:
         return self
 
     # introspection
-    def doc(self, as_argument=False):
+    def doc(self, as_argument=False, anonymous=False):
         typename = "Any" if self.type is None else self.type.__qualname__
 
         if self.label:
@@ -569,13 +569,21 @@ class Trait:
 
         params = self.doc_params(omit=["help", "default", "label"])
         if as_argument:
-            doc = f"{self.name} ({typename}): {self.help}"
+            if anonymous:
+                doc = f"{self.help}"
+            else:
+                doc = f"{self.name} ({typename}): {self.help}"
+            
             if len(params) > 0:
-                doc += f" where ({params})"
+                doc += f" (constraints: {params})"
 
         else:
             # as property
-            doc = f"{typename}: {self.help}"
+            if anonymous:
+                doc = str(self.help)
+            else:
+                doc = f"{typename}: {self.help}"
+                
 
             if len(params) > 0:
                 doc += f"\n\nConstraints:\n    {params}"

@@ -419,6 +419,10 @@ class Device(HasTraits, util.Ownable):
 
         if isopen:
             self.close()
+            
+    @property
+    def myproperty(self) -> int:
+        """ I can has documentation """
 
     def __repr__(self):
         name = self.__class__.__qualname__
@@ -428,9 +432,9 @@ class Device(HasTraits, util.Ownable):
             # In case an exception has occurred before __init__
             return f"{name}()"
 
-    @property_.bool()
+    @property_.bool(help='oh no')
     def isopen(self):
-        """is the backend ready?"""
+        """`True` if the backend is ready for use"""
         try:
             return DisconnectedBackend not in self.backend.__class__.__mro__
         except BaseException:

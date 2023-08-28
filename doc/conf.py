@@ -33,41 +33,36 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-# import traitlets as tl
-import sys
-import os
+from pathlib import Path
 import shutil
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
-
+import numpy as np
 from labbench import __version__ as version
+import toml
+from sphinx.domains.python import PythonDomain            
 
-# -- General configuration ------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, property trait it here.
-# needs_sphinx = '1.0'
+project_info = toml.load('../pyproject.toml')
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx_mdinclude",
     #    'sphinxcontrib.restbuilder',
-    "sphinx.ext.viewcode",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.inheritance_diagram",
-    "sphinx.ext.graphviz",
+    # "sphinx.ext.viewcode",
+    # "sphinx.ext.autosummary",
+    # "sphinx.ext.inheritance_diagram",
+    # "sphinx.ext.graphviz",
     "sphinx.ext.napoleon",  # support for numpy- and google-style docstrings
     # 'nbsphinx',
     # 'sphinx.ext.mathjax',
-    "recommonmark"
+    # "recommonmark"
     #    'sphinx_pyreverse'
 ]
 
+autoapi_dirs = [f'../{project_info["project"]["name"]}']
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -82,15 +77,18 @@ source_suffix = [".rst", ".md"]
 autodoc_mock_imports = []
 
 # The master toctree document.
-master_doc = "labbench"
+master_doc = "index"
 
 # General information about the project.
-project = "labbench"
+project = project_info["project"]["name"]
+authors = [author['name'] for author in project_info["project"]["authors"]]
+author_groups = [', '.join(a) for a in np.array_split(authors, np.ceil(len(authors)/3))]
 copyright = (
     "United States government work, not subject to copyright in the United States"
 )
 
-author = "Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma (NIST)"
+# author = "Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma (NIST)"
+author = ', '.join(author_groups)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -118,7 +116,7 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", "**.ipynb_checkpoints", "setup*"]
+exclude_patterns = ["_build", f"{project}/_version.py", "**.ipynb_checkpoints", "setup*"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -135,86 +133,16 @@ exclude_patterns = ["_build", "**.ipynb_checkpoints", "setup*"]
 # output. They are ignored by default.
 # show_authors = False
 
-autodoc_default_flags = ["inherited-members"]
-
-
-def maybe_skip_member(app, what, name, obj, skip, options):
-    """Skip extra cruft from Device.state objects"""
-    if skip:
-        return True
-    from traitlets import TraitType
-    import labbench as lb
-
-    TraitMixIn = lb.Bool.__mro__[1]
-    whitelist = []
-
-    if name not in whitelist and hasattr(tl.HasTraits, name):
-        tlobj = getattr(tl.HasTraits, name)
-
-        if (
-            tlobj is obj
-            or (hasattr(tlobj, "im_func") and tlobj.__func__ is obj.__func__)
-        ) or (name.startswith("class") or name == "trait_events"):
-            with open("test.txt", "a") as f:
-                f.write(
-                    "skip: "
-                    + repr(what)
-                    + " with name "
-                    + name
-                    + " in "
-                    + repr(obj)
-                    + "\r\n"
-                )
-            return True
-        else:
-            with open("test.txt", "a") as f:
-                f.write(
-                    "nearly skip: "
-                    + repr(what)
-                    + " with name "
-                    + name
-                    + " in "
-                    + repr(obj)
-                    + "\r\n"
-                )
-
-    # Skip any type definition attribute that's already in TraitType
-    # or TraitMixIn
-    for cls in (TraitType, TraitMixIn):
-        if name not in whitelist and hasattr(cls, name):
-            if getattr(cls, name) is obj:
-                with open("test.txt", "a") as f:
-                    f.write(
-                        "skip: "
-                        + repr(what)
-                        + " with name "
-                        + name
-                        + " in "
-                        + repr(obj)
-                        + "\r\n"
-                    )
-                return True
-            else:
-                with open("test.txt", "a") as f:
-                    f.write(
-                        "nearly skip: "
-                        + repr(what)
-                        + " with name "
-                        + name
-                        + " in "
-                        + repr(obj)
-                        + "\r\n"
-                    )
-
-    return False
-
+# autodoc_default_flags = ["inherited-members"]
+# autodoc_default_options = {
+#     'ignore-module-all': True
+# }
 
 # From https://groups.google.com/forum/#!msg/sphinx-users/NYUYffRrE78/MPMa57KN1sEJ
 # to make output paths compatible with github
 def change_pathto(app, pagename, templatename, context, doctree):
     """
-        Replace pathto helper to change paths to folders with a leading
-    underscore.
+        Replace pathto helper to change paths to folders with a leading underscore.
     """
     pathto = context.get("pathto")
 
@@ -233,20 +161,145 @@ def move_private_folders(app, e):
     remove leading underscore from folders in in the output folder
     """
 
-    def join(dir):
-        return os.path.join(app.builder.outdir, dir)
+    outdir = Path(app.builder.outdir)
 
-    for item in os.listdir(app.builder.outdir):
-        if item.startswith("_") and os.path.isdir(join(item)):
-            shutil.move(join(item), join(item[1:]))
+    for item in outdir.iterdir():
+        if item.name.startswith("_") and item.is_dir():
+            dest = item.with_name(item.name[1:])
 
+            if dest.exists():
+                shutil.rmtree(dest)
 
+            shutil.move(item, dest)
+
+import pickle
+
+# From https://github.com/sphinx-doc/sphinx/issues/3866#issuecomment-311181219
+# to avoid clobbering references to builtins
+class PatchedPythonDomain(PythonDomain):   
+    def resolve_xref(self, env, fromdocname, builder, typ, target, node, contnode):
+        import builtins
+        exclude_targets = set(dir(builtins))        
+
+        if 'refspecific' in node:
+            if not node['refspecific'] and node["reftarget"] in exclude_targets:
+                del node['refspecific']
+        
+        
+        with open('debug.pickle', 'wb') as fd:
+            pickle.dump(self.data, fd)
+
+        return super(PatchedPythonDomain, self).resolve_xref(
+            env, fromdocname, builder, typ, target, node, contnode)
+        
+        
+from sphinx.ext import autodoc
+import labbench as lb
+
+def process_signature(app, what, name, obj, options, signature, return_annotation):
+    if isinstance(obj, lb._traits.Trait):
+        # return_annotation = obj.type.__qualname__
+        print('process_signature: trait ', locals())
+        return (None, obj.type.__qualname__)
+    elif isinstance(obj, property):
+        print('process_signature: property ', locals())
+
+    return (signature, return_annotation)
+
+def process_docstring(app, what, name, obj, options, lines):
+    if isinstance(obj, lb._traits.Trait):
+        print('process_docstring: ', name, obj.doc(anonymous=True))
+        lines.append(obj.doc(as_argument=True, anonymous=True))
+       
+    elif isinstance(obj, property):
+        print('process_docstring: property ', locals())
+
+class AttributeDocumenter(autodoc.AttributeDocumenter):
+    @staticmethod
+    def _is_lb_value(obj):
+        return isinstance(obj, lb._traits.Trait) and obj.role == lb._traits.Trait.ROLE_VALUE
+
+    @classmethod
+    def can_document_member(cls, member, membername: str, isattr: bool, parent) -> bool:
+        if isinstance(parent, autodoc.ClassDocumenter):
+            if cls._is_lb_value(member):
+                return True
+        return super().can_document_member(member, membername, isattr, parent)
+
+    def add_directive_header(self, sig: str) -> None:
+        if not self._is_lb_value(self.object):
+            return super().add_directive_header(sig)
+        
+        super().add_directive_header(sig)
+        sourcename = self.get_sourcename()
+
+        # if signature.return_annotation is not Parameter.empty:
+        if self.config.autodoc_typehints_format == "short":
+            objrepr = autodoc.stringify_annotation(self.object.type, "smart")
+        else:
+            objrepr = autodoc.stringify_annotation(self.object.type,
+                                            "fully-qualified-except-typing")
+
+        self.add_line('   :type: ' + objrepr, sourcename)      
+        
+
+class PropertyDocumenter(autodoc.PropertyDocumenter):
+    @staticmethod
+    def _is_lb_property(obj):
+        return isinstance(obj, lb._traits.Trait) and obj.role == lb._traits.Trait.ROLE_PROPERTY
+    
+    @classmethod
+    def can_document_member(cls, member, membername: str, isattr: bool, parent) -> bool:
+        if isinstance(parent, autodoc.ClassDocumenter):
+            if cls._is_lb_property(member):
+                return True
+        return super().can_document_member(member, membername, isattr, parent)
+    
+    def import_object(self, raiseerror: bool = False) -> bool:
+        """Check the exisitence of uninitialized instance attribute when failed to import
+        the attribute."""
+        autodoc.ClassLevelDocumenter.import_object(self, raiseerror)
+        if self._is_lb_property(self.object):
+            self.isclassmethod = False
+            return True
+        else:
+            return super().import_object(raiseerror)
+
+    def add_directive_header(self, sig: str) -> None:
+        if not self._is_lb_property(self.object):
+            return super().add_directive_header(sig)
+
+        super().add_directive_header(sig)
+        sourcename = self.get_sourcename()
+        
+        # if signature.return_annotation is not Parameter.empty:
+        if self.config.autodoc_typehints_format == "short":
+            objrepr = autodoc.stringify_annotation(self.object.type, "smart")
+        else:
+            objrepr = autodoc.stringify_annotation(self.object.type,
+                                            "fully-qualified-except-typing")
+            
+        self.add_line('   :type: ' + objrepr, sourcename)
+
+    def format_args(self, **kwargs) -> str:
+        if not self._is_lb_property(self.object):
+            return super().format_args(**kwargs)
+        
+        # update the annotations of the property getter
+        self.env.app.emit('autodoc-before-process-signature', self.object, False)
+        # correctly format the arguments for a property
+        return super().format_args(**kwargs)
+
+    
 def setup(app):
     # app.connect('autodoc-skip-member', maybe_skip_member)
     app.connect("html-page-context", change_pathto)
     app.connect("build-finished", move_private_folders)
-    # app.connect('autodoc-process-signature', resignature)
-
+    app.add_domain(PatchedPythonDomain, override=True)
+    app.add_autodocumenter(PropertyDocumenter)
+    app.add_autodocumenter(AttributeDocumenter)
+    # app.connect('autodoc-process-signature', process_signature)
+    app.connect('autodoc-process-docstring', process_docstring)
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -276,7 +329,7 @@ html_theme = "nature"
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
-html_title = f"labbench v{version}"
+html_title = f"{project} v{version}"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 # html_short_title = None
@@ -320,7 +373,7 @@ html_static_path = ["_static"]
 # html_domain_indices = True
 
 # If false, no index is generated.
-# html_use_index = True
+html_use_index = False
 
 # If true, the index is split into individual pages for each letter.
 # html_split_index = False
@@ -381,7 +434,7 @@ latex_documents = [
         master_doc,
         "{}-api.tex".format(project),
         r"API reference for {}".format(project),
-        author,
+        r', \\'.join(author_groups),
         "manual",
     ),
 ]
@@ -398,31 +451,13 @@ latex_documents = [
 # latex_show_pagerefs = False
 
 # If true, show URL addresses after external links.
-# latex_show_urls = False
+latex_show_urls = 'False'
 
 # Documents to append as an appendix to all manuals.
 # latex_appendices = []
 
 # If false, no module index is generated.
-# latex_domain_indices = True
-
-
-# -- Options for manual page output ---------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [
-    (
-        master_doc,
-        "{}-api".format(project),
-        "API reference for {}".format(project),
-        [author],
-        1,
-    )
-]
-
-# If true, show URL addresses after external links.
-# man_show_urls = False
+latex_domain_indices = False
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -548,30 +583,30 @@ nbsphinx_execute_arguments = [
 # nbsphinx_responsive_width = '700px'
 
 # This is processed by Jinja2 and inserted before each notebook
-nbsphinx_prolog = r"""
-{% set docname = env.doc2path(env.docname, base='doc') %}
-.. only:: html
-    .. role:: raw-html(raw)
-        :format: html
-    .. nbinfo::
-        This page was generated from `{{ docname }}`__.
-        Interactive online version:
-        :raw-html:`<a href="https://mybinder.org/v2/gh/spatialaudio/nbsphinx/{{ env.config.release }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
-    __ https://github.com/spatialaudio/nbsphinx/blob/
-        {{ env.config.release }}/{{ docname }}
-.. raw:: latex
-    \nbsphinxstartnotebook{\scriptsize\noindent\strut
-    \textcolor{gray}{The following section was generated from
-    \sphinxcode{\sphinxupquote{\strut {{ docname | escape_latex }}}} \dotfill}}
-"""
+# nbsphinx_prolog = r"""
+# {% set docname = env.doc2path(env.docname, base='doc') %}
+# .. only:: html
+#     .. role:: raw-html(raw)
+#         :format: html
+#     .. nbinfo::
+#         This page was generated from `{{ docname }}`__.
+#         Interactive online version:
+#         :raw-html:`<a href="https://mybinder.org/v2/gh/spatialaudio/nbsphinx/{{ env.config.release }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+#     __ https://github.com/spatialaudio/nbsphinx/blob/
+#         {{ env.config.release }}/{{ docname }}
+# .. raw:: latex
+#     \nbsphinxstartnotebook{\scriptsize\noindent\strut
+#     \textcolor{gray}{The following section was generated from
+#     \sphinxcode{\sphinxupquote{\strut {{ docname | escape_latex }}}} \dotfill}}
+# """
 
-# This is processed by Jinja2 and inserted after each notebook
-nbsphinx_epilog = r"""
-.. raw:: latex
-    \nbsphinxstopnotebook{\scriptsize\noindent\strut
-    \textcolor{gray}{\dotfill\ \sphinxcode{\sphinxupquote{\strut
-    {{ env.doc2path(env.docname, base='doc') | escape_latex }}}} ends here.}}
-"""
+# # This is processed by Jinja2 and inserted after each notebook
+# nbsphinx_epilog = r"""
+# .. raw:: latex
+#     \nbsphinxstopnotebook{\scriptsize\noindent\strut
+#     \textcolor{gray}{\dotfill\ \sphinxcode{\sphinxupquote{\strut
+#     {{ env.doc2path(env.docname, base='doc') | escape_latex }}}} ends here.}}
+# """
 
 # Input prompt for code cells. "%s" is replaced by the execution count.
 # nbsphinx_input_prompt = 'In [%s]:'

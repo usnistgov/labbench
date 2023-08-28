@@ -1,6 +1,6 @@
 [project]
 name = "labbench"
-version = "0.27.0"
+version = "0.28.0"
 
 description = """\
     A set of python tools for clear, concise, and explainable laboratory automation. Code\
@@ -78,9 +78,10 @@ dev = [
     "pytest",
     "pytest-cov",
     "sphinx>=4.5",
-    "recommonmark",
     "ipywidgets",
     "twine>=4.0.2",
+    "toml>=0.10.2",
+    "sphinx-mdinclude>=0.5.3",
 ]
 
 [tool.black]

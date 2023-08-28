@@ -573,7 +573,7 @@ class Trait:
                 doc = f"{self.help}"
             else:
                 doc = f"{self.name} ({typename}): {self.help}"
-            
+
             if len(params) > 0:
                 doc += f" (constraints: {params})"
 
@@ -583,7 +583,6 @@ class Trait:
                 doc = str(self.help)
             else:
                 doc = f"{typename}: {self.help}"
-                
 
             if len(params) > 0:
                 doc += f"\n\nConstraints:\n    {params}"

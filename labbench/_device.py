@@ -418,7 +418,7 @@ class Device(HasTraits, util.Ownable):
             # In case an exception has occurred before __init__
             return f"{name}()"
 
-    @property_.bool(help="oh no")
+    @property_.bool()
     def isopen(self):
         """`True` if the backend is ready for use"""
         try:

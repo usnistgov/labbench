@@ -61,16 +61,21 @@ class message_keying(_traits.PropertyKeyingBase):
         self.write_func = write_func
         self.query_func = query_func
 
+        if len(remap) == 0:
+            self.value_map = {}
+            self.message_map = {}
+            return
+
         # ensure str type for messages; keys can be arbitrary python type
-        if not all(isinstance(v, str) for v in remap.values()):
+        if not all(isinstance(v, __builtins__['str']) for v in remap.values()):
             raise TypeError("all values in remap dict must have type str")
+
         self.value_map = remap
 
-        if len(remap) > 0:
-            # create the reverse mapping and ensure all values are unique
-            self.message_map = __builtins__["dict"](zip(remap.values(), remap.keys()))
-        else:
-            self.message_map = {}
+        # create the reverse mapping
+        self.message_map = __builtins__["dict"](zip(remap.values(), remap.keys()))
+
+        # and ensure all values are unique
         if len(self.message_map) != len(self.value_map):
             raise ValueError("'remap' has duplicate values")
 

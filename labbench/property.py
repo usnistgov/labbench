@@ -67,7 +67,7 @@ class message_keying(_traits.PropertyKeyingBase):
             return
 
         # ensure str type for messages; keys can be arbitrary python type
-        if not all(isinstance(v, __builtins__['str']) for v in remap.values()):
+        if not all(isinstance(v, __builtins__["str"]) for v in remap.values()):
             raise TypeError("all values in remap dict must have type str")
 
         self.value_map = remap

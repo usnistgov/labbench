@@ -81,7 +81,7 @@ dev = [
     "ipywidgets",
     "twine>=4.0.2",
     "toml>=0.10.2",
-    "sphinx-mdinclude>=0.5.3",
+    "myst-parser>=2.0.0",
 ]
 
 [tool.black]
@@ -90,6 +90,7 @@ target-version = ["py38", "py39", "py310", "py311"]
 include = '\.pyi?$'
 
 [tool.pdm.scripts]
-build-html = {cmd = "sphinx-build -b html doc public"}
-build-latex = {cmd = "sphinx-build -b latex doc public"}
-build-rst = {cmd = "sphinx-apidoc -F . -o doc"}
+doc-html = {cmd = "sphinx-build -b html doc doc/html"}
+doc-latex = {cmd = "sphinx-build -b latex doc doc/latex"}
+doc-pdf = {cmd = "pdflatex doc/latex/labbench-api.tex --output-directory=doc", env = {"TEXINPUTS" = "doc/latex"}}
+doc-rst = {cmd = "sphinx-apidoc -F . -o doc"}

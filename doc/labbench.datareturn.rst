@@ -1,7 +1,7 @@
-labbench
+labbench.datareturn
 ================
 
-.. automodule:: labbench
+.. automodule:: labbench.datareturn
    :members:
    :imported-members:
    :undoc-members:

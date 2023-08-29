@@ -38,10 +38,10 @@ import shutil
 import numpy as np
 from labbench import __version__ as version
 import toml
-from sphinx.domains.python import PythonDomain            
+from sphinx.domains.python import PythonDomain
 
 
-project_info = toml.load('../pyproject.toml')
+project_info = toml.load("../pyproject.toml")
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -49,7 +49,8 @@ project_info = toml.load('../pyproject.toml')
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
-    "sphinx_mdinclude",
+    # "sphinx_mdinclude",
+    "myst_parser",
     #    'sphinxcontrib.restbuilder',
     # "sphinx.ext.viewcode",
     # "sphinx.ext.autosummary",
@@ -81,14 +82,16 @@ master_doc = "index"
 
 # General information about the project.
 project = project_info["project"]["name"]
-authors = [author['name'] for author in project_info["project"]["authors"]]
-author_groups = [', '.join(a) for a in np.array_split(authors, np.ceil(len(authors)/3))]
+authors = [author["name"] for author in project_info["project"]["authors"]]
+author_groups = [
+    ", ".join(a) for a in np.array_split(authors, np.ceil(len(authors) / 3))
+]
 copyright = (
     "United States government work, not subject to copyright in the United States"
 )
 
 # author = "Dan Kuester, Shane Allman, Paul Blanchard, Yao Ma (NIST)"
-author = ', '.join(author_groups)
+author = ", ".join(author_groups)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -116,7 +119,12 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", f"{project}/_version.py", "**.ipynb_checkpoints", "setup*"]
+exclude_patterns = [
+    "_build",
+    f"{project}/_version.py",
+    "**.ipynb_checkpoints",
+    "setup*",
+]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -138,11 +146,12 @@ exclude_patterns = ["_build", f"{project}/_version.py", "**.ipynb_checkpoints", 
 #     'ignore-module-all': True
 # }
 
+
 # From https://groups.google.com/forum/#!msg/sphinx-users/NYUYffRrE78/MPMa57KN1sEJ
 # to make output paths compatible with github
 def change_pathto(app, pagename, templatename, context, doctree):
     """
-        Replace pathto helper to change paths to folders with a leading underscore.
+    Replace pathto helper to change paths to folders with a leading underscore.
     """
     pathto = context.get("pathto")
 
@@ -172,52 +181,53 @@ def move_private_folders(app, e):
 
             shutil.move(item, dest)
 
+
 import pickle
+
 
 # From https://github.com/sphinx-doc/sphinx/issues/3866#issuecomment-311181219
 # to avoid clobbering references to builtins
-class PatchedPythonDomain(PythonDomain):   
+class PatchedPythonDomain(PythonDomain):
     def resolve_xref(self, env, fromdocname, builder, typ, target, node, contnode):
         import builtins
-        exclude_targets = set(dir(builtins))        
 
-        if 'refspecific' in node:
-            if not node['refspecific'] and node["reftarget"] in exclude_targets:
-                del node['refspecific']
-        
-        
-        with open('debug.pickle', 'wb') as fd:
+        exclude_targets = set(dir(builtins))
+
+        if "refspecific" in node:
+            if not node["refspecific"] and node["reftarget"] in exclude_targets:
+                del node["refspecific"]
+
+        with open("debug.pickle", "wb") as fd:
             pickle.dump(self.data, fd)
 
         return super(PatchedPythonDomain, self).resolve_xref(
-            env, fromdocname, builder, typ, target, node, contnode)
-        
-        
+            env, fromdocname, builder, typ, target, node, contnode
+        )
+
+
 from sphinx.ext import autodoc
 import labbench as lb
 
+
 def process_signature(app, what, name, obj, options, signature, return_annotation):
     if isinstance(obj, lb._traits.Trait):
-        # return_annotation = obj.type.__qualname__
-        print('process_signature: trait ', locals())
-        return (None, obj.type.__qualname__)
-    elif isinstance(obj, property):
-        print('process_signature: property ', locals())
+        return (name, obj.type.__qualname__)
+    else:
+        return (signature, return_annotation)
 
-    return (signature, return_annotation)
 
 def process_docstring(app, what, name, obj, options, lines):
     if isinstance(obj, lb._traits.Trait):
-        print('process_docstring: ', name, obj.doc(anonymous=True))
         lines.append(obj.doc(as_argument=True, anonymous=True))
-       
-    elif isinstance(obj, property):
-        print('process_docstring: property ', locals())
+
 
 class AttributeDocumenter(autodoc.AttributeDocumenter):
     @staticmethod
     def _is_lb_value(obj):
-        return isinstance(obj, lb._traits.Trait) and obj.role == lb._traits.Trait.ROLE_VALUE
+        return (
+            isinstance(obj, lb._traits.Trait)
+            and obj.role == lb._traits.Trait.ROLE_VALUE
+        )
 
     @classmethod
     def can_document_member(cls, member, membername: str, isattr: bool, parent) -> bool:
@@ -229,7 +239,7 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
     def add_directive_header(self, sig: str) -> None:
         if not self._is_lb_value(self.object):
             return super().add_directive_header(sig)
-        
+
         super().add_directive_header(sig)
         sourcename = self.get_sourcename()
 
@@ -237,24 +247,28 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
         if self.config.autodoc_typehints_format == "short":
             objrepr = autodoc.stringify_annotation(self.object.type, "smart")
         else:
-            objrepr = autodoc.stringify_annotation(self.object.type,
-                                            "fully-qualified-except-typing")
+            objrepr = autodoc.stringify_annotation(
+                self.object.type, "fully-qualified-except-typing"
+            )
 
-        self.add_line('   :type: ' + objrepr, sourcename)      
-        
+        self.add_line("   :type: " + objrepr, sourcename)
+
 
 class PropertyDocumenter(autodoc.PropertyDocumenter):
     @staticmethod
     def _is_lb_property(obj):
-        return isinstance(obj, lb._traits.Trait) and obj.role == lb._traits.Trait.ROLE_PROPERTY
-    
+        return (
+            isinstance(obj, lb._traits.Trait)
+            and obj.role == lb._traits.Trait.ROLE_PROPERTY
+        )
+
     @classmethod
     def can_document_member(cls, member, membername: str, isattr: bool, parent) -> bool:
         if isinstance(parent, autodoc.ClassDocumenter):
             if cls._is_lb_property(member):
                 return True
         return super().can_document_member(member, membername, isattr, parent)
-    
+
     def import_object(self, raiseerror: bool = False) -> bool:
         """Check the exisitence of uninitialized instance attribute when failed to import
         the attribute."""
@@ -271,26 +285,25 @@ class PropertyDocumenter(autodoc.PropertyDocumenter):
 
         super().add_directive_header(sig)
         sourcename = self.get_sourcename()
-        
+
         # if signature.return_annotation is not Parameter.empty:
         if self.config.autodoc_typehints_format == "short":
             objrepr = autodoc.stringify_annotation(self.object.type, "smart")
         else:
-            objrepr = autodoc.stringify_annotation(self.object.type,
-                                            "fully-qualified-except-typing")
-            
-        self.add_line('   :type: ' + objrepr, sourcename)
+            objrepr = autodoc.stringify_annotation(
+                self.object.type, "fully-qualified-except-typing"
+            )
+
+        self.add_line("   :type: " + objrepr, sourcename)
 
     def format_args(self, **kwargs) -> str:
         if not self._is_lb_property(self.object):
             return super().format_args(**kwargs)
-        
-        # update the annotations of the property getter
-        self.env.app.emit('autodoc-before-process-signature', self.object, False)
-        # correctly format the arguments for a property
-        return super().format_args(**kwargs)
+        else:
+            self.env.app.emit("autodoc-before-process-signature", self.object, False)
+            return super().format_args(**kwargs)
 
-    
+
 def setup(app):
     # app.connect('autodoc-skip-member', maybe_skip_member)
     app.connect("html-page-context", change_pathto)
@@ -299,7 +312,8 @@ def setup(app):
     app.add_autodocumenter(PropertyDocumenter)
     app.add_autodocumenter(AttributeDocumenter)
     # app.connect('autodoc-process-signature', process_signature)
-    app.connect('autodoc-process-docstring', process_docstring)
+    app.connect("autodoc-process-docstring", process_docstring)
+
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -434,7 +448,7 @@ latex_documents = [
         master_doc,
         "{}-api.tex".format(project),
         r"API reference for {}".format(project),
-        r', \\'.join(author_groups),
+        r", \\".join(author_groups),
         "manual",
     ),
 ]
@@ -451,7 +465,7 @@ latex_documents = [
 # latex_show_pagerefs = False
 
 # If true, show URL addresses after external links.
-latex_show_urls = 'False'
+latex_show_urls = "False"
 
 # Documents to append as an appendix to all manuals.
 # latex_appendices = []

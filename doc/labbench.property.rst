@@ -1,7 +1,7 @@
-labbench
+labbench.property
 ================
 
-.. automodule:: labbench
+.. automodule:: labbench.property
    :members:
    :imported-members:
    :undoc-members:

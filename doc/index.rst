@@ -1,14 +1,12 @@
 labbench documentation
 ===========================================
 
-.. mdinclude:: ../README.md
-
-.. mdinclude:: ../LICENSE.md
-
 .. toctree::
    :maxdepth: 2
 
-   labbench
+   readme
+   license
+   api_reference
 
 
 .. Indices and tables

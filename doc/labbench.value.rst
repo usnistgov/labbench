@@ -1,9 +1,8 @@
-labbench
+labbench.value
 ================
 
-.. automodule:: labbench
+.. automodule:: labbench.value
    :members:
-   :imported-members:
    :undoc-members:
    :show-inheritance:
 

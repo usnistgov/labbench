@@ -22,6 +22,10 @@ Some complex measurement efforts that used labbench:
   * [NIST TN 2147: Characterizing LTE User Equipment Emissions Under Closed-Loop Power Control](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2147.pdf)
   * [Blind Measurement of Receiver System Noise](https://www.nist.gov/publications/blind-measurement-receiver-system-noise) and [data](https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121)
 
+## Status
+* The project is under ongoing development. While API changes have slowed, but deprecation warnings are not yet being provided.
+* Parts of the documentation are in need of updates, and others have not yet been written
+
 ## Installation
 1. Ensure python 3.8 or newer is installed with pip for package management
 2. Run the following to install the labbench module:        

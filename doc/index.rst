@@ -2,11 +2,10 @@ labbench documentation
 ===========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   readme
-   license
-   api_reference
+   02_getting_started.md
+   api_reference.rst
 
 
 .. Indices and tables

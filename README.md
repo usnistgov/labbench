@@ -4,17 +4,14 @@
 [![Downloads](https://static.pepy.tech/badge/labbench)](https://pepy.tech/project/labbench)
 [![Last commit](https://img.shields.io/github/last-commit/usnistgov/labbench)](https://pypi.org/project/labbench/)
 
-# labbench
-This is a set of python tools for writing laboratory automation scripts that are
-clear, concise, and explainable.
-Code that achieves these goals should read like a pseudocode expression of the experimental
-procedure. Objects for control over equipment (or other software) should only expose
-a clear set of automation capabilities to make laboratory automation more robust and less frustrating.
+The `labbench` module supports laboratory automation scripting that is clear, concise, explainable, and reusable.
+The goal is to enable code that reads as a pseudocode expression of an experimental procedure.
 
-The labbench module provides tools that support toward this goal through an object protocol and
-support functions. These separate repetitive and error-prone boilerplate code,
-Use of these capabilities among multiple experimental runs also helps to produced data sets with
-consistent structure.
+The approach to this problem is to provide an API composed of object protocol and
+support functions that are targeted toward common patterns in laboratory automation.
+These simplify code for multi-threaded operations, log test results based on introspection,
+and reduce repetitive and error-prone copy-and-paste processes. Underlying interactions with hardware
+are driven by lower-level automation libraries such as [pyvisa](https://pyvisa.readthedocs.io/).
 
 ### Devices
 A `Device` object exposes automation control over a piece of lab equipment, or software as a virtual "device." Organizing access into the `Device` class immediately provides transparent capability to
@@ -33,12 +30,10 @@ import labbench as lb
 import pandas as pd
 
 class PowerSensor(lb.VISADevice):
-    SOURCES = 'IMM', 'INT', 'EXT', 'BUS', 'INT1'
     RATES = 'NORM', 'DOUB', 'FAST'
 
     initiate_continuous = lb.property.bool(key='INIT:CONT')
     output_trigger = lb.property.bool(key='OUTP:TRIG')
-    trigger_source = lb.property.str(key='TRIG:SOUR', only=SOURCES, case=False)
     trigger_count = lb.property.int(key='TRIG:COUN', min=1, max=200)
     measurement_rate = lb.property.str(key='SENS:MRAT', only=RATES, case=False)
     sweep_aperture = lb.property.float(key='SWE:APER', min=20e-6, max=200e-3, help='time (s)')
@@ -64,7 +59,7 @@ with PowerSensor('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as sensor:
     # configure from scratch
     sensor.preset()
 
-    # the following set parameters on the power sensor
+    # set parameters onboard the power sensor
     sensor.frequency = 1e9
     sensor.measurement_rate = 'FAST'
     sensor.trigger_count = 200
@@ -75,12 +70,12 @@ with PowerSensor('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as sensor:
     power = sensor.fetch()
 ```
 
-The usage here is simple because the methods and traits for automation can be discovered easily through tab completion in most IDEs. They can be used on connection with a simple `with` block.
+The usage here is simple because the methods and traits for automation can be discovered easily through tab completion in most IDEs. The device connection remains open when inside a `with` block.
 
 ### Scaling to testbeds
-Large test setups can neatly organize procedures that require a few Device instances into `Task` objects. A `Testbed` class collects the set of `Task` instances needed to perform the experiment, manages connection of these devices together,
-ensuring graceful disconnection of all `Device` on unhandled exceptions.
-A `multitask` definition defines a more complete experiment in the `Testbed` as a concurrent and sequential steps from multiple `Task` objects, using `multitask`. The `Testbed` also optionally exposes device state and fetched data for database management and user interface. The following ties all these together:
+Large test setups can neatly organize procedures that require a few Device instances into `Rack` objects. These collect the `Device` instances needed to perform the experiment, together with other `Rack` instances, and ensure
+graceful disconnection of all `Device` on unhandled exceptions.
+The following ties all these together:
 
 ```python
 # testbed.py

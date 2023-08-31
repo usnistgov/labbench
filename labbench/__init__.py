@@ -69,13 +69,7 @@ from ._rack import (
     rack_kwargs_template,
 )
 from ._serialize import dump_rack, load_rack
-from ._traits import (
-    Undefined,
-    observe,
-    unobserve,
-    PropertyKeyingBase,
-    adjusted
-)
+from ._traits import Undefined, observe, unobserve, PropertyKeyingBase, adjusted
 from ._version import __version__
 
 # scrub __module__ for cleaner repr() and doc

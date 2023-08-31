@@ -36,6 +36,7 @@ from warnings import warn
 from functools import wraps
 import validators as _val
 from contextlib import contextmanager
+import builtins
 
 from inspect import isclass
 import inspect
@@ -824,7 +825,9 @@ class HasTraits(metaclass=HasTraitsMeta):
         pass
 
 
-def adjusted(trait: Union[Trait, str], default: Any = Undefined, /, **trait_params) -> HasTraits:
+def adjusted(
+    trait: Union[Trait, str], default: Any = Undefined, /, **trait_params
+) -> HasTraits:
     """decorates a Device subclass to adjust parameters of this trait name.
 
     This can be applied to inherited classes that need traits that vary the
@@ -845,10 +848,10 @@ def adjusted(trait: Union[Trait, str], default: Any = Undefined, /, **trait_para
     """
     if isinstance(trait, Trait):
         name = trait.name
-    elif isinstance(trait, __builtins__.str):
+    elif isinstance(trait, builtins.str):
         name = trait
     else:
-        raise ValueError('expected Trait or str instance for `trait` argument')
+        raise ValueError("expected Trait or str instance for `trait` argument")
 
     def apply_adjusted_trait(owner_cls: HasTraits):
         if not issubclass(owner_cls, HasTraits):

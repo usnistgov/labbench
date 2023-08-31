@@ -10,10 +10,10 @@ expression of an experimental procedure. These characteristics necessary to scal
 
 Features include:
 * Expedited development of python device wrappers, including specialized backends for [pythonnet](https://github.com/pythonnet/pythonnet/wiki), [pyvisa](https://pyvisa.readthedocs.io/), [pyserial](https://pyserial.readthedocs.io/en/latest/), [subprocess](https://docs.python.org/3/library/subprocess.html), [telnetlib](https://docs.python.org/3/library/telnetlib.html)
-* Automated test logging based on introspection of wrapper objects
+* Automated test logging into CSV, HDF, or sqlite based on introspection of wrapper objects
 * Simplified multi-threaded concurrency for lab testing use cases
 * Composable and nestable container objects for device wrappers
-* Support for table-driven testing
+* Support for testing driven by tables of test conditions
 
 Some complex measurement efforts that used labbench:
   * [NIST TN 1952: LTE Impacts on GPS](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1952.pdf) and [data](https://data.nist.gov/od/id/mds2-2186)

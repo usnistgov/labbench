@@ -1,9 +1,4 @@
-from . import (
-    datareturn as datareturn,
-    property as property,
-    util as util,
-    value as value,
-)
+from . import datareturn as datareturn, property as property, util as util, value as value
 from ._backends import (
     DotNetDevice as DotNetDevice,
     LabviewSocketInterface as LabviewSocketInterface,
@@ -24,11 +19,7 @@ from ._data import (
     read as read,
     read_relational as read_relational,
 )
-from ._device import (
-    Device as Device,
-    list_devices as list_devices,
-    trait_info as trait_info,
-)
+from ._device import Device as Device, list_devices as list_devices, trait_info as trait_info
 from ._host import Email as Email
 from ._rack import (
     Rack as Rack,
@@ -43,6 +34,7 @@ from ._serialize import dump_rack as dump_rack, load_rack as load_rack
 from ._traits import (
     PropertyKeyingBase as PropertyKeyingBase,
     Undefined as Undefined,
+    adjusted as adjusted,
     observe as observe,
     unobserve as unobserve,
 )

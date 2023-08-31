@@ -23,7 +23,7 @@ Some complex measurement efforts that used labbench:
   * [Blind Measurement of Receiver System Noise](https://www.nist.gov/publications/blind-measurement-receiver-system-noise) and [data](https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121)
 
 ## Status
-* The project is under ongoing development. While API changes have slowed, but deprecation warnings are not yet being provided.
+* The project is under ongoing development. API changes have slowed, but deprecation warnings are not yet being provided.
 * Parts of the documentation are in need of updates, and others have not yet been written
 
 ## Installation

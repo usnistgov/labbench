@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Getting started &#8212; labbench</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=6f14c262" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=d568ce81"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Multi-threaded concurrency" href="03_concurrency.html" />
+    <link rel="prev" title="labbench documentation" href="../index.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench">
+  <link rel="canonical" href="../">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="..//_static/NISTStyle.css">
+  <link rel="stylesheet" href="..//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="03_concurrency.html" title="Multi-threaded concurrency"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="labbench documentation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">labbench</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Getting started</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this heading">¶</a></h1>
+<section id="single-devices">
+<h2>Single devices<a class="headerlink" href="#single-devices" title="Permalink to this heading">¶</a></h2>
+<p>A <code class="docutils literal notranslate"><span class="pre">Device</span></code> object is the central encapsulates python control over a single piece of laboratory equipment or a software instance. Organizing automation with the <code class="docutils literal notranslate"><span class="pre">Device</span></code> classes in this way immediately provides shortcuts for</p>
+<ul class="simple">
+<li><p>automatic logging</p></li>
+<li><p>coercion between python types and low-level/over-the-wire data types</p></li>
+<li><p>constraints on instrument parameters</p></li>
+<li><p>multi-threaded connection management</p></li>
+<li><p>hooks for real-time heads-up displays</p></li>
+</ul>
+<section id="a-basic-visa-device-wrapper">
+<h3>A basic VISA device wrapper<a class="headerlink" href="#a-basic-visa-device-wrapper" title="Permalink to this heading">¶</a></h3>
+<p>Let’s start by a simple demonstration with <a class="reference external" href="https://en.wikipedia.org/wiki/Virtual_instrument_software_architecture">VISA</a> instrument automation. To do this, we write wrapper that specializes the general-purpose <code class="docutils literal notranslate"><span class="pre">labbench.VISADevice</span></code> backend, which uses the <a class="reference external" href="https://pyvisa.readthedocs.io/"><code class="docutils literal notranslate"><span class="pre">pyvisa</span></code></a> library. This helps to expedite <a class="reference external" href="https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments">SCPI</a> messaging patterns that arise often.</p>
+<p>The example below gives a simplified working example of <a class="reference external" href="https://github.com/usnistgov/ssmdevices/blob/main/ssmdevices/instruments/power_sensors.py">a more complete commercial power sensor</a>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+
+<span class="nd">@lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span>
+    <span class="c1"># these are the default SCPI query and write formats</span>
+    <span class="n">query_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">?&quot;</span><span class="p">,</span>
+    <span class="n">write_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> </span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">,</span>
+
+    <span class="c1"># map python True and False values to these SCPI strings</span>
+    <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="n">RATES</span> <span class="o">=</span> <span class="s2">&quot;NORM&quot;</span><span class="p">,</span> <span class="s2">&quot;DOUB&quot;</span><span class="p">,</span> <span class="s2">&quot;FAST&quot;</span>
+
+    <span class="c1"># SCPI string keys and bounds on the parameter values,</span>
+    <span class="c1"># taken from the instrument programming manual</span>
+    <span class="n">initiate_continuous</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;INIT:CONT&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;trigger continuously if True&quot;</span>
+    <span class="p">)</span>
+    <span class="n">trigger_count</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">int</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;TRIG:COUN&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;acquisition count&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;samples&quot;</span>
+    <span class="p">)</span>
+    <span class="n">measurement_rate</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">str</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:MRAT&quot;</span><span class="p">,</span> <span class="n">only</span><span class="o">=</span><span class="n">RATES</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span>
+    <span class="p">)</span>
+    <span class="n">sweep_aperture</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SWE:APER&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;measurement duration&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;s&quot;</span>
+    <span class="p">)</span>
+    <span class="n">frequency</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:FREQ&quot;</span><span class="p">,</span>
+        <span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span>
+        <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span>
+        <span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;input signal center frequency&quot;</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">preset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;revert to instrument preset state&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;SYST:PRES&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;acquire measurements as configured&quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;FETC?&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This object is already enough for us to automate an RF power measurements!</p>
+</section>
+<section id="usage-of-device-wrappers">
+<h3>Usage of device wrappers<a class="headerlink" href="#usage-of-device-wrappers" title="Permalink to this heading">¶</a></h3>
+<p>An automation script uses</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># specify the VISA address to use the power sensor</span>
+<span class="n">sensor</span> <span class="o">=</span> <span class="n">PowerSensor</span><span class="p">(</span><span class="s2">&quot;USB0::0x2A8D::0x1E01::SG56360004::INSTR&quot;</span><span class="p">)</span>
+
+<span class="c1"># connection to the power sensor hardware at the specified address</span>
+<span class="c1"># is held open until exiting the &quot;with&quot; block</span>
+<span class="k">with</span> <span class="n">sensor</span><span class="p">:</span>
+    <span class="c1"># apply the instrument preset state</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
+
+    <span class="c1"># set acquisition parameters on the power sensor</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="mf">1e9</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">measurement_rate</span> <span class="o">=</span> <span class="s2">&quot;FAST&quot;</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">sweep_aperture</span> <span class="o">=</span> <span class="mf">20e-6</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">initiate_continuous</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># retreive the 200 measurement samples</span>
+    <span class="n">power</span> <span class="o">=</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The usage here is simple because the methods and traits for automation can be discovered easily through tab completion in most IDEs. The device connection remains open for all lines inside the <code class="docutils literal notranslate"><span class="pre">with</span></code> block..</p>
+</section>
+</section>
+<section id="multiple-devices">
+<h2>Multiple devices<a class="headerlink" href="#multiple-devices" title="Permalink to this heading">¶</a></h2>
+<p>To organize and operate multiple Device instances, <code class="docutils literal notranslate"><span class="pre">labbench</span></code> provides <code class="docutils literal notranslate"><span class="pre">Rack</span></code> objects. These act as a container for aspects of automation needed to perform into a resuable automation task, including <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects, other <code class="docutils literal notranslate"><span class="pre">Rack</span></code> objects, and automation functions. On exception, they ensure that all <code class="docutils literal notranslate"><span class="pre">Device</span></code> connections are closed.</p>
+<section id="basic-implementation">
+<h3>Basic implementation<a class="headerlink" href="#basic-implementation" title="Permalink to this heading">¶</a></h3>
+<p>The following example creates simple automation tasks for a swept-frequency microwave measurement built around one <code class="docutils literal notranslate"><span class="pre">Device</span></code> each:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+
+<span class="c1"># some custom library of Device drivers</span>
+<span class="kn">from</span> <span class="nn">myinstruments</span> <span class="kn">import</span> <span class="n">MySpectrumAnalyzer</span><span class="p">,</span> <span class="n">MySignalGenerator</span>
+
+
+<span class="k">class</span> <span class="nc">Synthesizer</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+    <span class="c1"># inputs needed to run the rack: in this case, a Device</span>
+    <span class="n">inst</span><span class="p">:</span> <span class="n">MySignalGenerator</span>
+
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="s2">&quot;carrier&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">bandwidth</span> <span class="o">=</span> <span class="mf">2e6</span>
+
+    <span class="k">def</span> <span class="nf">arm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">rf_output_enable</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">rf_output_enable</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">Analyzer</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+    <span class="c1"># inputs needed to run the rack: in this case, a Device</span>
+    <span class="n">inst</span><span class="p">:</span> <span class="n">MySpectrumAnalyzer</span>
+
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">load_state</span><span class="p">(</span><span class="s2">&quot;savename&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
+        <span class="n">lb</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># testbed data will have a column called &#39;spectrogram&#39;, which</span>
+        <span class="c1"># point to subdirectory containing a file called &#39;spectrogram.csv&#39;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">spectrogram</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">fetch_spectrogram</span><span class="p">())</span>
+
+
+<span class="k">class</span> <span class="nc">SweptMeasurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+    <span class="c1"># inputs needed to run the rack: in this case, child Rack objects</span>
+    <span class="n">generator</span><span class="p">:</span> <span class="n">Synthesizer</span>
+    <span class="n">detector</span><span class="p">:</span> <span class="n">Analyzer</span>
+
+    <span class="k">def</span> <span class="nf">single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">center_frequency</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">center_frequency</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">arm</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">frequencies</span><span class="p">:</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="n">duration</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">duration</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="usage-in-test-scripts">
+<h3>Usage in test scripts<a class="headerlink" href="#usage-in-test-scripts" title="Permalink to this heading">¶</a></h3>
+<p>When executed to run test scripts, create Rack instances with input objects according to their definition:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sa</span> <span class="o">=</span> <span class="n">MySpectrumAnalyzer</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+<span class="n">sg</span> <span class="o">=</span> <span class="n">MySignalGenerator</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">SweptMeasurement</span><span class="p">(</span><span class="n">generator</span><span class="o">=</span><span class="n">Synthesizer</span><span class="p">(</span><span class="n">sg</span><span class="p">),</span> <span class="n">detector</span><span class="o">=</span><span class="n">Analyzer</span><span class="p">(</span><span class="n">sa</span><span class="p">))</span> <span class="k">as</span> <span class="n">sweep</span><span class="p">:</span>
+    <span class="n">measurement</span> <span class="o">=</span> <span class="n">sweep</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">],</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>They open and close connections with all <code class="docutils literal notranslate"><span class="pre">Device</span></code> children by use of <code class="docutils literal notranslate"><span class="pre">with</span></code> methods. The connection state of all <code class="docutils literal notranslate"><span class="pre">SweptMeasurement</span></code> children are managed together, and all are closed in the event of an exception.</p>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Getting started</a><ul>
+<li><a class="reference internal" href="#single-devices">Single devices</a><ul>
+<li><a class="reference internal" href="#a-basic-visa-device-wrapper">A basic VISA device wrapper</a></li>
+<li><a class="reference internal" href="#usage-of-device-wrappers">Usage of device wrappers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#multiple-devices">Multiple devices</a><ul>
+<li><a class="reference internal" href="#basic-implementation">Basic implementation</a></li>
+<li><a class="reference internal" href="#usage-in-test-scripts">Usage in test scripts</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../index.html"
+                          title="previous chapter">labbench documentation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="03_concurrency.html"
+                          title="next chapter">Multi-threaded concurrency</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/guide/02_getting_started.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="03_concurrency.html" title="Multi-threaded concurrency"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="labbench documentation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">labbench</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Getting started</a></li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

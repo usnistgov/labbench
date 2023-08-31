@@ -35,4 +35,3 @@ must be installed separately.
 |pyvisa 1.8|[MIT](https://github.com/pyvisa/pyvisa/blob/master/LICENSE)|
 |pythonnet|[MIT](https://github.com/pythonnet/pythonnet/blob/master/LICENSE)|
 |sphinx 1.6.x|[BSD,MIT,PSF/Beopen.org](https://github.com/sphinx-doc/sphinx/blob/master/LICENSE)|
-|sorteddict 1.5.x|[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)|

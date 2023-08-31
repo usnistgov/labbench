@@ -1,4 +1,4 @@
-### License
+# License
 
 This software was developed by employees of the National Institute of Standards and Technology (NIST), an agency of the
 Federal Government. Pursuant to title 17 United States Code Section 105, works of NIST employees are not subject to
@@ -18,7 +18,7 @@ OR NOT LOSS WAS SUSTAINED FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE S
 Distributions of NIST software should also include copyright and licensing statements of any third-party software
 that are legally bundled with the code in compliance with the conditions of those licenses.
 
-### Dependencies
+## Dependency licenses
 Recently available license information for functional dependencies of this source
 code is summarized below. These dependencies are not redistributed here and
 must be installed separately.

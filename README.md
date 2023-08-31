@@ -22,10 +22,14 @@ Some complex measurement efforts that used labbench:
   * [NIST TN 2147: Characterizing LTE User Equipment Emissions Under Closed-Loop Power Control](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2147.pdf)
   * [Blind Measurement of Receiver System Noise](https://www.nist.gov/publications/blind-measurement-receiver-system-noise) and [data](https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121)
 
-#### Resources
+## Resources
 * [Documentation](http://pages.nist.gov/labbench)
 * [PyPI](https://pypi.org/project/labbench/) for installation
 * [ssmdevices](https://github.com/usnistgov/ssmdevices), a collection of device wrappers implemented with labbench
+
+## Contributing
+* [Pull requests](https://github.com/usnistgov/labbench/pulls) are welcome!
+* [Inline documentation style convention](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings)
 
 ## Contributors
 |Name|Contact|

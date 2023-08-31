@@ -257,5 +257,5 @@ def setup(app):
     app.add_domain(PatchedPythonDomain, override=True)
     app.add_autodocumenter(PropertyDocumenter, override=True)
     app.add_autodocumenter(AttributeDocumenter)
-    # app.connect('autodoc-process-signature', process_signature)
+    app.connect('autodoc-process-signature', process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

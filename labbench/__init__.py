@@ -74,6 +74,7 @@ from ._traits import (
     observe,
     unobserve,
     PropertyKeyingBase,
+    adjusted
 )
 from ._version import __version__
 

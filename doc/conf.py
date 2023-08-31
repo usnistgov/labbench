@@ -67,7 +67,7 @@ templates_path = ["_templates"]
 # source_suffix = [".rst", ".md"]
 source_suffix = {
     '.rst': 'restructuredtext',
-    '.ipynb': 'restructuredtext',
+    '.ipynb': 'myst-nb',
     '.md': 'myst-nb',
 }
 
@@ -120,6 +120,7 @@ language = "en"
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = [
     "_build",
+    "jupyter_execute",
     f"{project}/_version.py",
     "**.ipynb_checkpoints",
     "setup*",
@@ -145,6 +146,7 @@ exclude_patterns = [
 #     'ignore-module-all': True
 # }
 
+nb_execution_mode = 'off'
 
 # From https://github.com/sphinx-doc/sphinx/issues/3866#issuecomment-311181219
 # to avoid clobbering references to builtins

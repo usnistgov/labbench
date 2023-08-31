@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.29]
+### Added
+- new `adjusted` decorator for changing trait definitions in specialized subclassed Device instances
+
+### Changed
+- overhaul documentation
+
+## [0.28]
+### Added
+- compartmentalize backend property implementation into `PropertyKeyingBase`, a backend-specific decorator
+- implement `property.visa_keying` and `property.message_keying`
+- `Trait.adopt` decorator adjusts parameters of inherited traits in `Device` subclasses
+- support for pattern-based automatic connection to VISA instruments with new `VISADevice.identity_pattern` value trait
+- `visa_list_identities` lists the '*IDN?' response for all devices that are enumerated by `visa_list_resources`
+- `visa_list_resources` lists resources available for the default `VISADevice` resource manager
+
+
 ## [0.28.1] [0.28.2]
 ### Changed
 - corrected an import bug

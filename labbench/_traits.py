@@ -47,7 +47,7 @@ from pathlib import Path
 Undefined = inspect.Parameter.empty
 
 T = typing.TypeVar("T")
-from typing import Union
+from typing import Union, Any
 
 
 class ThisType(typing.Generic[T]):
@@ -822,6 +822,46 @@ class HasTraits(metaclass=HasTraitsMeta):
         """
         # assignment to to self.__cache__ here would corrupt 'old' message key in __notify__
         pass
+
+
+def adjusted(trait: Union[Trait, str], default: Any = Undefined, /, **trait_params) -> HasTraits:
+    """decorates a Device subclass to adjust parameters of this trait name.
+
+    This can be applied to inherited classes that need traits that vary the
+    parameters of a trait defined in a parent. Multiple decorators can be applied to the
+    same class definition.
+
+    Args:
+        trait (Union[Trait, str]): trait or name of trait to adjust in the wrapped class
+        default (Any, optional): new default value (for value traits only)
+
+    Raises:
+        ValueError: invalid type of Trait argument, or when d
+        TypeError: _description_
+        ValueError: _description_
+
+    Returns:
+        HasTraits or Device with adjusted trait value
+    """
+    if isinstance(trait, Trait):
+        name = trait.name
+    elif isinstance(trait, __builtins__.str):
+        name = trait
+    else:
+        raise ValueError('expected Trait or str instance for `trait` argument')
+
+    def apply_adjusted_trait(owner_cls: HasTraits):
+        if not issubclass(owner_cls, HasTraits):
+            raise TypeError("adopt must decorate a Device class definition")
+        if name not in owner_cls.__dict__:
+            raise ValueError(f'no trait "{name}" in {repr(owner_cls)}')
+
+        trait = getattr(owner_cls, name)
+        trait.update(**trait_params)
+        owner_cls.__update_signature__()
+        return owner_cls
+
+    return apply_adjusted_trait
 
 
 class Any(Trait, type=None):

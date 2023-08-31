@@ -30,12 +30,10 @@ import labbench as lb
 import pandas as pd
 
 class PowerSensor(lb.VISADevice):
-    SOURCES = 'IMM', 'INT', 'EXT', 'BUS', 'INT1'
     RATES = 'NORM', 'DOUB', 'FAST'
 
     initiate_continuous = lb.property.bool(key='INIT:CONT')
     output_trigger = lb.property.bool(key='OUTP:TRIG')
-    trigger_source = lb.property.str(key='TRIG:SOUR', only=SOURCES, case=False)
     trigger_count = lb.property.int(key='TRIG:COUN', min=1, max=200)
     measurement_rate = lb.property.str(key='SENS:MRAT', only=RATES, case=False)
     sweep_aperture = lb.property.float(key='SWE:APER', min=20e-6, max=200e-3, help='time (s)')

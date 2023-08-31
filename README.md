@@ -24,9 +24,10 @@ Some complex measurement efforts that used labbench:
 
 ## Installation
 1. Ensure python 3.8 or newer is installed with pip for package management
-2. Run the following to install the labbench module:
-
-    `pip install labbench`
+2. Run the following to install the labbench module:        
+    ```sh
+    pip install labbench
+    ```
 
 ## Resources
 

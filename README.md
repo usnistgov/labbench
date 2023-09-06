@@ -4,9 +4,9 @@
 [![Downloads](https://static.pepy.tech/badge/labbench)](https://pepy.tech/project/labbench)
 [![Last commit](https://img.shields.io/github/last-commit/usnistgov/labbench)](https://pypi.org/project/labbench/)
 
-The `labbench` module provides API tools to support python scripting for laboratory automation that is clear,
-concise, explainable, and reusable. The goal is to produce code that reads as a pseudocode
-expression of an experimental procedure. These characteristics necessary to scale complex testbeds.
+The `labbench` module provides API tools to support python scripting for laboratory automation.
+The goal is to simplify the process of developing an experimental procedure into clear, concise, explainable, and reusable code.
+These characteristics are necessary to scale up the complexity of large testbeds and experiments.
 
 Features include:
 * Expedited development of python device wrappers, including specialized backends for [pythonnet](https://github.com/pythonnet/pythonnet/wiki), [pyvisa](https://pyvisa.readthedocs.io/), [pyserial](https://pyserial.readthedocs.io/en/latest/), [subprocess](https://docs.python.org/3/library/subprocess.html), [telnetlib](https://docs.python.org/3/library/telnetlib.html)

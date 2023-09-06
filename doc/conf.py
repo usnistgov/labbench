@@ -47,21 +47,6 @@ project_info = toml.load("../pyproject.toml")
 # Location of the API source code
 autoapi_dirs = [f'../{project_info["project"]["name"]}']
 
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
-# Force handlers
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.ipynb': 'myst-nb',
-    '.md': 'myst-nb',
-}
-
-autodoc_mock_imports = []
-
-# The master toctree document.
-master_doc = "index"
-
 # -------- General information about the project ------------------
 project = project_info["project"]["name"]
 authors = [author["name"] for author in project_info["project"]["authors"]]
@@ -72,10 +57,10 @@ copyright = (
     "United States government work, not subject to copyright in the United States"
 )
 author = ", ".join(author_groups)
-version = release = project_info["project"]["name"]
+version = release = project_info["project"]["version"]
 language = "en"
 
-# ------------- General sphinx -----------------------------------
+# ------------- base sphinx setup -------------------------------
 extensions = [
     #
     # base sphinx capabilities
@@ -87,6 +72,8 @@ extensions = [
     #
     # numpy- and google-style docstrings
     "sphinx.ext.napoleon",
+    #
+    # for code that will be hosted on github pages (or NIST pages)
     "sphinx.ext.githubpages",
 ]
 
@@ -98,8 +85,24 @@ exclude_patterns = [
     "setup*",
 ]
 
+# Add any paths that contain templates here, relative to this directory.
+templates_path = ["_templates"]
+
+# Force handlers
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".ipynb": "myst-nb",
+    ".md": "myst-nb",
+}
+
+autodoc_mock_imports = []
+
+# The master toctree document.
+master_doc = "index"
+
+
 # ------------------ myst_nb ---------------------------------------
-nb_execution_mode = 'off'
+nb_execution_mode = "off"
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "default"
@@ -141,6 +144,7 @@ mathjax_config = {
 # -- Dynamic processing to get the library introspection right ----
 class PatchedPythonDomain(PythonDomain):
     """avoid clobbering references to builtins"""
+
     def resolve_xref(self, env, fromdocname, builder, typ, target, node, contnode):
         # ref: https://github.com/sphinx-doc/sphinx/issues/3866#issuecomment-311181219
         exclude_targets = set(dir(builtins))
@@ -156,7 +160,7 @@ class PatchedPythonDomain(PythonDomain):
 
 def process_signature(app, what, name, obj, options, signature, return_annotation):
     if isinstance(obj, lb._traits.Trait):
-        return (name, getattr(obj.type, '__qualname__', repr(obj.type)))
+        return (name, getattr(obj.type, "__qualname__", repr(obj.type)))
     else:
         return (signature, return_annotation)
 
@@ -168,6 +172,7 @@ def process_docstring(app, what, name, obj, options, lines):
 
 class AttributeDocumenter(autodoc.AttributeDocumenter):
     """Document lb.value trait class attributes in the style of python class attributes"""
+
     @staticmethod
     def _is_lb_value(obj):
         return (
@@ -180,7 +185,7 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
         if isinstance(parent, autodoc.ClassDocumenter):
             if cls._is_lb_value(member):
                 return True
-        
+
         return super().can_document_member(member, membername, isattr, parent)
 
     def add_directive_header(self, sig: str) -> None:
@@ -203,7 +208,7 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
 
 class PropertyDocumenter(autodoc.PropertyDocumenter):
     """Document lb.property traits in the style of python properties"""
-    
+
     @staticmethod
     def _is_lb_property(obj):
         return (
@@ -257,5 +262,5 @@ def setup(app):
     app.add_domain(PatchedPythonDomain, override=True)
     app.add_autodocumenter(PropertyDocumenter, override=True)
     app.add_autodocumenter(AttributeDocumenter)
-    app.connect('autodoc-process-signature', process_signature)
+    # app.connect('autodoc-process-signature', process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

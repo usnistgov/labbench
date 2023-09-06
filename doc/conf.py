@@ -39,24 +39,35 @@ import numpy as np
 import toml
 from sphinx.domains.python import PythonDomain
 from sphinx.ext import autodoc
+from pathlib import Path
 
 import labbench as lb
 
+# load and validate the project definition from pyproject.toml
 project_info = toml.load("../pyproject.toml")
+missing_fields = {'name', 'version'} - set(project_info["project"].keys())
+if len(missing_fields) > 0:
+    raise ValueError(f'fields {missing_fields} missing from [project] in pyproject.toml')
 
 # Location of the API source code
 autoapi_dirs = [f'../{project_info["project"]["name"]}']
+if not Path(autoapi_dirs[0]).exists():
+    raise IOError(f'did not find source directory at expected path "{autoapi_dirs[0]}"')
 
 # -------- General information about the project ------------------
 project = project_info["project"]["name"]
-authors = [author["name"] for author in project_info["project"]["authors"]]
-author_groups = [
-    ", ".join(a) for a in np.array_split(authors, np.ceil(len(authors) / 3))
-]
+
+if 'authors' in project_info["project"]:
+    authors = [author["name"] for author in project_info["project"]["authors"]]
+    author_groups = [
+        ", ".join(a) for a in np.array_split(authors, np.ceil(len(authors) / 3))
+    ]
+else:
+    author_groups = []
+
 copyright = (
     "United States government work, not subject to copyright in the United States"
 )
-author = ", ".join(author_groups)
 version = release = project_info["project"]["version"]
 language = "en"
 

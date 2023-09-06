@@ -984,13 +984,7 @@ class VISADevice(Device):
             "operating": bool(code & 0b10000000),
         }
 
-    _rm = value.str(
-        "@ivi",
-        only=("@ivi", "@py", "@sim"),
-        sets=False,
-        cache=True,
-        help="the pyvisa resource manager backend for connections",
-    )
+    _rm = '@py'
 
     # Overload methods as needed to implement RemoteDevice
     def open(self):
@@ -1208,9 +1202,10 @@ class VISADevice(Device):
         import pyvisa.constants
 
         # From instrument and pyvisa docs
-        self.backend.visalib.viGpibControlREN(
-            self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
-        )
+        if not self._rm.endswith('@sim'):
+            self.backend.visalib.viGpibControlREN(
+                self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
+            )
 
     def _get_rm(self):
         import pyvisa
@@ -1233,7 +1228,7 @@ class VISADevice(Device):
         except OSError as e:
             if is_ivi:
                 url = r"https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa"
-                msg = f"could not connect to NI VISA resource manager - see {url}"
+                msg = f"could not connect to resource manager - see {url}"
                 e.args[0] += msg
             raise e
 
@@ -1253,14 +1248,7 @@ def visa_list_resources(resourcemanager: str = None):
 
 
 def visa_default_resource_manager(name=None):
-    if name is None:
-        return VISADevice._rm.default
-    else:
-        if name not in VISADevice._rm.only:
-            raise ValueError(
-                f"backend name '{name}' is not one of the allowed {VISADevice._rm.only}"
-            )
-        VISADevice._rm.default = name
+    VISADevice._rm = name
 
 
 @util.TTLCache(timeout=3)
@@ -1298,35 +1286,35 @@ def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
     return identities
 
 
-@VISADevice._rm.adopt("@sim")
-class SimulatedVISADevice(VISADevice):
-    """Base class for wrapping simulated VISA devices with pyvisa.
+# @VISADevice._rm.adopt("@sim")
+# class SimulatedVISADevice(VISADevice):
+#     """Base class for wrapping simulated VISA devices with pyvisa.
 
-    See also:
-        - _Backend information: https://pyvisa-sim.readthedocs.io/
-    """
+#     See also:
+#         - _Backend information: https://pyvisa-sim.readthedocs.io/
+#     """
 
-    # can only set this when the class is defined
-    yaml_source = value.Path(
-        "", sets=False, exists=True, help="definition of the simulated instrument"
-    )
+#     # can only set this when the class is defined
+#     yaml_source = value.Path(
+#         "", sets=False, exists=True, help="definition of the simulated instrument"
+#     )
 
-    def _release_remote_control(self):
-        pass
+#     def _release_remote_control(self):
+#         pass
 
-    @classmethod
-    def _get_rm(cls):
-        import pyvisa
+#     @classmethod
+#     def _get_rm(cls):
+#         import pyvisa
 
-        backend_name = f"{cls.yaml_source.default}@sim"
+#         backend_name = f"{cls.yaml_source.default}@sim"
 
-        try:
-            rm = pyvisa.ResourceManager(backend_name)
-        except OSError as e:
-            e.args[0] += "is pyvisa-sim installed?"
-            raise e
+#         try:
+#             rm = pyvisa.ResourceManager(backend_name)
+#         except OSError as e:
+#             e.args[0] += "is pyvisa-sim installed?"
+#             raise e
 
-        return rm
+#         return rm
 
 
 @Device.concurrency.adopt(True)

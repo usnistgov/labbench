@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+### Added
+
+### Changed
+- The instrument drivers in the documentation guide are now self-contained by use of `@pyvisa-sim`` backends
+- `VISABackend._rm` is now a simple class attribute rather than a trait, so that changes to it propagate to subclasses
+- `pyvisa-sim` is now a dependency for development (but not a requirement when installing labbench as a package)
+
+### Removed
+- `SimulatedVISABackend` - instead, use `VISABackend` after calling `visa_default_resource_manager('my-file.yml@sim')`
+
+### 
 ## [0.29]
 ### Added
 - new `adjusted` decorator for changing trait definitions in specialized subclassed Device instances

@@ -31,12 +31,16 @@ The example below gives a simplified working example of [a more complete commerc
 import labbench as lb
 
 @lb.property.visa_keying(
-    # these are the default SCPI query and write formats
+    # the default SCPI query and write formats
     query_fmt="{key}?",
     write_fmt="{key} {value}",
 
     # map python True and False values to these SCPI strings
     remap={True: "ON", False: "OFF"}
+)
+@lb.adjusted(
+    # set the identity_pattern 
+    'identity_pattern', default=r'Power Sensor model \#1234'
 )
 class PowerSensor(lb.VISADevice):
     RATES = "NORM", "DOUB", "FAST"
@@ -44,14 +48,14 @@ class PowerSensor(lb.VISADevice):
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
     initiate_continuous = lb.property.bool(
-        key="INIT:CONT", label="trigger continuously if True"
+        key="INIT:CONT", help="trigger continuously if True"
     )
     trigger_count = lb.property.int(
         key="TRIG:COUN", min=1, max=200,
         help="acquisition count", label="samples"
     )
     measurement_rate = lb.property.str(
-        key="SENS:MRAT", only=RATES, case=False, label="Hz"
+        key="SENS:MRAT", only=RATES, case=False
     )
     sweep_aperture = lb.property.float(
         key="SWE:APER", min=20e-6, max=200e-3,
@@ -59,9 +63,7 @@ class PowerSensor(lb.VISADevice):
     )
     frequency = lb.property.float(
         key="SENS:FREQ",
-        min=10e6,
-        max=18e9,
-        step=1e-3,
+        min=10e6, max=18e9, step=1e-3,
         help="input signal center frequency",
         label="Hz",
     )
@@ -83,11 +85,17 @@ class PowerSensor(lb.VISADevice):
 This object is already enough for us to automate an RF power measurements!
 
 ### Usage of device wrappers
-An automation script uses 
+An automation script uses
 
 ```{code-cell} ipython3
+# a simulated instrument backend makes this self-contained
+lb.visa_default_resource_manager('sim-visa.yml@sim')
+
+# print the low-level actions of the code
+lb.show_messages('debug')
+
 # specify the VISA address to use the power sensor
-sensor = PowerSensor("USB0::0x2A8D::0x1E01::SG56360004::INSTR")
+sensor = PowerSensor()#"USB::0x1111::0x2222::0x1234::INSTR")
 
 # connection to the power sensor hardware at the specified address
 # is held open until exiting the "with" block
@@ -118,19 +126,18 @@ The following example creates simple automation tasks for a swept-frequency micr
 ```{code-cell} ipython3
 import labbench as lb
 
-# some custom library of Device drivers
-from myinstruments import MySpectrumAnalyzer, MySignalGenerator
+# my_instruments.py constaints Device classes for a few instruments
+from my_instruments import SpectrumAnalyzer, SignalGenerator
 
 
 class Synthesizer(lb.Rack):
     # inputs needed to run the rack: in this case, a Device
-    inst: MySignalGenerator
+    inst: SignalGenerator
 
     def setup(self, *, center_frequency):
         self.inst.preset()
-        self.inst.set_mode("carrier")
+        self.inst.mode = "tone"
         self.inst.center_frequency = center_frequency
-        self.inst.bandwidth = 2e6
 
     def arm(self):
         self.inst.rf_output_enable = True
@@ -141,16 +148,17 @@ class Synthesizer(lb.Rack):
 
 class Analyzer(lb.Rack):
     # inputs needed to run the rack: in this case, a Device
-    inst: MySpectrumAnalyzer
+    inst: SpectrumAnalyzer
 
     def setup(self, *, center_frequency):
         self.inst.load_state("savename")
         self.inst.center_frequency = center_frequency
+        self.resolution_bandwidth = 10e6
 
     def acquire(self, *, duration):
         self.inst.trigger()
         lb.sleep(duration)
-        self.inst.stop()
+        return self.inst.fetch()
 
     def fetch(self):
         # testbed data will have a column called 'spectrogram', which
@@ -186,8 +194,8 @@ class SweptMeasurement(lb.Rack):
 When executed to run test scripts, create Rack instances with input objects according to their definition:
 
 ```{code-cell} ipython3
-sa = MySpectrumAnalyzer(resource="a")
-sg = MySignalGenerator(resource="b")
+sa = SpectrumAnalyzer(resource="a")
+sg = SignalGenerator(resource="b")
 
 with SweptMeasurement(generator=Synthesizer(sg), detector=Analyzer(sa)) as sweep:
     measurement = sweep.run(frequencies=[2.4e9, 2.44e9, 2.48e9], duration=1.0)

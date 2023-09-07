@@ -133,33 +133,27 @@ class DisconnectedBackend(object):
 def log_trait_activity(msg):
     """emit debug messages for trait values"""
 
-    # print('logger debug!', msg)
-
     if msg["name"] == "isopen":
         return
 
     owner = msg["owner"]
     trait_name = msg["name"]
 
+    label = ''
     if msg["type"] == "set":
-        label = owner._traits[trait_name].label or " "
-        if label:
-            label = f" {label} "
+        if owner._traits[trait_name].label:
+            label = f'({owner._traits[trait_name].label})'
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        owner._logger.debug(f'set trait "{trait_name}" → {value}{label}')
+        owner._logger.debug(f'trait set: "{trait_name}" → {value} {label}'.rstrip())
     elif msg["type"] == "get":
-        if msg["new"] != msg["old"]:
-            label = owner._traits[trait_name].label
-            if label:
-                label = f" {label} "
-
-            value = repr(msg["new"])
-            if len(value) > 180:
-                value = f'<data of type {type(msg["new"]).__qualname__}>'
-
-            owner._logger.debug(f'get trait "{trait_name}" == {value}{label}')
+        if owner._traits[trait_name].label:
+            label = f'({owner._traits[trait_name].label})'
+        value = repr(msg["new"])
+        if len(value) > 180:
+            value = f'<data of type {type(msg["new"]).__qualname__}>'
+        owner._logger.debug(f'trait get: "{trait_name}" → {value} {label}'.rstrip())
     else:
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')
 

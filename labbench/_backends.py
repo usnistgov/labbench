@@ -984,7 +984,7 @@ class VISADevice(Device):
             "operating": bool(code & 0b10000000),
         }
 
-    _rm = '@py'
+    _rm = "@py"
 
     # Overload methods as needed to implement RemoteDevice
     def open(self):
@@ -1019,6 +1019,7 @@ class VISADevice(Device):
                 msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.identity_pattern}"'
                 raise IOError(msg)
             elif len(identities) == 1:
+                self._logger.debug(f'resource identified with identity pattern match "{list(identities.values())[0]}"')
                 self.resource = list(identities.keys())[0]
             else:
                 msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.identity_pattern}"'
@@ -1078,7 +1079,7 @@ class VISADevice(Device):
         if self._opc:
             msg = msg + ";*OPC"
         msg_out = repr(msg) if len(msg) < 1024 else f"({len(msg)} bytes)"
-        self._logger.debug(f"write {repr(msg_out)}")
+        self._logger.debug(f"write {msg_out}")
         self.backend.write(msg)
 
     def query(self, msg: str, timeout=None) -> str:
@@ -1102,8 +1103,8 @@ class VISADevice(Device):
             if timeout is not None:
                 self.backend.timeout = _to
 
-        msg_out = repr(ret) if len(ret) < 80 else f"({len(msg)} bytes)"
-        self._logger.debug(f"      -> {msg_out}")
+        msg_out = repr(ret) if len(ret) < 80 else f"({len(ret)} bytes)"
+        self._logger.debug(f"    → {msg_out}")
 
         return ret
 
@@ -1202,7 +1203,7 @@ class VISADevice(Device):
         import pyvisa.constants
 
         # From instrument and pyvisa docs
-        if not self._rm.endswith('@sim'):
+        if not self._rm.endswith("@sim"):
             self.backend.visalib.viGpibControlREN(
                 self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
             )
@@ -1255,11 +1256,17 @@ def visa_default_resource_manager(name=None):
 @util.SingleThreadProducer
 def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
     import pyvisa
+    import logging
+  
+    def make_test_device(res):
+        device = VISADevice(res, open_timeout=0.25)
+        device._logger = logging.getLogger()
+        return device
 
     def check_idn(device: VISADevice):
         try:
             return device.identity
-        except pyvisa.errors.VisaIOError:
+        except pyvisa.errors.VisaIOError as ex:
             return None
 
     def keep_interface(name):
@@ -1269,8 +1276,8 @@ def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
         return True
 
     devices = {
-        res: VISADevice(res, open_timeout=0.25)
-        for res in VISADevice.list_resources()
+        res: make_test_device(res)
+        for res in visa_list_resources()
         if keep_interface(res)
     }
 

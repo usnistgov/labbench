@@ -139,17 +139,17 @@ def log_trait_activity(msg):
     owner = msg["owner"]
     trait_name = msg["name"]
 
-    label = ''
+    label = ""
     if msg["type"] == "set":
         if owner._traits[trait_name].label:
-            label = f'({owner._traits[trait_name].label})'
+            label = f"({owner._traits[trait_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
         owner._logger.debug(f'trait set: "{trait_name}" → {value} {label}'.rstrip())
     elif msg["type"] == "get":
         if owner._traits[trait_name].label:
-            label = f'({owner._traits[trait_name].label})'
+            label = f"({owner._traits[trait_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'

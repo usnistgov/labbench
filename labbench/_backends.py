@@ -1019,7 +1019,9 @@ class VISADevice(Device):
                 msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.identity_pattern}"'
                 raise IOError(msg)
             elif len(identities) == 1:
-                self._logger.debug(f'resource identified with identity pattern match "{list(identities.values())[0]}"')
+                self._logger.debug(
+                    f'resource identified with identity pattern match "{list(identities.values())[0]}"'
+                )
                 self.resource = list(identities.keys())[0]
             else:
                 msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.identity_pattern}"'
@@ -1257,7 +1259,7 @@ def visa_default_resource_manager(name=None):
 def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
     import pyvisa
     import logging
-  
+
     def make_test_device(res):
         device = VISADevice(res, open_timeout=0.25)
         device._logger = logging.getLogger()
@@ -1266,7 +1268,7 @@ def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
     def check_idn(device: VISADevice):
         try:
             return device.identity
-        except pyvisa.errors.VisaIOError as ex:
+        except pyvisa.errors.VisaIOError:
             return None
 
     def keep_interface(name):

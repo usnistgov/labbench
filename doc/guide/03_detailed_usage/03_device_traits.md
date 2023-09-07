@@ -10,8 +10,8 @@ kernelspec:
   name: python385jvsc74a57bd0584ca3e41de69dadb90590574368a536937183574270e0c5348c810208f0dc2f
 ---
 
-# Device objects
-A series of short working examples here illustrate the use of labbench `Device` classes for experiment automation. The python programming interface is in the module of the same name, but it is convenient to import it as `lb` for shorthand.
+# Device Traits
+<!-- A series of short working examples here illustrate the use of labbench `Device` classes for experiment automation. The python programming interface is in the module of the same name, but it is convenient to import it as `lb` for shorthand.
 
 ```{code-cell} ipython3
 import labbench as lb
@@ -217,4 +217,4 @@ from labbench import concurrently, Call
 
 results = concurrently(do_something_4, do_something_1, catch=True)
 results
-```
+``` -->

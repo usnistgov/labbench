@@ -1,8 +1,8 @@
-API Reference
+Detailed Usage
 ===========================================
 
 .. toctree::
    :maxdepth: 2
    :glob:
 
-   labbench*
+   03_detailed_usage/*

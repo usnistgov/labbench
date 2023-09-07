@@ -1,8 +1,8 @@
-API Reference
+Getting Started
 ===========================================
 
 .. toctree::
    :maxdepth: 2
    :glob:
 
-   labbench*
+   02_getting_started/*

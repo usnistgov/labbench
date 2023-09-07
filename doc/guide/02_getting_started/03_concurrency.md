@@ -10,7 +10,7 @@ kernelspec:
   name: python385jvsc74a57bd0584ca3e41de69dadb90590574368a536937183574270e0c5348c810208f0dc2f
 ---
 
-# Multi-threaded concurrency
+# Simplified Concurrency
 `labbench` includes simplified concurrency support for this kind of I/O-constrained operations like waiting for instruments to perform long operations. It is not suited for parallelizing CPU-intensive tasks because the operations share a single process on one CPU core, instead of multiprocessing, which may be able to spread operations across multiple CPU cores.
 
 +++

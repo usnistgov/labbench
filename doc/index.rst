@@ -2,11 +2,9 @@ Contents
 ===========================================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    guide/01_introduction.md
-   guide/02_getting_started.md
-   guide/03_concurrency.md
-   guide/04_data_logging.md
-   guide/05_device_usage.md
+   guide/02_getting_started.rst
+   guide/03_detailed_usage.rst
    api_reference.rst

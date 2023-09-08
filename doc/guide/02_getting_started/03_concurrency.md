@@ -14,78 +14,81 @@ kernelspec:
 # Simplified Concurrency
 `labbench` includes simplified concurrency support for this kind of I/O-constrained operations like waiting for instruments to perform long operations. It is not suited for parallelizing CPU-intensive tasks because the operations share a single process on one CPU core, instead of multiprocessing, which may be able to spread operations across multiple CPU cores.
 
-+++
+Here are simple Device objects with `sleep` placeholders for long-running remote operations:
 
-Here are very fake functions that just use `time.sleep` to block. They simulate longer instrument calls (such as triggering or acquisition) that take some time to complete.
-
-Notice that `do_something_3` takes 3 arguments (and returns them), and that `do_something_4` raises an exception.
-
-```{code-cell}
-import time
-
-def do_something_1 ():
-    print('start 1')
-    time.sleep(1)
-    print('end 1')
-    return 1
-
-def do_something_2 ():
-    print('start 2')
-    time.sleep(2)
-    print('end 2')
-    return 2
-
-def do_something_3 (a,b,c):
-    print('start 3')
-    time.sleep(2.5)
-    print('end 3')
-    return a,b,c 
-
-def do_something_4 ():
-    print('start 4')
-    time.sleep(3)
-    raise ValueError('I had an error')
-    print('end 4')
-    return 4
-
-def do_something_5 ():
-    print('start 5')
-    time.sleep(4)
-    raise IndexError('I had a different error')
-    print('end 5')
-    return 4
-```
-
-Here is the simplest example, where we call functions `do_something_1` and `do_something_2` that take no arguments and raise no exceptions:
-
-```{code-cell}
+```{code-cell} ipython3
 import labbench as lb
 
-results = lb.concurrently(do_something_1, do_something_2)
-print(f'results: {results}')
+# a placeholder for long-running remote operations
+from time import sleep
+
+class Device1(lb.VISADevice):
+    def open(self):
+        # open() is called on connection to the device
+        with lb.stopwatch('Device1 connect'):
+            sleep(1)
+            
+    def fetch(self):
+        with lb.stopwatch('Device1 fetch'):
+            sleep(1)
+            return 5
+
+class Device2(lb.VISADevice):
+    def open(self):
+        # open() is called on connection to the device
+        with lb.stopwatch('Device2 connect'):
+            sleep(2)
+            
+    def acquire(self):
+        with lb.stopwatch('Device2 acquire'):
+            sleep(2)
+            return None
 ```
 
-We can also pass functions by wrapping the functions in `Call()`, which is a class designed for this purpose:
+Suppose we need to both `fetch` from `Device1` and `acquire` in `Device2`, and that the sequencing is not important. One approach is to simply call one and then the other:
 
-```{code-cell}
-results = lb.concurrently(do_something_1, lb.Call(do_something_3, 1,2,c=3))
-results
+```{code-cell} ipython3
+from labbench import testing
+from time import perf_counter
+
+# allow simulated connections to the specified VISA devices
+lb.visa_default_resource_manager(testing.pyvisa_sim_resource)
+
+d1 = Device1('TCPIP::localhost::INSTR')
+d2 = Device2('USB::0x1111::0x2222::0x1234::INSTR')
+
+t0 = perf_counter()
+with d1, d2:
+    print(f'connect both (total time): {perf_counter()-t0:0.1f} s')
+    with lb.stopwatch('both Device1.fetch and Device2.acquire (total time)'):
+        d1.fetch()
+        d2.acquire()
 ```
 
-More than one of the functions running concurrently may raise exceptions. Tracebacks print to the screen, and by default `ConcurrentException` is also raised:
+For each of the connection and fetch/acquire operations, the total duration was about 3 seconds, because the 1 and 2 second operations are executed sequentially.
 
-```{code-cell}
-from labbench import concurrently, Call
+Suppose that we want to perform each of the open and fetch/acquire operations concurrently. Enter `lb.concurrently`:
 
-results = concurrently(do_something_4, do_something_5)
-results
+```{code-cell} ipython3
+from labbench import testing
+from time import perf_counter
+
+# allow simulated connections to the specified VISA devices
+lb.visa_default_resource_manager(testing.pyvisa_sim_resource)
+
+d1 = Device1('TCPIP::localhost::INSTR')
+d2 = Device2('USB::0x1111::0x2222::0x1234::INSTR')
+
+t0 = perf_counter()
+with lb.concurrently(d1, d2):
+    print(f'connect both (total time): {perf_counter()-t0:0.1f} s')
+    with lb.stopwatch('both Device1.fetch and Device2.acquire (total time)'):
+        ret = lb.concurrently(d1.fetch, d2.acquire)
+        
+print('Return value: ', ret)
 ```
 
-the `catch` flag changes concurrent exception handling behavior to return values of functions that did not raise exceptions (instead of raising `ConcurrentException`). The return dictionary only includes keys for functions that did not raise exceptions.
-
-```{code-cell}
-from labbench import concurrently, Call
-
-results = concurrently(do_something_4, do_something_1, catch=True)
-results
-```
+Each call to `lb.concurrently` executes each callable in separate threads, and returns after the longest-running call.
+* As a result, in this example, for each of the `open` and `fetch`/`acquire`, the total time is reduced from 3 s to 2 s.
+* The return values of threaded calls are packaged into a dictionary for each call that does not return `None`.
+The syntax is a little more involved when you want to pass in arguments to multiple callables. For information on doing this, see the [detailed instructions](../03_detailed_usage/05_concurrency).

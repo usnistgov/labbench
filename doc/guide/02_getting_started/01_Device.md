@@ -22,9 +22,10 @@ This section demonstrates usage of `Device` through a lean working example. The 
 * multi-threaded connection management
 
 ## Example Implementation: A VISA Instrument
-Let's start by a simple demonstration with [VISA](https://en.wikipedia.org/wiki/Virtual_instrument_software_architecture) instrument automation. The example below gives a simplified working example taken from [an actual commercial RF power sensor](https://github.com/usnistgov/ssmdevices/blob/main/ssmdevices/instruments/power_sensors.py):
+Let's start by a simple demonstration with [VISA](https://en.wikipedia.org/wiki/Virtual_instrument_software_architecture) instrument automation. The example below gives a simplified working example modeled on [an actual commercial RF power sensor](https://github.com/usnistgov/ssmdevices/blob/main/ssmdevices/instruments/power_sensors.py):
 
 ```{code-cell} ipython3
+# sim_instrument1.py
 import labbench as lb
 
 @lb.property.visa_keying(
@@ -52,7 +53,8 @@ class PowerSensor(lb.VISADevice):
         help="acquisition count", label="samples"
     )
     measurement_rate = lb.property.str(
-        key="SENS:MRAT", only=RATES, case=False
+        key="SENS:MRAT", only=RATES, case=False,
+        
     )
     sweep_aperture = lb.property.float(
         key="SWE:APER", min=20e-6, max=200e-3,
@@ -61,8 +63,7 @@ class PowerSensor(lb.VISADevice):
     frequency = lb.property.float(
         key="SENS:FREQ",
         min=10e6, max=18e9, step=1e-3,
-        help="input signal center frequency",
-        label="Hz",
+        help="calibration frequency", label="Hz",
     )
 
     def preset(self):
@@ -79,25 +80,25 @@ class PowerSensor(lb.VISADevice):
             return [float(s) for s in response.split(",")]
 ```
 
-Automation for the power sensor instrument is encapsulated in the `PowerSensor` object.
-* `PowerSensor` begins with the attributes the `labbench.VISADevice` backend, which wraps the [`pyvisa`](https://pyvisa.readthedocs.io/) library
+Automation capabilities for this instrument are fully encapsulated by the `PowerSensor` object. Some key features:
+* `PowerSensor` begins with the attributes the `labbench.VISADevice` backend, which wraps the [`pyvisa`](https://pyvisa.readthedocs.io/) library.
 * The various `lb.property` definitions are shortcuts for [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments) commands on this instrument. When we use `PowerSensor` to control an instrument, getting or setting these properties will trigger SCPI query and commands based on each property's `key`. The property type (`lb.property.float`, `lb.property.str`, etc.) and remaining arguments determine the type and constraints of the python representation of that property.
 * The method functions (`fetch` and `preset`) represent examples of other types of SCPI commands that are implemented programmatically.
 
-This is a working implementation, which means it is enough for us demonstrate its use in scripting an actual RF power measurement.
-
 ### Basic Device Wrapper Usage
-Automation with the `PowerSensor` wrapper starts with making an instance and then connecting it.
+The implementation of `PowerSensor` above is enough for us to perform a simple measurement. Automation starts with making an instance and then connecting it.
+The methods and traits can be discovered through tab completion in most IDEs.
 
 ```{code-cell} ipython3
-# a simulated instrument backend makes this self-contained
-lb.visa_default_resource_manager('sim-visa.yml@sim')
+# use a pyvisa-sim simulated VISA instrument for the demo
+from labbench import testing
+lb.visa_default_resource_manager(testing.pyvisa_sim_resource)
 
 # print the low-level actions of the code
 lb.show_messages('debug')
 
 # specify the VISA address to use the power sensor
-sensor = PowerSensor()#"USB::0x1111::0x2222::0x1234::INSTR")
+sensor = PowerSensor()
 
 # the sensor attempts to connect to the hardware on entering a `with` block
 with sensor:   
@@ -117,4 +118,6 @@ with sensor:
     # the instrument connection closes on leaving the with block
 ```
 
-The usage here is simple because the methods and traits for automation can be discovered easily through tab completion in most IDEs. The device connection remains open for all lines inside the `with` block.
+Making the `sensor` instance brings the `PowerSensor` class definition to life. This enabled key features:
+* The connection remains open for VISA communication inside the `with` block
+* Attributes that were defined with `lb.property` in `PowerSensor` become interactive instrument automation in `sensor`. This means that assigning to `sensor.frequency`, `sensor.measurement_rate` trigger VISA writes to set these parameters on the instrument. Similarly, _getting_ each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.

@@ -6,8 +6,9 @@ jupytext:
     format_version: 0.13
     jupytext_version: 1.15.1
 kernelspec:
-  display_name: 'Python 3.8.5 64-bit (''base'': conda)'
-  name: python385jvsc74a57bd0584ca3e41de69dadb90590574368a536937183574270e0c5348c810208f0dc2f
+  display_name: base
+  language: python
+  name: python3
 ---
 
 # Device Traits

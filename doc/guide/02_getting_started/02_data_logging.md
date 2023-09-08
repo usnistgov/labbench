@@ -19,7 +19,7 @@ A number of tools are included in `labbench` to streamline acquisition of test d
 
 The data management supports automatic relational databasing. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside of the data tree, etc.) are automatically stored relationally --- placed in folders and referred to in the database. Other data can be forced to be relational by dynamically generating relational databases on the fly.
 
-## File conventions
+<!-- ## File conventions
 All labbench data save functionality is implemented in tables with [pandas](pandas.pydata.org) DataFrame backends. Here are database storage formats that are supported:
 
 | Format                            | File extension(s)              | Data management class | flag to [use record file format](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.RelationalTableLogger.set_relational_file_format) | Comments |
@@ -38,14 +38,14 @@ Several formats are supported only as relational data (data stored in a file in 
 | text files     | .txt | string or bytes longer than `text_relational_min` | N/A | set `text_relational_min` when you instantiate the database manager
 | arbitrary files generated outside the file tree |     *             | strings containing filesystem path | N/A |
 
-In the following example, we will use an sqlite master database, and csv record files. 
+In the following example, we will use an sqlite master database, and csv record files.
 
 +++
 
 ## Example
 Here is a emulated "dummy" instrument. It has a few state settings similar to a simple power sensor. The state descriptors (`initiate_continuous`, `output_trigger`, etc.) are defined as local types, which means they don't trigger communication with any actual devices. The `fetch_trace` method generates a "trace" drawn from a uniform distribution.
 
-```{code-cell} ipython3
+```{code-cell}
 import sys
 sys.path.insert(0,'..')
 import labbench as lb
@@ -87,7 +87,7 @@ Now make a loop to execute 100 test runs with two emulated instruments, and log 
 
 Remember that use of the `with` statement automatically connects to the instruments, and then ensures that the instruments are properly closed when we leave the `with` block (even if there is an exception).
 
-```{code-cell} ipython3
+```{code-cell}
 def inst1_trace ():
     """ Return a 1001-point trace
     """
@@ -139,7 +139,7 @@ with EmulatedInstrument()        as inst1,\
 #### Reading and exploring the data
 The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the sqlite database into a pandas dataframe. Each state is a column in the database. The logger creates columns named as a combination of the device name ('inst1') and name of the corresponding device state.
 
-```{code-cell} ipython3
+```{code-cell}
 %pylab inline
 master = lb.read(f'{db_path}/master.db')
 master.head()
@@ -147,17 +147,17 @@ master.head()
 
 This is a pandas DataFrame object. There is extensive information about how to use dataframes [on the pandas website](http://pandas.pydata.org/pandas-docs/stable/). Suppose we want to bring in the data from the traces, which are in a collection of waveform files specified under the `inst1_trace` column. The function `labbench.expand` serves to flatten the database with respect to data files that were generated on each row.
 
-```{code-cell} ipython3
+```{code-cell}
 waveforms = lb.read_relational(f'{db_path}/master.db', 'inst1_trace', ['dut', 'inst1_frequency'])
 waveforms
 ```
 
 now we can manipulate the results to look for meaningful information in the data.
 
-```{code-cell} ipython3
+```{code-cell}
 import seaborn as sns; sns.set(context='notebook', style='ticks', font_scale=1.5) # Theme stuff
 
 waveforms.plot(x='inst1_frequency',y='inst1_trace_voltage',kind='hexbin')
 xlabel('Frequency (Hz)')
 ylabel('Voltage (arb units)')
-```
+``` -->

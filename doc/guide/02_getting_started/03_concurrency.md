@@ -6,8 +6,9 @@ jupytext:
     format_version: 0.13
     jupytext_version: 1.15.1
 kernelspec:
-  display_name: 'Python 3.8.5 64-bit (''base'': conda)'
-  name: python385jvsc74a57bd0584ca3e41de69dadb90590574368a536937183574270e0c5348c810208f0dc2f
+  display_name: base
+  language: python
+  name: python3
 ---
 
 # Simplified Concurrency
@@ -19,7 +20,7 @@ Here are very fake functions that just use `time.sleep` to block. They simulate 
 
 Notice that `do_something_3` takes 3 arguments (and returns them), and that `do_something_4` raises an exception.
 
-```{code-cell} ipython3
+```{code-cell}
 import time
 
 def do_something_1 ():
@@ -57,7 +58,7 @@ def do_something_5 ():
 
 Here is the simplest example, where we call functions `do_something_1` and `do_something_2` that take no arguments and raise no exceptions:
 
-```{code-cell} ipython3
+```{code-cell}
 import labbench as lb
 
 results = lb.concurrently(do_something_1, do_something_2)
@@ -66,14 +67,14 @@ print(f'results: {results}')
 
 We can also pass functions by wrapping the functions in `Call()`, which is a class designed for this purpose:
 
-```{code-cell} ipython3
+```{code-cell}
 results = lb.concurrently(do_something_1, lb.Call(do_something_3, 1,2,c=3))
 results
 ```
 
 More than one of the functions running concurrently may raise exceptions. Tracebacks print to the screen, and by default `ConcurrentException` is also raised:
 
-```{code-cell} ipython3
+```{code-cell}
 from labbench import concurrently, Call
 
 results = concurrently(do_something_4, do_something_5)
@@ -82,7 +83,7 @@ results
 
 the `catch` flag changes concurrent exception handling behavior to return values of functions that did not raise exceptions (instead of raising `ConcurrentException`). The return dictionary only includes keys for functions that did not raise exceptions.
 
-```{code-cell} ipython3
+```{code-cell}
 from labbench import concurrently, Call
 
 results = concurrently(do_something_4, do_something_1, catch=True)

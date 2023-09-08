@@ -18,7 +18,7 @@ To organize automation across multiple `Device` wrappers, `labbench` provides `R
 ### Example Implementation: 2 Device wrappers
 The following example creates simple automation tasks for a swept-frequency microwave measurement. This one is built around one `Device`:
 
-```{code-cell} ipython3
+```{code-cell}
 import labbench as lb
 
 # my_instruments.py constaints Device classes for a few instruments
@@ -88,7 +88,7 @@ class SweptMeasurement(lb.Rack):
 ### Usage in test scripts
 When executed to run test scripts, create Rack instances with input objects according to their definition:
 
-```{code-cell} ipython3
+```{code-cell}
 sa = SpectrumAnalyzer(resource="a")
 sg = SignalGenerator(resource="b")
 

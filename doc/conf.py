@@ -113,7 +113,7 @@ master_doc = "index"
 
 
 # ------------------ myst_nb ---------------------------------------
-nb_execution_mode = "off"
+# nb_execution_mode = "off"
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "default"

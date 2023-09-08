@@ -118,6 +118,6 @@ with sensor:
     # the instrument connection closes on leaving the with block
 ```
 
-Making the `sensor` instance brings the `PowerSensor` class definition to life. This enabled key features:
+Creating the `sensor` instance brings the `PowerSensor` class definition to life. This means:
 * The connection remains open for VISA communication inside the `with` block
-* Attributes that were defined with `lb.property` in `PowerSensor` become interactive instrument automation in `sensor`. This means that assigning to `sensor.frequency`, `sensor.measurement_rate` trigger VISA writes to set these parameters on the instrument. Similarly, _getting_ each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.
+* Attributes that were defined with `lb.property` in `PowerSensor` become interactive for instrument automation in `sensor`. This means that assigning to `sensor.frequency`, `sensor.measurement_rate` trigger VISA writes to set these parameters on the instrument. Similarly, _getting_ each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.

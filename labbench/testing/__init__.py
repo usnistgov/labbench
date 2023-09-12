@@ -1,5 +1,4 @@
-from .sim_instruments1 import *
-from .sim_instruments2 import *
+from .sim_instruments import *
 from pathlib import Path
 
 path = Path(__file__).parent

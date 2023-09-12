@@ -11,70 +11,68 @@ kernelspec:
   name: python3
 ---
 
-## Organizing Testbeds
+## Testbed Organization
 
 To organize automation across multiple `Device` wrappers, `labbench` provides `Rack` objects. These act as a container for aspects of automation needed to perform into a resuable automation task, including `Device` objects, other `Rack` objects, and automation functions. On exception, they ensure that all `Device` connections are closed.
 
-### Example Implementation: 2 Device wrappers
-The following example creates simple automation tasks for a swept-frequency microwave measurement. This one is built around one `Device`:
+### Example: 3 Devices
+Suppose we need to take a measurement with automation of 2 instruments:
 
-```{code-cell}
+```{code-cell} ipython3
 import labbench as lb
+from labbench.testing import SignalGenerator, PowerSensor, SpectrumAnalyzer, pyvisa_sim_resource
+```
 
-# my_instruments.py constaints Device classes for a few instruments
-from my_instruments import SpectrumAnalyzer, SignalGenerator
+Here is an artificial example of how these could be assembled into `Rack` objects 
 
+```{code-cell} ipython3
+class Measurement(lb.Rack):
+    # a default device instance makes the `inst` argument 
+    # optional when creating the Measurement object.
+    spectrum_analyzer: SpectrumAnalyzer = SpectrumAnalyzer()
 
-class Synthesizer(lb.Rack):
-    # inputs needed to run the rack: in this case, a Device
-    inst: SignalGenerator
-
-    def setup(self, *, center_frequency):
-        self.inst.preset()
-        self.inst.mode = "tone"
-        self.inst.center_frequency = center_frequency
-
-    def arm(self):
-        self.inst.rf_output_enable = True
-
-    def stop(self):
-        self.inst.rf_output_enable = False
-
-
-class Analyzer(lb.Rack):
-    # inputs needed to run the rack: in this case, a Device
-    inst: SpectrumAnalyzer
+    # without the default, `power_sensor` _must_ be passed as
+    # a keyword argument when instantiating Measurement
+    power_sensor: PowerSensor
 
     def setup(self, *, center_frequency):
-        self.inst.load_state("savename")
-        self.inst.center_frequency = center_frequency
+        self.spectrum_analyzer.load_state("state_filename")
+        self.spectrum_analyzer.center_frequency = center_frequency
         self.resolution_bandwidth = 10e6
+        
+        self.power_sensor.preset()
+        self.power_sensor.frequency = center_frequency
 
     def acquire(self, *, duration):
-        self.inst.trigger()
+        self.spectrum_analyzer.trigger()
         lb.sleep(duration)
-        return self.inst.fetch()
 
     def fetch(self):
-        # testbed data will have a column called 'spectrogram', which
-        # point to subdirectory containing a file called 'spectrogram.csv'
-        return dict(spectrogram=self.inst.fetch_spectrogram())
+        return {
+            'spectrum': self.spectrum_analyzer.fetch(),
+            'power': self.power_sensor.fetch()
+        }
 
 
 class SweptMeasurement(lb.Rack):
-    # inputs needed to run the rack: in this case, child Rack objects
-    generator: Synthesizer
-    detector: Analyzer
-
+    # we can mix and match Device and Rack instances to compose nested
+    # test automation components
+    generator: SignalGenerator = SignalGenerator()
+    
+    # here, to set a default measurement, we'd have to pass in 
+    measurement: Measurement
+    
     def single(self, center_frequency, duration):
-        self.generator.setup(center_frequency)
-        self.detector.setup(center_frequency)
+        self.generator.preset()
+        self.generator.mode = "tone"
+        self.generator.center_frequency = center_frequency
+        
+        self.measurement.setup(center_frequency=center_frequency)
+        self.generator.rf_output_enable = True
+        self.measurement.acquire(duration=duration)
+        self.generator.rf_output_enable = True
 
-        self.generator.arm()
-        self.detector.acquire(duration)
-        self.generator.stop()
-
-        return self.detector.fetch()
+        return self.measurement.fetch()
 
     def run(self, frequencies, duration):
         ret = []
@@ -88,12 +86,21 @@ class SweptMeasurement(lb.Rack):
 ### Usage in test scripts
 When executed to run test scripts, create Rack instances with input objects according to their definition:
 
-```{code-cell}
-sa = SpectrumAnalyzer(resource="a")
-sg = SignalGenerator(resource="b")
+```{code-cell} ipython3
+FREQS = 2.4e9, 2.44e9, 2.48e9
 
-with SweptMeasurement(generator=Synthesizer(sg), detector=Analyzer(sa)) as sweep:
-    measurement = sweep.run(frequencies=[2.4e9, 2.44e9, 2.48e9], duration=1.0)
+lb.show_messages('debug')
+
+# allow simulated connections to the specified VISA devices
+lb.visa_default_resource_manager(pyvisa_sim_resource)
+
+# we might want to specify the address in case e.g. there
+# are > 1 power sensor connected
+sensor=PowerSensor('USB::0x1111::0x2222::0x1234::INSTR')
+
+sweep = SweptMeasurement(measurement=Measurement(power_sensor=sensor))
+with sweep:
+    measurements = [sweep.single(fc, duration=1.0) for fc in FREQS]
 ```
 
 They open and close connections with all `Device` children by use of `with` methods. The connection state of all `SweptMeasurement` children are managed together, and all are closed in the event of an exception.

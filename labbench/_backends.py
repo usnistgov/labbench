@@ -1001,7 +1001,7 @@ class VISADevice(Device):
 
         kwargs = dict(
             read_termination=self.read_termination,
-            write_termination=self.write_termination
+            write_termination=self.write_termination,
         )
 
         if self.resource not in ("", None):
@@ -1032,9 +1032,9 @@ class VISADevice(Device):
             )
 
         if self.timeout is not None:
-            kwargs['timeout'] = int(self.timeout * 1000)
+            kwargs["timeout"] = int(self.timeout * 1000)
         if self.open_timeout is not None:
-            kwargs['open_timeout'] = int(self.open_timeout * 1000)
+            kwargs["open_timeout"] = int(self.open_timeout * 1000)
 
         # print(repr(kwargs))
         rm = self._get_rm()

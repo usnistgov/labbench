@@ -629,10 +629,7 @@ class BoundSequence(util.Ownable):
 
 
 class OwnerContextAdapter:
-    """transform calls to __enter__ -> open and __exit__ -> close.
-    each will be called
-
-    """
+    """transform calls to __enter__ -> open and __exit__ -> close"""
 
     def __init__(self, owner):
         self._owner = owner
@@ -708,12 +705,11 @@ def recursive_devices(top):
 
     for owner in top._owners.values():
         children, o_entry_order = recursive_devices(owner)
-        name_prefix = top_name_prefix + owner.__name__ + '.'
+        name_prefix = top_name_prefix + owner.__name__ + "."
 
         # this might be faster if the key/value order is transposed in devices?
         for name, child in children.items():
             if child not in devices.values():
-                print(child, repr(name_prefix), repr(name))
                 devices[name_prefix + name] = child
 
         entry_order.extend(o_entry_order)
@@ -722,8 +718,7 @@ def recursive_devices(top):
 
 
 def flatten_nested_owner_contexts(top) -> dict:
-    """generate a flattened mapping of context managers to
-    that nested Owner classes
+    """recursively generate a flattened mapping of context managers nested Owners
 
     Returns:
         mapping of {name: contextmanager}
@@ -768,7 +763,8 @@ def package_owned_contexts(top):
     # like set(entry_order), but maintains order in python >= 3.7
     entry_order = tuple(dict.fromkeys(entry_order))
     order_desc = " -> ".join([e.__qualname__ for e in entry_order])
-    log.debug(f"entry_order before other devices: {order_desc}")
+    if len(order_desc) > 0:
+        log.debug(f"entry_order before other devices: {order_desc}")
 
     # Pull any objects of types listed by top.entry_order, in the
     # order of (1) the types listed in top.entry_order, then (2) the order
@@ -941,7 +937,9 @@ class Owner:
         self._devices = dict(self._devices, **update_devices)
 
         super().__init__()
+        self.__propagate_ownership__()
 
+    def __propagate_ownership__(self):
         for obj in self._owners.values():
             obj.__owner_init__(self)
 
@@ -958,6 +956,8 @@ class Owner:
             if getattr(obj, "__objclass__", None) is not type(self):
                 obj.__set_name__(type(self), key)
                 obj.__owner_init__(self)
+                if isinstance(obj, Owner):
+                    obj.__propagate_ownership__()
 
         if isinstance(obj, core.Device):
             self._devices[key] = obj

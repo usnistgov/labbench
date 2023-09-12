@@ -702,16 +702,18 @@ class OwnerContextAdapter:
 def recursive_devices(top):
     entry_order = list(top._entry_order)
     devices = dict(top._devices)
-    name_prefix = getattr(top, "__name__", "")
-    if len(name_prefix) > 0:
-        name_prefix = name_prefix + "."
+    top_name_prefix = getattr(top, "__name__", "")
+    if len(top_name_prefix) > 0:
+        top_name_prefix = top_name_prefix + "."
 
     for owner in top._owners.values():
         children, o_entry_order = recursive_devices(owner)
+        name_prefix = top_name_prefix + owner.__name__ + '.'
 
-        # this might be faster by reversing key and value order in devices (and thus children)?
+        # this might be faster if the key/value order is transposed in devices?
         for name, child in children.items():
             if child not in devices.values():
+                print(child, repr(name_prefix), repr(name))
                 devices[name_prefix + name] = child
 
         entry_order.extend(o_entry_order)

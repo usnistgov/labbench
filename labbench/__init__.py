@@ -77,3 +77,5 @@ for _obj in dict(locals()).values():
     if getattr(_obj, "__module__", "").startswith("labbench."):
         _obj.__module__ = "labbench"
 del _obj
+
+_force_full_traceback(True)

@@ -985,6 +985,7 @@ class VISADevice(Device):
         }
 
     _rm = "@py"
+    _opc = False
 
     # Overload methods as needed to implement RemoteDevice
     def open(self):
@@ -998,11 +999,10 @@ class VISADevice(Device):
 
         self._opc = False
 
-        kwargs = {}
-        if self.timeout is not None:
-            kwargs.update(timeout=int(self.timeout * 1000))
-        if self.open_timeout is not None:
-            kwargs.update(open_timeout=int(self.open_timeout * 1000))
+        kwargs = dict(
+            read_termination=self.read_termination,
+            write_termination=self.write_termination
+        )
 
         if self.resource not in ("", None):
             pass
@@ -1031,12 +1031,14 @@ class VISADevice(Device):
                 f"specify the resource or identity_pattern attributes to open {repr(self)} connection"
             )
 
-        self.backend = self._get_rm().open_resource(
-            self.resource,
-            read_termination=self.read_termination,
-            write_termination=self.write_termination,
-            **kwargs,
-        )
+        if self.timeout is not None:
+            kwargs['timeout'] = int(self.timeout * 1000)
+        if self.open_timeout is not None:
+            kwargs['open_timeout'] = int(self.open_timeout * 1000)
+
+        # print(repr(kwargs))
+        rm = self._get_rm()
+        self.backend = rm.open_resource(self.resource, **kwargs)
 
     def close(self):
         """closes the instrument.
@@ -1256,12 +1258,12 @@ def visa_default_resource_manager(name=None):
 
 @util.TTLCache(timeout=3)
 @util.SingleThreadProducer
-def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
+def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, str]:
     import pyvisa
     import logging
 
     def make_test_device(res):
-        device = VISADevice(res, open_timeout=0.25)
+        device = VISADevice(res, open_timeout=0.25, **device_kws)
         device._logger = logging.getLogger()
         return device
 
@@ -1283,14 +1285,14 @@ def visa_list_identities(skip_interfaces=["ASRL"]) -> Dict[str, str]:
         if keep_interface(res)
     }
 
-    with util.concurrently(*list(devices.values()), catch=True):
+    with util.sequentially(*list(devices.values()), catch=True):
         calls = [
             util.Call(check_idn, device).rename(res)
             for res, device in devices.items()
             if device.isopen
         ]
 
-        identities = util.concurrently(*calls, catch=True)
+        identities = util.sequentially(*calls, catch=True)
 
     return identities
 

@@ -54,8 +54,8 @@ class PowerSensor(lb.VISADevice):
         if self.trigger_count == 1:
             return float(response)
         else:
-            return pd.Series([float(s) for s in response.split(",")], name='spectrum')
-        
+            return pd.Series([float(s) for s in response.split(",")], name="spectrum")
+
     def trigger(self):
         return self.write("TRIG")
 
@@ -88,13 +88,10 @@ class SpectrumAnalyzer(lb.VISADevice):
         """acquire measurements as configured"""
         response = self.query("FETC?")
 
-        series = pd.Series(
-            [float(s) for s in response.split(",")],
-            name='spectrum'
-        )
+        series = pd.Series([float(s) for s in response.split(",")], name="spectrum")
         series.index = pd.Index(
             self.center_frequency + np.linspace(-5e6, 5e6, len(series)),
-            name='frequency'
+            name="frequency",
         )
 
         return series

@@ -624,8 +624,8 @@ class Aggregator(util.Ownable):
         aggregated_input = {}
         aggregated_input.update(self._pending_rack_input)
 
-        if 'index' in aggregated_input:
-            aggregated_output['index'] = aggregated_input['index']
+        if "index" in aggregated_input:
+            aggregated_output["index"] = aggregated_input["index"]
 
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
         # value traits traits are locally cached, so it is safe to keep them in the next step
@@ -1295,19 +1295,25 @@ class CSVLogger(RelationalTableLogger):
             if isfirst:
                 self.tables[path_to_csv.name] = pending
             else:
-                self.tables[path_to_csv.name] = pd.concat((self.tables[path_to_csv.name], pending))
-                self.tables[path_to_csv.name] = self.tables[path_to_csv.name].loc[pending.index[0]:]
+                self.tables[path_to_csv.name] = pd.concat(
+                    (self.tables[path_to_csv.name], pending)
+                )
+                self.tables[path_to_csv.name] = self.tables[path_to_csv.name].loc[
+                    pending.index[0] :
+                ]
             self.tables[path_to_csv.name].sort_index(inplace=True)
 
             self.path.mkdir(exist_ok=True, parents=True)
 
             self.tables[path_to_csv.name].to_csv(
-                path_to_csv, mode='a', header=isfirst, index=False, encoding='utf-8'
+                path_to_csv, mode="a", header=isfirst, index=False, encoding="utf-8"
             )
 
         append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
         append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
-        self.output_index = self.tables[(self.path / self.OUTPUT_FILE_NAME).name].index[-1]
+        self.output_index = self.tables[(self.path / self.OUTPUT_FILE_NAME).name].index[
+            -1
+        ]
 
 
 class MungeToHDF(Device):
@@ -1964,8 +1970,8 @@ def read_relational(
     root = read(path, columns=root_cols, nrows=root_nrows, format=root_format)
 
     if root_cols is not None:
-        root_cols = ['root_index'] + root_cols
-    root = root.reset_index(names='root_index')
+        root_cols = ["root_index"] + root_cols
+    root = root.reset_index(names="root_index")
     reader = MungeReader(path)
 
     def generate():

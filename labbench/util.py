@@ -84,11 +84,11 @@ logger = logging.LoggerAdapter(
 )
 
 _LOG_LEVEL_NAMES = {
-    'debug': logging.DEBUG,
-    'info': logging.INFO,
-    'warning': logging.WARN,
-    'error': logging.ERROR,
-    'critical': logging.CRITICAL
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARN,
+    "error": logging.ERROR,
+    "critical": logging.CRITICAL,
 }
 
 
@@ -628,7 +628,7 @@ def hash_caller(call_depth=1):
 
 
 @contextmanager
-def stopwatch(desc: str = "", threshold: float = 0, logger_level='info'):
+def stopwatch(desc: str = "", threshold: float = 0, logger_level="info"):
     """Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
@@ -658,7 +658,9 @@ def stopwatch(desc: str = "", threshold: float = 0, logger_level='info'):
             try:
                 level = _LOG_LEVEL_NAMES[logger_level]
             except KeyError:
-                raise ValueError(f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}')
+                raise ValueError(
+                    f"logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}"
+                )
 
             logger.log(level, msg.lstrip())
 
@@ -814,7 +816,11 @@ class MultipleContexts:
         calls = [(name, Call(self.enter, name, obj)) for name, obj in self.objs]
 
         try:
-            with stopwatch(f"entry into context for {self.params['name']}", 0.5, logger_level='debug'):
+            with stopwatch(
+                f"entry into context for {self.params['name']}",
+                0.5,
+                logger_level="debug",
+            ):
                 self.call_handler(self.params, calls)
         except BaseException as e:
             try:
@@ -824,7 +830,9 @@ class MultipleContexts:
 
     @hide_in_traceback
     def __exit__(self, *exc):
-        with stopwatch(f"{self.params['name']} - context exit", 0.5, logger_level='debug'):
+        with stopwatch(
+            f"{self.params['name']} - context exit", 0.5, logger_level="debug"
+        ):
             for name in tuple(self._entered.keys())[::-1]:
                 context = self._entered[name]
 

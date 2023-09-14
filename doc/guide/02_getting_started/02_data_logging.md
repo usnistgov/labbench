@@ -19,7 +19,7 @@ A number of tools are included in `labbench` to streamline acquisition of test d
 
 The data management supports automatic relational databasing. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside of the data tree, etc.) are automatically stored relationally --- placed in folders and referred to in the database. Other data can be forced to be relational by dynamically generating relational databases on the fly.
 
-<!-- ## File conventions
+## File conventions
 All labbench data save functionality is implemented in tables with [pandas](pandas.pydata.org) DataFrame backends. Here are database storage formats that are supported:
 
 | Format                            | File extension(s)              | Data management class | flag to [use record file format](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.RelationalTableLogger.set_relational_file_format) | Comments |
@@ -45,37 +45,11 @@ In the following example, we will use an sqlite master database, and csv record 
 ## Example
 Here is a emulated "dummy" instrument. It has a few state settings similar to a simple power sensor. The state descriptors (`initiate_continuous`, `output_trigger`, etc.) are defined as local types, which means they don't trigger communication with any actual devices. The `fetch_trace` method generates a "trace" drawn from a uniform distribution.
 
-```{code-cell}
-import sys
-sys.path.insert(0,'..')
+```{code-cell} ipython3
 import labbench as lb
 import numpy as np
-import pandas as pd
 
-class EmulatedInstrument(lb.EmulatedVISADevice):
-    """ This "instrument" makes mock data and instrument states to
-        demonstrate we can show the process of setting
-        up a measurement.
-    """
-    class state (lb.EmulatedVISADevice.state):
-        initiate_continuous:bool = lb.property(key='INIT:CONT')
-        output_trigger:bool = lb.property(key='OUTP:TRIG')
-        sweep_aperture:float = lb.property(min=20e-6, max=200e-3,help='s')
-        frequency:float = lb.property(min=10e6, max=18e9,step=1e-3,help='Hz')
-
-    def trigger(self):
-        """ This would tell the instrument to start a measurement
-        """
-        pass
-    
-    def fetch_trace(self, N=1001):
-        """ Generate N points of junk data as a pandas series.
-        """
-        values = np.random.normal(size=N)
-        index = np.linspace(0,self.state.sweep_aperture,N)
-        series = pd.Series(values,index=index,name='voltage')
-        series.index.name = 'time'
-        return series
+from labbench.testing import SpectrumAnalyzer, PowerSensor, pyvisa_sim_resource
 ```
 
 Now make a loop to execute 100 test runs with two emulated instruments, and log the results with a relational SQLite database. I do a little setup to start:
@@ -87,77 +61,85 @@ Now make a loop to execute 100 test runs with two emulated instruments, and log 
 
 Remember that use of the `with` statement automatically connects to the instruments, and then ensures that the instruments are properly closed when we leave the `with` block (even if there is an exception).
 
-```{code-cell}
-def inst1_trace ():
-    """ Return a 1001-point trace
-    """
-    inst1.trigger()
-    return inst1.fetch_trace(51)
+```{code-cell} ipython3
+from time import strftime
 
-def inst2_trace ():
-    """ This one returns only one point
-    """
-    inst2.trigger()
-    return inst2.fetch_trace(1).values[0]
-    
-# Root directory of the database
-db_path = r'data'
+FREQ_COUNT = 3
+DUT_NAME = "DUT 63"
 
-# Seed the data dictionary with some global data
-data = {'dut': 'DUT 15'}
+# allow simulated connections to the specified VISA devices
+lb.visa_default_resource_manager(pyvisa_sim_resource)
 
-Nfreqs = 101
+sensor = PowerSensor()
+analyzer = SpectrumAnalyzer()
+db = lb.CSVLogger(path=f"data {strftime('%Y-%m-%d %Hh%Mm%S')}")
+# Catch any changes in inst1.state and inst2.state
 
-with EmulatedInstrument()        as inst1,\
-     EmulatedInstrument()        as inst2,\
-     lb.SQLiteLogger(db_path)  as db:
-        # Catch any changes in inst1.state and inst2.state
-        db.observe_states([inst1,inst2])  
-        
-        # Update inst1.state.sweep_aperture on each db.append
-        db.observe_states(inst1, always='sweep_aperture')
-        
-        # Store trace data in csv format
-        db.set_relational_file_format('csv')
-        
-        # Perform a frequency sweep. The frequency will be logged to the
-        # database, because we configured it to observe all state changes.
-        inst2.state.frequency = 5.8e9
-        for inst1.state.frequency in np.linspace(5.8e9, 5.9e9, Nfreqs):                    
-            # Collect "test data" by concurrently calling
-            # inst1_trace and inst2_trace
-            data.update(lb.concurrently(inst1_trace, inst2_trace))
 
-            # Append the new data as a row to the database.
-            # Each key is a column in the database (which will be added
-            # dynamically to the database if needed). More keys and values
-            # are also added corresponding to attributes inst1.state and inst2.state
-            db.append(comments='trying for 1.21 GW to time travel',
-                      **data)
+# automatic logging from `analyzer` in 'output.csv' in each call to db.new_row:
+# (1) each lb.property or lb.value that has been get or set in the device since the last call
+db.observe(analyzer)
+
+# automatic logging from `sensor` in 'output.csv' in each call to db.new_row:
+# (1) each lb.property or lb.value that has been get or set in the device since the last call
+# (2) explicitly get `sensor.sweep_aperture` (as column "sensor_sweep_aperture")
+db.observe(sensor, always=['sweep_aperture'])
+
+pending = []
+with sensor, analyzer, db:
+    for freq in np.linspace(5.8e9, 5.9e9, FREQ_COUNT):
+        # Assignment to these property attributes:
+        # (1) sets the frequency on each instrument *and*
+        # (2) triggers logging of these values in the next database row in
+        #     the columns 'analyzer_center_frequency' and 'sensor_frequency'
+        analyzer.center_frequency = freq
+        sensor.frequency = freq
+
+        sensor.trigger()
+        analyzer.trigger()
+
+        # Logs the measurements and test conditions as a new row. Each key
+        # is a column in the database in addition to the automatic parameters
+        db.new_row(
+            comments='trying for 1.21 GW to time travel',
+            dut = DUT_NAME,
+            analyzer_trace=analyzer.fetch(),
+            sensor_reading=sensor.fetch()[0]
+        )
 ```
 
 #### Reading and exploring the data
-The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the sqlite database into a pandas dataframe. Each state is a column in the database. The logger creates columns named as a combination of the device name ('inst1') and name of the corresponding device state.
+The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the table of measurement results into a [pandas](http://pandas.pydata.org/pandas-docs/stable/) DataFrame table:
 
-```{code-cell}
-%pylab inline
-master = lb.read(f'{db_path}/master.db')
-master.head()
+```{code-cell} ipython3
+root = lb.read(f'{db.path}/outputs.csv')
+root
 ```
 
-This is a pandas DataFrame object. There is extensive information about how to use dataframes [on the pandas website](http://pandas.pydata.org/pandas-docs/stable/). Suppose we want to bring in the data from the traces, which are in a collection of waveform files specified under the `inst1_trace` column. The function `labbench.expand` serves to flatten the database with respect to data files that were generated on each row.
+This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column 'analyzer_trace.csv'), and the host log JSON file ('host_log).
 
-```{code-cell}
-waveforms = lb.read_relational(f'{db_path}/master.db', 'inst1_trace', ['dut', 'inst1_frequency'])
-waveforms
+To analyze the experimental data, one approach is to access these files directly at these files
+
+```{code-cell} ipython3
+rel_path = root['analyzer_trace'].values[0]
+lb.read(f"{db.path}/{rel_path}")
 ```
 
-now we can manipulate the results to look for meaningful information in the data.
+This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column 'analyzer_trace.csv'), and the host log JSON file ('host_log).
 
-```{code-cell}
-import seaborn as sns; sns.set(context='notebook', style='ticks', font_scale=1.5) # Theme stuff
+Suppose we want to expand a table based on the relational data files in one of these columns. A shortcut for this is provided by `labbench.read_relational`:
 
-waveforms.plot(x='inst1_frequency',y='inst1_trace_voltage',kind='hexbin')
-xlabel('Frequency (Hz)')
-ylabel('Voltage (arb units)')
-``` -->
+```{code-cell} ipython3
+lb.read_relational(
+    f'{db.path}/outputs.csv',
+
+    # the column containing paths to relational data tables.
+    # the returned table places a .
+    'analyzer_trace',
+
+    # copy fixed values of these column across as columns in each relational data table
+    ['sensor_frequency', 'sensor_sweep_aperture']
+)
+```
+
+For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in `analyzer_trace.csv`.

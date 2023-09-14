@@ -965,10 +965,6 @@ class VISADevice(Device):
         help="identity string reported by the instrument",
     )
 
-    options = property_.str(
-        key="*OPT", sets=False, cache=True, help="options reported by the instrument"
-    )
-
     @property_.dict(sets=False)
     def status_byte(self):
         """instrument status decoded from '*STB?'"""

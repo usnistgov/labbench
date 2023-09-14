@@ -42,6 +42,7 @@ import os
 from pathlib import Path
 import pickle
 import shutil
+from typing import List, Union
 import warnings
 
 EMPTY = inspect._empty
@@ -257,9 +258,10 @@ class MungerBase(core.Device):
         Returns:
             the path to the file, relative to the directory that contains the root database
         """
-        with self._open_relational(name + ext, index, row, mode="w") as f:
-            json.dump(value, f, indent=True)  # f.write(bytes(value, encoding='utf-8'))
-        return self._get_key(f)
+        with self._open_relational(name + ext, index, row, mode="w") as fd:
+            json.dump(value, fd, indent=True)  # f.write(bytes(value, encoding='utf-8'))
+
+        return self._get_key(fd)
 
     # The following methods need to be implemented in subclasses.
     def _get_key(self, buf):
@@ -604,7 +606,7 @@ class Aggregator(util.Ownable):
                     else:
                         self._pending_traits_volatile.pop(self.key(name, attr), None)
 
-        aggregated_output = dict(index=self._rack_input_index)
+        aggregated_output = {}
 
         # start by aggregating the trait data, and checking for conflicts with keys in the Rack data
         aggregated_output.update(self._pending_traits_persistent)
@@ -619,8 +621,11 @@ class Aggregator(util.Ownable):
         aggregated_output.update(self._pending_rack_output)
 
         # and the rack inputs
-        aggregated_input = dict(index=self._rack_input_index)
+        aggregated_input = {}
         aggregated_input.update(self._pending_rack_input)
+
+        if 'index' in aggregated_input:
+            aggregated_output['index'] = aggregated_input['index']
 
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
         # value traits traits are locally cached, so it is safe to keep them in the next step
@@ -669,6 +674,8 @@ class Aggregator(util.Ownable):
         """called by an owning Rack notifying that managed procedural steps have returned data"""
         # trait data or previous returned data may cause problems here. perhaps this should be an exception?
 
+        row_data = dict(index=self._rack_input_index)
+
         if self._rack_toplevel_caller is None:
             # take the first call as the top-level caller
             self._rack_toplevel_caller = msg["owner"]
@@ -678,10 +685,8 @@ class Aggregator(util.Ownable):
             return
 
         else:
+            # iter_info = msg["new"]
             self._rack_input_index += 1
-
-        # iter_info = msg["new"]
-        row_data = dict(index=self._rack_input_index)
 
         # if len(self._iter_index_names) > 0:
         #     self._iter_index_names.setdefault(
@@ -1047,7 +1052,7 @@ class RelationalTableLogger(
         elif len(args) == 0:
             row = {}
 
-        # Pull in observed states
+        # Pull in observed states. aggregated_input comes from Rack method keyword args
         aggregated_output, aggregated_input = self.aggregator.get()
         if do_copy:
             aggregated_output = copy.deepcopy(aggregated_output)
@@ -1077,7 +1082,7 @@ class RelationalTableLogger(
         if len(self.pending_output) != len(self.pending_input):
             util.logger.warning("the input and output have mismatched length")
 
-        count = max(len(self.pending_output), len(self.pending_input))
+        count = len(self.pending_output)
 
         if count > 0:
             proc = self._row_preprocessor
@@ -1092,8 +1097,8 @@ class RelationalTableLogger(
                 for i, row in enumerate(self.pending_input)
             ]
 
-            self.output_index += len(self.pending_output) - 1
             self._write_root()
+            self.output_index += len(self.pending_output) - 1
             self.clear()
 
     @contextmanager
@@ -1270,9 +1275,6 @@ class CSVLogger(RelationalTableLogger):
                 self.tables[file_name] = None
                 self.output_index = 0
 
-    def close(self):
-        self._write_root()
-
     def _write_root(self):
         """Write queued rows of data to csv. This is called automatically on :func:`close`, or when
         exiting a `with` block.
@@ -1293,21 +1295,19 @@ class CSVLogger(RelationalTableLogger):
             if isfirst:
                 self.tables[path_to_csv.name] = pending
             else:
-                self.tables[path_to_csv.name] = (
-                    self.tables[path_to_csv.name]
-                    .append(pending)
-                    .loc[self.output_index :]
-                )
+                self.tables[path_to_csv.name] = pd.concat((self.tables[path_to_csv.name], pending))
+                self.tables[path_to_csv.name] = self.tables[path_to_csv.name].loc[pending.index[0]:]
             self.tables[path_to_csv.name].sort_index(inplace=True)
-            self.output_index = self.tables[path_to_csv.name].index[-1]
 
             self.path.mkdir(exist_ok=True, parents=True)
 
-            with open(path_to_csv, "a") as f:
-                self.tables[path_to_csv.name].to_csv(f, header=isfirst, index=False)
+            self.tables[path_to_csv.name].to_csv(
+                path_to_csv, mode='a', header=isfirst, index=False, encoding='utf-8'
+            )
 
-        append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
         append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
+        append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
+        self.output_index = self.tables[(self.path / self.OUTPUT_FILE_NAME).name].index[-1]
 
 
 class MungeToHDF(Device):
@@ -1527,7 +1527,6 @@ class HDFLogger(RelationalTableLogger):
         import pandas as pd
 
         def write_table(key, data):
-            print("write table! ", key, data)
             if len(data) == 0:
                 return
             isfirst = self.df is None
@@ -1535,10 +1534,8 @@ class HDFLogger(RelationalTableLogger):
             pending.index.name = self.index_label
             pending.index += self.output_index
             if isfirst:
-                print("first!")
                 self.df = pending
             else:
-                print(self.df.columns, pending.columns)
                 self.df = self.df.append(pending).loc[self.output_index :]
             self.df.sort_index(inplace=True)
             self.output_index = self.df.index[-1]
@@ -1926,13 +1923,13 @@ class MungeReader:
 
 
 def read_relational(
-    path,
-    expand_col,
-    root_cols=None,
-    target_cols=None,
-    root_nrows=None,
-    root_format="auto",
-    prepend_column_name=True,
+    path: Union[str, Path],
+    expand_col: str,
+    root_cols: Union[List[str], None] = None,
+    target_cols: Union[List[str], None] = None,
+    root_nrows: Union[int, None] = None,
+    root_format: str = "auto",
+    prepend_column_name: bool = True,
 ):
     """Flatten a relational database table by loading the table located each row of
     `root[expand_col]`. The value of each column in this row
@@ -1943,8 +1940,6 @@ def read_relational(
 
     The expanded dataframe may be very large, making downselecting a practical
     necessity in some scenarios.
-
-    TODO: Support for a list of expand_col?
 
     :param pandas.DataFrame root: the root database, consisting of columns containing data and columns containing paths to data files
         expand_col (str): the column in the root database containing paths to    data files that should be expanded
@@ -1967,6 +1962,10 @@ def read_relational(
     if root_cols is not None:
         root_cols = list(root_cols) + [expand_col]
     root = read(path, columns=root_cols, nrows=root_nrows, format=root_format)
+
+    if root_cols is not None:
+        root_cols = ['root_index'] + root_cols
+    root = root.reset_index(names='root_index')
     reader = MungeReader(path)
 
     def generate():
@@ -1990,7 +1989,7 @@ def read_relational(
             #     row = row[root_cols]
 
             # Add in columns from the root
-            for c, v in row.iteritems():
+            for c, v in row.items():
                 sub[c] = v
 
             yield sub

@@ -1,4 +1,6 @@
 import labbench as lb
+import pandas as pd
+import numpy as np
 
 
 @lb.property.visa_keying(
@@ -52,7 +54,10 @@ class PowerSensor(lb.VISADevice):
         if self.trigger_count == 1:
             return float(response)
         else:
-            return [float(s) for s in response.split(",")]
+            return pd.Series([float(s) for s in response.split(",")], name='spectrum')
+        
+    def trigger(self):
+        return self.write("TRIG")
 
 
 @lb.property.visa_keying(remap={True: "ON", False: "OFF"})
@@ -83,10 +88,19 @@ class SpectrumAnalyzer(lb.VISADevice):
         """acquire measurements as configured"""
         response = self.query("FETC?")
 
-        return [float(s) for s in response.split(",")]
-    
+        series = pd.Series(
+            [float(s) for s in response.split(",")],
+            name='spectrum'
+        )
+        series.index = pd.Index(
+            self.center_frequency + np.linspace(-5e6, 5e6, len(series)),
+            name='frequency'
+        )
+
+        return series
+
     def trigger(self):
-        return self.write('TRIG')
+        return self.write("TRIG")
 
 
 @lb.property.visa_keying(remap={True: "YES", False: "NO"})

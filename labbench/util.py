@@ -83,6 +83,14 @@ logger = logging.LoggerAdapter(
     ),  # description of origin within labbench (for screen logs only)
 )
 
+_LOG_LEVEL_NAMES = {
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARN,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL
+}
+
 
 # show deprecation warnings only once
 class LabbenchDeprecationWarning(DeprecationWarning):
@@ -620,7 +628,7 @@ def hash_caller(call_depth=1):
 
 
 @contextmanager
-def stopwatch(desc: str = "", threshold: float = 0):
+def stopwatch(desc: str = "", threshold: float = 0, logger_level='info'):
     """Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
@@ -647,7 +655,12 @@ def stopwatch(desc: str = "", threshold: float = 0):
             if exc_info != (None, None, None):
                 msg += f" before exception {exc_info[1]}"
 
-            logger.info(msg.lstrip())
+            try:
+                level = _LOG_LEVEL_NAMES[logger_level]
+            except KeyError:
+                raise ValueError(f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}')
+
+            logger.log(level, msg.lstrip())
 
 
 class Call(object):
@@ -801,7 +814,7 @@ class MultipleContexts:
         calls = [(name, Call(self.enter, name, obj)) for name, obj in self.objs]
 
         try:
-            with stopwatch(f"entry into context for {self.params['name']}", 0.5):
+            with stopwatch(f"entry into context for {self.params['name']}", 0.5, logger_level='debug'):
                 self.call_handler(self.params, calls)
         except BaseException as e:
             try:
@@ -811,7 +824,7 @@ class MultipleContexts:
 
     @hide_in_traceback
     def __exit__(self, *exc):
-        with stopwatch(f"{self.params['name']} - context exit", 0.5):
+        with stopwatch(f"{self.params['name']} - context exit", 0.5, logger_level='debug'):
             for name in tuple(self._entered.keys())[::-1]:
                 context = self._entered[name]
 

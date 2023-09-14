@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Cleanups in `VISABackend` and trait debug messages
 - Corrected a bug where context entry into a Rack objects missed entry Device objects that had the same name in different Rack children 
 - Corrected a bug where Rack the full ownership wasn't being properly indicated in log messages 
+- Removed "options" from `VISABackend`, leaving it to be implemented per-instrument
+- Removed unecessary extra writes to output table in `CSVLogger`
 
 ### Removed
 - `SimulatedVISABackend` - instead, use `VISABackend` after calling `visa_default_resource_manager('my-file.yml@sim')`

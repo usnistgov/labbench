@@ -151,19 +151,29 @@ class notify:
     def unobserve_returns(cls, handler):
         if not callable(handler):
             raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers["returns"].remove(handler)
+
+        try:
+            cls._handlers["returns"].remove(handler)
+        except KeyError:
+            pass
 
     @classmethod
     def unobserve_calls(cls, handler):
         if not callable(handler):
             raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers["calls"].remove(handler)
+        try:
+            cls._handlers["calls"].remove(handler)
+        except KeyError:
+            pass
 
     @classmethod
     def unobserve_call_iteration(cls, handler):
         if not callable(handler):
             raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers["iteration"].remove(handler)
+        try:
+            cls._handlers["iteration"].remove(handler)
+        except KeyError:
+            pass
 
 
 class CallSignatureTemplate:
@@ -696,27 +706,6 @@ class OwnerContextAdapter:
         return getattr(self._owner, "_owned_name", None) or repr(self)
 
 
-def recursive_devices(top):
-    entry_order = list(top._entry_order)
-    devices = dict(top._devices)
-    top_name_prefix = getattr(top, "__name__", "")
-    if len(top_name_prefix) > 0:
-        top_name_prefix = top_name_prefix + "."
-
-    for owner in top._owners.values():
-        children, o_entry_order = recursive_devices(owner)
-        name_prefix = top_name_prefix + owner.__name__ + "."
-
-        # this might be faster if the key/value order is transposed in devices?
-        for name, child in children.items():
-            if child not in devices.values():
-                devices[name_prefix + name] = child
-
-        entry_order.extend(o_entry_order)
-
-    return devices, entry_order
-
-
 def flatten_nested_owner_contexts(top) -> dict:
     """recursively generate a flattened mapping of context managers nested Owners
 
@@ -838,6 +827,7 @@ class Owner:
     _concurrent = True
 
     def __init_subclass__(cls, entry_order: list = None):
+        """type configuration performed each time a new subclass is created"""
         # registries that will be context managed
         cls._devices = {}  # each of cls._devices.values() these will be context managed
         cls._owners = (
@@ -989,6 +979,27 @@ class Owner:
     def __exit__(self):
         # pass along from self._context
         return self._context.__exit__
+
+
+def recursive_devices(top: Owner):
+    entry_order = list(top._entry_order)
+    devices = dict(top._devices)
+    top_name_prefix = getattr(top, "__name__", "")
+    if len(top_name_prefix) > 0:
+        top_name_prefix = top_name_prefix + "."
+
+    for owner in top._owners.values():
+        children, o_entry_order = recursive_devices(owner)
+        name_prefix = top_name_prefix + owner.__name__ + "."
+
+        # this might be faster if the key/value order is transposed in devices?
+        for name, child in children.items():
+            if child not in devices.values():
+                devices[name_prefix + name] = child
+
+        entry_order.extend(o_entry_order)
+
+    return devices, entry_order
 
 
 def override_empty(a, b, param_name, field):

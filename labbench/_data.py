@@ -73,11 +73,9 @@ class MungerBase(core.Device):
         min=0,
         help="minimum size threshold that triggers storing text in a relational file",
     )
-    force_relational = value.list(
-        ["host_log"], help="list of column names to always save as relational data"
-    )
-    dirname_fmt = value.str(
-        "{id} {host_time}",
+    force_relational = value.list([], help="list of column names to always save as relational data")
+    relational_name_fmt = value.str(
+        "{id}",
         help="directory name format for data in each row keyed on column",
     )
     nonscalar_file_type = value.str(
@@ -131,6 +129,9 @@ class MungerBase(core.Device):
 
         return row
 
+    def __repr__(self):
+        return f"{type(self).__name__}('{str(self.resource)}')"
+
     def save_metadata(self, name, key_func, **extra):
         import pandas as pd
 
@@ -150,6 +151,10 @@ class MungerBase(core.Device):
 
         summary = dict(extra)
         for owner, owner_name in name.items():
+            if not isinstance(owner, Device):
+                # other util.Ownable instances e.g. RelationalTableLogger
+                continue
+
             for trait_name, trait in owner._traits.items():
                 if trait.role == _traits.Trait.ROLE_VALUE or trait.cache:
                     summary[key_func(owner_name, trait_name)] = getattr(
@@ -228,7 +233,7 @@ class MungerBase(core.Device):
         with self._open_relational(basename, index, row, mode="wb") as buf:
             new_path = buf.name
 
-        self._import_from_file(old_path, new_path)
+        self._relational_from_file(old_path, new_path)
 
         return self._get_key(new_path)
 
@@ -300,7 +305,7 @@ class MungerBase(core.Device):
 
         raise NotImplementedError
 
-    def _import_from_file(self, old_path, dest):
+    def _relational_from_file(self, old_path, dest):
         raise NotImplementedError
 
     def open(self):
@@ -313,11 +318,6 @@ class MungeToDirectory(MungerBase):
     """Implement data munging into subdirectories."""
 
     def _open_relational(self, name, index, row, mode):
-        if "host_time" not in row:
-            self._logger.error(
-                "no timestamp yet from host yet; this shouldn't happen :("
-            )
-
         relpath = self._make_path_heirarchy(index, row)
         if not os.path.exists(relpath):
             os.makedirs(relpath)
@@ -340,7 +340,7 @@ class MungeToDirectory(MungerBase):
         """
         return os.path.relpath(stream.name, self.resource)
 
-    def _import_from_file(self, old_path, dest):
+    def _relational_from_file(self, old_path, dest):
         # Retry moves for several seconds in case the file is in the process
         # of being closed
         @util.until_timeout(PermissionError, 5, delay=0.5)
@@ -359,9 +359,11 @@ class MungeToDirectory(MungerBase):
             shutil.copyfile(old_path, dest)
 
     def _make_path_heirarchy(self, index, row):
-        relpath = self.dirname_fmt.format(id=index, **row)
+        # relpath = f'{index} {self.relational_name_fmt}'
+        # TODO: add back in a timestamp
+        relpath = self.relational_name_fmt.format(id=index, **row)
 
-        # TODO: Find a more generic way to force valid path name
+        # TODO: More robust enforcement for a valid path strings
         relpath = relpath.replace(":", "")
         relpath = os.path.join(self.resource, relpath)
         return relpath
@@ -451,12 +453,7 @@ class MungeToTar(MungerBase):
     tarname = "data.tar"
 
     def _open_relational(self, name, index, row, mode):
-        if "host_time" not in row:
-            self._logger.error(
-                "no timestamp yet from host yet; this shouldn't happen :("
-            )
-
-        relpath = os.path.join(self.dirname_fmt.format(id=index, **row), name)
+        relpath = os.path.join(self.relational_name_fmt.format(id=index, **row), name)
 
         return TarFileIO(self.tarfile, relpath, mode=mode)
 
@@ -486,7 +483,7 @@ class MungeToTar(MungerBase):
         """
         return buf.name
 
-    def _import_from_file(self, old_path, dest):
+    def _relational_from_file(self, old_path, dest):
         info = self.tar.gettarinfo(old_path)
         info.name = dest
         self.tar.addfile(old_path, info)
@@ -534,12 +531,10 @@ class Aggregator(util.Ownable):
         self.trait_rules = dict(always={}, never={})
 
         # pending data
-        self._pending_traits_volatile = (
-            {}
-        )  # pending = dict(state={}, value traits={}, rack={})
-        self._pending_traits_persistent = {}
-        self._pending_rack_output = {}
-        self._pending_rack_input = {}
+        self.incoming_trait_auto = {}
+        self.incoming_trait_always = {}
+        self.incoming_rack_output = {}
+        self.incoming_rack_input = {}
 
         self._rack_toplevel_caller = None
         self._rack_input_index = 0
@@ -565,7 +560,7 @@ class Aggregator(util.Ownable):
         _rack.notify.unobserve_calls(self._receive_rack_input)
         # _rack.notify.unobserve_call_iteration(self._receive_rack_input)
 
-    def is_persistent_trait(self, device, attr):
+    def is_always_trait(self, device, attr):
         if not isinstance(device, core.Device):
             return False
 
@@ -585,52 +580,52 @@ class Aggregator(util.Ownable):
             dictionary keyed on :func:`key` (defaults '{device name}_{state name}')
         """
 
-        for device, name in list(self.name_map.items()):
+        for device, device_name in list(self.name_map.items()):
             # Perform gets for each property trait called out in self.trait_rules['always']
             if device in self.trait_rules["always"].keys():
                 for attr in self.trait_rules["always"][device]:
-                    if self.is_persistent_trait(device, attr):
-                        self._pending_traits_persistent[self.key(name, attr)] = getattr(
-                            device, attr
-                        )
+                    key = self.key(device_name, attr)
+                    value = getattr(device, attr)
+
+                    if self.is_always_trait(device, attr):
+                        self.incoming_trait_always[key] = value
                     else:
-                        self._pending_traits_volatile[self.key(name, attr)] = getattr(
-                            device, attr
-                        )
+                        self.incoming_trait_auto[key] = value
 
             # Remove keys corresponding with self.trait_rules['never']
             if device in self.trait_rules["never"].keys():
                 for attr in self.trait_rules["never"][device]:
-                    if self.is_persistent_trait(device, attr):
-                        self._pending_traits_persistent.pop(self.key(name, attr), None)
+                    key = self.key(device_name, attr)
+                    if self.is_always_trait(device, attr):
+                        self.incoming_trait_always.pop(key, None)
                     else:
-                        self._pending_traits_volatile.pop(self.key(name, attr), None)
+                        self.incoming_trait_auto.pop(key, None)
 
         aggregated_output = {}
 
         # start by aggregating the trait data, and checking for conflicts with keys in the Rack data
-        aggregated_output.update(self._pending_traits_persistent)
-        aggregated_output.update(self._pending_traits_volatile)
+        aggregated_output.update(self.incoming_trait_always)
+        aggregated_output.update(self.incoming_trait_auto)
 
         # check namespace conflicts and pull in rack outputs
-        key_conflicts = set(aggregated_output).intersection(self._pending_rack_output)
+        key_conflicts = set(aggregated_output).intersection(self.incoming_rack_output)
         if len(key_conflicts) > 0:
             self.critical(
                 f"key name conflict in aggregated data - Rack data is overwriting trait data for {key_conflicts}"
             )
-        aggregated_output.update(self._pending_rack_output)
+        aggregated_output.update(self.incoming_rack_output)
 
         # and the rack inputs
         aggregated_input = {}
-        aggregated_input.update(self._pending_rack_input)
+        aggregated_input.update(self.incoming_rack_input)
 
         if "index" in aggregated_input:
             aggregated_output["index"] = aggregated_input["index"]
 
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
         # value traits traits are locally cached, so it is safe to keep them in the next step
-        self._pending_rack_output = {}
-        self._pending_traits_volatile = {}
+        self.incoming_rack_output = {}
+        self.incoming_trait_auto = {}
         # self._pending_rack_input = {}
 
         return aggregated_output, aggregated_input
@@ -639,7 +634,8 @@ class Aggregator(util.Ownable):
         """Generate a name for a trait based on the names of
         a device and one of its states or value traits.
         """
-        return f"{device_name}_{state_name}"
+        key_name = device_name.replace(' ', '_').replace('.', '_')
+        return f"{key_name}_{state_name}"
 
     def set_device_labels(self, **mapping):
         """Manually choose device name for a device instance.
@@ -663,12 +659,12 @@ class Aggregator(util.Ownable):
 
         row_data = msg["new"]
 
-        key_conflicts = set(row_data).intersection(self._pending_rack_output)
+        key_conflicts = set(row_data).intersection(self.incoming_rack_output)
         if len(key_conflicts) > 0:
             self._logger.warning(
                 f"Rack call overwrites prior data with existing keys {key_conflicts}"
             )
-        self._pending_rack_output.update(row_data)
+        self.incoming_rack_output.update(row_data)
 
     def _receive_rack_input(self, msg: dict):
         """called by an owning Rack notifying that managed procedural steps have returned data"""
@@ -706,7 +702,7 @@ class Aggregator(util.Ownable):
         #         f"Rack call overwrites prior data with existing keys {key_conflicts}"
         #     )
 
-        self._pending_rack_input = dict(row_data, **msg["new"])
+        self.incoming_rack_input = dict(row_data, **msg["new"])
 
     def _receive_trait_update(self, msg: dict):
         """called by trait owners on changes observed
@@ -726,46 +722,56 @@ class Aggregator(util.Ownable):
 
         if msg["cache"]:
             self.metadata[self.key(name, attr)] = msg["new"]
-        elif self.is_persistent_trait(msg["owner"], msg["name"]):
-            self._pending_traits_persistent[self.key(name, attr)] = msg["new"]
+        elif self.is_always_trait(msg["owner"], msg["name"]):
+            self.incoming_trait_always[self.key(name, attr)] = msg["new"]
         else:
-            self._pending_traits_volatile[self.key(name, attr)] = msg["new"]
+            self.incoming_trait_auto[self.key(name, attr)] = msg["new"]
 
-    def _update_name_map(self, rack_or_devices):
+    def update_name_map(self, ownables, owner_prefix=None):
         """ "map each Device to a name in devices.values() by introspection"""
 
         # self.name_map.clear()
 
-        if isinstance(rack_or_devices, Rack):
-            devices = {
-                name: obj
-                for name, obj in Rack._ownables.items()
-                if isinstance(obj, Device)
-            }
+        if owner_prefix is None:
+            prefix = ''
         else:
-            devices = rack_or_devices
+            prefix = owner_prefix + '.'
 
-        for device, name in devices.items():
-            if not isinstance(device, Device):
-                raise ValueError(f"{device} is not an instance of Device")
+        for obj, name in ownables.items():
+            if not isinstance(obj, util.Ownable):
+                raise ValueError(f"{obj} is not a Device or other ownable labbench type")
 
-            if name:
-                if device in self.name_map and name != self.name_map[device]:
-                    # a rename is an odd case, make a note of it
-                    self._logger.warning(f"renaming {self.name_map[device]} to {name}")
-                self.name_map[device] = name
+            if name is not None:
+                # if obj in self.name_map and name != self.name_map[obj]:
+                #     # a rename is an odd case, make a note of it
+                #     self._logger.warning(f"renaming {self.name_map[obj]} to {name}")
+                if obj not in self.name_map:
+                    self.name_map[obj] = new_name = prefix + name
+                else:
+                    new_name = name
 
-            elif device in self.name_map:
+            elif obj in self.name_map:
                 # naming for device. needs this
-                name = self.name_map[device]
+                new_name = prefix + self.name_map[obj]
 
-            elif hasattr(device, "__name__"):
+            # elif obj._owned_name is not None:
+            #     self.name_map[obj] = new_name = obj._owned_name
+
+            elif hasattr(obj, "__name__"):
                 # Ownable instances that have owners have this attribute set
-                self.name_map[device] = name = device.__name__
+                self.name_map[obj] = new_name = prefix + obj.__name__
 
             else:
-                self.name_map[device] = name = self._find_object_in_callers(device)
-                self._logger.info(f"{device} named '{name}' by introspection")
+                self.name_map[obj] = new_name = prefix + self.inspect_object_name(obj)
+                self._logger.info(f"{obj} named '{new_name}' by introspection")
+
+            if isinstance(obj, Owner):
+                children = dict(zip(obj._ownables.values(), obj._ownables.keys()))
+                self.update_name_map(children, owner_prefix=new_name)
+
+            # if obj._owned_name is None:
+            #     obj._owned_name = new_name
+            #     obj._logger.extra.update(**util.logger_metadata(obj))
 
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
             names = list(self.name_map.values())
@@ -823,7 +829,7 @@ class Aggregator(util.Ownable):
         # if role not in VALID_TRAIT_ROLES:
         #     raise ValueError(f"the 'role' argument must be one of {str(VALID_TRAIT_ROLES)}, not {role}")
 
-        self._update_name_map(devices)
+        self.update_name_map(devices)
 
         # Register handlers
         for device in devices.keys():
@@ -836,7 +842,7 @@ class Aggregator(util.Ownable):
             if never:
                 self.trait_rules["never"][device] = never
 
-    def _find_object_in_callers(self, target, max_levels=5):
+    def inspect_object_name(self, target, max_levels=20):
         """Introspect into the caller to name an object .
 
         Arguments:
@@ -873,25 +879,29 @@ class Aggregator(util.Ownable):
             while f.f_code.co_filename in INSPECT_SKIP_FILES:
                 f = f.f_back
 
-            for i in range(max_levels):
+            tries_elapsed = 0
+            while tries_elapsed < max_levels:
                 # look in the namespace; if nothing
                 try:
                     ret = find_value(f.f_locals, target)
                 except KeyError:
+                    f = f.f_back
+                    if f is None:
+                        tries_elapsed = max_levels
+                    else:
+                        tries_elapsed += 1
                     continue
                 else:
                     break
-
-                f = f.f_back
             else:
-                raise Exception(f"failed to automatically label {repr(target)}")
+                raise RuntimeError(f"failed to automatically label {repr(target)} by inspection")
         finally:
             del f, frame
 
         return ret
 
 
-class RelationalTableLogger(
+class TabularLoggerBase(
     Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)
 ):
     """Base class for loggers that queue dictionaries of data before writing
@@ -917,7 +927,7 @@ class RelationalTableLogger(
         directory is inside a git repo with this branch name
     """
 
-    index_label = "id"
+    INDEX_LABEL = "id"
 
     def __init__(
         self,
@@ -926,19 +936,23 @@ class RelationalTableLogger(
         append=False,
         text_relational_min=1024,
         force_relational=["host_log"],
-        dirname_fmt="{id} {host_time}",
         nonscalar_file_type="csv",
         metadata_dirname="metadata",
         tar=False,
         git_commit_in=None,
         # **metadata
     ):
-        self.aggregator = Aggregator()
+        self.path = Path(path)
+        self.last_row = 0
+        self.pending_output = []
+        self.pending_input = []
+        self._append = append
 
-        super().__init__()
+        self.aggregator = Aggregator()
 
         # log host introspection
         # TODO: smarter
+
         self.host = _host.Host(git_commit_in=git_commit_in)
 
         # select the backend that dumps relational data
@@ -947,27 +961,23 @@ class RelationalTableLogger(
             path,
             text_relational_min=text_relational_min,
             force_relational=force_relational,
-            dirname_fmt=dirname_fmt,
             nonscalar_file_type=nonscalar_file_type,
             metadata_dirname=metadata_dirname,
             # **metadata
         )
 
-        self.last_row = 0
-        self.pending_output = []
-        self.pending_input = []
-        self.path = Path(path)
-        self._append = append
         self.set_row_preprocessor(None)
+
+        # doing this at the end ensures self._logger is seeded with appropriate log messages  
+        super().__init__()
 
     def __copy__(self):
         return copy.deepcopy(self)
 
-    def __owner_init__(self, owner):
+    def __owner_init__(self, owner: Owner):
+        """observe children of each Rack or other Owner"""
         super().__owner_init__(owner)
-
         devices, _ = _rack.recursive_devices(owner)
-
         self.observe({v: k for k, v in devices.items()})
 
     def __repr__(self):
@@ -1144,32 +1154,32 @@ class RelationalTableLogger(
             raise Exception(f"relational file data format {format} not supported")
         self.munge.nonscalar_file_type = format
 
-    def set_path_format(self, format):
-        """ Set the path name convention for relational files that is used when
-            a table entry contains non-scalar (multidimensional) information and will
-            need to be stored in a separate file. The entry in the aggregate property traits table
-            becomes the path to the file.
+    # def set_path_format(self, format):
+    #     """ Set the path name convention for relational files that is used when
+    #         a table entry contains non-scalar (multidimensional) information and will
+    #         need to be stored in a separate file. The entry in the aggregate property traits table
+    #         becomes the path to the file.
 
-            The format string follows the syntax of python's python's built-in :func:`str.format`.\
-            You may use any keys from the table to form the path. For example, consider a\
-            scenario where aggregate device property traits includes `inst1_frequency` of `915e6`,\
-            and :func:`append` has been called as `append(dut="DUT15")`. If the current\
-            aggregate property trait entry includes inst1_frequency=915e6, then the format string\
-            '{dut}/{inst1_frequency}' means relative data path 'DUT15/915e6'.
+    #         The format string follows the syntax of python's python's built-in :func:`str.format`.\
+    #         You may use any keys from the table to form the path. For example, consider a\
+    #         scenario where aggregate device property traits includes `inst1_frequency` of `915e6`,\
+    #         and :func:`append` has been called as `append(dut="DUT15")`. If the current\
+    #         aggregate property trait entry includes inst1_frequency=915e6, then the format string\
+    #         '{dut}/{inst1_frequency}' means relative data path 'DUT15/915e6'.
 
-            Arguments:
-                format: a string compatible with :func:`str.format`, with replacement\
-            fields defined from the keys from the current entry of results and aggregated states.\
+    #         Arguments:
+    #             format: a string compatible with :func:`str.format`, with replacement\
+    #         fields defined from the keys from the current entry of results and aggregated states.\
 
-            Returns:
-                None
-        """
-        warnings.warn(
-            """set_path_format is deprecated; set when creating
-                         the database object instead with the nonscalar_output flag"""
-        )
+    #         Returns:
+    #             None
+    #     """
+    #     warnings.warn(
+    #         """set_path_format is deprecated; set when creating
+    #                      the database object instead with the nonscalar_output flag"""
+    #     )
 
-        self.munge.dirname_fmt = format
+    #     self.munge.relational_name_fmt = format
 
     def open(self):
         """Open the file or database connection.
@@ -1182,8 +1192,20 @@ class RelationalTableLogger(
         if self.path is None:
             raise TypeError("cannot open dB while path is None")
 
+        # introspect self so to hook in self.host and self.munge
+        if self not in self.aggregator.name_map:
+            self.aggregator.update_name_map({self: None})
+
         self.observe(self.munge, never=self.munge._traits)
         self.observe(self.host, always=["time", "log"])
+
+        # configure strings in relational data files that depend on how 'self' is
+        # named in introspection
+        time_key = self.aggregator.key(self.aggregator.name_map[self.host], 'time')
+        self.munge.relational_name_fmt = f'{{id}} {{{time_key}}}'
+        log_key = self.aggregator.key(self.aggregator.name_map[self.host], 'log')
+        if log_key not in self.munge.force_relational:
+            self.munge.force_relational = list(self.munge.force_relational) + [log_key]
 
         # Do some checks on the relative data directory before we consider overwriting
         # the root db.
@@ -1199,17 +1221,19 @@ class RelationalTableLogger(
         self.aggregator.disable()
         # try:
         self.write()
+
         if self.output_index > 0:
-            self.munge.save_metadata(
-                self.aggregator.name_map,
-                self.aggregator.key,
-                **self.aggregator.metadata,
-            )
-        # except BaseException as e:
-        #     traceback.print_exc()
+            if self.host.isopen:
+                self.munge.save_metadata(
+                    self.aggregator.name_map,
+                    self.aggregator.key,
+                    **self.aggregator.metadata,
+                )
+            else:
+                self.munge._logger.warning('not saving metadata due to exception')
 
 
-class CSVLogger(RelationalTableLogger):
+class CSVLogger(TabularLoggerBase):
     """Store data, value traits, and property traits to disk into a root database formatted as a comma-separated value (CSV) file.
 
     This extends :class:`Aggregator` to support
@@ -1269,7 +1293,7 @@ class CSVLogger(RelationalTableLogger):
             if self._append and file_path.stat().st_size > 0:
                 # there's something here and we plan to append
                 self.tables[file_name] = pd.read_csv(file_path, nrows=1)
-                self.tables[file_name].index.name = self.index_label
+                self.tables[file_name].index.name = self.INDEX_LABEL
                 self.output_index = len(self.tables[file_name])
             else:
                 self.tables[file_name] = None
@@ -1289,7 +1313,7 @@ class CSVLogger(RelationalTableLogger):
                 return
             isfirst = self.tables.get(path_to_csv.name, None) is None
             pending = pd.DataFrame(df)
-            pending.index.name = self.index_label
+            pending.index.name = self.INDEX_LABEL
             pending.index = pending.index + self.output_index
 
             if isfirst:
@@ -1311,9 +1335,9 @@ class CSVLogger(RelationalTableLogger):
 
         append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
         append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
-        self.output_index = self.tables[(self.path / self.OUTPUT_FILE_NAME).name].index[
-            -1
-        ]
+
+        output_df = self.tables[(self.path / self.OUTPUT_FILE_NAME).name]
+        self.output_index = output_df.index[-1]
 
 
 class MungeToHDF(Device):
@@ -1458,7 +1482,7 @@ class MungeToHDF(Device):
             return "/" + self.key_fmt.format(id=index, **row) + " " + name
 
 
-class HDFLogger(RelationalTableLogger):
+class HDFLogger(TabularLoggerBase):
     """Store data and activity from value and property sets and gets to disk
     into a root database formatted as an HDF file.
 
@@ -1537,7 +1561,7 @@ class HDFLogger(RelationalTableLogger):
                 return
             isfirst = self.df is None
             pending = pd.DataFrame(data)
-            pending.index.name = self.index_label
+            pending.index.name = self.INDEX_LABEL
             pending.index += self.output_index
             if isfirst:
                 self.df = pending
@@ -1552,7 +1576,7 @@ class HDFLogger(RelationalTableLogger):
         write_table(self.KEY_INPUT, self.pending_input)
 
 
-class SQLiteLogger(RelationalTableLogger):
+class SQLiteLogger(TabularLoggerBase):
     """Store data and property traits to disk into an an sqlite database.
 
     This extends :class:`Aggregator` to support
@@ -1571,7 +1595,7 @@ class SQLiteLogger(RelationalTableLogger):
         tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
-    index_label = "id"  # Don't change this or sqlite breaks :(
+    INDEX_LABEL = "id"  # Don't change this or sqlite breaks :(
     ROOT_FILE_NAME = "root.db"
     OUTPUT_TABLE_NAME = "output"
     _columns = None
@@ -1627,9 +1651,9 @@ class SQLiteLogger(RelationalTableLogger):
         if os.path.exists(path):
             if self._append:
                 # read the last row to 1) list the columns and 2) get index
-                query = f"select * from {self.OUTPUT_TABLE_NAME} order by {self.index_label} desc limit 1"
+                query = f"select * from {self.OUTPUT_TABLE_NAME} order by {self.INDEX_LABEL} desc limit 1"
 
-                df = pd.read_sql_query(query, self._engine, index_col=self.index_label)
+                df = pd.read_sql_query(query, self._engine, index_col=self.INDEX_LABEL)
                 self._columns = df.columns
                 self.output_index = df.index[-1] + 1
             else:
@@ -1694,10 +1718,10 @@ class SQLiteLogger(RelationalTableLogger):
                 self._engine,
                 if_exists="append",
                 index=True,
-                index_label=self.index_label,
+                index_label=self.INDEX_LABEL,
             )
         except ArgumentError:
-            self._logger.error(f"failed to convert index label {self.index_label}")
+            self._logger.error(f"failed to convert index label {self.INDEX_LABEL}")
             raise ArgumentError
         except BaseException as e:
             raise e
@@ -1708,7 +1732,8 @@ class SQLiteLogger(RelationalTableLogger):
         """The key determines the SQL column name. df.to_sql does not seem
         to support column names that include spaces
         """
-        return f"{name.replace(' ', '_')}_{attr}"
+        key_name = name.replace(' ', '_').replace('.', '_')
+        return f"{key_name}_{attr}"
 
     def _sql_type_name(self, col):
         from pandas.io.sql import _SQL_TYPES
@@ -1790,7 +1815,7 @@ def read_sqlite(
     table_name=SQLiteLogger.OUTPUT_TABLE_NAME,
     columns=None,
     nrows=None,
-    index_col=RelationalTableLogger.index_label,
+    index_col=TabularLoggerBase.INDEX_LABEL,
 ):
     """Wrapper to that uses pandas.read_sql_table to load a table from an sqlite database at the specified path.
 

@@ -12,69 +12,34 @@ kernelspec:
 ---
 
 # Data Logging
-A number of tools are included in `labbench` to streamline acquisition of test data into a database. A couple of methods are
+Several objects are included in `labbench` for logging test conditions and resulting measurement results.
+* Automatic logging of iteractions with `lb.property`, `lb.value`, and `lb.datareturn` attributes of devices
+* Manual logging through simple dictionary mapping
+The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside of the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.
 
-* Automatically monitoring attributes in `state` and logging changes
-* Saving postprocessed data in the as a new column
+Logging is provided for several root data formats through `labbench.CSVLogger`, `labbench.HDFLogger`, and `labbench.SQLiteLogger`.
 
-The data management supports automatic relational databasing. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside of the data tree, etc.) are automatically stored relationally --- placed in folders and referred to in the database. Other data can be forced to be relational by dynamically generating relational databases on the fly.
-
-## File conventions
-All labbench data save functionality is implemented in tables with [pandas](pandas.pydata.org) DataFrame backends. Here are database storage formats that are supported:
-
-| Format                            | File extension(s)              | Data management class | flag to [use record file format](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.RelationalTableLogger.set_relational_file_format) | Comments |
-|:----------------------------------|:-------------------------------|:-----------------------|:------------------------|:----
-| [sqlite](sqlite.org)              | .db                            | [labbench.SQLiteLogger](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.SQLiteLogger) | 'sqlite' | Scales to larger databases than csv |
-| csv                               | .csv,.csv.gz,.csv.bz2,.csv.zip | [labbench.CSVLogger](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.CSVLogger)          |'csv'| Easy to inspect |
-
-Several formats are supported only as relational data (data stored in a file in the subdirectory instead of directly in the ). Certain types of data as values into the database manager automatically become relational data when you call the `append` method of the data manager:
-
-| Format                            | File extension(s)              | python type conversion | [set_record file format](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.RelationalTableLogger.set_relational_file_format) flag | Comments |
-|:----------------------------------|:-------------------------------|:-----------------------|:------------------------|:----
-| [feather](github.com/wesm/feather)| .f                             | iterables of numbers and strings; pd.DataFrame | 'feather' | Python 3.x only
-| [json](http://www.json.org/)      | .json                          | iterables of numbers and strings; pd.DataFrame         | 'json' | |
-| csv                               | .csv | iterables of numbers and strings; pd.DataFrame         |'csv'| |
-| python [pickle](https://docs.python.org/3/library/pickle.html) | .pickle | any | 'pickle' | fallback if the chosen relational format fails |
-| text files     | .txt | string or bytes longer than `text_relational_min` | N/A | set `text_relational_min` when you instantiate the database manager
-| arbitrary files generated outside the file tree |     *             | strings containing filesystem path | N/A |
-
-In the following example, we will use an sqlite master database, and csv record files.
-
-+++
-
-## Example
-Here is a emulated "dummy" instrument. It has a few state settings similar to a simple power sensor. The state descriptors (`initiate_continuous`, `output_trigger`, etc.) are defined as local types, which means they don't trigger communication with any actual devices. The `fetch_trace` method generates a "trace" drawn from a uniform distribution.
+## Example: Logging with `Device` objects in scripts
+The use of logging objects requires some light configuration, and one call to add data per test row.
 
 ```{code-cell} ipython3
 import labbench as lb
-import numpy as np
-
 from labbench.testing import SpectrumAnalyzer, PowerSensor, pyvisa_sim_resource
-```
-
-Now make a loop to execute 100 test runs with two emulated instruments, and log the results with a relational SQLite database. I do a little setup to start:
-
-1. Define a couple of functions `inst1_trace` and `inst2_trace` that collect my data
-2. Instantiate 2 instruments, `inst1` and `inst2`
-3. Instantiate the logger with `lb.SQLiteLogger('test.db', 'state')`.
-   The arguments specify the name of the sqlite database file and the name of the table where the following will be stored: 1) the instrument state info will be stored, 2) locations of data files, and 3) any extra comments we add with `db.write()`.
-
-Remember that use of the `with` statement automatically connects to the instruments, and then ensures that the instruments are properly closed when we leave the `with` block (even if there is an exception).
-
-```{code-cell} ipython3
-from time import strftime
+import numpy as np
+import shutil, time
 
 FREQ_COUNT = 3
 DUT_NAME = "DUT 63"
+DATA_PATH = './data'
 
-# allow simulated connections to the specified VISA devices
+# the labbench.testing devices support simulated pyvisa operations
 lb.visa_default_resource_manager(pyvisa_sim_resource)
+lb.show_messages('debug')
 
 sensor = PowerSensor()
 analyzer = SpectrumAnalyzer()
-db = lb.CSVLogger(path=f"data {strftime('%Y-%m-%d %Hh%Mm%S')}")
-# Catch any changes in inst1.state and inst2.state
-
+shutil.rmtree(DATA_PATH, True)
+db = lb.CSVLogger(path=f"./data")
 
 # automatic logging from `analyzer` in 'output.csv' in each call to db.new_row:
 # (1) each lb.property or lb.value that has been get or set in the device since the last call
@@ -85,7 +50,6 @@ db.observe(analyzer)
 # (2) explicitly get `sensor.sweep_aperture` (as column "sensor_sweep_aperture")
 db.observe(sensor, always=['sweep_aperture'])
 
-pending = []
 with sensor, analyzer, db:
     for freq in np.linspace(5.8e9, 5.9e9, FREQ_COUNT):
         # Assignment to these property attributes:
@@ -108,6 +72,14 @@ with sensor, analyzer, db:
         )
 ```
 
+```{code-cell} ipython3
+db._logger.extra
+```
+
+```{code-cell} ipython3
+
+```
+
 #### Reading and exploring the data
 The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the table of measurement results into a [pandas](http://pandas.pydata.org/pandas-docs/stable/) DataFrame table:
 
@@ -122,12 +94,10 @@ To analyze the experimental data, one approach is to access these files directly
 
 ```{code-cell} ipython3
 rel_path = root['analyzer_trace'].values[0]
-lb.read(f"{db.path}/{rel_path}")
+lb.read(f"{db.path}/{rel_path}").head()
 ```
 
-This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column 'analyzer_trace.csv'), and the host log JSON file ('host_log).
-
-Suppose we want to expand a table based on the relational data files in one of these columns. A shortcut for this is provided by `labbench.read_relational`:
+For a more systematic analysis to analyzing the data, we may want to expand the root table based on the relational data files in one of these columns. A shortcut for this is provided by `labbench.read_relational`:
 
 ```{code-cell} ipython3
 lb.read_relational(
@@ -143,3 +113,56 @@ lb.read_relational(
 ```
 
 For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in `analyzer_trace.csv`.
+
+```{code-cell} ipython3
+## Logg
+```
+
+```{code-cell} ipython3
+import labbench as lb
+from labbench.testing import SpectrumAnalyzer, PowerSensor, SignalGenerator, pyvisa_sim_resource
+import numpy as np
+from shutil import rmtree
+
+FREQ_COUNT = 3
+DUT_NAME = "DUT 63"
+DATA_PATH = './data'
+
+
+# the labbench.testing devices support simulated pyvisa operations
+lb.visa_default_resource_manager(pyvisa_sim_resource)
+
+class Testbed(lb.Rack):
+    sensor: PowerSensor = PowerSensor()
+    analyzer: SpectrumAnalyzer = SpectrumAnalyzer()
+    db: lb.CSVLogger = lb.CSVLogger(path=DATA_PATH)
+
+    def open(self):
+        # remove prior data before we start
+        self.db.observe(self.analyzer)
+        self.db.observe(self.sensor, always=['sweep_aperture'])
+
+    def single(self, frequency: float):
+        self.analyzer.center_frequency = frequency
+        self.sensor.frequency = frequency
+
+        self.sensor.trigger()
+        self.analyzer.trigger()
+
+        return dict(
+            analyzer_trace=self.analyzer.fetch(),
+            sensor_reading=self.sensor.fetch()[0]
+        )
+
+rmtree(Testbed.db.path, True)
+
+with Testbed() as rack:
+    for freq in np.linspace(5.8e9, 5.9e9, FREQ_COUNT):
+        rack.single(freq)
+
+        # this could also go in single()
+        rack.db.new_row(
+            comments='trying for 1.21 GW to time travel',
+            dut = DUT_NAME,
+        )
+```

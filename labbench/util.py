@@ -164,7 +164,7 @@ def show_messages(minimum_level, colors=True):
 show_messages("info")
 
 
-def _inject_logger_metadata(obj):
+def logger_metadata(obj):
     d = dict(
         object=repr(obj),
         origin=type(obj).__qualname__,
@@ -201,7 +201,7 @@ class Ownable:
     def __init__(self):
         self._logger = logging.LoggerAdapter(
             logger.logger,
-            extra=_inject_logger_metadata(self),
+            extra=logger_metadata(self),
         )
 
     def __set_name__(self, owner_cls, name):
@@ -218,13 +218,15 @@ class Ownable:
         else:
             self._owned_name = owner._owned_name + "." + self.__name__
 
-        self._logger.extra.update(**_inject_logger_metadata(self))
+        # self._logger.extra.update(**logger_metadata(self))
 
     def __owner_subclass__(self, owner_cls):
         """Called after the owner class is instantiated; returns an object to be used in the Rack namespace"""
         # TODO: revisit whether there should be any assignment of _owned_name here
         if self._owned_name is None:
             self._owned_name = self.__name__
+
+        # self._logger.extra.update(**logger_metadata(self))
 
         return self
 

@@ -23,8 +23,9 @@
 # copyright and licensing statements of any third-party software that are
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
+
 """
-This implementation is deeply intertwined obscure details of the python object
+This implementation is deeply intertwined with obscure details of the python object
 model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
@@ -42,7 +43,6 @@ from . import value
 
 from ._traits import (
     HasTraits,
-    Trait,
     Undefined,
     BoundedNumber,
     observe,

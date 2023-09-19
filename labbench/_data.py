@@ -24,26 +24,41 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from contextlib import suppress, contextmanager
-from . import _device, _traits, _rack
-from ._device import Device
-from ._traits import observe
-from ._rack import Owner, Rack
-from . import _host
-from . import _device as core
-from . import value
-from . import util
 import copy
 import inspect
 import io
 import json
-from numbers import Number
 import os
-from pathlib import Path
 import pickle
 import shutil
-from typing import List, Union
+import tarfile
 import warnings
+from contextlib import contextmanager, suppress
+from numbers import Number
+from pathlib import Path
+from typing import List, Union
+
+from . import _device
+from . import _device as core
+from . import _host, _rack, _traits, util, value
+from ._device import Device
+from ._rack import Owner, Rack
+from ._traits import observe
+
+try:
+    h5py = util.lazy_import('h5py')
+    np = util.lazy_import('numpy')
+    pd = util.lazy_import('pandas')
+    sqlalchemy = util.lazy_import('sqlalchemy')
+    feather = util.lazy_import('pyarrow.feather')
+except RuntimeWarning:
+    # not executed: help coding tools recognize lazy_imports as imports
+    import h5py
+    import numpy as np
+    import pandas as pd
+    import sqlalchemy
+    from pyarrow import feather
+
 
 EMPTY = inspect._empty
 
@@ -73,7 +88,9 @@ class MungerBase(core.Device):
         min=0,
         help="minimum size threshold that triggers storing text in a relational file",
     )
-    force_relational = value.list([], help="list of column names to always save as relational data")
+    force_relational = value.list(
+        [], help="list of column names to always save as relational data"
+    )
     relational_name_fmt = value.str(
         "{id}",
         help="directory name format for data in each row keyed on column",
@@ -94,8 +111,6 @@ class MungerBase(core.Device):
         Returns:
             the row dictionary, replacing special entries with the relative path to the saved data file
         """
-        import pandas as pd
-        import numpy as np
 
         def is_path(v):
             if not isinstance(v, str):
@@ -133,8 +148,6 @@ class MungerBase(core.Device):
         return f"{type(self).__name__}('{str(self.resource)}')"
 
     def save_metadata(self, name, key_func, **extra):
-        import pandas as pd
-
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 if len(value) > self.text_relational_min:
@@ -180,8 +193,6 @@ class MungerBase(core.Device):
         Returns:
             the path to the file, relative to the directory that contains the root database
         """
-        import pandas as pd
-
         def write(stream, ext, value):
             if ext == "csv":
                 value.to_csv(stream)
@@ -309,9 +320,9 @@ class MungerBase(core.Device):
         raise NotImplementedError
 
     def open(self):
-        # make sure these are fresh in the module cache
-        import pandas as pd
-        import numpy as np
+        # touch these modules to ensure they have imported
+        pd.DataFrame
+        np.array
 
 
 class MungeToDirectory(MungerBase):
@@ -354,8 +365,6 @@ class MungeToDirectory(MungerBase):
             self._logger.warning(
                 "relational file was still open in another program; fallback to copy instead of rename"
             )
-            import shutil
-
             shutil.copyfile(old_path, dest)
 
     def _make_path_heirarchy(self, index, row):
@@ -369,8 +378,6 @@ class MungeToDirectory(MungerBase):
         return relpath
 
     def _write_metadata(self, metadata):
-        import pandas as pd
-
         def recursive_dict_fix(d):
             d = dict(d)
             for name, obj in dict(d).items():
@@ -427,8 +434,6 @@ class TarFileIO(io.BytesIO):
         #        tarpath = os.path.join(self.tarbase, self.tarname)
         #        f = tarfile.open(tarpath, 'a')
 
-        import tarfile
-
         try:
             if not self.overwrite and self.name in self.tarfile.getnames():
                 raise IOError(f"{self.name} already exists in {self.tarfile.name}")
@@ -462,8 +467,6 @@ class MungeToTar(MungerBase):
         return TarFileIO(self.tarfile, dirpath, mode=mode)
 
     def open(self):
-        import tarfile
-
         if not os.path.exists(self.resource):
             with suppress(FileExistsError):
                 os.makedirs(self.resource)
@@ -502,8 +505,6 @@ class MungeToTar(MungerBase):
             self._logger.warning(f"could not remove old file or directory {old_path}")
 
     def _write_metadata(self, metadata):
-        import pandas as pd
-
         for k, v in metadata.items():
             stream = self._open_metadata(k + ".json", "w")
             if hasattr(stream, "overwrite"):
@@ -634,7 +635,7 @@ class Aggregator(util.Ownable):
         """Generate a name for a trait based on the names of
         a device and one of its states or value traits.
         """
-        key_name = device_name.replace(' ', '_').replace('.', '_')
+        key_name = device_name.replace(" ", "_").replace(".", "_")
         return f"{key_name}_{state_name}"
 
     def set_device_labels(self, **mapping):
@@ -733,13 +734,15 @@ class Aggregator(util.Ownable):
         # self.name_map.clear()
 
         if owner_prefix is None:
-            prefix = ''
+            prefix = ""
         else:
-            prefix = owner_prefix + '.'
+            prefix = owner_prefix + "."
 
         for obj, name in ownables.items():
             if not isinstance(obj, util.Ownable):
-                raise ValueError(f"{obj} is not a Device or other ownable labbench type")
+                raise ValueError(
+                    f"{obj} is not a Device or other ownable labbench type"
+                )
 
             if name is not None:
                 # if obj in self.name_map and name != self.name_map[obj]:
@@ -894,7 +897,9 @@ class Aggregator(util.Ownable):
                 else:
                     break
             else:
-                raise RuntimeError(f"failed to automatically label {repr(target)} by inspection")
+                raise RuntimeError(
+                    f"failed to automatically label {repr(target)} by inspection"
+                )
         finally:
             del f, frame
 
@@ -968,7 +973,7 @@ class TabularLoggerBase(
 
         self.set_row_preprocessor(None)
 
-        # doing this at the end ensures self._logger is seeded with appropriate log messages  
+        # doing this at the end ensures self._logger is seeded with appropriate log messages
         super().__init__()
 
     def __copy__(self):
@@ -1201,9 +1206,9 @@ class TabularLoggerBase(
 
         # configure strings in relational data files that depend on how 'self' is
         # named in introspection
-        time_key = self.aggregator.key(self.aggregator.name_map[self.host], 'time')
-        self.munge.relational_name_fmt = f'{{id}} {{{time_key}}}'
-        log_key = self.aggregator.key(self.aggregator.name_map[self.host], 'log')
+        time_key = self.aggregator.key(self.aggregator.name_map[self.host], "time")
+        self.munge.relational_name_fmt = f"{{id}} {{{time_key}}}"
+        log_key = self.aggregator.key(self.aggregator.name_map[self.host], "log")
         if log_key not in self.munge.force_relational:
             self.munge.force_relational = list(self.munge.force_relational) + [log_key]
 
@@ -1230,7 +1235,7 @@ class TabularLoggerBase(
                     **self.aggregator.metadata,
                 )
             else:
-                self.munge._logger.warning('not saving metadata due to exception')
+                self.munge._logger.warning("not saving metadata due to exception")
 
 
 class CSVLogger(TabularLoggerBase):
@@ -1274,7 +1279,9 @@ class CSVLogger(TabularLoggerBase):
         the file is closed when exiting the `with` block, even if there
         is an exception.
         """
-        import pandas as pd
+
+        # touch pandas to force lazy loading
+        pd.__version__
 
         self.tables = {}
 
@@ -1306,43 +1313,39 @@ class CSVLogger(TabularLoggerBase):
         If the class was created with overwrite=True, then the first call to _write_root() will overwrite
         the preexisting file; subsequent calls append.
         """
-        import pandas as pd
-
-        def append_csv(path_to_csv, df):
+        def append_csv(path: Path, df: pd.DataFrame):
             if len(df) == 0:
                 return
-            isfirst = self.tables.get(path_to_csv.name, None) is None
+
+            isfirst = self.tables.get(path.name, None) is None
             pending = pd.DataFrame(df)
             pending.index.name = self.INDEX_LABEL
             pending.index = pending.index + self.output_index
 
             if isfirst:
-                self.tables[path_to_csv.name] = pending
+                self.tables[path.name] = pending
             else:
-                self.tables[path_to_csv.name] = pd.concat(
-                    (self.tables[path_to_csv.name], pending)
-                )
-                self.tables[path_to_csv.name] = self.tables[path_to_csv.name].loc[
-                    pending.index[0] :
-                ]
-            self.tables[path_to_csv.name].sort_index(inplace=True)
+                self.tables[path.name] = pd.concat((self.tables[path.name], pending))
+                self.tables[path.name] = self.tables[path.name].loc[pending.index[0]:]
+            self.tables[path.name].sort_index(inplace=True)
 
             self.path.mkdir(exist_ok=True, parents=True)
 
-            self.tables[path_to_csv.name].to_csv(
-                path_to_csv, mode="a", header=isfirst, index=False, encoding="utf-8"
+            self.tables[path.name].to_csv(
+                path, mode="a", header=isfirst, index=False, encoding="utf-8"
             )
 
-        append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
-        append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
+        if len(self.pending_input) > 0:
+            append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
+        if len(self.pending_output) > 0:
+            append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
 
-        output_df = self.tables[(self.path / self.OUTPUT_FILE_NAME).name]
-        self.output_index = output_df.index[-1]
+            output_df = self.tables[(self.path / self.OUTPUT_FILE_NAME).name]
+            self.output_index = output_df.index[-1]
 
 
 class MungeToHDF(Device):
-    """This is where ugly but necessary sausage making organizes
-    in a file output with a key in the root database.
+    """Funnel test input and output data into a file output with a key in the root database.
 
     The following conversions to relational files are attempted in order to
     convert each value in the row dictionary:
@@ -1365,8 +1368,6 @@ class MungeToHDF(Device):
     )
 
     def open(self):
-        import h5py
-
         self.backend = h5py.File(self.resource, "a")
 
     def close(self):
@@ -1415,8 +1416,6 @@ class MungeToHDF(Device):
         return row
 
     def save_metadata(self, name, key_func, **extra):
-        import pandas as pd
-
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 return value
@@ -1451,8 +1450,6 @@ class MungeToHDF(Device):
         Returns:
             the path to the file, relative to the directory that contains the root database
         """
-        import pandas as pd
-
         key = self._get_key(name, index, row)
 
         try:
@@ -1554,8 +1551,6 @@ class HDFLogger(TabularLoggerBase):
         If the class was created with overwrite=True, then the first call to _write_root() will overwrite
         the preexisting file; subsequent calls append.
         """
-        import pandas as pd
-
         def write_table(key, data):
             if len(data) == 0:
                 return
@@ -1619,8 +1614,6 @@ class SQLiteLogger(TabularLoggerBase):
         the file is closed when exiting the `with` block, even if there
         is an exception.
         """
-        from sqlalchemy import create_engine  # database connection
-        import pandas as pd
 
         if self.path.exists():
             root = str(self.path.absolute())
@@ -1646,7 +1639,7 @@ class SQLiteLogger(TabularLoggerBase):
         path = os.path.join(self.path, self.ROOT_FILE_NAME)
 
         # Create an engine via sqlalchemy
-        self._engine = create_engine("sqlite:///{}".format(path))
+        self._engine = sqlalchemy.create_engine("sqlite:///{}".format(path))
 
         if os.path.exists(path):
             if self._append:
@@ -1678,8 +1671,6 @@ class SQLiteLogger(TabularLoggerBase):
         If the class was created with overwrite=True, then the first call to _write_root() will overwrite
         the preexisting file; subsequent calls append.
         """
-        import pandas as pd
-
         if len(self.pending_output) == 0:
             return
 
@@ -1732,12 +1723,10 @@ class SQLiteLogger(TabularLoggerBase):
         """The key determines the SQL column name. df.to_sql does not seem
         to support column names that include spaces
         """
-        key_name = name.replace(' ', '_').replace('.', '_')
+        key_name = name.replace(" ", "_").replace(".", "_")
         return f"{key_name}_{attr}"
 
     def _sql_type_name(self, col):
-        from pandas.io.sql import _SQL_TYPES
-
         col_type = self._get_notnull_col_dtype(col)
         if col_type == "timedelta64":
             warnings.warn(
@@ -1756,10 +1745,10 @@ class SQLiteLogger(TabularLoggerBase):
         elif col_type == "complex":
             raise ValueError("Complex datatypes not supported")
 
-        if col_type not in _SQL_TYPES:
+        if col_type not in pd.io.sql._SQL_TYPES:
             col_type = "string"
 
-        return _SQL_TYPES[col_type]
+        return pd.io.sql._SQL_TYPES[col_type]
 
     def _get_notnull_col_dtype(self, col):
         """
@@ -1767,8 +1756,6 @@ class SQLiteLogger(TabularLoggerBase):
         and it contains NA values, this infers the datatype of the not-NA
         values.  Needed for inserting typed data containing NULLs, GH8778.
         """
-        import pandas as pd
-
         col_for_inference = col
         if col.dtype == "object":
             notnulldata = col[~pd.isnull(col)]
@@ -1791,8 +1778,6 @@ def to_feather(data, path):
         None
 
     """
-    import numpy as np
-
     iname, data.index.name = data.index.name, None
     cname, data.columns.name = data.columns.name, None
 
@@ -1828,10 +1813,7 @@ def read_sqlite(
     Returns:
         pandas.DataFrame instance containing data loaded from `path`
     """
-    import pandas as pd
-    from sqlalchemy import create_engine
-
-    engine = create_engine(f"sqlite:///{path}")
+    engine = sqlalchemy.create_engine(f"sqlite:///{path}")
     df = pd.read_sql_table(table_name, engine, index_col=index_col, columns=columns)
     engine.dispose()
     if nrows is not None:
@@ -1853,9 +1835,6 @@ def read(path_or_buf, columns=None, nrows=None, format="auto", **kws):
         pandas.DataFrame instance containing data read from file
     """
 
-    import pandas as pd
-    from pyarrow.feather import read_feather
-
     reader_guess = {
         "p": pd.read_pickle,
         "pickle": pd.read_pickle,
@@ -1866,7 +1845,7 @@ def read(path_or_buf, columns=None, nrows=None, format="auto", **kws):
     }
 
     try:
-        reader_guess.update({"f": read_feather, "feather": read_feather})
+        reader_guess.update({"f": feather.read_feather, "feather": feather.read_feather})
     except BaseException:
         warnings.warn(
             "feather format is not available in this pandas installation, and will not be supported in labbench"
@@ -1906,8 +1885,6 @@ class MungeTarReader:
     tarnames = "data.tar", "data.tar.gz", "data.tar.bz2", "data.tar.lz4"
 
     def __init__(self, path, tarname="data.tar"):
-        import tarfile
-
         self.tarfile = tarfile.open(os.path.join(path, tarname), "r")
 
     def __call__(self, key, *args, **kws):
@@ -1982,8 +1959,6 @@ def read_relational(
         the expanded dataframe
 
     """
-    import pandas as pd
-
     # if not isinstance(root, (pd.DataFrame,pd.Series)):
     #     raise ValueError('expected root to be a DataFrame instance, but it is {} instead'\
     #                      .format(repr(type(root))))

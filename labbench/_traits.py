@@ -29,26 +29,31 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-from . import util
-
-import typing
-from warnings import warn
-from functools import wraps
-import validators as _val
-from contextlib import contextmanager
 import builtins
-
-from inspect import isclass
 import inspect
 import numbers
-
+import typing
+from contextlib import contextmanager
+from functools import wraps
+from inspect import isclass
 # for common types
 from pathlib import Path
+from warnings import warn
+
+import validators as _val
+
+from . import util
+
+try:
+    pd = util.lazy_import('pandas')
+except RuntimeError:
+    # not executed: help coding tools recognize lazy_imports as imports
+    import pandas as pd
 
 Undefined = inspect.Parameter.empty
 
 T = typing.TypeVar("T")
-from typing import Union, Any
+from typing import Any, Union
 
 
 class ThisType(typing.Generic[T]):
@@ -1098,8 +1103,6 @@ class RemappingCorrectionMixIn(DependentTrait):
         if owner is None:
             raise ValueError("must pass owner to set_mapping")
 
-        import pandas as pd
-
         if isinstance(series_or_uncal, pd.Series):
             by_uncal = pd.Series(series_or_uncal).copy()
         elif cal is not None:
@@ -1237,8 +1240,6 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _load_calibration_table(self, owner, path):
         """stash the calibration table from disk"""
-        import pandas as pd
-
         def read(path):
             # quick read
             cal = pd.read_csv(str(path), index_col=self.table_index_column, dtype=float)

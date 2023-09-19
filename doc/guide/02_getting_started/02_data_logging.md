@@ -13,9 +13,9 @@ kernelspec:
 
 # Data Logging
 Several objects are included in `labbench` for logging test conditions and resulting measurement results.
-* Automatic logging of iteractions with `lb.property`, `lb.value`, and `lb.datareturn` attributes of devices
+* Automatic logging of interactions with `Device` attributes that are defined with `lb.property`, `lb.value`, and `lb.datareturn`
 * Manual logging through simple dictionary mapping
-The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside of the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.
+The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.
 
 Logging is provided for several root data formats through `labbench.CSVLogger`, `labbench.HDFLogger`, and `labbench.SQLiteLogger`.
 
@@ -72,14 +72,6 @@ with sensor, analyzer, db:
         )
 ```
 
-```{code-cell} ipython3
-db._logger.extra
-```
-
-```{code-cell} ipython3
-
-```
-
 #### Reading and exploring the data
 The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the table of measurement results into a [pandas](http://pandas.pydata.org/pandas-docs/stable/) DataFrame table:
 
@@ -113,10 +105,6 @@ lb.read_relational(
 ```
 
 For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in `analyzer_trace.csv`.
-
-```{code-cell} ipython3
-## Logg
-```
 
 ```{code-cell} ipython3
 import labbench as lb

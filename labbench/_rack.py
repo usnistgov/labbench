@@ -26,13 +26,13 @@
 
 import contextlib
 import copy
-from ctypes import ArgumentError
-from dataclasses import dataclass
 import importlib
 import inspect
 import sys
 import time
 import traceback
+from ctypes import ArgumentError
+from dataclasses import dataclass
 from functools import wraps
 
 from . import _device as core

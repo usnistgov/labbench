@@ -27,6 +27,7 @@
 import contextlib
 import importlib
 import inspect
+import logging
 import os
 import re
 import select
@@ -44,9 +45,17 @@ import psutil
 from . import property as property_
 from . import util, value
 from ._device import Device
-from ._traits import (
-    observe,
-)
+from ._traits import observe
+
+try:
+    serial = util.lazy_import('serial')
+    pyvisa = util.lazy_import('pyvisa')
+    telnetlib = util.lazy_import('telnetlib')
+except RuntimeWarning:
+    # not executed: help coding tools recognize lazy_imports as imports
+    import serial
+    import pyvisa
+    import telnetlib
 
 
 class ShellBackend(Device):
@@ -672,8 +681,6 @@ class SerialDevice(Device):
         """Connect to the serial device with the VISA resource string defined
         in self.resource
         """
-        import serial
-
         keys = "timeout", "parity", "stopbits", "xonxoff", "rtscts", "dsrdtr"
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(self.resource, self.baud_rate, **params)
@@ -782,8 +789,6 @@ class SerialLoggingDevice(SerialDevice):
         Returns:
             None
         """
-        from serial import SerialException
-
         def accumulate():
             timeout, self.backend.timeout = self.backend.timeout, 0
             q = self._stdout
@@ -794,7 +799,7 @@ class SerialLoggingDevice(SerialDevice):
             try:
                 while stop_event.wait(self.poll_rate) is not True:
                     q.put(self.backend.read(10 * self.baud_rate * self.poll_rate))
-            except SerialException as e:
+            except serial.SerialException as e:
                 self._stop.set()
                 self.close()
                 raise e
@@ -881,8 +886,6 @@ class TelnetDevice(Device):
         """Open a telnet connection to the host defined
         by the string in self.resource
         """
-        from telnetlib import Telnet
-
         host, *port = self.resource.split(":")
 
         if len(port) > 0:
@@ -890,7 +893,7 @@ class TelnetDevice(Device):
         else:
             port = 23
 
-        self.backend = Telnet(self.resource, port=port, timeout=self.timeout)
+        self.backend = telnetlib.Telnet(self.resource, port=port, timeout=self.timeout)
 
     def close(self):
         """Disconnect the telnet connection"""
@@ -1043,8 +1046,6 @@ class VISADevice(Device):
         this is called automatically and does not need
         to be invoked.
         """
-        import pyvisa
-
         if not self.isopen or self.backend is None:
             return
 
@@ -1191,17 +1192,12 @@ class VISADevice(Device):
         """
 
         def __exit__(self, exctype, excinst, exctb):
-            import pyvisa
-
             EXC = pyvisa.errors.VisaIOError
             CODE = pyvisa.errors.StatusCode.error_timeout
 
             return exctype == EXC and excinst.error_code == CODE
 
     def _release_remote_control(self):
-        import pyvisa
-        import pyvisa.constants
-
         # From instrument and pyvisa docs
         if not self._rm.endswith("@sim"):
             self.backend.visalib.viGpibControlREN(
@@ -1209,9 +1205,6 @@ class VISADevice(Device):
             )
 
     def _get_rm(self):
-        import pyvisa
-        import pyvisa.constants
-
         backend_name = self._rm
 
         if backend_name in ("@ivi", "@ni"):
@@ -1238,8 +1231,6 @@ class VISADevice(Device):
 
 def visa_list_resources(resourcemanager: str = None):
     """autodetects and returns a list of valid resource strings"""
-    import pyvisa
-
     if resourcemanager is None:
         rm = VISADevice()._get_rm()
     else:
@@ -1253,11 +1244,8 @@ def visa_default_resource_manager(name=None):
 
 
 @util.TTLCache(timeout=3)
-@util.SingleThreadProducer
+@util.single_threaded_call_lock
 def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, str]:
-    import pyvisa
-    import logging
-
     def make_test_device(res):
         device = VISADevice(res, open_timeout=0.25, **device_kws)
         device._logger = logging.getLogger()
@@ -1291,37 +1279,6 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
         identities = util.sequentially(*calls, catch=True)
 
     return identities
-
-
-# @VISADevice._rm.adopt("@sim")
-# class SimulatedVISADevice(VISADevice):
-#     """Base class for wrapping simulated VISA devices with pyvisa.
-
-#     See also:
-#         - _Backend information: https://pyvisa-sim.readthedocs.io/
-#     """
-
-#     # can only set this when the class is defined
-#     yaml_source = value.Path(
-#         "", sets=False, exists=True, help="definition of the simulated instrument"
-#     )
-
-#     def _release_remote_control(self):
-#         pass
-
-#     @classmethod
-#     def _get_rm(cls):
-#         import pyvisa
-
-#         backend_name = f"{cls.yaml_source.default}@sim"
-
-#         try:
-#             rm = pyvisa.ResourceManager(backend_name)
-#         except OSError as e:
-#             e.args[0] += "is pyvisa-sim installed?"
-#             raise e
-
-#         return rm
 
 
 @Device.concurrency.adopt(True)

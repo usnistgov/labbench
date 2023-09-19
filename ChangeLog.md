@@ -16,9 +16,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Corrected a bug where Rack the full ownership wasn't being properly indicated in log messages 
 - Removed "options" from `VISABackend`, leaving it to be implemented per-instrument
 - Removed unecessary extra writes to output table in `CSVLogger`
+- Switched to lazy loading for expensive imports (instead of imports within function namespaces)
 
 ### Removed
 - `SimulatedVISABackend` - instead, use `VISABackend` after calling `visa_default_resource_manager('my-file.yml@sim')`
+- `ConfigStore` - this never found traction after 3 years
 
 ### 
 ## [0.29]

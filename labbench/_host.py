@@ -31,10 +31,24 @@ import logging
 import socket
 import sys
 import time
+import email.mime.text
+from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
 from . import property as property_
 from . import util, value
+
+try:
+    git = util.lazy_import('git')
+    pd = util.lazy_import('pandas')
+    pip = util.lazy_import('pip')
+    smtplib = util.lazy_import('smtplib')
+except RuntimeWarning:
+    # not executed: help coding tools recognize lazy_imports as imports
+    import git
+    import pandas as pd
+    import pip
+    import smtplib
 
 __all__ = ["Host", "Email"]
 
@@ -113,10 +127,8 @@ class Email(core.Device):
     def _send(self, subject, body):
         sys.stderr.flush()
         self.backend.flush()
-        import smtplib
-        from email.mime.text import MIMEText
 
-        msg = MIMEText(body, "html")
+        msg = email.mime.text.MIMEText(body, "html")
         msg["From"] = self.sender
         msg["Subject"] = subject
         msg["To"] = ", ".join(self.recipients)
@@ -145,8 +157,6 @@ class Email(core.Device):
             return
 
         if exc != (None, None, None):
-            from traceback import format_exc
-
             if self.failure_message is None:
                 return
             subject = self.failure_message
@@ -219,8 +229,6 @@ class JSONFormatter(logging.Formatter):
 
         etype, einst, exc_tb = sys.exc_info()
         if etype is not None:
-            from traceback import format_exception_only, format_tb
-
             msg["exception"] = format_exception_only(etype, einst)[0].rstrip()
             msg["traceback"] = "".join(format_tb(exc_tb)).splitlines()
 
@@ -241,9 +249,9 @@ class Host(core.Device):
 
     def open(self):
         """The host setup method tries to commit current changes to the tree"""
-        import git
-        import pandas as pd
-        import pip
+
+        # touch git to ensure completed import
+        git.__version__
 
         log_formatter = JSONFormatter()
         stream = LogStreamBuffer()
@@ -301,8 +309,6 @@ class Host(core.Device):
 
     def __python_module_versions(self):
         """Enumerate the versions of installed python modules"""
-        import pandas as pd
-        import pip
 
         versions = dict(
             [str(d).lower().split(" ") for d in pip.get_installed_distributions()]
@@ -338,7 +344,6 @@ class Host(core.Device):
     @property_.str(cache=True)
     def git_commit_id(self):
         """Try to determine the current commit hash of the current git repo"""
-        import git
 
         try:
             commit = self.backend["repo"].commit()
@@ -379,5 +384,5 @@ if __name__ == "__main__":
     #    with Host() as pc:
     #        print(pc.time)
 
-    with Email(recipients=["daniel.kuester@nist.gov"]) as email:
+    with Email(recipients=["daniel.kuester@nist.gov"]) as mail:
         pass

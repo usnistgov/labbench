@@ -25,7 +25,6 @@
 # licenses.
 
 __all__ = [  # "misc"
-    "ConfigStore",
     "hash_caller",
     "kill_by_name",
     "show_messages",
@@ -35,11 +34,13 @@ __all__ = [  # "misc"
     # concurrency and sequencing
     "concurrently",
     "sequentially",
+    "lazy_import",
     "Call",
     "ConcurrentException",
     "check_hanging_thread",
     "ThreadSandbox",
     "ThreadEndedByMaster",
+    "single_threaded_call_lock",
     # timing and flow management
     "retry",
     "until_timeout",
@@ -57,22 +58,26 @@ __all__ = [  # "misc"
 
 import ast
 import hashlib
+import importlib.util
 import inspect
 import logging
+import pickle
 import re
 import sys
 import textwrap
 import time
-import types
 import traceback
+import types
 from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
-from threading import Event, Thread, ThreadError, RLock
+from threading import Event, RLock, Thread, ThreadError
 from typing import Callable
 from warnings import simplefilter
 
+import coloredlogs
 import psutil
+
 
 import_t0 = time.perf_counter()
 
@@ -109,8 +114,6 @@ def show_messages(minimum_level, colors=True):
         None
     """
 
-    import logging
-
     err_map = {
         "debug": logging.DEBUG,
         "warning": logging.WARNING,
@@ -145,14 +148,12 @@ def show_messages(minimum_level, colors=True):
     # - %(pathname)s:%(lineno)d'
 
     if colors:
-        from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
-
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
         styles = dict(
-            DEFAULT_FIELD_STYLES,
+            coloredlogs.DEFAULT_FIELD_STYLES,
             label=dict(color="blue"),
         )
-        formatter = ColoredFormatter(log_fmt, style="{", field_styles=styles)
+        formatter = coloredlogs.ColoredFormatter(log_fmt, style="{", field_styles=styles)
     else:
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
         formatter = logging.Formatter(log_fmt, style="{")
@@ -599,8 +600,6 @@ def hash_caller(call_depth=1):
     is almost certainly unique to the combination of the caller source code
     and the arguments passed it.
     """
-    import inspect
-    import pickle
 
     thisframe = inspect.currentframe()
     frame = inspect.getouterframes(thisframe)[call_depth]
@@ -1499,40 +1498,8 @@ class ThreadSandbox(object):
 sandbox_keys = set(ThreadSandbox.__dict__.keys()).difference(object.__dict__.keys())
 
 
-class ConfigStore:
-    """Define dictionaries of configuration value traits
-    in subclasses of this object. Each dictionary should
-    be an attribute of the subclass. The all() class method
-    returns a flattened dictionary consisting of all values
-    of these dictionary attributes, keyed according to
-    '{attr_name}_{attr_key}', where {attr_name} is the
-    name of the dictionary attribute and {attr_key} is the
-    nested dictionary key.
-    """
-
-    @classmethod
-    def all(cls):
-        """Return a dictionary of all attributes in the class"""
-        ret = {}
-        for k, v in cls.__dict__.items():
-            if isinstance(v, dict) and not k.startswith("_"):
-                ret.update([(k + "_" + k2, v2) for k2, v2 in v.items()])
-        return ret
-
-    @classmethod
-    def frame(cls):
-        """Return a pandas DataFrame containing all attributes
-        in the class
-        """
-        import pandas as pd
-
-        df = pd.DataFrame([cls.all()]).T
-        df.columns.name = "Value"
-        df.index.name = "Parameter"
-        return df
-
-
-class SingleThreadProducer:
+class single_threaded_call_lock:
+    """decorates a function to ensure it is only executed by one thread at a time"""
     def __new__(cls, func):
         obj = super().__new__(cls)
         obj.func = func
@@ -1556,6 +1523,30 @@ class SingleThreadProducer:
             self.lock.release()
 
         return ret
+
+
+# TODO: is lazy_import threadsafe? if so the decorator is probably unecessary
+def lazy_import(name):
+    """postponed import of the module with the specified name.
+
+    The import is not performed until the module is accessed in the code. This
+    reduces the total time to import labbench by waiting to import the module
+    until it is used.
+    """
+    # see https://docs.python.org/3/library/importlib.html#implementing-lazy-imports
+
+    try:
+        return sys.modules[name]
+    except KeyError:
+        spec = importlib.util.find_spec(name)
+        if spec is None:
+            raise ImportError(f'no module found named "{name}"')
+        loader = importlib.util.LazyLoader(spec.loader)
+        spec.loader = loader
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        loader.exec_module(module)
+        return module
 
 
 class TTLCache:

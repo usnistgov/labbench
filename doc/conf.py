@@ -113,7 +113,9 @@ master_doc = "index"
 
 
 # ------------------ myst_nb ---------------------------------------
-nb_execution_mode = "off"
+# nb_execution_mode = "off"
+
+# merge consecutive notebook logger outputs into shared text box
 nb_merge_streams = True
 
 # The name of the Pygments (syntax highlighting) style to use.

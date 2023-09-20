@@ -172,7 +172,6 @@ class PatchedPythonDomain(PythonDomain):
 
 def process_docstring(app, what, name, obj, options, lines):
     if isinstance(obj, lb._traits.Trait):
-        fd.write(f'{locals()}\n\n')
         lines.append(obj.doc(as_argument=True, anonymous=True))
 
 

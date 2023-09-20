@@ -57,7 +57,7 @@ with supply, spectrum_analyzer:
 trace_dB.plot();
 ```
 
-These instruments are emulated - under the hood they are [pyvisa-sim](pyvisa-sim.readthedocs.io/) instruments, configured in [sim_visa.yaml], which act as simple value stores for a few fake SCPI commands and sources of "canned" arrays of data. The demo labbench Device classes that control them are implemented in [sim_visa.py] (subclassed from `lb.Device` -> `lb.VISADevice` -> `lb.SimulatedVISADevice`).
+These instruments are emulated - under the hood they are [pyvisa-sim](http://pyvisa-sim.readthedocs.io/) instruments, configured in [sim_visa.yaml], which act as simple value stores for a few fake SCPI commands and sources of "canned" arrays of data. The demo labbench Device classes that control them are implemented in [sim_visa.py] (subclassed from `lb.Device` -> `lb.VISADevice` -> `lb.SimulatedVISADevice`).
 
 ## Workflow
 ### Constructing objects
@@ -92,10 +92,11 @@ This type of exploration is a good way to learn the capabilities of a device int
 Python's introspection tools give more opportunities to discover the API exposed by a device object. This is important because the methods and other attributes vary from one type of Device class to another. The below uses `dir` to show the list of all _public_ attributes (those that don't start with `'_'`).
 
 ```{code-cell} ipython3
+# filter by name
 attrs = [
     name
     for name in dir(SpectrumAnalyzer)
-    if not name.startswith('_') # filter by name
+    if not name.startswith('_')
 ]
 
 print(f'public attributes of SpectrumAnalyzer: {attrs}\n')
@@ -159,13 +160,9 @@ except:
     # context management ensured a base.close() after visa.open() failed, 
     assert base.isopen==False and visa.isopen==False
 ```
-
-```{code-cell} ipython3
-
 data logging, type checking,and numerical bounds validation. 
 
 These features are common to all `Device` classes (and derived classes). To get started, provide  by minimum working examples. Examples will use  we'll look into the more specialized capabilities provided by other `Device` subclasses included `labbench` for often-used backend APIs like serial and VISA.
-```
 
 ### Example
 Here are very fake functions that just use `time.sleep` to block. They simulate longer instrument calls (such as triggering or acquisition) that take some time to complete.

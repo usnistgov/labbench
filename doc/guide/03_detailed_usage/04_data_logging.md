@@ -20,18 +20,18 @@ A number of tools are included in `labbench` to streamline acquisition of test d
 The data management supports automatic relational databasing. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside of the data tree, etc.) are automatically stored relationally --- placed in folders and referred to in the database. Other data can be forced to be relational by dynamically generating relational databases on the fly.
 
 ## File conventions
-All labbench data save functionality is implemented in tables with [pandas](pandas.pydata.org) DataFrame backends. Here are database storage formats that are supported:
+All labbench data save functionality is implemented in tables with [pandas](http://pandas.pydata.org) DataFrame backends. Here are database storage formats that are supported:
 
 | Format                            | File extension(s)              | Data management class | flag to [use record file format](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.RelationalTableLogger.set_relational_file_format) | Comments |
 |:----------------------------------|:-------------------------------|:-----------------------|:------------------------|:----
-| [sqlite](sqlite.org)              | .db                            | [labbench.SQLiteLogger](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.SQLiteLogger) | 'sqlite' | Scales to larger databases than csv |
+| [sqlite](http://sqlite.org/)              | .db                            | [labbench.SQLiteLogger](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.SQLiteLogger) | 'sqlite' | Scales to larger databases than csv |
 | csv                               | .csv,.csv.gz,.csv.bz2,.csv.zip | [labbench.CSVLogger](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.CSVLogger)          |'csv'| Easy to inspect |
 
 Several formats are supported only as relational data (data stored in a file in the subdirectory instead of directly in the ). Certain types of data as values into the database manager automatically become relational data when you call the `append` method of the data manager:
 
 | Format                            | File extension(s)              | python type conversion | [set_record file format](http://ssm.ipages.nist.gov/labbench/labbench.html#labbench.managedata.RelationalTableLogger.set_relational_file_format) flag | Comments |
 |:----------------------------------|:-------------------------------|:-----------------------|:------------------------|:----
-| [feather](github.com/wesm/feather)| .f                             | iterables of numbers and strings; pd.DataFrame | 'feather' | Python 3.x only
+| [feather](http://github.com/wesm/feather)| .f                             | iterables of numbers and strings; pd.DataFrame | 'feather' | Python 3.x only
 | [json](http://www.json.org/)      | .json                          | iterables of numbers and strings; pd.DataFrame         | 'json' | |
 | csv                               | .csv | iterables of numbers and strings; pd.DataFrame         |'csv'| |
 | python [pickle](https://docs.python.org/3/library/pickle.html) | .pickle | any | 'pickle' | fallback if the chosen relational format fails |
@@ -136,7 +136,7 @@ with EmulatedInstrument()        as inst1,\
                       **data)
 ```
 
-#### Reading and exploring the data
+### Reading and exploring the data
 The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the sqlite database into a pandas dataframe. Each state is a column in the database. The logger creates columns named as a combination of the device name ('inst1') and name of the corresponding device state.
 
 ```{code-cell} ipython3

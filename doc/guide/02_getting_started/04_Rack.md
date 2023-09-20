@@ -11,11 +11,11 @@ kernelspec:
   name: python3
 ---
 
-## Testbed Organization
+# Testbed Organization
 
 To organize automation across multiple `Device` wrappers, `labbench` provides `Rack` objects. These act as a container for aspects of automation needed to perform into a resuable automation task, including `Device` objects, other `Rack` objects, and automation functions. On exception, they ensure that all `Device` connections are closed.
 
-### Example: 3 Devices
+## Example: 3 Devices
 Suppose we need to take a measurement with automation of 2 instruments:
 
 ```{code-cell} ipython3
@@ -83,7 +83,7 @@ class SweptMeasurement(lb.Rack):
         return duration
 ```
 
-### Usage in test scripts
+## Usage in test scripts
 When executed to run test scripts, create Rack instances with input objects according to their definition:
 
 ```{code-cell} ipython3

@@ -72,7 +72,7 @@ with sensor, analyzer, db:
         )
 ```
 
-#### Reading and exploring the data
+### Reading and exploring the data
 The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the table of measurement results into a [pandas](http://pandas.pydata.org/pandas-docs/stable/) DataFrame table:
 
 ```{code-cell} ipython3

@@ -39,10 +39,10 @@ from . import property as property_
 from . import util, value
 
 try:
-    git = util.lazy_import('git')
-    pd = util.lazy_import('pandas')
-    pip = util.lazy_import('pip')
-    smtplib = util.lazy_import('smtplib')
+    git = util.lazy_import("git")
+    pd = util.lazy_import("pandas")
+    pip = util.lazy_import("pip")
+    smtplib = util.lazy_import("smtplib")
 except RuntimeWarning:
     # not executed: help coding tools recognize lazy_imports as imports
     import git

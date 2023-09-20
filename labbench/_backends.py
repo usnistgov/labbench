@@ -48,9 +48,9 @@ from ._device import Device
 from ._traits import observe
 
 try:
-    serial = util.lazy_import('serial')
-    pyvisa = util.lazy_import('pyvisa')
-    telnetlib = util.lazy_import('telnetlib')
+    serial = util.lazy_import("serial")
+    pyvisa = util.lazy_import("pyvisa")
+    telnetlib = util.lazy_import("telnetlib")
 except RuntimeWarning:
     # not executed: help coding tools recognize lazy_imports as imports
     import serial
@@ -579,7 +579,7 @@ class LabviewSocketInterface(Device):
     assigning the commands implemented in the corresponding labview VI.
 
     Attributes:
-        - backend (dict): connection object mapping {'rx': rxsock, 'tx': txsock}
+        - backend: connection object mapping {'rx': rxsock, 'tx': txsock}
     """
 
     resource = value.NetworkAddress(
@@ -789,6 +789,7 @@ class SerialLoggingDevice(SerialDevice):
         Returns:
             None
         """
+
         def accumulate():
             timeout, self.backend.timeout = self.backend.timeout, 0
             q = self._stdout

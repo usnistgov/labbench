@@ -36,6 +36,7 @@ import typing
 from contextlib import contextmanager
 from functools import wraps
 from inspect import isclass
+
 # for common types
 from pathlib import Path
 from warnings import warn
@@ -45,7 +46,7 @@ import validators as _val
 from . import util
 
 try:
-    pd = util.lazy_import('pandas')
+    pd = util.lazy_import("pandas")
 except RuntimeError:
     # not executed: help coding tools recognize lazy_imports as imports
     import pandas as pd
@@ -840,8 +841,8 @@ def adjusted(
     same class definition.
 
     Args:
-        trait (Union[Trait, str]): trait or name of trait to adjust in the wrapped class
-        default (Any, optional): new default value (for value traits only)
+        trait: trait or name of trait to adjust in the wrapped class
+        default: new default value (for value traits only)
 
     Raises:
         ValueError: invalid type of Trait argument, or when d
@@ -1240,6 +1241,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _load_calibration_table(self, owner, path):
         """stash the calibration table from disk"""
+
         def read(path):
             # quick read
             cal = pd.read_csv(str(path), index_col=self.table_index_column, dtype=float)

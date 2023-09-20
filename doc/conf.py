@@ -113,7 +113,8 @@ master_doc = "index"
 
 
 # ------------------ myst_nb ---------------------------------------
-# nb_execution_mode = "off"
+nb_execution_mode = "off"
+nb_merge_streams = True
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "default"
@@ -168,16 +169,22 @@ class PatchedPythonDomain(PythonDomain):
             env, fromdocname, builder, typ, target, node, contnode
         )
 
+fd = open('out.txt', 'w')
 
 def process_signature(app, what, name, obj, options, signature, return_annotation):
     if isinstance(obj, lb._traits.Trait):
+        if "labbench.LabviewSocketInterface" in name or True:
+            fd.write(f'is trait\n {str(locals())}\n\n')
         return (name, getattr(obj.type, "__qualname__", repr(obj.type)))
     else:
+        if "labbench.LabviewSocketInterface" in name or True:
+            fd.write(f'not trait\n {str(locals())}\n\n')
         return (signature, return_annotation)
 
 
 def process_docstring(app, what, name, obj, options, lines):
     if isinstance(obj, lb._traits.Trait):
+        fd.write(f'{locals()}\n\n')
         lines.append(obj.doc(as_argument=True, anonymous=True))
 
 

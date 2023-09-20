@@ -153,7 +153,9 @@ def show_messages(minimum_level, colors=True):
             coloredlogs.DEFAULT_FIELD_STYLES,
             label=dict(color="blue"),
         )
-        formatter = coloredlogs.ColoredFormatter(log_fmt, style="{", field_styles=styles)
+        formatter = coloredlogs.ColoredFormatter(
+            log_fmt, style="{", field_styles=styles
+        )
     else:
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
         formatter = logging.Formatter(log_fmt, style="{")
@@ -1500,6 +1502,7 @@ sandbox_keys = set(ThreadSandbox.__dict__.keys()).difference(object.__dict__.key
 
 class single_threaded_call_lock:
     """decorates a function to ensure it is only executed by one thread at a time"""
+
     def __new__(cls, func):
         obj = super().__new__(cls)
         obj.func = func
@@ -1525,7 +1528,6 @@ class single_threaded_call_lock:
         return ret
 
 
-# TODO: is lazy_import threadsafe? if so the decorator is probably unecessary
 def lazy_import(name):
     """postponed import of the module with the specified name.
 
@@ -1541,11 +1543,10 @@ def lazy_import(name):
         spec = importlib.util.find_spec(name)
         if spec is None:
             raise ImportError(f'no module found named "{name}"')
-        loader = importlib.util.LazyLoader(spec.loader)
-        spec.loader = loader
+        spec.loader = importlib.util.LazyLoader(spec.loader)
         module = importlib.util.module_from_spec(spec)
         sys.modules[name] = module
-        loader.exec_module(module)
+        spec.loader.exec_module(module)
         return module
 
 

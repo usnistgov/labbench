@@ -169,18 +169,6 @@ class PatchedPythonDomain(PythonDomain):
             env, fromdocname, builder, typ, target, node, contnode
         )
 
-fd = open('out.txt', 'w')
-
-def process_signature(app, what, name, obj, options, signature, return_annotation):
-    if isinstance(obj, lb._traits.Trait):
-        if "labbench.LabviewSocketInterface" in name or True:
-            fd.write(f'is trait\n {str(locals())}\n\n')
-        return (name, getattr(obj.type, "__qualname__", repr(obj.type)))
-    else:
-        if "labbench.LabviewSocketInterface" in name or True:
-            fd.write(f'not trait\n {str(locals())}\n\n')
-        return (signature, return_annotation)
-
 
 def process_docstring(app, what, name, obj, options, lines):
     if isinstance(obj, lb._traits.Trait):
@@ -280,5 +268,4 @@ def setup(app):
     app.add_domain(PatchedPythonDomain, override=True)
     app.add_autodocumenter(PropertyDocumenter, override=True)
     app.add_autodocumenter(AttributeDocumenter)
-    # app.connect('autodoc-process-signature', process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

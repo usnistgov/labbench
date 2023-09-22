@@ -8,8 +8,8 @@
     <title>Data Logging &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
     <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=dfcfee03"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=7bb76a1a"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="search" title="Search" href="../../search.html" />
@@ -145,107 +145,157 @@ The data model is driven by a root table of test conditions and measurement resu
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.831</span> • <span class=" -Color -Color-Blue">Aggregator():</span> SpectrumAnalyzer(&#39;&#39;) named &#39;analyzer&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.833</span> • <span class=" -Color -Color-Blue">Aggregator():</span> PowerSensor(&#39;&#39;) named &#39;sensor&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.909</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Power Sensor model #1234, Serial 63472&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.910</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.910</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.911</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Spectrum analyzer model #1234, Serial #AUJH99&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.911</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.912</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.912</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">entry_order before other devices: Email -&gt; MungerBase -&gt; Host</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.913</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">context order: munge-&gt;host-&gt;()-&gt;(CSVLogger(&#39;data&#39;))</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:50.913</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.140</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">running in git repository</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.227</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_commit_id&quot; → &#39;063f3583fd69020a2356efd9cf7bbdd28e73368e&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.319</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_remote_url&quot; → &#39;https://github.com/usnistgov/labbench&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.320</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_browse_url&quot; → &#39;https://github.com/usnistgov/labbench/tree/063f3583fd69020a2356efd9cf7bbdd28e73368e&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.433</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_pending_changes&quot; → &#39;&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.434</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.434</span> • <span class=" -Color -Color-Blue">Aggregator():</span> CSVLogger(&#39;data&#39;) named &#39;db&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.435</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;relational_name_fmt&quot; → &#39;{id} {db_host_time}&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.435</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;force_relational&quot; → [&#39;host_log&#39;, &#39;db_host_log&#39;]</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.436</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">CSVLogger(&#39;data&#39;) is open</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.437</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.438</span> • <span class=" -Color -Color-Blue">labbench:</span> <span class=" -Color -Color-Green">entry into context for CSVLogger(&#39;data&#39;) 0.524 s elapsed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.439</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.440</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.440</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.442</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.442</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.443</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.443</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.445</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.446</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.447</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5800000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.447</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.448</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.449</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.450</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.450</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.451</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.451</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.452</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.452</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.453</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;time&quot; → &#39;2023-09-22 13:36:51.453011&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.453</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;log&quot; → &lt;data of type list&gt;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.454</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 10 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.454</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.455</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.455</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.456</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.456</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.457</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.457</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.459</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.459</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.460</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5850000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.460</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.461</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.463</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.463</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.464</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.464</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.465</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.465</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.466</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.466</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;time&quot; → &#39;2023-09-22 13:36:51.466012&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.467</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;log&quot; → &lt;data of type list&gt;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.467</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 10 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.468</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.468</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.468</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.469</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.469</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.470</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.470</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.472</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.473</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.474</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5900000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.474</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.475</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.477</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.477</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.478</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.478</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.479</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.480</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.480</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.481</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;time&quot; → &#39;2023-09-22 13:36:51.481012&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.481</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;log&quot; → &lt;data of type list&gt;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.482</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 10 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.503</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;*IDN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.504</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;Spectrum analyzer model #1234, Serial #AUJH99&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.505</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;identity&quot; → &#39;Spectrum analyzer model #1234, Serial #AUJH99&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.505</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;*IDN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.506</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;Power Sensor model #1234, Serial 63472&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.506</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;identity&quot; → &#39;Power Sensor model #1234, Serial 63472&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.507</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;hostname&quot; → &#39;67205DKLAPTOP&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.512</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.566</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.566</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.567</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.567</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.720</span> • <span class=" -Color -Color-Blue">Aggregator():</span> SpectrumAnalyzer(&#39;&#39;) named &#39;analyzer&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.723</span> • <span class=" -Color -Color-Blue">Aggregator():</span> PowerSensor(&#39;&#39;) named &#39;sensor&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.770</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Power Sensor model #1234, Serial 63472&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.771</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.772</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.773</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Spectrum analyzer model #1234, Serial #AUJH99&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.773</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.774</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.774</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">entry_order before other devices: Email -&gt; MungerBase -&gt; Host</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.775</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">context order: munge-&gt;host-&gt;()-&gt;(CSVLogger(&#39;data&#39;))</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.777</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.777</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.778</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.778</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5800000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.779</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.779</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.780</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.782</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.783</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.783</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5800000000.000000&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.784</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.784</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.786</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.787</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.788</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.789</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.790</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.790</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.791</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.791</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 8 columns</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.792</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.792</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.793</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.793</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5850000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.794</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.794</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.795</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.797</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.798</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.799</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5850000000.000000&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.799</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.800</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.802</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.802</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.803</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.803</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.804</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.805</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.805</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.806</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 8 columns</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.806</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.807</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.808</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.808</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5900000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.809</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.809</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.810</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.812</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.813</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.814</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5900000000.000000&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.814</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.815</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.817</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.817</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.818</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.818</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.819</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.820</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.821</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.822</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 8 columns</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.822</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.823</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
+</pre></div>
+</div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ValueError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">28</span>
+<span class="g g-Whitespace">     </span><span class="mi">23</span> <span class="c1"># automatic logging from `sensor` in &#39;output.csv&#39; in each call to db.new_row:</span>
+<span class="g g-Whitespace">     </span><span class="mi">24</span> <span class="c1"># (1) each lb.property or lb.value that has been get or set in the device since the last call</span>
+<span class="g g-Whitespace">     </span><span class="mi">25</span> <span class="c1"># (2) explicitly get `sensor.sweep_aperture` (as column &quot;sensor_sweep_aperture&quot;)</span>
+<span class="g g-Whitespace">     </span><span class="mi">26</span> <span class="n">db</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sweep_aperture&#39;</span><span class="p">])</span>
+<span class="ne">---&gt; </span><span class="mi">28</span> <span class="k">with</span> <span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span>
+<span class="g g-Whitespace">     </span><span class="mi">29</span>     <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">5.8e9</span><span class="p">,</span> <span class="mf">5.9e9</span><span class="p">,</span> <span class="n">FREQ_COUNT</span><span class="p">):</span>
+<span class="g g-Whitespace">     </span><span class="mi">30</span>         <span class="c1"># Assignment to these property attributes:</span>
+<span class="g g-Whitespace">     </span><span class="mi">31</span>         <span class="c1"># (1) sets the frequency on each instrument *and*</span>
+<span class="g g-Whitespace">     </span><span class="mi">32</span>         <span class="c1"># (2) triggers logging of these values in the next database row in</span>
+<span class="g g-Whitespace">     </span><span class="mi">33</span>         <span class="c1">#     the columns &#39;analyzer_center_frequency&#39; and &#39;sensor_frequency&#39;</span>
+<span class="g g-Whitespace">     </span><span class="mi">34</span>         <span class="n">analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">freq</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:872,</span> in <span class="ni">MultipleContexts.__exit__</span><span class="nt">(self, *exc)</span>
+<span class="g g-Whitespace">    </span><span class="mi">870</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">871</span>     <span class="n">exc_info</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="ne">--&gt; </span><span class="mi">872</span>     <span class="k">raise</span> <span class="n">exc_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span> <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>     <span class="n">ex</span> <span class="o">=</span> <span class="n">ConcurrentException</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>         <span class="sa">f</span><span class="s2">&quot;exceptions raised in </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span><span class="si">}</span><span class="s2"> contexts are printed inline&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">876</span>     <span class="p">)</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:702,</span> in <span class="ni">Call.__call__</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">699</span> <span class="nd">@hide_in_traceback</span>
+<span class="g g-Whitespace">    </span><span class="mi">700</span> <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="g g-Whitespace">    </span><span class="mi">701</span>     <span class="k">try</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">702</span>         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kws</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">703</span>     <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">704</span>         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:809,</span> in <span class="ni">MultipleContexts.enter</span><span class="nt">(self, name, context)</span>
+<span class="g g-Whitespace">    </span><span class="mi">806</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">abort</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">807</span>     <span class="c1"># proceed only if there have been no exceptions</span>
+<span class="g g-Whitespace">    </span><span class="mi">808</span>     <span class="k">try</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">809</span>         <span class="n">context</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>  <span class="c1"># start of a context entry thread</span>
+<span class="g g-Whitespace">    </span><span class="mi">810</span>     <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">811</span>         <span class="bp">self</span><span class="o">.</span><span class="n">abort</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_device.py:384,</span> in <span class="ni">Device.__enter__</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">382</span>     <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">383</span>     <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">384</span> <span class="k">raise</span> <span class="n">e</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_device.py:377,</span> in <span class="ni">Device.__enter__</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">374</span> <span class="nd">@util</span><span class="o">.</span><span class="n">hide_in_traceback</span>
+<span class="g g-Whitespace">    </span><span class="mi">375</span> <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="g g-Whitespace">    </span><span class="mi">376</span>     <span class="k">try</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">377</span>         <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">378</span>         <span class="k">return</span> <span class="bp">self</span>
+<span class="g g-Whitespace">    </span><span class="mi">379</span>     <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_device.py:321,</span> in <span class="ni">Device.__open_wrapper__</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">319</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">320</span>     <span class="k">for</span> <span class="n">opener</span> <span class="ow">in</span> <span class="n">trace_methods</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="n">Device</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+<span class="ne">--&gt; </span><span class="mi">321</span>         <span class="n">opener</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">322</span> <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">323</span>     <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">DisconnectedBackend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_data.py:325,</span> in <span class="ni">MungerBase.open</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">323</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="g g-Whitespace">    </span><span class="mi">324</span>     <span class="c1"># touch these modules to ensure they have imported</span>
+<span class="ne">--&gt; </span><span class="mi">325</span>     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+<span class="g g-Whitespace">    </span><span class="mi">326</span>     <span class="n">np</span><span class="o">.</span><span class="n">array</span>
+
+<span class="nn">File C:\Python310\lib\importlib\util.py:252,</span> in <span class="ni">_LazyModule.__getattribute__</span><span class="nt">(self, attr)</span>
+<span class="g g-Whitespace">    </span><span class="mi">250</span> <span class="k">if</span> <span class="n">original_name</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">251</span>     <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">id</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">original_name</span><span class="p">]):</span>
+<span class="ne">--&gt; </span><span class="mi">252</span>         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;module object for </span><span class="si">{</span><span class="n">original_name</span><span class="si">!r}</span><span class="s2"> &quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">253</span>                           <span class="s2">&quot;substituted in sys.modules during a lazy &quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">254</span>                           <span class="s2">&quot;load&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">255</span> <span class="c1"># Update after loading since that&#39;s what would happen in an eager</span>
+<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="c1"># loading situation.</span>
+<span class="g g-Whitespace">    </span><span class="mi">257</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">attrs_updated</span><span class="p">)</span>
+
+<span class="ne">ValueError</span>: MungeToDirectory(&#39;data&#39;): module object for &#39;pandas&#39; substituted in sys.modules during a lazy load
 </pre></div>
 </div>
 </div>
@@ -260,80 +310,6 @@ The data model is driven by a root table of test conditions and measurement resu
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>analyzer_center_frequency</th>
-      <th>sensor_frequency</th>
-      <th>sensor_trigger_count</th>
-      <th>sensor_sweep_aperture</th>
-      <th>db_host_time</th>
-      <th>db_host_log</th>
-      <th>comments</th>
-      <th>dut</th>
-      <th>analyzer_trace</th>
-      <th>sensor_reading</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>5.800000e+09</td>
-      <td>5.800000e+09</td>
-      <td>200</td>
-      <td>0.02</td>
-      <td>2023-09-22 13:36:51.453011</td>
-      <td>0 2023-09-22 133651.453011\db_host_log.json</td>
-      <td>trying for 1.21 GW to time travel</td>
-      <td>DUT 63</td>
-      <td>0 2023-09-22 133651.453011\analyzer_trace.csv</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>5.850000e+09</td>
-      <td>5.850000e+09</td>
-      <td>200</td>
-      <td>0.02</td>
-      <td>2023-09-22 13:36:51.466012</td>
-      <td>1 2023-09-22 133651.466012\db_host_log.json</td>
-      <td>trying for 1.21 GW to time travel</td>
-      <td>DUT 63</td>
-      <td>1 2023-09-22 133651.466012\analyzer_trace.csv</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>5.900000e+09</td>
-      <td>5.900000e+09</td>
-      <td>200</td>
-      <td>0.02</td>
-      <td>2023-09-22 13:36:51.481012</td>
-      <td>2 2023-09-22 133651.481012\db_host_log.json</td>
-      <td>trying for 1.21 GW to time travel</td>
-      <td>DUT 63</td>
-      <td>2 2023-09-22 133651.481012\analyzer_trace.csv</td>
-      <td>-52.617</td>
-    </tr>
-  </tbody>
-</table>
-</div></div></div>
 </div>
 <p>This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column <code class="docutils literal notranslate"><span class="pre">'analyzer_trace.csv'</span></code>), and the host log JSON file (‘host_log).</p>
 <p>To analyze the experimental data, one approach is to access these files directly at these files</p>
@@ -344,58 +320,6 @@ The data model is driven by a root table of test conditions and measurement resu
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>frequency</th>
-      <th>spectrum</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>5.795000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>5.795050e+09</td>
-      <td>-52.373</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>5.795101e+09</td>
-      <td>-52.724</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>5.795151e+09</td>
-      <td>-51.893</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>5.795201e+09</td>
-      <td>-52.270</td>
-    </tr>
-  </tbody>
-</table>
-</div></div></div>
 </div>
 <p>For a more systematic analysis to analyzing the data, we may want to expand the root table based on the relational data files in one of these columns. A shortcut for this is provided by <a class="reference internal" href="../../labbench.html#labbench.read_relational" title="labbench.read_relational"><code class="xref py py-func docutils literal notranslate"><span class="pre">labbench.read_relational()</span></code></a>:</p>
 <div class="cell docutils container">
@@ -413,149 +337,6 @@ The data model is driven by a root table of test conditions and measurement resu
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>analyzer_trace</th>
-      <th>analyzer_trace_frequency</th>
-      <th>analyzer_trace_id</th>
-      <th>analyzer_trace_spectrum</th>
-      <th>root_index</th>
-      <th>sensor_frequency</th>
-      <th>sensor_sweep_aperture</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0 2023-09-22 133651.453011\analyzer_trace.csv</td>
-      <td>5.795000e+09</td>
-      <td>0</td>
-      <td>-52.617</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>0 2023-09-22 133651.453011\analyzer_trace.csv</td>
-      <td>5.795050e+09</td>
-      <td>1</td>
-      <td>-52.373</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>0 2023-09-22 133651.453011\analyzer_trace.csv</td>
-      <td>5.795101e+09</td>
-      <td>2</td>
-      <td>-52.724</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>0 2023-09-22 133651.453011\analyzer_trace.csv</td>
-      <td>5.795151e+09</td>
-      <td>3</td>
-      <td>-51.893</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>0 2023-09-22 133651.453011\analyzer_trace.csv</td>
-      <td>5.795201e+09</td>
-      <td>4</td>
-      <td>-52.270</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>595</th>
-      <td>2 2023-09-22 133651.481012\analyzer_trace.csv</td>
-      <td>5.904799e+09</td>
-      <td>195</td>
-      <td>-51.752</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>596</th>
-      <td>2 2023-09-22 133651.481012\analyzer_trace.csv</td>
-      <td>5.904849e+09</td>
-      <td>196</td>
-      <td>-53.065</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>597</th>
-      <td>2 2023-09-22 133651.481012\analyzer_trace.csv</td>
-      <td>5.904899e+09</td>
-      <td>197</td>
-      <td>-52.585</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>598</th>
-      <td>2 2023-09-22 133651.481012\analyzer_trace.csv</td>
-      <td>5.904950e+09</td>
-      <td>198</td>
-      <td>-51.861</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>0.02</td>
-    </tr>
-    <tr>
-      <th>599</th>
-      <td>2 2023-09-22 133651.481012\analyzer_trace.csv</td>
-      <td>5.905000e+09</td>
-      <td>199</td>
-      <td>-51.596</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>0.02</td>
-    </tr>
-  </tbody>
-</table>
-<p>600 rows × 7 columns</p>
-</div></div></div>
 </div>
 <p>For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in <code class="docutils literal notranslate"><span class="pre">'analyzer_trace.csv'</span></code>.</p>
 <div class="cell docutils container">
@@ -606,109 +387,6 @@ The data model is driven by a root table of test conditions and measurement resu
             <span class="n">comments</span><span class="o">=</span><span class="s1">&#39;trying for 1.21 GW to time travel&#39;</span><span class="p">,</span>
             <span class="n">dut</span> <span class="o">=</span> <span class="n">DUT_NAME</span><span class="p">,</span>
         <span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.672</span> • <span class=" -Color -Color-Blue">Testbed(...):</span> <span class=" -Color -Color-Green">entry_order before other devices: Email -&gt; MungerBase -&gt; Host</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.673</span> • <span class=" -Color -Color-Blue">Testbed(...):</span> <span class=" -Color -Color-Green">context order: munge-&gt;host-&gt;(sensor, analyzer)-&gt;(db,&lt;__main__.Testbed object at 0x000001E06C368250&gt;)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.673</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.676</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">running in git repository</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.763</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_commit_id&quot; → &#39;063f3583fd69020a2356efd9cf7bbdd28e73368e&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.856</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_remote_url&quot; → &#39;https://github.com/usnistgov/labbench&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.857</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_browse_url&quot; → &#39;https://github.com/usnistgov/labbench/tree/063f3583fd69020a2356efd9cf7bbdd28e73368e&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.972</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;git_pending_changes&quot; → &#39;&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.973</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.974</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Power Sensor model #1234, Serial 63472&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.976</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.976</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Spectrum analyzer model #1234, Serial #AUJH99&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.977</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.979</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.981</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.981</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;relational_name_fmt&quot; → &#39;{id} {db_host_time}&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.982</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;force_relational&quot; → [&#39;host_log&#39;, &#39;db_host_log&#39;]</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.983</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">db is open</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.984</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.984</span> • <span class=" -Color -Color-Blue">Testbed(...):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.985</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.986</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.986</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.987</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.987</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.987</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.988</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.989</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.990</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.990</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5800000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.991</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.992</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.993</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.994</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.994</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.995</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.995</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.996</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.996</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.997</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;time&quot; → &#39;2023-09-22 13:36:51.997106&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.997</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;log&quot; → &lt;data of type list&gt;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.998</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 10 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.998</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.999</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:51.999</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.000</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.000</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.001</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.001</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.003</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.003</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.004</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5850000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.004</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.005</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.006</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.007</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.007</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.008</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.008</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.009</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.009</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.010</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;time&quot; → &#39;2023-09-22 13:36:52.9105&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.010</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;log&quot; → &lt;data of type list&gt;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.010</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 10 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.011</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.011</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.012</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.012</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.013</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.013</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.013</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.015</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.016</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.016</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5900000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.016</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.017</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.019</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.019</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.019</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.020</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.020</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.021</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.021</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.022</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;time&quot; → &#39;2023-09-22 13:36:52.22106&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.022</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;log&quot; → &lt;data of type list&gt;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.023</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 10 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.023</span> • <span class=" -Color -Color-Blue">Testbed(...):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.046</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;*IDN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.047</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;Power Sensor model #1234, Serial 63472&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.047</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;identity&quot; → &#39;Power Sensor model #1234, Serial 63472&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.048</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;*IDN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.048</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;Spectrum analyzer model #1234, Serial #AUJH99&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.049</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;identity&quot; → &#39;Spectrum analyzer model #1234, Serial #AUJH99&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.049</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;hostname&quot; → &#39;67205DKLAPTOP&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.053</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.054</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.055</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.056</span> • <span class=" -Color -Color-Blue">Host(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:52.056</span> • <span class=" -Color -Color-Blue">MungeToDirectory(&#39;data&#39;):</span> <span class=" -Color -Color-Green">closed</span>
 </pre></div>
 </div>
 </div>

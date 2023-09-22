@@ -1,0 +1,213 @@
+Traceback (most recent call last):
+  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\jupyter_cache\executors\utils.py", line 58, in single_nb_execution
+    executenb(
+  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 1305, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\jupyter_core\utils\__init__.py", line 166, in wrapped
+    return loop.run_until_complete(inner)
+  File "C:\Python310\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 705, in async_execute
+    await self.async_execute_cell(
+  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 1058, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 914, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+FREQS = 2.4e9, 2.44e9, 2.48e9
+
+lb.show_messages('debug')
+
+# allow simulated connections to the specified VISA devices
+lb.visa_default_resource_manager(pyvisa_sim_resource)
+
+# we might want to specify the address in case e.g. there
+# are > 1 power sensor connected
+sensor=PowerSensor('USB::0x1111::0x2222::0x1234::INSTR')
+
+sweep = SweptMeasurement(measurement=Measurement(power_sensor=sensor))
+with sweep:
+    measurements = [sweep.single(fc, duration=1.0) for fc in FREQS]
+------------------
+
+----- stderr -----
+[1;30m DEBUG [0m [32m2023-09-22 10:53:56.484[0m • [34mSweptMeasurement(...):[0m [32mcontext order: (generator, measurement.spectrum_analyzer, measurement.power_sensor)->(measurement,<__main__.SweptMeasurement object at 0x0000026E29441090>)[0m
+----- stderr -----
+Traceback (most recent call last):
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 384, in __enter__
+    raise e
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 377, in __enter__
+    self.open()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 321, in __open_wrapper__
+    opener(self)
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1014, in open
+    for res, idn in visa_list_identities().items()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 1565, in wrapper_decorator
+    ret = self.last_value = func(*args, **kws)
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 1519, in __call__
+    ret = self.retval = self.func()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1269, in visa_list_identities
+    for res in visa_list_resources()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1236, in visa_list_resources
+    rm = VISADevice()._get_rm()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: SpectrumAnalyzer(''): module 'pyvisa' has no attribute 'ResourceManager'
+Traceback (most recent call last):
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 384, in __enter__
+    raise e
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 377, in __enter__
+    self.open()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 321, in __open_wrapper__
+    opener(self)
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1040, in open
+    rm = self._get_rm()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: PowerSensor('USB::0x1111::0x2222::0x1234::INSTR'): module 'pyvisa' has no attribute 'ResourceManager'
+[1;30m DEBUG [0m [32m2023-09-22 10:53:56.564[0m • [34mSignalGenerator(''):[0m [32mresource identified with identity pattern match "Signal generator model #1234, serial number 1837518935"[0m
+----- stderr -----
+[1;30m DEBUG [0m [32m2023-09-22 10:53:56.566[0m • [34mSignalGenerator(''):[0m [32mtrait set: "resource" → 'TCPIP0::localhost::inst0::INSTR'[0m
+----- stderr -----
+[1;30m DEBUG [0m [32m2023-09-22 10:53:56.567[0m • [34mSignalGenerator(''):[0m [32mopened[0m
+----- stderr -----
+Traceback (most recent call last):
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 384, in __enter__
+    raise e
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 377, in __enter__
+    self.open()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 321, in __open_wrapper__
+    opener(self)
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1014, in open
+    for res, idn in visa_list_identities().items()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 1565, in wrapper_decorator
+    ret = self.last_value = func(*args, **kws)
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 1519, in __call__
+    ret = self.retval = self.func()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1269, in visa_list_identities
+    for res in visa_list_resources()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1236, in visa_list_resources
+    rm = VISADevice()._get_rm()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: SpectrumAnalyzer(''): module 'pyvisa' has no attribute 'ResourceManager'
+Traceback (most recent call last):
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 384, in __enter__
+    raise e
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 377, in __enter__
+    self.open()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_device.py", line 321, in __open_wrapper__
+    opener(self)
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1040, in open
+    rm = self._get_rm()
+  File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: PowerSensor('USB::0x1111::0x2222::0x1234::INSTR'): module 'pyvisa' has no attribute 'ResourceManager'
+[1;30m DEBUG [0m [32m2023-09-22 10:53:56.569[0m • [34mSignalGenerator(''):[0m [32mclosed[0m
+----- stderr -----
+[1;30m DEBUG [0m [32m2023-09-22 10:53:56.569[0m • [34mSignalGenerator(''):[0m [32mwrite '*RST'[0m
+----- stderr -----
+[1;30mWARNING[0m [32m2023-09-22 10:53:56.570[0m • [34mlabbench:[0m [33menter_MultipleContexts_0x26e29441390.__exit__ raised exceptions raised in 2 contexts are printed inline in cleanup attempt after another exception in enter_MultipleContexts_0x26e29441390.__enter__[0m
+------------------
+
+[1;31m---------------------------------------------------------------------------[0m
+[1;31mConnectionError[0m                           Traceback (most recent call last)
+Cell [1;32mIn[3], line 14[0m
+[0;32m     13[0m [38;5;28;01mwith[39;00m sweep:
+[1;32m---> 14[0m     measurements [38;5;241m=[39m [sweep[38;5;241m.[39msingle(fc, duration[38;5;241m=[39m[38;5;241m1.0[39m) [38;5;28;01mfor[39;00m fc [38;5;129;01min[39;00m FREQS]
+
+Cell [1;32mIn[3], line 14[0m, in [0;36m<listcomp>[1;34m(.0)[0m
+[0;32m     13[0m [38;5;28;01mwith[39;00m sweep:
+[1;32m---> 14[0m     measurements [38;5;241m=[39m [[43msweep[49m[38;5;241;43m.[39;49m[43msingle[49m[43m([49m[43mfc[49m[43m,[49m[43m [49m[43mduration[49m[38;5;241;43m=[39;49m[38;5;241;43m1.0[39;49m[43m)[49m [38;5;28;01mfor[39;00m fc [38;5;129;01min[39;00m FREQS]
+
+File [1;32m~\Documents\src\labbench\labbench\_rack.py:518[0m, in [0;36mRackMethod.__call__[1;34m(self, *args, **kws)[0m
+[0;32m    517[0m t0 [38;5;241m=[39m time[38;5;241m.[39mperf_counter()
+[1;32m--> 518[0m ret [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39m_wrapped([38;5;28mself[39m[38;5;241m.[39m_owner, [38;5;241m*[39margs, [38;5;241m*[39m[38;5;241m*[39mkws)
+[0;32m    519[0m elapsed [38;5;241m=[39m time[38;5;241m.[39mperf_counter() [38;5;241m-[39m t0
+
+Cell [1;32mIn[2], line 38[0m, in [0;36mSweptMeasurement.single[1;34m(self, center_frequency, duration)[0m
+[0;32m     37[0m [38;5;28;01mdef[39;00m [38;5;21msingle[39m([38;5;28mself[39m, center_frequency, duration):
+[1;32m---> 38[0m     [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mgenerator[49m[38;5;241;43m.[39;49m[43mpreset[49m[43m([49m[43m)[49m
+[0;32m     39[0m     [38;5;28mself[39m[38;5;241m.[39mgenerator[38;5;241m.[39mmode [38;5;241m=[39m [38;5;124m"[39m[38;5;124mtone[39m[38;5;124m"[39m
+
+File [1;32m~\Documents\src\labbench\labbench\_backends.py:1151[0m, in [0;36mVISADevice.preset[1;34m(self)[0m
+[0;32m   1150[0m [38;5;250m[39m[38;5;124;03m"""sends '*RST' to reset the instrument to preset"""[39;00m
+[1;32m-> 1151[0m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mwrite[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43m*RST[39;49m[38;5;124;43m"[39;49m[43m)[49m
+
+File [1;32m~\Documents\src\labbench\labbench\_backends.py:1085[0m, in [0;36mVISADevice.write[1;34m(self, msg)[0m
+[0;32m   1084[0m [38;5;28mself[39m[38;5;241m.[39m_logger[38;5;241m.[39mdebug([38;5;124mf[39m[38;5;124m"[39m[38;5;124mwrite [39m[38;5;132;01m{[39;00mmsg_out[38;5;132;01m}[39;00m[38;5;124m"[39m)
+[1;32m-> 1085[0m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mbackend[49m[38;5;241;43m.[39;49m[43mwrite[49m(msg)
+
+File [1;32m~\Documents\src\labbench\labbench\_device.py:121[0m, in [0;36mDisconnectedBackend.__getattr__[1;34m(self, key)[0m
+[0;32m    120[0m msg [38;5;241m=[39m [38;5;124mf[39m[38;5;124m"[39m[38;5;124mopen [39m[38;5;132;01m{[39;00m[38;5;28mself[39m[38;5;241m.[39mname[38;5;132;01m}[39;00m[38;5;124m first to access its backend[39m[38;5;124m"[39m
+[1;32m--> 121[0m [38;5;28;01mraise[39;00m [38;5;167;01mConnectionError[39;00m(msg)
+
+[1;31mConnectionError[0m: open generator first to access its backend
+
+During handling of the above exception, another exception occurred:
+
+[1;31mConcurrentException[0m                       Traceback (most recent call last)
+Cell [1;32mIn[3], line 13[0m
+[0;32m     10[0m sensor[38;5;241m=[39mPowerSensor([38;5;124m'[39m[38;5;124mUSB::0x1111::0x2222::0x1234::INSTR[39m[38;5;124m'[39m)
+[0;32m     12[0m sweep [38;5;241m=[39m SweptMeasurement(measurement[38;5;241m=[39mMeasurement(power_sensor[38;5;241m=[39msensor))
+[1;32m---> 13[0m [38;5;28;01mwith[39;00m sweep:
+[0;32m     14[0m     measurements [38;5;241m=[39m [sweep[38;5;241m.[39msingle(fc, duration[38;5;241m=[39m[38;5;241m1.0[39m) [38;5;28;01mfor[39;00m fc [38;5;129;01min[39;00m FREQS]
+
+File [1;32m~\Documents\src\labbench\labbench\util.py:872[0m, in [0;36mMultipleContexts.__exit__[1;34m(self, *exc)[0m
+[0;32m    870[0m [38;5;28;01mif[39;00m [38;5;28mlen[39m([38;5;28mself[39m[38;5;241m.[39mexc) [38;5;241m==[39m [38;5;241m1[39m:
+[0;32m    871[0m     exc_info [38;5;241m=[39m [38;5;28mlist[39m([38;5;28mself[39m[38;5;241m.[39mexc[38;5;241m.[39mvalues())[[38;5;241m0[39m]
+[1;32m--> 872[0m     [38;5;28;01mraise[39;00m exc_info[[38;5;241m1[39m]
+[0;32m    873[0m [38;5;28;01melif[39;00m [38;5;28mlen[39m([38;5;28mself[39m[38;5;241m.[39mexc) [38;5;241m>[39m [38;5;241m1[39m:
+[0;32m    874[0m     ex [38;5;241m=[39m ConcurrentException(
+[0;32m    875[0m         [38;5;124mf[39m[38;5;124m"[39m[38;5;124mexceptions raised in [39m[38;5;132;01m{[39;00m[38;5;28mlen[39m([38;5;28mself[39m[38;5;241m.[39mexc)[38;5;132;01m}[39;00m[38;5;124m contexts are printed inline[39m[38;5;124m"[39m
+[0;32m    876[0m     )
+
+File [1;32m~\Documents\src\labbench\labbench\util.py:702[0m, in [0;36mCall.__call__[1;34m(self)[0m
+[0;32m    699[0m [38;5;129m@hide_in_traceback[39m
+[0;32m    700[0m [38;5;28;01mdef[39;00m [38;5;21m__call__[39m([38;5;28mself[39m):
+[0;32m    701[0m     [38;5;28;01mtry[39;00m:
+[1;32m--> 702[0m         [38;5;28mself[39m[38;5;241m.[39mresult [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39mfunc([38;5;241m*[39m[38;5;28mself[39m[38;5;241m.[39margs, [38;5;241m*[39m[38;5;241m*[39m[38;5;28mself[39m[38;5;241m.[39mkws)
+[0;32m    703[0m     [38;5;28;01mexcept[39;00m [38;5;167;01mBaseException[39;00m:
+[0;32m    704[0m         [38;5;28mself[39m[38;5;241m.[39mresult [38;5;241m=[39m [38;5;28;01mNone[39;00m
+
+File [1;32m~\Documents\src\labbench\labbench\util.py:809[0m, in [0;36mMultipleContexts.enter[1;34m(self, name, context)[0m
+[0;32m    806[0m [38;5;28;01mif[39;00m [38;5;129;01mnot[39;00m [38;5;28mself[39m[38;5;241m.[39mabort:
+[0;32m    807[0m     [38;5;66;03m# proceed only if there have been no exceptions[39;00m
+[0;32m    808[0m     [38;5;28;01mtry[39;00m:
+[1;32m--> 809[0m         [43mcontext[49m[38;5;241;43m.[39;49m[38;5;21;43m__enter__[39;49m[43m([49m[43m)[49m  [38;5;66;03m# start of a context entry thread[39;00m
+[0;32m    810[0m     [38;5;28;01mexcept[39;00m [38;5;167;01mBaseException[39;00m:
+[0;32m    811[0m         [38;5;28mself[39m[38;5;241m.[39mabort [38;5;241m=[39m [38;5;28;01mTrue[39;00m
+
+File [1;32m~\Documents\src\labbench\labbench\util.py:832[0m, in [0;36mMultipleContexts.__enter__[1;34m(self)[0m
+[0;32m    830[0m     [38;5;28mself[39m[38;5;241m.[39m[38;5;21m__exit__[39m([38;5;28;01mNone[39;00m, [38;5;28;01mNone[39;00m, [38;5;28;01mNone[39;00m)  [38;5;66;03m# exit any open contexts before raise[39;00m
+[0;32m    831[0m [38;5;28;01mfinally[39;00m:
+[1;32m--> 832[0m     [38;5;28;01mraise[39;00m e
+
+File [1;32m~\Documents\src\labbench\labbench\util.py:827[0m, in [0;36mMultipleContexts.__enter__[1;34m(self)[0m
+[0;32m    821[0m [38;5;28;01mtry[39;00m:
+[0;32m    822[0m     [38;5;28;01mwith[39;00m stopwatch(
+[0;32m    823[0m         [38;5;124mf[39m[38;5;124m"[39m[38;5;124mentry into context for [39m[38;5;132;01m{[39;00m[38;5;28mself[39m[38;5;241m.[39mparams[[38;5;124m'[39m[38;5;124mname[39m[38;5;124m'[39m][38;5;132;01m}[39;00m[38;5;124m"[39m,
+[0;32m    824[0m         [38;5;241m0.5[39m,
+[0;32m    825[0m         logger_level[38;5;241m=[39m[38;5;124m"[39m[38;5;124mdebug[39m[38;5;124m"[39m,
+[0;32m    826[0m     ):
+[1;32m--> 827[0m         [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mcall_handler[49m[43m([49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mparams[49m[43m,[49m[43m [49m[43mcalls[49m[43m)[49m
+[0;32m    828[0m [38;5;28;01mexcept[39;00m [38;5;167;01mBaseException[39;00m [38;5;28;01mas[39;00m e:
+[0;32m    829[0m     [38;5;28;01mtry[39;00m:
+
+File [1;32m~\Documents\src\labbench\labbench\util.py:1167[0m, in [0;36mconcurrently_call[1;34m(params, name_func_pairs)[0m
+[0;32m   1165[0m         ex [38;5;241m=[39m ConcurrentException([38;5;124mf[39m[38;5;124m"[39m[38;5;132;01m{[39;00m[38;5;28mlen[39m(tracebacks)[38;5;132;01m}[39;00m[38;5;124m call(s) raised exceptions[39m[38;5;124m"[39m)
+[0;32m   1166[0m         ex[38;5;241m.[39mthread_exceptions [38;5;241m=[39m tracebacks
+[1;32m-> 1167[0m         [38;5;28;01mraise[39;00m ex
+[0;32m   1169[0m [38;5;28;01mreturn[39;00m results
+
+[1;31mConcurrentException[0m: 2 call(s) raised exceptions
+

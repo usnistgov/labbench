@@ -197,7 +197,7 @@ td,th{
 	}
 
 	a,a:visited{
-		text-decoration:underline
+		text-decoration:underline;
 		color: purple;
 	}
 
@@ -730,7 +730,7 @@ pre code{
 
 .container{
 	margin-right:auto;
-	margin-left:auto;
+	margin-left:0;
 	padding-left:15px;
 	padding-right:15px
 }
@@ -739,21 +739,19 @@ pre code{
 	.container{
 		width:750px
 	}
-
 }
 
-@media (min-width:992px){
+@media (min-width:100%){
 	.container{
-		width:970px
+		min-width:100%
 	}
 
 }
 
-@media (min-width:1200px){
+@media (min-width:100%){
 	.container{
-		width:1170px
+		width:100%
 	}
-
 }
 
 .container-fluid{
@@ -6694,7 +6692,7 @@ section.home.home-about .gb-list li{
 @media (min-width:768px){
 	section.home.home-about .gb-list li{
 		*position:relative;
-		width:100%
+		width:100%;
 		min-height:1px;
 		padding-left:15px;
 		padding-right:15px

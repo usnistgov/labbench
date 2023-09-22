@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Device Wrapping &#8212; labbench</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=dfcfee03"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Data Logging" href="02_data_logging.html" />
+    <link rel="prev" title="Getting Started" href="../02_getting_started.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench">
+  <link rel="canonical" href="../../">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../..//_static/NISTStyle.css">
+  <link rel="stylesheet" href="../..//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="02_data_logging.html" title="Data Logging"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../02_getting_started.html" title="Getting Started"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../02_getting_started.html" accesskey="U">Getting Started</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Device Wrapping</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="device-wrapping">
+<h1>Device Wrapping<a class="headerlink" href="#device-wrapping" title="Permalink to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">Device</span></code> is the root object used to define and implement automation with a lower-level driver in labbench. Its purpose is to encapsulate python data and methods over a specific type of laboratory equipment or a software.</p>
+<p>This section demonstrates usage of <code class="docutils literal notranslate"><span class="pre">Device</span></code> through a lean working example. The wrapper design pattern in <code class="docutils literal notranslate"><span class="pre">labbench</span></code> starts by defining a subclass of <code class="docutils literal notranslate"><span class="pre">Device</span></code> for a specific device, often from one of the backend subclasses that has been specialized for a low-level driver module (`pyvisa``, shell command, etc.). Doing this has several advantages:</p>
+<ul class="simple">
+<li><p>hooks into the data logging subsystem for automatic logging of parameters and acquired data</p></li>
+<li><p>automatic coercion between python types and low-level/over-the-wire data types</p></li>
+<li><p>constraints on instrument parameters</p></li>
+<li><p>multi-threaded connection management</p></li>
+</ul>
+<section id="example-implementation-a-visa-instrument">
+<h2>Example Implementation: A VISA Instrument<a class="headerlink" href="#example-implementation-a-visa-instrument" title="Permalink to this heading">¶</a></h2>
+<p>Let’s start by a simple demonstration with <a class="reference external" href="https://en.wikipedia.org/wiki/Virtual_instrument_software_architecture">VISA</a> instrument automation. The example below gives a simplified working example modeled on <a class="reference external" href="https://github.com/usnistgov/ssmdevices/blob/main/ssmdevices/instruments/power_sensors.py">an actual commercial RF power sensor</a>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># sim_instrument1.py</span>
+<span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+
+<span class="nd">@lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span>
+    <span class="c1"># the default SCPI query and write formats</span>
+    <span class="n">query_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">?&quot;</span><span class="p">,</span>
+    <span class="n">write_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> </span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">,</span>
+
+    <span class="c1"># map python True and False values to these SCPI strings</span>
+    <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="nd">@lb</span><span class="o">.</span><span class="n">adjusted</span><span class="p">(</span>
+    <span class="c1"># set the identity_pattern </span>
+    <span class="s1">&#39;identity_pattern&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Power Sensor model \#1234&#39;</span>
+<span class="p">)</span>
+<span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="n">RATES</span> <span class="o">=</span> <span class="s2">&quot;NORM&quot;</span><span class="p">,</span> <span class="s2">&quot;DOUB&quot;</span><span class="p">,</span> <span class="s2">&quot;FAST&quot;</span>
+
+    <span class="c1"># SCPI string keys and bounds on the parameter values,</span>
+    <span class="c1"># taken from the instrument programming manual</span>
+    <span class="n">initiate_continuous</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;INIT:CONT&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;trigger continuously if True&quot;</span>
+    <span class="p">)</span>
+    <span class="n">trigger_count</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">int</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;TRIG:COUN&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;acquisition count&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;samples&quot;</span>
+    <span class="p">)</span>
+    <span class="n">measurement_rate</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">str</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:MRAT&quot;</span><span class="p">,</span> <span class="n">only</span><span class="o">=</span><span class="n">RATES</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        
+    <span class="p">)</span>
+    <span class="n">sweep_aperture</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SWE:APER&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;measurement duration&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;s&quot;</span>
+    <span class="p">)</span>
+    <span class="n">frequency</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:FREQ&quot;</span><span class="p">,</span>
+        <span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;calibration frequency&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">preset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;revert to instrument preset state&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;SYST:PRES&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;acquire measurements as configured&quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;FETC?&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Automation capabilities for this instrument are fully encapsulated by the <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> object. Some key features:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> begins with the attributes the <code class="docutils literal notranslate"><span class="pre">labbench.VISADevice</span></code> backend, which wraps the <a class="reference external" href="https://pyvisa.readthedocs.io/"><code class="docutils literal notranslate"><span class="pre">pyvisa</span></code></a> library.</p></li>
+<li><p>The various <code class="docutils literal notranslate"><span class="pre">lb.property</span></code> definitions are shortcuts for <a class="reference external" href="https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments">SCPI</a> commands on this instrument. When we use <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> to control an instrument, getting or setting these properties will trigger SCPI query and commands based on each property’s <code class="docutils literal notranslate"><span class="pre">key</span></code>. The property type (<code class="docutils literal notranslate"><span class="pre">lb.property.float</span></code>, <code class="docutils literal notranslate"><span class="pre">lb.property.str</span></code>, etc.) and remaining arguments determine the type and constraints of the python representation of that property.</p></li>
+<li><p>The method functions (<code class="docutils literal notranslate"><span class="pre">fetch</span></code> and <code class="docutils literal notranslate"><span class="pre">preset</span></code>) represent examples of other types of SCPI commands that are implemented programmatically.</p></li>
+</ul>
+<section id="basic-device-wrapper-usage">
+<h3>Basic Device Wrapper Usage<a class="headerlink" href="#basic-device-wrapper-usage" title="Permalink to this heading">¶</a></h3>
+<p>The implementation of <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> above is enough for us to perform a simple measurement. Automation starts with making an instance and then connecting it.
+The methods and traits can be discovered through tab completion in most IDEs.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># use a pyvisa-sim simulated VISA instrument for the demo</span>
+<span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">testing</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="n">testing</span><span class="o">.</span><span class="n">pyvisa_sim_resource</span><span class="p">)</span>
+
+<span class="c1"># print the low-level actions of the code</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;debug&#39;</span><span class="p">)</span>
+
+<span class="c1"># specify the VISA address to use the power sensor</span>
+<span class="n">sensor</span> <span class="o">=</span> <span class="n">PowerSensor</span><span class="p">()</span>
+
+<span class="c1"># the sensor attempts to connect to the hardware on entering a `with` block</span>
+<span class="k">with</span> <span class="n">sensor</span><span class="p">:</span>   
+    <span class="c1"># apply the instrument preset state</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
+
+    <span class="c1"># set acquisition parameters on the power sensor</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="mf">1e9</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">measurement_rate</span> <span class="o">=</span> <span class="s2">&quot;FAST&quot;</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">sweep_aperture</span> <span class="o">=</span> <span class="mf">20e-6</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">initiate_continuous</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># retreive the 200 measurement samples</span>
+    <span class="n">power</span> <span class="o">=</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+
+    <span class="c1"># the instrument connection closes on leaving the with block</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Creating the <code class="docutils literal notranslate"><span class="pre">sensor</span></code> instance brings the <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> class definition to life. This means:</p>
+<ul class="simple">
+<li><p>The connection remains open for VISA communication inside the <code class="docutils literal notranslate"><span class="pre">with</span></code> block</p></li>
+<li><p>Attributes that were defined with <code class="docutils literal notranslate"><span class="pre">lb.property</span></code> in <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> become interactive for instrument automation in <code class="docutils literal notranslate"><span class="pre">sensor</span></code>. This means that assigning to <code class="docutils literal notranslate"><span class="pre">sensor.frequency</span></code>, <code class="docutils literal notranslate"><span class="pre">sensor.measurement_rate</span></code> trigger VISA writes to set these parameters on the instrument. Similarly, <em>getting</em> each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Device Wrapping</a><ul>
+<li><a class="reference internal" href="#example-implementation-a-visa-instrument">Example Implementation: A VISA Instrument</a><ul>
+<li><a class="reference internal" href="#basic-device-wrapper-usage">Basic Device Wrapper Usage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../02_getting_started.html"
+                          title="previous chapter">Getting Started</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="02_data_logging.html"
+                          title="next chapter">Data Logging</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/guide/02_getting_started/01_Device.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="02_data_logging.html" title="Data Logging"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../02_getting_started.html" title="Getting Started"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../02_getting_started.html" >Getting Started</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Device Wrapping</a></li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

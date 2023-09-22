@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Organizing Experimental Procedures &#8212; labbench</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=dfcfee03"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Data Logging" href="03%20data%20logging.html" />
+    <link rel="prev" title="Device Wrappers" href="01%20device.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench">
+  <link rel="canonical" href="../../">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../..//_static/NISTStyle.css">
+  <link rel="stylesheet" href="../..//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="03%20data%20logging.html" title="Data Logging"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="01%20device.html" title="Device Wrappers"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../02_getting_started.html" accesskey="U">Getting Started</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Organizing Experimental Procedures</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="organizing-experimental-procedures">
+<h1>Organizing Experimental Procedures<a class="headerlink" href="#organizing-experimental-procedures" title="Permalink to this heading">¶</a></h1>
+<p>To organize procedures that use more than one device wrapper, use <a class="reference internal" href="../../labbench.html#labbench.Rack" title="labbench.Rack"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Rack</span></code></a> objects. These act as containers for aspects of automation that need to access a particular set of <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects, other <code class="docutils literal notranslate"><span class="pre">Rack</span></code> objects, and automation functions that need to be applied to them. When they are open in a <code class="docutils literal notranslate"><span class="pre">with</span></code> block, they ensure that all <code class="docutils literal notranslate"><span class="pre">Device</span></code> connections are closed together if there is an exception.</p>
+<section id="example-3-devices">
+<h2>Example: 3 Devices<a class="headerlink" href="#example-3-devices" title="Permalink to this heading">¶</a></h2>
+<p>Suppose we need to take a measurement with automation of 2 instruments:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="kn">from</span> <span class="nn">labbench.testing</span> <span class="kn">import</span> <span class="n">SignalGenerator</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">pyvisa_sim_resource</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Here is an artificial example of how these could be assembled into <code class="docutils literal notranslate"><span class="pre">Rack</span></code> objects</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Measurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+    <span class="c1"># a default device instance makes the `inst` argument </span>
+    <span class="c1"># optional when creating the Measurement object.</span>
+    <span class="n">spectrum_analyzer</span><span class="p">:</span> <span class="n">SpectrumAnalyzer</span> <span class="o">=</span> <span class="n">SpectrumAnalyzer</span><span class="p">()</span>
+
+    <span class="c1"># without the default, `power_sensor` _must_ be passed as</span>
+    <span class="c1"># a keyword argument when instantiating Measurement</span>
+    <span class="n">power_sensor</span><span class="p">:</span> <span class="n">PowerSensor</span>
+
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">load_state</span><span class="p">(</span><span class="s2">&quot;state_filename&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution_bandwidth</span> <span class="o">=</span> <span class="mf">10e6</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
+        <span class="n">lb</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;spectrum&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">(),</span>
+            <span class="s1">&#39;power&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+        <span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">SweptMeasurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+    <span class="c1"># we can mix and match Device and Rack instances to compose nested</span>
+    <span class="c1"># test automation components</span>
+    <span class="n">generator</span><span class="p">:</span> <span class="n">SignalGenerator</span> <span class="o">=</span> <span class="n">SignalGenerator</span><span class="p">()</span>
+    
+    <span class="c1"># here, to set a default measurement, we&#39;d have to pass in </span>
+    <span class="n">measurement</span><span class="p">:</span> <span class="n">Measurement</span>
+    
+    <span class="k">def</span> <span class="nf">single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;tone&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">center_frequency</span><span class="o">=</span><span class="n">center_frequency</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">rf_output_enable</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">rf_output_enable</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">frequencies</span><span class="p">:</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="n">duration</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">duration</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="usage-in-test-scripts">
+<h2>Usage in test scripts<a class="headerlink" href="#usage-in-test-scripts" title="Permalink to this heading">¶</a></h2>
+<p>When executed to run test scripts, create Rack instances with input objects according to their definition:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">FREQS</span> <span class="o">=</span> <span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span>
+
+<span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;debug&#39;</span><span class="p">)</span>
+
+<span class="c1"># allow simulated connections to the specified VISA devices</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="n">pyvisa_sim_resource</span><span class="p">)</span>
+
+<span class="c1"># we might want to specify the address in case e.g. there</span>
+<span class="c1"># are &gt; 1 power sensor connected</span>
+<span class="n">sensor</span><span class="o">=</span><span class="n">PowerSensor</span><span class="p">(</span><span class="s1">&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;</span><span class="p">)</span>
+
+<span class="n">sweep</span> <span class="o">=</span> <span class="n">SweptMeasurement</span><span class="p">(</span><span class="n">measurement</span><span class="o">=</span><span class="n">Measurement</span><span class="p">(</span><span class="n">power_sensor</span><span class="o">=</span><span class="n">sensor</span><span class="p">))</span>
+<span class="k">with</span> <span class="n">sweep</span><span class="p">:</span>
+    <span class="n">measurements</span> <span class="o">=</span> <span class="p">[</span><span class="n">sweep</span><span class="o">.</span><span class="n">single</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">fc</span> <span class="ow">in</span> <span class="n">FREQS</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.484</span> • <span class=" -Color -Color-Blue">SweptMeasurement(...):</span> <span class=" -Color -Color-Green">context order: (generator, measurement.spectrum_analyzer, measurement.power_sensor)-&gt;(measurement,&lt;__main__.SweptMeasurement object at 0x0000026E29441090&gt;)</span>
+Traceback (most recent call last):
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 384, in __enter__
+    raise e
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 377, in __enter__
+    self.open()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 321, in __open_wrapper__
+    opener(self)
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1014, in open
+    for res, idn in visa_list_identities().items()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 1565, in wrapper_decorator
+    ret = self.last_value = func(*args, **kws)
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 1519, in __call__
+    ret = self.retval = self.func()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1269, in visa_list_identities
+    for res in visa_list_resources()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1236, in visa_list_resources
+    rm = VISADevice()._get_rm()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: SpectrumAnalyzer(&#39;&#39;): module &#39;pyvisa&#39; has no attribute &#39;ResourceManager&#39;
+Traceback (most recent call last):
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 384, in __enter__
+    raise e
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 377, in __enter__
+    self.open()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 321, in __open_wrapper__
+    opener(self)
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1040, in open
+    rm = self._get_rm()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: PowerSensor(&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;): module &#39;pyvisa&#39; has no attribute &#39;ResourceManager&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.564</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Signal generator model #1234, serial number 1837518935&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.566</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;TCPIP0::localhost::inst0::INSTR&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.567</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
+Traceback (most recent call last):
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 384, in __enter__
+    raise e
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 377, in __enter__
+    self.open()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 321, in __open_wrapper__
+    opener(self)
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1014, in open
+    for res, idn in visa_list_identities().items()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 1565, in wrapper_decorator
+    ret = self.last_value = func(*args, **kws)
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 1519, in __call__
+    ret = self.retval = self.func()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1269, in visa_list_identities
+    for res in visa_list_resources()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1236, in visa_list_resources
+    rm = VISADevice()._get_rm()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: SpectrumAnalyzer(&#39;&#39;): module &#39;pyvisa&#39; has no attribute &#39;ResourceManager&#39;
+Traceback (most recent call last):
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 809, in enter
+    context.__enter__()  # start of a context entry thread
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 384, in __enter__
+    raise e
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 377, in __enter__
+    self.open()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_device.py&quot;, line 321, in __open_wrapper__
+    opener(self)
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1040, in open
+    rm = self._get_rm()
+  File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1222, in _get_rm
+    rm = pyvisa.ResourceManager(backend_name)
+AttributeError: PowerSensor(&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;): module &#39;pyvisa&#39; has no attribute &#39;ResourceManager&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.569</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.569</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;*RST&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black">WARNING</span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.570</span> • <span class=" -Color -Color-Blue">labbench:</span> <span class=" -Color -Color-Yellow">enter_MultipleContexts_0x26e29441390.__exit__ raised exceptions raised in 2 contexts are printed inline in cleanup attempt after another exception in enter_MultipleContexts_0x26e29441390.__enter__</span>
+</pre></div>
+</div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ConnectionError</span><span class="g g-Whitespace">                           </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">line</span> <span class="mi">14</span>
+<span class="g g-Whitespace">     </span><span class="mi">13</span> <span class="k">with</span> <span class="n">sweep</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">14</span>     <span class="n">measurements</span> <span class="o">=</span> <span class="p">[</span><span class="n">sweep</span><span class="o">.</span><span class="n">single</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">fc</span> <span class="ow">in</span> <span class="n">FREQS</span><span class="p">]</span>
+
+<span class="nn">Cell In[3], line 14,</span> in <span class="ni">&lt;listcomp&gt;</span><span class="nt">(.0)</span>
+<span class="g g-Whitespace">     </span><span class="mi">13</span> <span class="k">with</span> <span class="n">sweep</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">14</span>     <span class="n">measurements</span> <span class="o">=</span> <span class="p">[</span><span class="n">sweep</span><span class="o">.</span><span class="n">single</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">fc</span> <span class="ow">in</span> <span class="n">FREQS</span><span class="p">]</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_rack.py:518,</span> in <span class="ni">RackMethod.__call__</span><span class="nt">(self, *args, **kws)</span>
+<span class="g g-Whitespace">    </span><span class="mi">517</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<span class="ne">--&gt; </span><span class="mi">518</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_owner</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">519</span> <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+
+<span class="nn">Cell In[2], line 38,</span> in <span class="ni">SweptMeasurement.single</span><span class="nt">(self, center_frequency, duration)</span>
+<span class="g g-Whitespace">     </span><span class="mi">37</span> <span class="k">def</span> <span class="nf">single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+<span class="ne">---&gt; </span><span class="mi">38</span>     <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">39</span>     <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;tone&quot;</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_backends.py:1151,</span> in <span class="ni">VISADevice.preset</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1150</span><span class="w"> </span><span class="sd">&quot;&quot;&quot;sends &#39;*RST&#39; to reset the instrument to preset&quot;&quot;&quot;</span>
+<span class="ne">-&gt; </span><span class="mi">1151</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;*RST&quot;</span><span class="p">)</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_backends.py:1085,</span> in <span class="ni">VISADevice.write</span><span class="nt">(self, msg)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1084</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;write </span><span class="si">{</span><span class="n">msg_out</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1085</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\_device.py:121,</span> in <span class="ni">DisconnectedBackend.__getattr__</span><span class="nt">(self, key)</span>
+<span class="g g-Whitespace">    </span><span class="mi">120</span> <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;open </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> first to access its backend&quot;</span>
+<span class="ne">--&gt; </span><span class="mi">121</span> <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="ne">ConnectionError</span>: open generator first to access its backend
+
+<span class="n">During</span> <span class="n">handling</span> <span class="n">of</span> <span class="n">the</span> <span class="n">above</span> <span class="n">exception</span><span class="p">,</span> <span class="n">another</span> <span class="n">exception</span> <span class="n">occurred</span><span class="p">:</span>
+
+<span class="ne">ConcurrentException</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">line</span> <span class="mi">13</span>
+<span class="g g-Whitespace">     </span><span class="mi">10</span> <span class="n">sensor</span><span class="o">=</span><span class="n">PowerSensor</span><span class="p">(</span><span class="s1">&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">12</span> <span class="n">sweep</span> <span class="o">=</span> <span class="n">SweptMeasurement</span><span class="p">(</span><span class="n">measurement</span><span class="o">=</span><span class="n">Measurement</span><span class="p">(</span><span class="n">power_sensor</span><span class="o">=</span><span class="n">sensor</span><span class="p">))</span>
+<span class="ne">---&gt; </span><span class="mi">13</span> <span class="k">with</span> <span class="n">sweep</span><span class="p">:</span>
+<span class="g g-Whitespace">     </span><span class="mi">14</span>     <span class="n">measurements</span> <span class="o">=</span> <span class="p">[</span><span class="n">sweep</span><span class="o">.</span><span class="n">single</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">fc</span> <span class="ow">in</span> <span class="n">FREQS</span><span class="p">]</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:872,</span> in <span class="ni">MultipleContexts.__exit__</span><span class="nt">(self, *exc)</span>
+<span class="g g-Whitespace">    </span><span class="mi">870</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">871</span>     <span class="n">exc_info</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="ne">--&gt; </span><span class="mi">872</span>     <span class="k">raise</span> <span class="n">exc_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span> <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>     <span class="n">ex</span> <span class="o">=</span> <span class="n">ConcurrentException</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>         <span class="sa">f</span><span class="s2">&quot;exceptions raised in </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span><span class="si">}</span><span class="s2"> contexts are printed inline&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">876</span>     <span class="p">)</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:702,</span> in <span class="ni">Call.__call__</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">699</span> <span class="nd">@hide_in_traceback</span>
+<span class="g g-Whitespace">    </span><span class="mi">700</span> <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="g g-Whitespace">    </span><span class="mi">701</span>     <span class="k">try</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">702</span>         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kws</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">703</span>     <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">704</span>         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:809,</span> in <span class="ni">MultipleContexts.enter</span><span class="nt">(self, name, context)</span>
+<span class="g g-Whitespace">    </span><span class="mi">806</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">abort</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">807</span>     <span class="c1"># proceed only if there have been no exceptions</span>
+<span class="g g-Whitespace">    </span><span class="mi">808</span>     <span class="k">try</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">809</span>         <span class="n">context</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>  <span class="c1"># start of a context entry thread</span>
+<span class="g g-Whitespace">    </span><span class="mi">810</span>     <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">811</span>         <span class="bp">self</span><span class="o">.</span><span class="n">abort</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:832,</span> in <span class="ni">MultipleContexts.__enter__</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">830</span>     <span class="bp">self</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># exit any open contexts before raise</span>
+<span class="g g-Whitespace">    </span><span class="mi">831</span> <span class="k">finally</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">832</span>     <span class="k">raise</span> <span class="n">e</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:827,</span> in <span class="ni">MultipleContexts.__enter__</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">821</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">822</span>     <span class="k">with</span> <span class="n">stopwatch</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">823</span>         <span class="sa">f</span><span class="s2">&quot;entry into context for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">824</span>         <span class="mf">0.5</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">825</span>         <span class="n">logger_level</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">826</span>     <span class="p">):</span>
+<span class="ne">--&gt; </span><span class="mi">827</span>         <span class="bp">self</span><span class="o">.</span><span class="n">call_handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">calls</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">828</span> <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">829</span>     <span class="k">try</span><span class="p">:</span>
+
+<span class="nn">File ~\Documents\src\labbench\labbench\util.py:1167,</span> in <span class="ni">concurrently_call</span><span class="nt">(params, name_func_pairs)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1165</span>         <span class="n">ex</span> <span class="o">=</span> <span class="n">ConcurrentException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tracebacks</span><span class="p">)</span><span class="si">}</span><span class="s2"> call(s) raised exceptions&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1166</span>         <span class="n">ex</span><span class="o">.</span><span class="n">thread_exceptions</span> <span class="o">=</span> <span class="n">tracebacks</span>
+<span class="ne">-&gt; </span><span class="mi">1167</span>         <span class="k">raise</span> <span class="n">ex</span>
+<span class="g g-Whitespace">   </span><span class="mi">1169</span> <span class="k">return</span> <span class="n">results</span>
+
+<span class="ne">ConcurrentException</span>: 2 call(s) raised exceptions
+</pre></div>
+</div>
+</div>
+</div>
+<p>They open and close connections with all child devices by use of <code class="docutils literal notranslate"><span class="pre">with</span></code> methods. The connection state of all <code class="docutils literal notranslate"><span class="pre">SweptMeasurement</span></code> children are managed together, and all are closed in the event of an exception.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Organizing Experimental Procedures</a><ul>
+<li><a class="reference internal" href="#example-3-devices">Example: 3 Devices</a></li>
+<li><a class="reference internal" href="#usage-in-test-scripts">Usage in test scripts</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="01%20device.html"
+                          title="previous chapter">Device Wrappers</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="03%20data%20logging.html"
+                          title="next chapter">Data Logging</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/guide/02_getting_started/02 rack.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="03%20data%20logging.html" title="Data Logging"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="01%20device.html" title="Device Wrappers"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../02_getting_started.html" >Getting Started</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Organizing Experimental Procedures</a></li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

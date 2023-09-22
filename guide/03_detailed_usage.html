@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Detailed Usage &#8212; labbench</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=6f14c262" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=dfcfee03"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Device Usage" href="03_detailed_usage/01_device_usage.html" />
+    <link rel="prev" title="Simplified Concurrency" href="02_getting_started/04%20concurrency.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench">
+  <link rel="canonical" href="../">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="..//_static/NISTStyle.css">
+  <link rel="stylesheet" href="..//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="03_detailed_usage/01_device_usage.html" title="Device Usage"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="02_getting_started/04%20concurrency.html" title="Simplified Concurrency"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">labbench</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Detailed Usage</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="detailed-usage">
+<h1>Detailed Usage<a class="headerlink" href="#detailed-usage" title="Permalink to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="03_detailed_usage/01_device_usage.html">Device Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/01_device_usage.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/01_device_usage.html#workflow">Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/01_device_usage.html#generalizing-from-the-example">Generalizing from the example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="03_detailed_usage/02_device_backends.html">Device Backends</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/02_device_backends.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/02_device_backends.html#workflow">Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/02_device_backends.html#generalizing-from-the-example">Generalizing from the example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="03_detailed_usage/03_device_traits.html">Device Traits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_detailed_usage/04_data_logging.html">Logging device states and test results to a database</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/04_data_logging.html#file-conventions">File conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_detailed_usage/04_data_logging.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="03_detailed_usage/05_concurrency.html">Simplified Concurrency</a></li>
+</ul>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="02_getting_started/04%20concurrency.html"
+                          title="previous chapter">Simplified Concurrency</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="03_detailed_usage/01_device_usage.html"
+                          title="next chapter">Device Usage</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/guide/03_detailed_usage.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="03_detailed_usage/01_device_usage.html" title="Device Usage"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="02_getting_started/04%20concurrency.html" title="Simplified Concurrency"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">labbench</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Detailed Usage</a></li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

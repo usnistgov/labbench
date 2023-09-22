@@ -13,7 +13,7 @@ kernelspec:
 
 # Procedural Snippets
 
-To organize procedures that use more than one device wrapper, implement {py:class}`labbench.Rack` classes. These act as containers for aspects of automation that need to access a particular set of device objects, or even other rack objects, and automation functions that need to be applied to them. When they are open in a `with` block, they ensure that all `Device` connections are closed together if there is an exception.
+To organize procedures that use more than one device wrapper, implement {py:class}`labbench.Rack` classes. These act as containers for aspects of automation that need to access a particular set of device objects, or even other rack objects, together with associated automation routines. When they are open in a `with` block, they ensure that all `Device` connections are closed together if there is an exception.
 
 ## Example: 3 Devices
 Suppose we need to take a measurement with automation of 2 instruments:

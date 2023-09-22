@@ -41,6 +41,8 @@ from threading import Event, Thread
 from typing import Dict
 
 import psutil
+import pyvisa
+import pyvisa.errors
 
 from . import property as property_
 from . import util, value
@@ -49,13 +51,11 @@ from ._traits import observe
 
 try:
     serial = util.lazy_import("serial")
-    pyvisa = util.lazy_import("pyvisa")
     telnetlib = util.lazy_import("telnetlib")
 except RuntimeWarning:
     # not executed: help coding tools recognize lazy_imports as imports
-    import serial
-    import pyvisa
     import telnetlib
+    import serial
 
 
 class ShellBackend(Device):
@@ -909,7 +909,7 @@ class VISADevice(Device):
 
         Autodetect a list of valid `resource` strings on the host::
 
-            print(VISADevice.list_resources())
+            print(visa_list_resources())
 
         Fetch the instrument identity string::
 

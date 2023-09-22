@@ -1512,11 +1512,11 @@ class single_threaded_call_lock:
         return obj
 
     @hide_in_traceback
-    def __call__(self):
+    def __call__(self, *args, **kws):
         if self.lock.acquire(False):
             # no other threads are running self.func; invoke it in this one
             try:
-                ret = self.retval = self.func()
+                ret = self.retval = self.func(*args, **kws)
             finally:
                 self.lock.release()
         else:
@@ -1528,6 +1528,8 @@ class single_threaded_call_lock:
         return ret
 
 
+# otherwise turns out not to be thread-safe
+@single_threaded_call_lock
 def lazy_import(name):
     """postponed import of the module with the specified name.
 
@@ -1536,16 +1538,15 @@ def lazy_import(name):
     until it is used.
     """
     # see https://docs.python.org/3/library/importlib.html#implementing-lazy-imports
-
     try:
-        return sys.modules[name]
+        ret = sys.modules[name]
+        return ret
     except KeyError:
         spec = importlib.util.find_spec(name)
         if spec is None:
             raise ImportError(f'no module found named "{name}"')
         spec.loader = importlib.util.LazyLoader(spec.loader)
         module = importlib.util.module_from_spec(spec)
-        sys.modules[name] = module
         spec.loader.exec_module(module)
         return module
 

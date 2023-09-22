@@ -103,4 +103,4 @@ with sweep:
     measurements = [sweep.single(fc, duration=1.0) for fc in FREQS]
 ```
 
-They open and close connections with all child devices by use of `with` methods. The connection state of all `SweptMeasurement` children are managed together, and all are closed in the event of an exception.
+They open and close connections with all child devices by use of the `with` block (the python context manager). On entry into this block, connections to all devices (recursively) in `SweptMeasurement` open together. Similarly, after the last line in the block, or if an exception is raised, all of the devices are closed together.

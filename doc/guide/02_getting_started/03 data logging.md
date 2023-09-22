@@ -13,11 +13,11 @@ kernelspec:
 
 # Data Logging
 Several objects are included in `labbench` for logging test conditions and resulting measurement results.
-* Automatic logging of interactions with `Device` attributes that are defined with `lb.property`, `lb.value`, and `lb.datareturn`
+* Automatic logging of interactions with `Device` attributes that are defined with {py:mod}`labbench.property`, {py:mod}`labbench.value`, and {py:mod}`labbench.datareturn`
 * Manual logging through simple dictionary mapping
-The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types (`pandas.DataFrame`, `numpy.array`, long strings, files generated outside the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.
+The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types ({py:class}`pandas.DataFrame`, {py:func}`numpy.array`, long strings, files generated outside the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.
 
-Logging is provided for several root data formats through `labbench.CSVLogger`, `labbench.HDFLogger`, and `labbench.SQLiteLogger`.
+Logging is provided for specific root data formats through {py:class}`labbench.CSVLogger`, {py:class}`labbench.HDFLogger`, and {py:class}`labbench.SQLiteLogger`.
 
 ## Example: Logging with `Device` objects in scripts
 The use of logging objects requires some light configuration, and one call to add data per test row.
@@ -73,14 +73,14 @@ with sensor, analyzer, db:
 ```
 
 ### Reading and exploring the data
-The master database is now populated with the test results and subdirectories are populated with trace data. `labbench` provides the function `read` as a shortcut to load the table of measurement results into a [pandas](http://pandas.pydata.org/pandas-docs/stable/) DataFrame table:
+The master database is now populated with the test results and subdirectories are populated with trace data. The function {py:class}`labbench.read` loads a the table of measurement results into a [pandas](http://pandas.pydata.org/pandas-docs/stable/) data frame:
 
 ```{code-cell} ipython3
 root = lb.read(f'{db.path}/outputs.csv')
 root
 ```
 
-This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column 'analyzer_trace.csv'), and the host log JSON file ('host_log).
+This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column `'analyzer_trace.csv'`), and the host log JSON file ('host_log).
 
 To analyze the experimental data, one approach is to access these files directly at these files
 
@@ -89,7 +89,7 @@ rel_path = root['analyzer_trace'].values[0]
 lb.read(f"{db.path}/{rel_path}").head()
 ```
 
-For a more systematic analysis to analyzing the data, we may want to expand the root table based on the relational data files in one of these columns. A shortcut for this is provided by `labbench.read_relational`:
+For a more systematic analysis to analyzing the data, we may want to expand the root table based on the relational data files in one of these columns. A shortcut for this is provided by {py:func}`labbench.read_relational`:
 
 ```{code-cell} ipython3
 lb.read_relational(
@@ -104,7 +104,7 @@ lb.read_relational(
 )
 ```
 
-For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in `analyzer_trace.csv`.
+For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in `'analyzer_trace.csv'`.
 
 ```{code-cell} ipython3
 import labbench as lb

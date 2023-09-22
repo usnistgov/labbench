@@ -11,12 +11,12 @@ kernelspec:
   name: python3
 ---
 
-# Device Wrapping
+# Device Wrappers
 
-`Device` is the root object used to define and implement automation with a lower-level driver in labbench. Its purpose is to encapsulate python data and methods over a specific type of laboratory equipment or a software.
+{py:class}`labbench.Device` is the root object used to define and implement automation with a lower-level driver. Its purpose is to encapsulate all python data and methods for a specific laboratory device or software.
 
-This section demonstrates usage of `Device` through a lean working example. The wrapper design pattern in `labbench` starts by defining a subclass of `Device` for a specific device, often from one of the backend subclasses that has been specialized for a low-level driver module (`pyvisa``, shell command, etc.). Doing this has several advantages:
-* hooks into the data logging subsystem for automatic logging of parameters and acquired data
+This section demonstrates usage through a lean working example. The {py:class}`labbench.Device` design pattern for a specific device starts by defining a subclass, often from one of the backend subclasses that has been specialized for a low-level driver module ([`pyvisa`](http://pyvisa.readthedocs.org/), shell commands, etc.). Doing this has several advantages:
+* hooks into the [data logging subsystem](./03%20data%20logging.md) for automatic logging of parameters and acquired data
 * automatic coercion between python types and low-level/over-the-wire data types
 * constraints on instrument parameters
 * multi-threaded connection management
@@ -80,14 +80,15 @@ class PowerSensor(lb.VISADevice):
             return [float(s) for s in response.split(",")]
 ```
 
-Automation capabilities for this instrument are fully encapsulated by the `PowerSensor` object. Some key features:
-* `PowerSensor` begins with the attributes the `labbench.VISADevice` backend, which wraps the [`pyvisa`](https://pyvisa.readthedocs.io/) library.
-* The various `lb.property` definitions are shortcuts for [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments) commands on this instrument. When we use `PowerSensor` to control an instrument, getting or setting these properties will trigger SCPI query and commands based on each property's `key`. The property type (`lb.property.float`, `lb.property.str`, etc.) and remaining arguments determine the type and constraints of the python representation of that property.
-* The method functions (`fetch` and `preset`) represent examples of other types of SCPI commands that are implemented programmatically.
+Automation capabilities for this instrument are fully encapsulated by the `PowerSensor` object. Subclassing from {py:class}`labbench.VISADevice` seeds `PowerSensor` with all of its [`pyvisa`](https://pyvisa.readthedocs.io/), including connection management and access to its [pyvisa instrument object](https://pyvisa.readthedocs.io/en/latest/introduction/communication.html) as its `backend` attribute. The method functions (`fetch` and `preset`) represent examples of scripting SCPI commands through explicit code
 
-### Basic Device Wrapper Usage
-The implementation of `PowerSensor` above is enough for us to perform a simple measurement. Automation starts with making an instance and then connecting it.
-The methods and traits can be discovered through tab completion in most IDEs.
+The various {py:mod}`labbench.property` definitions are shortcuts for [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments). In usage of objects derived from {py:class}`labbench.VISABackend`, getting or setting these properties will trigger SCPI query and commands based on each property's `key`.
+* The property type ({py:class}`labbench.property.float`, {py:class}`labbench.property.str`, etc.) sets the python type to use for the parameter
+* The keyword arguments, which define the SCPI command, validation constraints and documentation metadata, would be  filled in based on the instrument programming manual.
+These properties are class _descriptors_ that exist only as definition until we _instantiate_ `PowerSensor` in order to _use_ it.
+
+## Example Usage
+The implementation of `PowerSensor` is already enough for us to perform a simple measurement. Automation starts with making an instance and then connecting it. The methods and traits can be discovered through tab completion in most IDEs.
 
 ```{code-cell} ipython3
 # use a pyvisa-sim simulated VISA instrument for the demo
@@ -121,3 +122,12 @@ with sensor:
 Creating the `sensor` instance brings the `PowerSensor` class definition to life. This means:
 * The connection remains open for VISA communication inside the `with` block
 * Attributes that were defined with `lb.property` in `PowerSensor` become interactive for instrument automation in `sensor`. This means that assigning to `sensor.frequency`, `sensor.measurement_rate` trigger VISA writes to set these parameters on the instrument. Similarly, _getting_ each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.
+
+```{admonition} Getting started with a new instrument
+Some trial and error is often needed, and it is best to iterate in small steps:
+1. Establish a connection to the instrument, referring to the documentation for the backend (for example, the [pyvisa communication documentation](https://pyvisa.readthedocs.io/en/latest/introduction/communication.html))
+2. Verify basic communication with the instrument using very simple commands
+3. Refer to the instrument programming manual to add one command at a time, testing each by verifying on the instrument itself
+```
+
+## Further Reading

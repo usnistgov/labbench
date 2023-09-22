@@ -113,6 +113,7 @@ master_doc = "index"
 
 
 # ------------------ myst_nb ---------------------------------------
+# For debug: uncomment this
 # nb_execution_mode = "off"
 
 # merge consecutive notebook logger outputs into shared text box

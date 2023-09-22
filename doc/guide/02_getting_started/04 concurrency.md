@@ -14,7 +14,7 @@ kernelspec:
 # Simplified Concurrency
 `labbench` includes simplified concurrency support for this kind of I/O-constrained operations like waiting for instruments to perform long operations. It is not suited for parallelizing CPU-intensive tasks because the operations share a single process on one CPU core, instead of multiprocessing, which may be able to spread operations across multiple CPU cores.
 
-Here are simple Device objects with `sleep` placeholders for long-running remote operations:
+Here are simple Device objects that use {py:func}`time.sleep` as a stand-in for long-running remote operations:
 
 ```{code-cell} ipython3
 import labbench as lb
@@ -45,7 +45,7 @@ class Device2(lb.VISADevice):
             return None
 ```
 
-Suppose we need to both `fetch` from `Device1` and `acquire` in `Device2`, and that the sequencing is not important. One approach is to simply call one and then the other:
+Suppose we need to both `fetch` from `Device1` and `acquire` in `Device2`, and that the time-sequencing is not important. One approach is to simply call one and then the other:
 
 ```{code-cell} ipython3
 from labbench import testing
@@ -67,7 +67,7 @@ with d1, d2:
 
 For each of the connection and fetch/acquire operations, the total duration was about 3 seconds, because the 1 and 2 second operations are executed sequentially.
 
-Suppose that we want to perform each of the open and fetch/acquire operations concurrently. Enter `lb.concurrently`:
+Suppose that we want to perform each of the open and fetch/acquire operations concurrently. Enter {py:func}`labbench.concurrently`:
 
 ```{code-cell} ipython3
 from labbench import testing
@@ -88,7 +88,7 @@ with lb.concurrently(d1, d2):
 print('Return value: ', ret)
 ```
 
-Each call to `lb.concurrently` executes each callable in separate threads, and returns after the longest-running call.
+Each call to {py:func}`labbench.concurrently` executes each callable in separate threads, and returns after the longest-running call.
 * As a result, in this example, for each of the `open` and `fetch`/`acquire`, the total time is reduced from 3 s to 2 s.
 * The return values of threaded calls are packaged into a dictionary for each call that does not return `None`.
 The syntax is a little more involved when you want to pass in arguments to multiple callables. For information on doing this, see the [detailed instructions](../03_detailed_usage/05_concurrency).

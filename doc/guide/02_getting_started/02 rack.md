@@ -11,9 +11,9 @@ kernelspec:
   name: python3
 ---
 
-# Testbed Organization
+# Organizing Experimental Procedures
 
-To organize automation across multiple `Device` wrappers, `labbench` provides `Rack` objects. These act as a container for aspects of automation needed to perform into a resuable automation task, including `Device` objects, other `Rack` objects, and automation functions. On exception, they ensure that all `Device` connections are closed.
+To organize procedures that use more than one device wrapper, use {py:class}`labbench.Rack` objects. These act as containers for aspects of automation that need to access a particular set of `Device` objects, other `Rack` objects, and automation functions that need to be applied to them. When they are open in a `with` block, they ensure that all `Device` connections are closed together if there is an exception.
 
 ## Example: 3 Devices
 Suppose we need to take a measurement with automation of 2 instruments:
@@ -103,4 +103,4 @@ with sweep:
     measurements = [sweep.single(fc, duration=1.0) for fc in FREQS]
 ```
 
-They open and close connections with all `Device` children by use of `with` methods. The connection state of all `SweptMeasurement` children are managed together, and all are closed in the event of an exception.
+They open and close connections with all child devices by use of `with` methods. The connection state of all `SweptMeasurement` children are managed together, and all are closed in the event of an exception.

@@ -11,7 +11,7 @@ kernelspec:
   name: python3
 ---
 
-# Organizing Experimental Procedures
+# Procedural Snippets
 
 To organize procedures that use more than one device wrapper, use {py:class}`labbench.Rack` objects. These act as containers for aspects of automation that need to access a particular set of `Device` objects, other `Rack` objects, and automation functions that need to be applied to them. When they are open in a `with` block, they ensure that all `Device` connections are closed together if there is an exception.
 

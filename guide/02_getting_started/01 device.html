@@ -8,12 +8,12 @@
     <title>Device Wrappers &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
     <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=dfcfee03"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Organizing Experimental Procedures" href="02%20rack.html" />
+    <link rel="next" title="Procedural Snippets" href="02%20rack.html" />
     <link rel="prev" title="Orientation" href="00%20overview.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -64,7 +64,7 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a></li>
         <li class="right" >
-          <a href="02%20rack.html" title="Organizing Experimental Procedures"
+          <a href="02%20rack.html" title="Procedural Snippets"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="00%20overview.html" title="Orientation"
@@ -195,26 +195,26 @@ These properties are class <em>descriptors</em> that exist only as definition un
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.270</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Power Sensor model #1234, Serial 63472&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.272</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.273</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.273</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SYST:PRES&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.273</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 1000000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.274</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 1000000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.274</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:MRAT FAST&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.275</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;measurement_rate&quot; → &#39;FAST&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.275</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG:COUN 200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.276</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.276</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SWE:APER 2e-05&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.277</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;sweep_aperture&quot; → 2e-05 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.277</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;INIT:CONT ON&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.278</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;initiate_continuous&quot; → True</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.279</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.280</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.281</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.281</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.282</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:46:02.282</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.216</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Power Sensor model #1234, Serial 63472&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.218</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.218</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.219</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SYST:PRES&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.219</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 1000000000.0&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.220</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 1000000000.0 (Hz)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.220</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:MRAT FAST&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.221</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;measurement_rate&quot; → &#39;FAST&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.221</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG:COUN 200&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.221</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;trigger_count&quot; → 200 (samples)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.222</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SWE:APER 2e-05&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.222</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;sweep_aperture&quot; → 2e-05 (s)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.223</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;INIT:CONT ON&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.223</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;initiate_continuous&quot; → True</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.223</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.225</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.225</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.226</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.226</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:45.227</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
 </pre></div>
 </div>
 </div>
@@ -266,7 +266,7 @@ These properties are class <em>descriptors</em> that exist only as definition un
   <div>
     <h4>Next topic</h4>
     <p class="topless"><a href="02%20rack.html"
-                          title="next chapter">Organizing Experimental Procedures</a></p>
+                          title="next chapter">Procedural Snippets</a></p>
   </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
@@ -296,7 +296,7 @@ These properties are class <em>descriptors</em> that exist only as definition un
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a></li>
         <li class="right" >
-          <a href="02%20rack.html" title="Organizing Experimental Procedures"
+          <a href="02%20rack.html" title="Procedural Snippets"
              >next</a> |</li>
         <li class="right" >
           <a href="00%20overview.html" title="Orientation"

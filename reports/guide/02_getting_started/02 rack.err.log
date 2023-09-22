@@ -32,7 +32,7 @@ with sweep:
 ------------------
 
 ----- stderr -----
-[1;30m DEBUG [0m [32m2023-09-22 10:53:56.484[0m • [34mSweptMeasurement(...):[0m [32mcontext order: (generator, measurement.spectrum_analyzer, measurement.power_sensor)->(measurement,<__main__.SweptMeasurement object at 0x0000026E29441090>)[0m
+[1;30m DEBUG [0m [32m2023-09-22 13:36:47.381[0m • [34mSweptMeasurement(...):[0m [32mcontext order: (generator, measurement.spectrum_analyzer, measurement.power_sensor)->(measurement,<__main__.SweptMeasurement object at 0x0000024A66D31330>)[0m
 ----- stderr -----
 Traceback (most recent call last):
   File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 809, in enter
@@ -70,11 +70,11 @@ Traceback (most recent call last):
   File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1222, in _get_rm
     rm = pyvisa.ResourceManager(backend_name)
 AttributeError: PowerSensor('USB::0x1111::0x2222::0x1234::INSTR'): module 'pyvisa' has no attribute 'ResourceManager'
-[1;30m DEBUG [0m [32m2023-09-22 10:53:56.564[0m • [34mSignalGenerator(''):[0m [32mresource identified with identity pattern match "Signal generator model #1234, serial number 1837518935"[0m
+[1;30m DEBUG [0m [32m2023-09-22 13:36:47.464[0m • [34mSignalGenerator(''):[0m [32mresource identified with identity pattern match "Signal generator model #1234, serial number 1837518935"[0m
 ----- stderr -----
-[1;30m DEBUG [0m [32m2023-09-22 10:53:56.566[0m • [34mSignalGenerator(''):[0m [32mtrait set: "resource" → 'TCPIP0::localhost::inst0::INSTR'[0m
+[1;30m DEBUG [0m [32m2023-09-22 13:36:47.467[0m • [34mSignalGenerator(''):[0m [32mtrait set: "resource" → 'TCPIP0::localhost::inst0::INSTR'[0m
 ----- stderr -----
-[1;30m DEBUG [0m [32m2023-09-22 10:53:56.567[0m • [34mSignalGenerator(''):[0m [32mopened[0m
+[1;30m DEBUG [0m [32m2023-09-22 13:36:47.467[0m • [34mSignalGenerator(''):[0m [32mopened[0m
 ----- stderr -----
 Traceback (most recent call last):
   File "C:\Users\dkuester\Documents\src\labbench\labbench\util.py", line 809, in enter
@@ -112,11 +112,11 @@ Traceback (most recent call last):
   File "C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py", line 1222, in _get_rm
     rm = pyvisa.ResourceManager(backend_name)
 AttributeError: PowerSensor('USB::0x1111::0x2222::0x1234::INSTR'): module 'pyvisa' has no attribute 'ResourceManager'
-[1;30m DEBUG [0m [32m2023-09-22 10:53:56.569[0m • [34mSignalGenerator(''):[0m [32mclosed[0m
+[1;30m DEBUG [0m [32m2023-09-22 13:36:47.469[0m • [34mSignalGenerator(''):[0m [32mclosed[0m
 ----- stderr -----
-[1;30m DEBUG [0m [32m2023-09-22 10:53:56.569[0m • [34mSignalGenerator(''):[0m [32mwrite '*RST'[0m
+[1;30m DEBUG [0m [32m2023-09-22 13:36:47.470[0m • [34mSignalGenerator(''):[0m [32mwrite '*RST'[0m
 ----- stderr -----
-[1;30mWARNING[0m [32m2023-09-22 10:53:56.570[0m • [34mlabbench:[0m [33menter_MultipleContexts_0x26e29441390.__exit__ raised exceptions raised in 2 contexts are printed inline in cleanup attempt after another exception in enter_MultipleContexts_0x26e29441390.__enter__[0m
+[1;30mWARNING[0m [32m2023-09-22 13:36:47.470[0m • [34mlabbench:[0m [33menter_MultipleContexts_0x24a66d31390.__exit__ raised exceptions raised in 2 contexts are printed inline in cleanup attempt after another exception in enter_MultipleContexts_0x24a66d31390.__enter__[0m
 ------------------
 
 [1;31m---------------------------------------------------------------------------[0m

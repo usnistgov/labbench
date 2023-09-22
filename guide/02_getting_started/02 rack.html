@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Organizing Experimental Procedures &#8212; labbench</title>
+    <title>Procedural Snippets &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
     <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=dfcfee03"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
@@ -71,7 +71,7 @@
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../02_getting_started.html" accesskey="U">Getting Started</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Organizing Experimental Procedures</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Procedural Snippets</a></li> 
       </ul>
     </div>  
 
@@ -80,9 +80,9 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="organizing-experimental-procedures">
-<h1>Organizing Experimental Procedures<a class="headerlink" href="#organizing-experimental-procedures" title="Permalink to this heading">¶</a></h1>
-<p>To organize procedures that use more than one device wrapper, use <a class="reference internal" href="../../labbench.html#labbench.Rack" title="labbench.Rack"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Rack</span></code></a> objects. These act as containers for aspects of automation that need to access a particular set of <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects, other <code class="docutils literal notranslate"><span class="pre">Rack</span></code> objects, and automation functions that need to be applied to them. When they are open in a <code class="docutils literal notranslate"><span class="pre">with</span></code> block, they ensure that all <code class="docutils literal notranslate"><span class="pre">Device</span></code> connections are closed together if there is an exception.</p>
+  <section id="procedural-snippets">
+<h1>Procedural Snippets<a class="headerlink" href="#procedural-snippets" title="Permalink to this heading">¶</a></h1>
+<p>To organize procedures that use more than one device wrapper, implement <a class="reference internal" href="../../labbench.html#labbench.Rack" title="labbench.Rack"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Rack</span></code></a> classes. These act as containers for aspects of automation that need to access a particular set of device objects, or even other rack objects, together with associated automation routines. When they are open in a <code class="docutils literal notranslate"><span class="pre">with</span></code> block, they ensure that all <code class="docutils literal notranslate"><span class="pre">Device</span></code> connections are closed together if there is an exception.</p>
 <section id="example-3-devices">
 <h2>Example: 3 Devices<a class="headerlink" href="#example-3-devices" title="Permalink to this heading">¶</a></h2>
 <p>Suppose we need to take a measurement with automation of 2 instruments:</p>
@@ -180,7 +180,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.484</span> • <span class=" -Color -Color-Blue">SweptMeasurement(...):</span> <span class=" -Color -Color-Green">context order: (generator, measurement.spectrum_analyzer, measurement.power_sensor)-&gt;(measurement,&lt;__main__.SweptMeasurement object at 0x0000026E29441090&gt;)</span>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:47.381</span> • <span class=" -Color -Color-Blue">SweptMeasurement(...):</span> <span class=" -Color -Color-Green">context order: (generator, measurement.spectrum_analyzer, measurement.power_sensor)-&gt;(measurement,&lt;__main__.SweptMeasurement object at 0x0000024A66D31330&gt;)</span>
 Traceback (most recent call last):
   File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 809, in enter
     context.__enter__()  # start of a context entry thread
@@ -217,9 +217,9 @@ Traceback (most recent call last):
   File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1222, in _get_rm
     rm = pyvisa.ResourceManager(backend_name)
 AttributeError: PowerSensor(&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;): module &#39;pyvisa&#39; has no attribute &#39;ResourceManager&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.564</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Signal generator model #1234, serial number 1837518935&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.566</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;TCPIP0::localhost::inst0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.567</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:47.464</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Signal generator model #1234, serial number 1837518935&quot;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:47.467</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;TCPIP0::localhost::inst0::INSTR&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:47.467</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
 Traceback (most recent call last):
   File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\util.py&quot;, line 809, in enter
     context.__enter__()  # start of a context entry thread
@@ -256,9 +256,9 @@ Traceback (most recent call last):
   File &quot;C:\Users\dkuester\Documents\src\labbench\labbench\_backends.py&quot;, line 1222, in _get_rm
     rm = pyvisa.ResourceManager(backend_name)
 AttributeError: PowerSensor(&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;): module &#39;pyvisa&#39; has no attribute &#39;ResourceManager&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.569</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.569</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;*RST&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black">WARNING</span> <span class=" -Color -Color-Green">2023-09-22 10:53:56.570</span> • <span class=" -Color -Color-Blue">labbench:</span> <span class=" -Color -Color-Yellow">enter_MultipleContexts_0x26e29441390.__exit__ raised exceptions raised in 2 contexts are printed inline in cleanup attempt after another exception in enter_MultipleContexts_0x26e29441390.__enter__</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:47.469</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 13:36:47.470</span> • <span class=" -Color -Color-Blue">SignalGenerator(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;*RST&#39;</span>
+<span class=" -Color -Color-Bold -Color-Bold-Black">WARNING</span> <span class=" -Color -Color-Green">2023-09-22 13:36:47.470</span> • <span class=" -Color -Color-Blue">labbench:</span> <span class=" -Color -Color-Yellow">enter_MultipleContexts_0x24a66d31390.__exit__ raised exceptions raised in 2 contexts are printed inline in cleanup attempt after another exception in enter_MultipleContexts_0x24a66d31390.__enter__</span>
 </pre></div>
 </div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
@@ -356,7 +356,7 @@ AttributeError: PowerSensor(&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;): modul
 </div>
 </div>
 </div>
-<p>They open and close connections with all child devices by use of <code class="docutils literal notranslate"><span class="pre">with</span></code> methods. The connection state of all <code class="docutils literal notranslate"><span class="pre">SweptMeasurement</span></code> children are managed together, and all are closed in the event of an exception.</p>
+<p>They open and close connections with all child devices by use of the <code class="docutils literal notranslate"><span class="pre">with</span></code> block (the python context manager). On entry into this block, connections to all devices (recursively) in <code class="docutils literal notranslate"><span class="pre">SweptMeasurement</span></code> open together. Similarly, after the last line in the block, or if an exception is raised, all of the devices are closed together.</p>
 </section>
 </section>
 
@@ -370,7 +370,7 @@ AttributeError: PowerSensor(&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;): modul
   <div>
     <h3><a href="../../index.html">Table of Contents</a></h3>
     <ul>
-<li><a class="reference internal" href="#">Organizing Experimental Procedures</a><ul>
+<li><a class="reference internal" href="#">Procedural Snippets</a><ul>
 <li><a class="reference internal" href="#example-3-devices">Example: 3 Devices</a></li>
 <li><a class="reference internal" href="#usage-in-test-scripts">Usage in test scripts</a></li>
 </ul>
@@ -423,7 +423,7 @@ AttributeError: PowerSensor(&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;): modul
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../02_getting_started.html" >Getting Started</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Organizing Experimental Procedures</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Procedural Snippets</a></li> 
       </ul>
     </div>
 <hr \>

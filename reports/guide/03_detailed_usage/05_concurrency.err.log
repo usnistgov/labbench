@@ -26,21 +26,21 @@ start 4
 start 5
 ----- stderr -----
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_23000\3738405091.py", line 24, in do_something_4
+  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_9724\3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 ----- stderr -----
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_23000\3738405091.py", line 31, in do_something_5
+  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_9724\3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ----- stderr -----
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_23000\3738405091.py", line 24, in do_something_4
+  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_9724\3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_23000\3738405091.py", line 31, in do_something_5
+  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_9724\3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ------------------

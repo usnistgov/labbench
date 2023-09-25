@@ -12,8 +12,8 @@ Features include:
 * Expedited development of python device wrappers, including specialized backends for [pythonnet](https://github.com/pythonnet/pythonnet/wiki), [pyvisa](https://pyvisa.readthedocs.io/), [pyserial](https://pyserial.readthedocs.io/en/latest/), [subprocess](https://docs.python.org/3/library/subprocess.html), [telnetlib](https://docs.python.org/3/library/telnetlib.html)
 * Automated test logging into CSV, HDF, or sqlite based on introspection of wrapper objects
 * Simplified multi-threaded concurrency for lab testing use cases
-* Composable and nestable container objects for device wrappers
-* Support for testing driven by tables of test conditions
+* Composable and nestable container objects for snippets of test procedures
+* Support for running experiments based on tables of test conditions
 
 The source code was developed at NIST to support complex measurement efforts. Examples of these projects include:
   * [NIST TN 1952: LTE Impacts on GPS](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1952.pdf) and [data](https://data.nist.gov/od/id/mds2-2186)

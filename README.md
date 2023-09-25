@@ -21,6 +21,7 @@ The source code was developed at NIST to support complex measurement efforts. Ex
   * [NIST TN 2140: AWS-3 LTE Impacts on Aeronautical Mobile Telemetry](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2140.pdf) and [data](https://data.nist.gov/od/id/mds2-2279)
   * [NIST TN 2147: Characterizing LTE User Equipment Emissions Under Closed-Loop Power Control](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2147.pdf)
   * [Blind Measurement of Receiver System Noise](https://www.nist.gov/publications/blind-measurement-receiver-system-noise) and [data](https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121)
+  * Automated Testbed for Interference Testing in Communications Systems, [automation source code](ATIC: Automated Testbed for Interference Testing in Communications Systems), and data
 
 ## Status
 * The project is under ongoing development. API changes have slowed, but deprecation warnings are not yet being provided.

@@ -16,12 +16,12 @@ Features include:
 * Support for running experiments based on tables of test conditions
 
 The source code was developed at NIST to support complex measurement efforts. Examples of these projects include:
-  * [NIST TN 1952: LTE Impacts on GPS](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1952.pdf) and [data](https://data.nist.gov/od/id/mds2-2186)
+  * [NIST TN 1952: LTE Impacts on GPS](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1952.pdf) ([data](https://data.nist.gov/od/id/mds2-2186))
   * [NIST TN 2069: Characterizing LTE User Equipment Emissions: Factor Screening](https://doi.org/10.6028/NIST.TN.2069)
-  * [NIST TN 2140: AWS-3 LTE Impacts on Aeronautical Mobile Telemetry](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2140.pdf) and [data](https://data.nist.gov/od/id/mds2-2279)
+  * [NIST TN 2140: AWS-3 LTE Impacts on Aeronautical Mobile Telemetry](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2140.pdf) ([data](https://data.nist.gov/od/id/mds2-2279))
   * [NIST TN 2147: Characterizing LTE User Equipment Emissions Under Closed-Loop Power Control](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2147.pdf)
-  * [Blind Measurement of Receiver System Noise](https://www.nist.gov/publications/blind-measurement-receiver-system-noise) and [data](https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121)
-  * Automated Testbed for Interference Testing in Communications Systems, [automation source code](https://github.com/usnistgov/atic/), and data
+  * [Blind Measurement of Receiver System Noise](https://www.nist.gov/publications/blind-measurement-receiver-system-noise) ([data](https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121))
+  * Automated Testbed for Interference Testing in Communications Systems ([code](https://github.com/usnistgov/atic/), data)
 
 ## Status
 * The project is under ongoing development. API changes have slowed, but deprecation warnings are not yet being provided.

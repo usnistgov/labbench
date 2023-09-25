@@ -15,7 +15,7 @@ Features include:
 * Composable and nestable container objects for device wrappers
 * Support for testing driven by tables of test conditions
 
-Some complex measurement efforts that used labbench:
+The source code was developed at NIST to support complex measurement efforts. Examples of these projects include:
   * [NIST TN 1952: LTE Impacts on GPS](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1952.pdf) and [data](https://data.nist.gov/od/id/mds2-2186)
   * [NIST TN 2069: Characterizing LTE User Equipment Emissions: Factor Screening](https://doi.org/10.6028/NIST.TN.2069)
   * [NIST TN 2140: AWS-3 LTE Impacts on Aeronautical Mobile Telemetry](https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2140.pdf) and [data](https://data.nist.gov/od/id/mds2-2279)
@@ -27,20 +27,29 @@ Some complex measurement efforts that used labbench:
 * Parts of the documentation are in need of updates, and others have not yet been written
 
 ## Installation
-1. Ensure python 3.8 or newer is installed with pip for package management
-2. Run the following to install the labbench module:        
-    ```sh
-    pip install labbench
-    ```
+1. Manual prerequisites:
+    * python (supported versions 3.8–3.11)
+    * [`pip`](https://pypi.org/project/pip/) for package management
+2. Recommended module installation:
+    * For python distributions based on anaconda:
+      ```sh
+      pip --upgrade-strategy only-if-needed install labbench
+      ```
+    * For other python installations:
+      ```sh
+      pip install labbench
+      ```
+
 
 ## Resources
 
+* [Source code](http://github.com/usnistgov/labbench)
 * [Documentation](http://pages.nist.gov/labbench)
-* [PyPI](https://pypi.org/project/labbench/) for installation
-* [ssmdevices](https://github.com/usnistgov/ssmdevices), a collection of device wrappers implemented with labbench
+* [PyPI](https://pypi.org/project/labbench/) module page
+* [ssmdevices](https://github.com/usnistgov/ssmdevices): a collection of device wrappers implemented with labbench
 
 ## Contributing
-* [Pull requests](https://github.com/usnistgov/labbench/pulls) are welcome!
+* [Pull requests](https://github.com/usnistgov/labbench/pulls) and [bug reports](https://github.com/usnistgov/labbench/issues) are welcome!
 * [Inline documentation style convention](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings)
 
 ## Contributors

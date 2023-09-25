@@ -28,7 +28,7 @@ The source code was developed at NIST to support complex measurement efforts. Ex
 
 ## Installation
 1. Manual prerequisites:
-    * python (supported versions 3.8–3.11)
+    * python (supported versions are 3.8–3.11)
     * [`pip`](https://pypi.org/project/pip/) for package management
 2. Recommended module installation:
     * For python distributions based on anaconda:
@@ -39,8 +39,6 @@ The source code was developed at NIST to support complex measurement efforts. Ex
       ```sh
       pip install labbench
       ```
-
-
 ## Resources
 
 * [Source code](http://github.com/usnistgov/labbench)

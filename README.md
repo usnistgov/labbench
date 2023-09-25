@@ -24,7 +24,9 @@ The source code was developed at NIST to support complex measurement efforts. Ex
   * Automated Testbed for Interference Testing in Communications Systems ([code](https://github.com/usnistgov/atic/), data)
 
 ## Status
-* The project is under ongoing development. API changes have slowed, but deprecation warnings are not yet being provided.
+The project is under ongoing development
+* API changes have slowed, but deprecation warnings are not yet being provided
+    * Suggest pinning labbench dependency to an exact labbench version to avoid API breaks
 * Parts of the documentation are in need of updates, and others have not yet been written
 
 ## Installation

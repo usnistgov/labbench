@@ -1,6 +1,6 @@
 [project]
 name = "labbench"
-version = "0.30.1"
+version = "0.30.2"
 
 description = """\
     The `labbench` module provides API tools to support python scripting for laboratory automation.\
@@ -39,6 +39,7 @@ dependencies = [
     "comtypes; sys_platform == 'win32'",
     "numpy>=1.19",
     "h5py>=3",
+    "pip"
 ]
 
 [project.optional-dependencies]

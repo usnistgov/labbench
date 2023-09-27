@@ -1,6 +1,6 @@
 [project]
 name = "labbench"
-version = "0.30.3"
+version = "0.31"
 
 description = """\
     The `labbench` module provides API tools to support python scripting for laboratory automation.\
@@ -31,7 +31,7 @@ dependencies = [
     "pyserial>=3.0",
     "pyarrow>=11.0.0",
     "pyvisa>=1.8",
-    "pyvisa-py[usb,gpib-ctypes,serial,psutil,hislip-discovery,vicp]>=0.6",
+    "pyvisa-py[usb,gpib-ctypes,serial,psutil,vicp]>=0.6",
     "ruamel-yaml>=0.17.21",
     "sqlalchemy>=2.0.1",
     "validators>=0.20.0",

@@ -901,7 +901,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-@property_.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}")
+@property_.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
 

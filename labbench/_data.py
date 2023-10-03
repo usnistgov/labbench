@@ -726,7 +726,7 @@ class Aggregator(util.Ownable):
             self.metadata[self.key(name, attr)] = msg["new"]
         elif self.is_always_trait(msg["owner"], msg["name"]):
             self.incoming_trait_always[self.key(name, attr)] = msg["new"]
-        else:
+        elif not name.startswith('_'):
             self.incoming_trait_auto[self.key(name, attr)] = msg["new"]
 
     def update_name_map(self, ownables, owner_prefix=None):

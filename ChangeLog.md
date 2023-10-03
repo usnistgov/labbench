@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Device properties ("private properties") with leading underscore names are no longer automatically
   included in output tables. They can still be logged by manually specifying them for logging, for example
   `.observe(always=["_property_name"])`.
+- `VISADevice.query` now supports a `remap` argument to apply the return value remap as specified by `property.visa_keying`
 
 ## [0.31 - 2023-09-27]
 ### Changed

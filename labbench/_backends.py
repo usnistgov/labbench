@@ -1086,7 +1086,7 @@ class VISADevice(Device):
         self._logger.debug(f"write {msg_out}")
         self.backend.write(msg)
 
-    def query(self, msg: str, timeout=None) -> str:
+    def query(self, msg: str, timeout=None, remap: bool = False) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1110,7 +1110,10 @@ class VISADevice(Device):
         msg_out = repr(ret) if len(ret) < 80 else f"({len(ret)} bytes)"
         self._logger.debug(f"    → {msg_out}")
 
-        return ret
+        if remap:
+            return self._property_keying.message_map[ret]
+        else:
+            return ret
 
     def query_ascii_values(
         self, msg: str, type_, separator=",", container=list, delay=None, timeout=None

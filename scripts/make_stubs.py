@@ -5,8 +5,9 @@ sys.path.insert(0, ".")
 import importlib
 from pathlib import Path
 
-from labbench import Device, Rack
+from labbench import Device, Rack, util
 from labbench._traits import Trait, Undefined
+util._force_full_traceback(True)
 
 VALID_PARENTS = Device, Rack, Trait
 

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   included in output tables. They can still be logged by manually specifying them for logging, for example
   `.observe(always=["_property_name"])`.
 - `VISADevice.query` now supports a `remap` argument to apply the return value remap as specified by `property.visa_keying`
+- Add a boolean `recheck` argument for property declarations that triggers an immediate `get` after each `set`.
+  This accommodates instruments which perform adjustments of values on the fly.
+- Fixes for uncommon multithreading import bugs related to lazy loading
 
 ## [0.31 - 2023-09-27]
 ### Changed

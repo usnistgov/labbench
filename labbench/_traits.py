@@ -29,26 +29,33 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-from . import util
-
-import typing
-from warnings import warn
-from functools import wraps
-import validators as _val
-from contextlib import contextmanager
+from __future__ import annotations
 import builtins
-
-from inspect import isclass
 import inspect
 import numbers
+import typing
+from contextlib import contextmanager
+from functools import wraps
+from inspect import isclass
 
 # for common types
 from pathlib import Path
+from warnings import warn
+
+import validators as _val
+
+from . import util
+
+try:
+    pd = util.lazy_import("pandas")
+except RuntimeError:
+    # not executed: help coding tools recognize lazy_imports as imports
+    import pandas as pd
 
 Undefined = inspect.Parameter.empty
 
 T = typing.TypeVar("T")
-from typing import Union, Any
+from typing import Any, Union, Callable
 
 
 class ThisType(typing.Generic[T]):
@@ -95,14 +102,20 @@ class Trait:
     Arguments:
         default: the default value of the trait (value traits only)
         key: specify automatic implementation with the Device (backend-specific)
+
         help: the Trait docstring
         label: a label for the quantity, such as units
+
+    Arguments:
         sets: True if the trait supports writes
         gets: True if the trait supports reads
+
         cache: if True, interact with the device only once, then return copies (state traits only)
         only: value allowlist; others raise ValueError
+
+    Arguments:
         allow_none: permit None values in addition to the specified type
-        recheck: when True, triggers a get immediately after each set
+
     """
 
     ROLE_VALUE = "value"
@@ -125,14 +138,14 @@ class Trait:
     cache: bool = False
     only: tuple = tuple()
     allow_none: bool = False
-    recheck: bool = False
 
     # If the trait is used for a state, it can operate as a decorator to
     # implement communication with a device
     _setter = None
     _getter = None
     _returner = None
-    _decorated_funcs = []
+    _decorated_funcs: list = []
+    _keywords: dict = {}
 
     # __decorator_action__ = None
 
@@ -317,7 +330,7 @@ class Trait:
         pass
 
     @util.hide_in_traceback
-    def __set__(self, owner, value):
+    def __set__(self, owner: HasTraits, value):
         # First, validate the pythonic types
         if not self.sets:
             raise AttributeError(f"{self.__str__()} cannot be set")
@@ -356,7 +369,7 @@ class Trait:
 
             elif self.key is not None:
                 # otherwise, use the owner's set_key
-                owner._property_keying.set(owner, self.key, value, self)
+                owner._keying.set(owner, self.key, value, self)
 
             else:
                 objname = owner.__class__.__qualname__ + "." + self.name
@@ -369,10 +382,6 @@ class Trait:
             raise AttributeError("data return traits cannot be set")
 
         owner.__notify__(self.name, value, "set", cache=self.cache)
-
-        if self.recheck:
-            self.__get__(owner)
-
 
     @util.hide_in_traceback
     def __get__(self, owner, owner_cls=None):
@@ -431,7 +440,7 @@ class Trait:
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
-            value = owner._property_keying.get(owner, self.key, self)
+            value = owner._keying.get(owner, self.key, self)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -518,10 +527,8 @@ class Trait:
 
     # Decorator methods
     @util.hide_in_traceback
-    def __call__(self, func):
-        """use the Trait as a decorator, which ties this Trait instance to evaluate a property or method in the
-        owning class. you can specify
-        """
+    def __call__(self, /, func=Undefined, **kwargs):
+        """decorates a class attribute with the Trait"""
         # only decorate functions.
         if not callable(func):
             raise Exception(
@@ -534,6 +541,8 @@ class Trait:
         # overloading function
         if getattr(self, "name", None) is None:
             self.name = func.__name__
+        else:
+            self._keywords = kwargs
         if len(HasTraitsMeta.__cls_namespace__) > 0:
             HasTraitsMeta.__cls_namespace__[-1][func.__name__] = self
 
@@ -705,7 +714,7 @@ class PropertyKeyingBase:
 
     def __call__(self, owner_cls):
         # do the decorating
-        owner_cls._property_keying = self
+        owner_cls._keying = self
         return owner_cls
 
     def get(self, trait_owner, key, trait=None):
@@ -722,7 +731,7 @@ class PropertyKeyingBase:
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
-    _property_keying = PropertyKeyingBase()
+    _keying = PropertyKeyingBase()
 
     def __init__(self, **values):
         # who is informed on new get or set values
@@ -834,8 +843,8 @@ def adjusted(
     same class definition.
 
     Args:
-        trait (Union[Trait, str]): trait or name of trait to adjust in the wrapped class
-        default (Any, optional): new default value (for value traits only)
+        trait: trait or name of trait to adjust in the wrapped class
+        default: new default value (for value traits only)
 
     Raises:
         ValueError: invalid type of Trait argument, or when d
@@ -1097,8 +1106,6 @@ class RemappingCorrectionMixIn(DependentTrait):
         if owner is None:
             raise ValueError("must pass owner to set_mapping")
 
-        import pandas as pd
-
         if isinstance(series_or_uncal, pd.Series):
             by_uncal = pd.Series(series_or_uncal).copy()
         elif cal is not None:
@@ -1236,7 +1243,6 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _load_calibration_table(self, owner, path):
         """stash the calibration table from disk"""
-        import pandas as pd
 
         def read(path):
             # quick read

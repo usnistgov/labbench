@@ -1554,10 +1554,9 @@ def lazy_import(name):
         module.__getattribute__ = single_threaded_call_lock(module.__getattribute__)
         return module
     except ValueError as ex:
-        if 'substituted' in str(ex):
+        if "substituted" in str(ex):
             return sys.modules[name]
         else:
-            print('ack!')
             raise
 
 

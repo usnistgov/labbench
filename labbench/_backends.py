@@ -587,8 +587,12 @@ class LabviewSocketInterface(Device):
     )
     tx_port = attr.value.int(61551, help="TX port to send to the LabView VI")
     rx_port = attr.value.int(61552, help="TX port to send to the LabView VI")
-    delay = attr.value.float(1, help="time to wait after each property trait write or query")
-    timeout = attr.value.float(2, help="maximum wait replies before raising TimeoutError")
+    delay = attr.value.float(
+        1, help="time to wait after each property trait write or query"
+    )
+    timeout = attr.value.float(
+        2, help="maximum wait replies before raising TimeoutError"
+    )
     rx_buffer_size = attr.value.int(1024, min=1)
 
     def open(self):
@@ -673,8 +677,12 @@ class SerialDevice(Device):
         1, min=1, max=2, step=0.5, help="Number of stop bits, one of `[1, 1.5, or 2.]`."
     )
     xonxoff = attr.value.bool(False, help="`True` to enable software flow control.")
-    rtscts = attr.value.bool(False, help="`True` to enable hardware (RTS/CTS) flow control.")
-    dsrdtr = attr.value.bool(False, help="`True` to enable hardware (DSR/DTR) flow control.")
+    rtscts = attr.value.bool(
+        False, help="`True` to enable hardware (RTS/CTS) flow control."
+    )
+    dsrdtr = attr.value.bool(
+        False, help="`True` to enable hardware (DSR/DTR) flow control."
+    )
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):

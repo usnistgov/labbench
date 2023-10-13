@@ -24,66 +24,66 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _api
+from . import _bases
 
 
-class bool(_api.Bool):
+class bool(_bases.Bool):
     pass
 
 
-class float(_api.Float):
+class float(_bases.Float):
     pass
 
 
-class int(_api.Int):
+class int(_bases.Int):
     pass
 
 
-class complex(_api.Complex):
+class complex(_bases.Complex):
     pass
 
 
-class str(_api.Unicode):
+class str(_bases.Unicode):
     pass
 
 
-class bytes(_api.Bytes):
+class bytes(_bases.Bytes):
     pass
 
 
-class list(_api.List):
+class list(_bases.List):
     pass
 
 
-class tuple(_api.Tuple):
+class tuple(_bases.Tuple):
     pass
 
 
-class dict(_api.Dict):
+class dict(_bases.Dict):
     pass
 
 
-class Path(_api.Path):
+class Path(_bases.Path):
     pass
 
 
-# class DataFrame(_api.PandasDataFrame):
+# class DataFrame(_bases.PandasDataFrame):
 #     pass
 
 
-# class Series(_api.PandasSeries):
+# class Series(_bases.PandasSeries):
 #     pass
 
 
-# class ndarray(_api.NumpyArray):
+# class ndarray(_bases.NumpyArray):
 #     pass
 
 
-class NetworkAddress(_api.NetworkAddress):
+class NetworkAddress(_bases.NetworkAddress):
     pass
 
 
 # mutate these traits into the right role
-_api.subclass_namespace_api(
-    locals(), role=_api.Trait.ROLE_DATARETURN, omit_trait_attrs=["key", "default"]
+_bases.subclass_namespace_bases(
+    locals(), role=_bases.Trait.ROLE_DATARETURN, omit_trait_attrs=["key", "default"]
 )

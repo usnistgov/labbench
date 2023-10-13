@@ -1,7 +1,7 @@
-from . import _api
+from . import _bases
 from _typeshed import Incomplete
 
-class message_keying(_api.PropertyKeyingBase):
+class message_keying(_bases.PropertyKeyingBase):
     query_fmt: Incomplete
     write_fmt: Incomplete
     write_func: Incomplete
@@ -18,11 +18,11 @@ class message_keying(_api.PropertyKeyingBase):
         remap=...,
     ) -> None: ...
     def get(
-        self, device: _api.HasTraits, scpi_key: str, trait: Incomplete | None = ...
+        self, device: _bases.HasTraits, scpi_key: str, trait: Incomplete | None = ...
     ): ...
     def set(
         self,
-        device: _api.HasTraits,
+        device: _bases.HasTraits,
         scpi_key: str,
         value,
         trait: Incomplete | None = ...,
@@ -38,7 +38,7 @@ class visa_keying(message_keying):
         remap=...,
     ) -> None: ...
 
-class bool(_api.Bool):
+class bool(_bases.Bool):
     def __init__(
         key=None,
         help: str = "",
@@ -51,7 +51,7 @@ class bool(_api.Bool):
     ): ...
     ...
 
-class float(_api.Float):
+class float(_bases.Float):
     def __init__(
         key=None,
         help: str = "",
@@ -70,7 +70,7 @@ class float(_api.Float):
     ): ...
     ...
 
-class int(_api.Int):
+class int(_bases.Int):
     def __init__(
         key=None,
         help: str = "",
@@ -88,7 +88,7 @@ class int(_api.Int):
     ): ...
     ...
 
-class complex(_api.Complex):
+class complex(_bases.Complex):
     def __init__(
         key=None,
         help: str = "",
@@ -101,21 +101,7 @@ class complex(_api.Complex):
     ): ...
     ...
 
-class str(_api.Unicode):
-    def __init__(
-        key=None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-        case: str = True,
-    ): ...
-    ...
-
-class bytes(_api.Bytes):
+class str(_bases.Unicode):
     def __init__(
         key=None,
         help: str = "",
@@ -129,7 +115,21 @@ class bytes(_api.Bytes):
     ): ...
     ...
 
-class list(_api.List):
+class bytes(_bases.Bytes):
+    def __init__(
+        key=None,
+        help: str = "",
+        label: str = "",
+        sets: str = True,
+        gets: str = True,
+        cache: str = False,
+        only: str = (),
+        allow_none: str = False,
+        case: str = True,
+    ): ...
+    ...
+
+class list(_bases.List):
     def __init__(
         key=None,
         help: str = "",
@@ -142,7 +142,7 @@ class list(_api.List):
     ): ...
     ...
 
-class tuple(_api.Tuple):
+class tuple(_bases.Tuple):
     def __init__(
         key=None,
         help: str = "",
@@ -155,7 +155,7 @@ class tuple(_api.Tuple):
     ): ...
     ...
 
-class dict(_api.Dict):
+class dict(_bases.Dict):
     def __init__(
         key=None,
         help: str = "",
@@ -168,7 +168,7 @@ class dict(_api.Dict):
     ): ...
     ...
 
-class Path(_api.Path):
+class Path(_bases.Path):
     def __init__(
         key=None,
         help: str = "",
@@ -182,7 +182,7 @@ class Path(_api.Path):
     ): ...
     ...
 
-class NetworkAddress(_api.NetworkAddress):
+class NetworkAddress(_bases.NetworkAddress):
     def __init__(
         key=None,
         help: str = "",

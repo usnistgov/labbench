@@ -69,7 +69,7 @@ from ._rack import (
     rack_kwargs_template,
 )
 from ._serialize import dump_rack, load_rack
-from .deviceattr._api import Undefined
+from .deviceattr._bases import Undefined
 from ._version import __version__
 
 # scrub __module__ for cleaner repr() and doc

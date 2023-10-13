@@ -24,10 +24,10 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _api
+from . import _bases
 
 
-class message_keying(_api.PropertyKeyingBase):
+class message_keying(_bases.PropertyKeyingBase):
     """Device class decorator that implements automatic API that triggers API messages for labbench properties.
 
     Example usage:
@@ -79,7 +79,7 @@ class message_keying(_api.PropertyKeyingBase):
         if len(self.message_map) != len(self.value_map):
             raise ValueError("'remap' has duplicate values")
 
-    def get(self, device: _api.HasTraits, scpi_key: str, trait=None):
+    def get(self, device: _bases.HasTraits, scpi_key: str, trait=None):
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
         The command message string is formatted as f'{scpi_key}?'.
@@ -101,7 +101,7 @@ class message_keying(_api.PropertyKeyingBase):
         value_str = query_func(self.query_fmt.format(key=scpi_key)).rstrip()
         return self.message_map.get(value_str, value_str)
 
-    def set(self, device: _api.HasTraits, scpi_key: str, value, trait=None):
+    def set(self, device: _bases.HasTraits, scpi_key: str, value, trait=None):
         """writes an SCPI message to set a parameter with a name key
         to `value`.
 
@@ -159,63 +159,63 @@ class visa_keying(message_keying):
         )
 
 
-class bool(_api.Bool):
+class bool(_bases.Bool):
     pass
 
 
-class float(_api.Float):
+class float(_bases.Float):
     pass
 
 
-class int(_api.Int):
+class int(_bases.Int):
     pass
 
 
-class complex(_api.Complex):
+class complex(_bases.Complex):
     pass
 
 
-class str(_api.Unicode):
+class str(_bases.Unicode):
     pass
 
 
-class bytes(_api.Bytes):
+class bytes(_bases.Bytes):
     pass
 
 
-class list(_api.List):
+class list(_bases.List):
     pass
 
 
-class tuple(_api.Tuple):
+class tuple(_bases.Tuple):
     pass
 
 
-class dict(_api.Dict):
+class dict(_bases.Dict):
     pass
 
 
-class Path(_api.Path):
+class Path(_bases.Path):
     pass
 
 
-# class DataFrame(_api.PandasDataFrame):
+# class DataFrame(_bases.PandasDataFrame):
 #     pass
 
 
-# class Series(_api.PandasSeries):
+# class Series(_bases.PandasSeries):
 #     pass
 
 
-# class ndarray(_api.NumpyArray):
+# class ndarray(_bases.NumpyArray):
 #     pass
 
 
-class NetworkAddress(_api.NetworkAddress):
+class NetworkAddress(_bases.NetworkAddress):
     pass
 
 
 # mutate these traits into the right role
-_api.subclass_namespace_api(
-    locals(), role=_api.Trait.ROLE_PROPERTY, omit_trait_attrs=["default", "func"]
+_bases.subclass_namespace_bases(
+    locals(), role=_bases.Trait.ROLE_PROPERTY, omit_trait_attrs=["default", "func"]
 )

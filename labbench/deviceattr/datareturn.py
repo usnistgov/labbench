@@ -24,70 +24,66 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _traits
+from . import _api
 
 
-class any(_traits.Any):
+class bool(_api.Bool):
     pass
 
 
-class bool(_traits.Bool):
+class float(_api.Float):
     pass
 
 
-class float(_traits.Float):
+class int(_api.Int):
     pass
 
 
-class int(_traits.Int):
+class complex(_api.Complex):
     pass
 
 
-class complex(_traits.Complex):
+class str(_api.Unicode):
     pass
 
 
-class str(_traits.Unicode):
+class bytes(_api.Bytes):
     pass
 
 
-class bytes(_traits.Bytes):
+class list(_api.List):
     pass
 
 
-class list(_traits.List):
+class tuple(_api.Tuple):
     pass
 
 
-class tuple(_traits.Tuple):
+class dict(_api.Dict):
     pass
 
 
-class dict(_traits.Dict):
+class Path(_api.Path):
     pass
 
 
-class Path(_traits.Path):
-    pass
-
-
-# class DataFrame(_traits.PandasDataFrame):
+# class DataFrame(_api.PandasDataFrame):
 #     pass
 
 
-# class Series(_traits.PandasSeries):
+# class Series(_api.PandasSeries):
 #     pass
 
 
-# class ndarray(_traits.NumpyArray):
+# class ndarray(_api.NumpyArray):
 #     pass
 
 
-class NetworkAddress(_traits.NetworkAddress):
+class NetworkAddress(_api.NetworkAddress):
     pass
 
 
 # mutate these traits into the right role
-_traits.subclass_namespace_traits(
-    locals(), role=_traits.Trait.ROLE_VALUE, omit_trait_attrs=["key", "func"]
+_api.subclass_namespace_api(
+    locals(), role=_api.Trait.ROLE_DATARETURN, omit_trait_attrs=["key", "default"]
 )

@@ -42,7 +42,7 @@ from .util import (
 
 _force_full_traceback(True)
 
-from . import datareturn, property, util, value
+from . import deviceattr, util
 from ._backends import (
     DotNetDevice,
     LabviewSocketInterface,
@@ -69,7 +69,7 @@ from ._rack import (
     rack_kwargs_template,
 )
 from ._serialize import dump_rack, load_rack
-from ._traits import PropertyKeyingBase, Undefined, adjusted, observe, unobserve
+from .deviceattr._api import Undefined
 from ._version import __version__
 
 # scrub __module__ for cleaner repr() and doc

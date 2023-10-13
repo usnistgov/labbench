@@ -41,7 +41,7 @@ from . import util
 from . import property as property_
 from . import value
 
-from ._traits import (
+from .deviceattr import (
     HasTraits,
     Undefined,
     BoundedNumber,

@@ -35,7 +35,7 @@ import email.mime.text
 from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
-from . import property as property_
+from . import deviceattr as attr
 from . import util, value
 
 try:
@@ -320,13 +320,13 @@ class Host(core.Device):
         )
         return pd.Series(running).sort_index()
 
-    @property_.str()
+    @attr.property.str()
     def time(self):
         """Get a timestamp of the current time"""
         now = datetime.datetime.now()
         return f"{now.strftime(self.time_format)}.{now.microsecond}"
 
-    @property_.list()
+    @attr.property.list()
     def log(self):
         """Get the current host log contents."""
         self.backend["log_handler"].flush()
@@ -341,7 +341,7 @@ class Host(core.Device):
         else:
             return {}
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_commit_id(self):
         """Try to determine the current commit hash of the current git repo"""
 
@@ -351,7 +351,7 @@ class Host(core.Device):
         except git.NoSuchPathError:
             return ""
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_remote_url(self):
         """Try to identify the remote URL of the repository of the current git repo"""
         try:
@@ -359,17 +359,17 @@ class Host(core.Device):
         except BaseException:
             return ""
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def hostname(self):
         """Get the name of the current host"""
         return socket.gethostname()
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_browse_url(self):
         """URL for browsing the current git repository"""
         return f"{self.git_remote_url}/tree/{self.git_commit_id}"
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_pending_changes(self):
         if self.backend["repo"] is not None:
             diffs = self.backend["repo"].index.diff(None)

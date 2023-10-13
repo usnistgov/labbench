@@ -44,10 +44,10 @@ import psutil
 import pyvisa
 import pyvisa.errors
 
-from . import property as property_
 from . import util, value
 from ._device import Device
-from ._traits import observe
+from .deviceattr import observe
+from . import deviceattr as attr
 
 try:
     serial = util.lazy_import("serial")
@@ -74,11 +74,11 @@ class ShellBackend(Device):
     queued stdout.
     """
 
-    binary_path = value.Path(
+    binary_path = attr.value.Path(
         default=None, allow_none=True, help="path to the file to run", cache=True
     )
 
-    timeout = value.float(
+    timeout = attr.value.float(
         default=1,
         min=0,
         help="wait time after close before killing background processes",
@@ -524,8 +524,8 @@ class DotNetDevice(Device):
     """
 
     # these can only be set as arguments to a subclass definition
-    library = value.any(None, allow_none=True, sets=False)  # Must be a module
-    dll_name = value.str(None, allow_none=True, sets=False)
+    library = attr.value.any(None, allow_none=True, sets=False)  # Must be a module
+    dll_name = attr.value.str(None, allow_none=True, sets=False)
 
     _dlls = {}
 
@@ -569,7 +569,7 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
-@property_.message_keying(write_fmt="{key} {value}", write_func="write")
+@attr.property.message_keying(write_fmt="{key} {value}", write_func="write")
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
@@ -582,14 +582,14 @@ class LabviewSocketInterface(Device):
         - backend: connection object mapping {'rx': rxsock, 'tx': txsock}
     """
 
-    resource = value.NetworkAddress(
+    resource = attr.value.NetworkAddress(
         "127.0.0.1", accept_port=False, help="LabView VI host address"
     )
-    tx_port = value.int(61551, help="TX port to send to the LabView VI")
-    rx_port = value.int(61552, help="TX port to send to the LabView VI")
-    delay = value.float(1, help="time to wait after each property trait write or query")
-    timeout = value.float(2, help="maximum wait replies before raising TimeoutError")
-    rx_buffer_size = value.int(1024, min=1)
+    tx_port = attr.value.int(61551, help="TX port to send to the LabView VI")
+    rx_port = attr.value.int(61552, help="TX port to send to the LabView VI")
+    delay = attr.value.float(1, help="time to wait after each property trait write or query")
+    timeout = attr.value.float(2, help="maximum wait replies before raising TimeoutError")
+    rx_buffer_size = attr.value.int(1024, min=1)
 
     def open(self):
         self.backend = dict(
@@ -658,23 +658,23 @@ class SerialDevice(Device):
     """
 
     # Connection value traits
-    resource = value.str(help="platform-dependent serial port address")
-    timeout = value.float(
+    resource = attr.value.str(help="platform-dependent serial port address")
+    timeout = attr.value.float(
         2, min=0, help="Max time to wait for a connection before raising TimeoutError."
     )
-    write_termination = value.bytes(
+    write_termination = attr.value.bytes(
         b"\n", help="Termination character to send after a write."
     )
-    baud_rate: int = value.int(
+    baud_rate: int = attr.value.int(
         9600, min=1, help="Data rate of the physical serial connection."
     )
-    parity = value.bytes(b"N", help="Parity in the physical serial connection.")
-    stopbits = value.float(
+    parity = attr.value.bytes(b"N", help="Parity in the physical serial connection.")
+    stopbits = attr.value.float(
         1, min=1, max=2, step=0.5, help="Number of stop bits, one of `[1, 1.5, or 2.]`."
     )
-    xonxoff = value.bool(False, help="`True` to enable software flow control.")
-    rtscts = value.bool(False, help="`True` to enable hardware (RTS/CTS) flow control.")
-    dsrdtr = value.bool(False, help="`True` to enable hardware (DSR/DTR) flow control.")
+    xonxoff = attr.value.bool(False, help="`True` to enable software flow control.")
+    rtscts = attr.value.bool(False, help="`True` to enable hardware (RTS/CTS) flow control.")
+    dsrdtr = attr.value.bool(False, help="`True` to enable hardware (DSR/DTR) flow control.")
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):
@@ -761,14 +761,14 @@ class SerialLoggingDevice(SerialDevice):
     from the serial port.
     """
 
-    poll_rate = value.float(
+    poll_rate = attr.value.float(
         0.1, min=0, help="Data retreival rate from the device (in seconds)"
     )
-    data_format = value.bytes(b"", help="Data format metadata")
-    stop_timeout = value.float(
+    data_format = attr.value.bytes(b"", help="Data format metadata")
+    stop_timeout = attr.value.float(
         0.5, min=0, help="delay after `stop` before terminating run thread"
     )
-    max_queue_size = value.int(
+    max_queue_size = attr.value.int(
         100000, min=1, help="bytes to allocate in the data retreival buffer"
     )
 
@@ -880,8 +880,8 @@ class TelnetDevice(Device):
     """
 
     # Connection value traits
-    resource = value.NetworkAddress("127.0.0.1:23", help="server host address")
-    timeout = value.float(2, min=0, label="s", help="connection timeout")
+    resource = attr.value.NetworkAddress("127.0.0.1:23", help="server host address")
+    timeout = attr.value.float(2, min=0, label="s", help="connection timeout")
 
     def open(self):
         """Open a telnet connection to the host defined
@@ -901,7 +901,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-@property_.visa_keying(
+@attr.property.visa_keying(
     query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"}
 )
 class VISADevice(Device):
@@ -936,15 +936,15 @@ class VISADevice(Device):
     """
 
     # Settings
-    read_termination = value.str(
+    read_termination = attr.value.str(
         "\n", cache=True, help="end of line string to expect in query replies"
     )
 
-    write_termination = value.str(
+    write_termination = attr.value.str(
         "\n", cache=True, help="end of line string to send after writes"
     )
 
-    open_timeout = value.float(
+    open_timeout = attr.value.float(
         None,
         cache=True,
         allow_none=True,
@@ -952,26 +952,26 @@ class VISADevice(Device):
         label="s",
     )
 
-    identity_pattern = value.str(
+    identity_pattern = attr.value.str(
         None,
         allow_none=True,
         cache=True,
         help="identity regex pattern to match for automatic connection",
     )
 
-    timeout = value.float(
+    timeout = attr.value.float(
         None, cache=True, allow_none=True, help="message response timeout", label="s"
     )
 
     # Common VISA properties
-    identity = property_.str(
+    identity = attr.property.str(
         key="*IDN",
         sets=False,
         cache=True,
         help="identity string reported by the instrument",
     )
 
-    @property_.dict(sets=False)
+    @attr.property.dict(sets=False)
     def status_byte(self):
         """instrument status decoded from '*STB?'"""
         code = int(self.query("*STB?"))
@@ -1302,7 +1302,7 @@ class Win32ComDevice(Device):
     # to the dispatched COM object block until the previous calls are completed
     # from within.
 
-    com_object = value.str(
+    com_object = attr.value.str(
         default="", sets=False, help="the win32com object string"
     )  # Must be a module
 

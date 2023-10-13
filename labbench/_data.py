@@ -40,10 +40,10 @@ from typing import List, Dict, Union
 
 from . import _device
 from . import _device as core
-from . import _host, _rack, _traits, util, value
+from . import _host, _rack, deviceattr, util, value
 from ._device import Device
 from ._rack import Owner, Rack
-from ._traits import observe
+from .deviceattr import observe
 
 try:
     h5py = util.lazy_import("h5py")
@@ -62,7 +62,7 @@ except RuntimeWarning:
 
 EMPTY = inspect._empty
 
-INSPECT_SKIP_FILES = _device.__file__, _traits.__file__, _rack.__file__, __file__
+INSPECT_SKIP_FILES = _device.__file__, deviceattr.__file__, _rack.__file__, __file__
 
 
 class MungerBase(core.Device):
@@ -168,8 +168,8 @@ class MungerBase(core.Device):
                 # other util.Ownable instances e.g. RelationalTableLogger
                 continue
 
-            for trait_name, trait in owner._traits.items():
-                if trait.role == _traits.Trait.ROLE_VALUE or trait.cache:
+            for trait_name, trait in owner.deviceattr.items():
+                if trait.role == deviceattr.Trait.ROLE_VALUE or trait.cache:
                     summary[key_func(owner_name, trait_name)] = getattr(
                         owner, trait_name
                     )
@@ -525,7 +525,7 @@ class MungeToTar(MungerBase):
 class Aggregator(util.Ownable):
     """Passive aggregation of data from Device property trait and value traits traits, and from calls to methods in Rack instances"""
 
-    PERSISTENT_TRAIT_ROLES = (_traits.Trait.ROLE_VALUE,)
+    PERSISTENT_TRAIT_ROLES = (deviceattr.Trait.ROLE_VALUE,)
 
     def __init__(self):
         # registry of names to use for trait owners

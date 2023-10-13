@@ -1,8 +1,8 @@
-from . import _traits
+from . import _api
 
-class bool(_traits.Bool):
+class any(_api.Any):
     def __init__(
-        func: str = None,
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -13,9 +13,22 @@ class bool(_traits.Bool):
     ): ...
     ...
 
-class float(_traits.Float):
+class bool(_api.Bool):
     def __init__(
-        func: str = None,
+        default: str = None,
+        help: str = "",
+        label: str = "",
+        sets: str = True,
+        gets: str = True,
+        cache: str = False,
+        only: str = (),
+        allow_none: str = False,
+    ): ...
+    ...
+
+class float(_api.Float):
+    def __init__(
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -32,9 +45,9 @@ class float(_traits.Float):
     ): ...
     ...
 
-class int(_traits.Int):
+class int(_api.Int):
     def __init__(
-        func: str = None,
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -50,9 +63,9 @@ class int(_traits.Int):
     ): ...
     ...
 
-class complex(_traits.Complex):
+class complex(_api.Complex):
     def __init__(
-        func: str = None,
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -63,23 +76,9 @@ class complex(_traits.Complex):
     ): ...
     ...
 
-class str(_traits.Unicode):
+class str(_api.Unicode):
     def __init__(
-        func: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-        case: str = True,
-    ): ...
-    ...
-
-class bytes(_traits.Bytes):
-    def __init__(
-        func: str = None,
+        default: str = "",
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -91,9 +90,23 @@ class bytes(_traits.Bytes):
     ): ...
     ...
 
-class list(_traits.List):
+class bytes(_api.Bytes):
     def __init__(
-        func: str = None,
+        default: str = b"",
+        help: str = "",
+        label: str = "",
+        sets: str = True,
+        gets: str = True,
+        cache: str = False,
+        only: str = (),
+        allow_none: str = False,
+        case: str = True,
+    ): ...
+    ...
+
+class list(_api.List):
+    def __init__(
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -104,9 +117,9 @@ class list(_traits.List):
     ): ...
     ...
 
-class tuple(_traits.Tuple):
+class tuple(_api.Tuple):
     def __init__(
-        func: str = None,
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = False,
@@ -117,9 +130,9 @@ class tuple(_traits.Tuple):
     ): ...
     ...
 
-class dict(_traits.Dict):
+class dict(_api.Dict):
     def __init__(
-        func: str = None,
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -130,9 +143,9 @@ class dict(_traits.Dict):
     ): ...
     ...
 
-class Path(_traits.Path):
+class Path(_api.Path):
     def __init__(
-        func: str = None,
+        default: str = None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -144,9 +157,9 @@ class Path(_traits.Path):
     ): ...
     ...
 
-class NetworkAddress(_traits.NetworkAddress):
+class NetworkAddress(_api.NetworkAddress):
     def __init__(
-        func: str = None,
+        default: str = "",
         help: str = "",
         label: str = "",
         sets: str = True,

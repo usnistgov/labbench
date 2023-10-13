@@ -44,7 +44,7 @@ from warnings import warn
 
 import validators as _val
 
-from . import util
+from .. import util
 
 try:
     pd = util.lazy_import("pandas")

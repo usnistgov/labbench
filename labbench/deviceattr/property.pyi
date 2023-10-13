@@ -1,8 +1,46 @@
-from . import _traits
+from . import _api
+from _typeshed import Incomplete
 
-class any(_traits.Any):
+class message_keying(_api.PropertyKeyingBase):
+    query_fmt: Incomplete
+    write_fmt: Incomplete
+    write_func: Incomplete
+    query_func: Incomplete
+    value_map: Incomplete
+    message_map: Incomplete
+
     def __init__(
-        default: str = None,
+        self,
+        query_fmt: Incomplete | None = ...,
+        write_fmt: Incomplete | None = ...,
+        write_func: Incomplete | None = ...,
+        query_func: Incomplete | None = ...,
+        remap=...,
+    ) -> None: ...
+    def get(
+        self, device: _api.HasTraits, scpi_key: str, trait: Incomplete | None = ...
+    ): ...
+    def set(
+        self,
+        device: _api.HasTraits,
+        scpi_key: str,
+        value,
+        trait: Incomplete | None = ...,
+    ): ...
+
+class visa_keying(message_keying):
+    def __init__(
+        self,
+        query_fmt: str = ...,
+        write_fmt: str = ...,
+        write_func: str = ...,
+        query_func: str = ...,
+        remap=...,
+    ) -> None: ...
+
+class bool(_api.Bool):
+    def __init__(
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -13,22 +51,9 @@ class any(_traits.Any):
     ): ...
     ...
 
-class bool(_traits.Bool):
+class float(_api.Float):
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-    ): ...
-    ...
-
-class float(_traits.Float):
-    def __init__(
-        default: str = None,
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -45,9 +70,9 @@ class float(_traits.Float):
     ): ...
     ...
 
-class int(_traits.Int):
+class int(_api.Int):
     def __init__(
-        default: str = None,
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -63,9 +88,9 @@ class int(_traits.Int):
     ): ...
     ...
 
-class complex(_traits.Complex):
+class complex(_api.Complex):
     def __init__(
-        default: str = None,
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -76,23 +101,9 @@ class complex(_traits.Complex):
     ): ...
     ...
 
-class str(_traits.Unicode):
+class str(_api.Unicode):
     def __init__(
-        default: str = "",
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-        case: str = True,
-    ): ...
-    ...
-
-class bytes(_traits.Bytes):
-    def __init__(
-        default: str = b"",
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -104,9 +115,23 @@ class bytes(_traits.Bytes):
     ): ...
     ...
 
-class list(_traits.List):
+class bytes(_api.Bytes):
     def __init__(
-        default: str = None,
+        key=None,
+        help: str = "",
+        label: str = "",
+        sets: str = True,
+        gets: str = True,
+        cache: str = False,
+        only: str = (),
+        allow_none: str = False,
+        case: str = True,
+    ): ...
+    ...
+
+class list(_api.List):
+    def __init__(
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -117,9 +142,9 @@ class list(_traits.List):
     ): ...
     ...
 
-class tuple(_traits.Tuple):
+class tuple(_api.Tuple):
     def __init__(
-        default: str = None,
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = False,
@@ -130,9 +155,9 @@ class tuple(_traits.Tuple):
     ): ...
     ...
 
-class dict(_traits.Dict):
+class dict(_api.Dict):
     def __init__(
-        default: str = None,
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -143,9 +168,9 @@ class dict(_traits.Dict):
     ): ...
     ...
 
-class Path(_traits.Path):
+class Path(_api.Path):
     def __init__(
-        default: str = None,
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,
@@ -157,9 +182,9 @@ class Path(_traits.Path):
     ): ...
     ...
 
-class NetworkAddress(_traits.NetworkAddress):
+class NetworkAddress(_api.NetworkAddress):
     def __init__(
-        default: str = "",
+        key=None,
         help: str = "",
         label: str = "",
         sets: str = True,

@@ -216,6 +216,6 @@ class NetworkAddress(_bases.NetworkAddress):
 
 
 # mutate these traits into the right role
-_bases.subclass_namespace_bases(
+_bases.subclass_namespace_attrs(
     locals(), role=_bases.Trait.ROLE_PROPERTY, omit_trait_attrs=["default", "func"]
 )

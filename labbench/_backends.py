@@ -44,7 +44,7 @@ import psutil
 import pyvisa
 import pyvisa.errors
 
-from . import util, value
+from . import util
 from ._device import Device
 from .deviceattr import observe
 from . import deviceattr as attr

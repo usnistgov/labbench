@@ -40,7 +40,8 @@ from typing import List, Dict, Union
 
 from . import _device
 from . import _device as core
-from . import _host, _rack, deviceattr, util, value
+from . import _host, _rack, util
+from . import deviceattr as attr
 from ._device import Device
 from ._rack import Owner, Rack
 from .deviceattr import observe
@@ -62,7 +63,7 @@ except RuntimeWarning:
 
 EMPTY = inspect._empty
 
-INSPECT_SKIP_FILES = _device.__file__, deviceattr.__file__, _rack.__file__, __file__
+INSPECT_SKIP_FILES = _device.__file__, attr.__file__, _rack.__file__, __file__
 
 
 class MungerBase(core.Device):
@@ -82,23 +83,23 @@ class MungerBase(core.Device):
 
     """
 
-    resource = value.Path(help="base directory for all data")
-    text_relational_min = value.int(
+    resource = attr.value.Path(help="base directory for all data")
+    text_relational_min = attr.value.int(
         1024,
         min=0,
         help="minimum size threshold that triggers storing text in a relational file",
     )
-    force_relational = value.list(
+    force_relational = attr.value.list(
         [], help="list of column names to always save as relational data"
     )
-    relational_name_fmt = value.str(
+    relational_name_fmt = attr.value.str(
         "{id}",
         help="directory name format for data in each row keyed on column",
     )
-    nonscalar_file_type = value.str(
+    nonscalar_file_type = attr.value.str(
         "csv", help="file format for non-scalar numerical data"
     )
-    metadata_dirname = value.str("metadata", help="subdirectory name for metadata")
+    metadata_dirname = attr.value.str("metadata", help="subdirectory name for metadata")
 
     def __call__(self, index, row):
         """
@@ -168,8 +169,8 @@ class MungerBase(core.Device):
                 # other util.Ownable instances e.g. RelationalTableLogger
                 continue
 
-            for trait_name, trait in owner.deviceattr.items():
-                if trait.role == deviceattr.Trait.ROLE_VALUE or trait.cache:
+            for trait_name, trait in owner._traits.items():
+                if trait.role == attr.Trait.ROLE_VALUE or trait.cache:
                     summary[key_func(owner_name, trait_name)] = getattr(
                         owner, trait_name
                     )
@@ -196,9 +197,9 @@ class MungerBase(core.Device):
 
         def write(stream, ext, value):
             if ext == "csv":
-                value.to_csv(stream)
+                attr.value.to_csv(stream)
             elif ext == "json":
-                value.to_json(stream)
+                attr.value.to_json(stream)
             elif ext in ("p", "pickle"):
                 pickle.dump(value, stream, 2)
             elif ext == "feather":
@@ -218,7 +219,7 @@ class MungerBase(core.Device):
 
         try:
             value = pd.DataFrame(value)
-            if value.shape[0] == 0:
+            if attr.value.shape[0] == 0:
                 value = pd.DataFrame([value])
         except BaseException:
             # We couldn't make a DataFrame
@@ -525,7 +526,7 @@ class MungeToTar(MungerBase):
 class Aggregator(util.Ownable):
     """Passive aggregation of data from Device property trait and value traits traits, and from calls to methods in Rack instances"""
 
-    PERSISTENT_TRAIT_ROLES = (deviceattr.Trait.ROLE_VALUE,)
+    PERSISTENT_TRAIT_ROLES = (attr._bases.Trait.ROLE_VALUE,)
 
     def __init__(self):
         # registry of names to use for trait owners
@@ -1371,8 +1372,8 @@ class MungeToHDF(Device):
 
     """
 
-    resource = value.Path(help="hdf file location")
-    key_fmt = value.str(
+    resource = attr.value.Path(help="hdf file location")
+    key_fmt = attr.value.str(
         "{id} {host_time}",
         help="format for linked data in the root database (keyed on column)",
     )

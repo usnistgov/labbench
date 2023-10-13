@@ -5,6 +5,7 @@ import time
 if ".." not in sys.path:
     sys.path.insert(0, "..")
 import labbench as lb
+from labbench import deviceattr as attr
 
 lb = importlib.reload(lb)
 
@@ -19,9 +20,9 @@ class LaggyInstrument(EmulatedVISADevice):
     """
 
     # Connection and driver value traits
-    delay = lb.value.float(default=0, min=0, help="connection time (s)")
-    fetch_time = lb.value.float(default=0, min=0, help="fetch time (s)")
-    fail_disconnect = lb.value.bool(
+    delay = attr.value.float(default=0, min=0, help="connection time (s)")
+    fetch_time = attr.value.float(default=0, min=0, help="fetch time (s)")
+    fail_disconnect = attr.value.bool(
         default=False, help="raise DivideByZero on disconnect?"
     )
 

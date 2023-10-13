@@ -26,6 +26,7 @@
 
 import sys
 import labbench as lb
+from labbench import deviceattr as attr
 import unittest
 import pandas as pd
 import numpy as np
@@ -45,18 +46,18 @@ class EmulatedInstrument(EmulatedVISADevice):
     """
 
     # values
-    trace_index = lb.value.int(0)
+    trace_index = attr.value.int(0)
 
     # properties
-    initiate_continuous = lb.property.bool(key="INIT:CONT")
-    output_trigger = lb.property.bool(key="OUTP:TRIG")
-    sweep_aperture = lb.property.float(
+    initiate_continuous = attr.property.bool(key="INIT:CONT")
+    output_trigger = attr.property.bool(key="OUTP:TRIG")
+    sweep_aperture = attr.property.float(
         key="SWE:APER", min=20e-6, max=200e-3, help="time (in s)"
     )
-    frequency = lb.property.float(
+    frequency = attr.property.float(
         key="SENS:FREQ", min=10e6, max=18e9, help="center frequency (in Hz)"
     )
-    atten = lb.property.float(key="POW", min=0, max=100, step=0.5)
+    atten = attr.property.float(key="POW", min=0, max=100, step=0.5)
 
     def trigger(self):
         """This would tell the instrument to start a measurement"""
@@ -65,7 +66,7 @@ class EmulatedInstrument(EmulatedVISADevice):
     def method(self):
         print("method!")
 
-    @lb.datareturn.DataFrame
+    @attr.datareturn.DataFrame
     def fetch_trace(self, N=101):
         """Generate N points of junk data as a pandas series."""
         self.trace_index = self.trace_index + 1

@@ -1,4 +1,5 @@
 import labbench as lb
+from labbench import deviceattr as attr
 
 
 class EmulatedVISAPropertyAdapter(lb.VISAPropertyAdapter):
@@ -29,23 +30,23 @@ class EmulatedVISADevice(lb.Device):
     """Act as a VISA device without dispatching any visa keys"""
 
     # Settings
-    read_termination = lb.value.str("\n", help="end-of-receive termination character")
-    write_termination = lb.value.str("\n", help="end-of-transmit termination character")
+    read_termination = attr.value.str("\n", help="end-of-receive termination character")
+    write_termination = attr.value.str("\n", help="end-of-transmit termination character")
 
     # States
-    @lb.property.str(key="*IDN", sets=False, cache=True)
+    @attr.property.str(key="*IDN", sets=False, cache=True)
     def identity(self):
         """identity string reported by the instrument"""
         return self.__class__.__qualname__
 
-    @lb.property.str(key="*OPT", sets=False, cache=True)
+    @attr.property.str(key="*OPT", sets=False, cache=True)
     def options(self):
         """options reported by the instrument"""
 
         param_strs = (f"{s}={getattr(self,s)}" for s in self._value_attrs)
         return ",".join(param_strs)
 
-    @lb.property.dict(key="*STB", sets=False)
+    @attr.property.dict(key="*STB", sets=False)
     def status_byte(self):
         """VISA status byte reported by the instrument"""
         return {

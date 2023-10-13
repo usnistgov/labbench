@@ -30,6 +30,7 @@ import sys
 import time
 from contextlib import contextmanager
 import labbench as lb
+from labbench import deviceattr as attr
 import numpy as np
 
 lb = importlib.reload(lb)
@@ -43,9 +44,9 @@ lb._force_full_traceback(True)
 class LaggyInstrument(EmulatedVISADevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
 
-    delay = lb.value.float(0, min=0, help="connection time")
-    fetch_time = lb.value.float(0, min=0, help="fetch time")
-    fail_disconnect = lb.value.bool(
+    delay = attr.value.float(0, min=0, help="connection time")
+    fetch_time = attr.value.float(0, min=0, help="fetch time")
+    fail_disconnect = attr.value.bool(
         False, help="whether to raise DivideByZero on disconnect"
     )
 

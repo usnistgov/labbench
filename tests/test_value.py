@@ -30,6 +30,7 @@ import sys
 import pandas as pd
 import numpy as np
 import labbench as lb
+from labbench import deviceattr as attr
 
 lb._force_full_traceback(True)
 
@@ -39,23 +40,23 @@ flag_start = False
 class TrialDevice(lb.Device):
     _getter_counts = {}
 
-    float0 = lb.value.float()
-    float1 = lb.value.float(min=0, max=10, help="descriptive", label="items")
-    float2 = lb.value.float(only=(0, 3, 96))
-    float3 = lb.value.float(step=3)
+    float0 = attr.value.float()
+    float1 = attr.value.float(min=0, max=10, help="descriptive", label="items")
+    float2 = attr.value.float(only=(0, 3, 96))
+    float3 = attr.value.float(step=3)
 
-    int0 = lb.value.int()
-    int1 = lb.value.int(min=0, max=10, help="descriptive", label="items")
-    int2 = lb.value.int(only=(0, 3, 96))
+    int0 = attr.value.int()
+    int1 = attr.value.int(min=0, max=10, help="descriptive", label="items")
+    int2 = attr.value.int(only=(0, 3, 96))
 
-    str0 = lb.value.str()
-    str1 = lb.value.str(default="hello")
-    str2 = lb.value.str("moose", only=("moose", "squirrel"))
-    str3 = lb.value.str("moose", only=("MOOSE", "squirrel"), case=False)
+    str0 = attr.value.str()
+    str1 = attr.value.str(default="hello")
+    str2 = attr.value.str("moose", only=("moose", "squirrel"))
+    str3 = attr.value.str("moose", only=("MOOSE", "squirrel"), case=False)
 
-    # df0 = lb.value.DataFrame(pd.DataFrame([0,1,2,3,4,5]))
-    # series0 = lb.value.Series(pd.Series([0,1,2,3,4,5]))
-    # array0 = lb.value.ndarray(np.array([0,1,2,3,4,5]))
+    # df0 = attr.value.DataFrame(pd.DataFrame([0,1,2,3,4,5]))
+    # series0 = attr.value.Series(pd.Series([0,1,2,3,4,5]))
+    # array0 = attr.value.ndarray(np.array([0,1,2,3,4,5]))
 
 
 class UpdateTrialDevice(TrialDevice, float0=7):

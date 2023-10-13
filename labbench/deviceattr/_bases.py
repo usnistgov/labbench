@@ -1874,7 +1874,7 @@ class NetworkAddress(Unicode):
 VALID_TRAIT_ROLES = Trait.ROLE_VALUE, Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
 
 
-def subclass_namespace_traits(namespace_dict, role, omit_trait_attrs):
+def subclass_namespace_attrs(namespace_dict, role, omit_trait_attrs):
     for name, attr in dict(namespace_dict).items():
         if isclass(attr) and issubclass(attr, Trait):
             # subclass our traits with the given role

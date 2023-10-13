@@ -38,9 +38,9 @@ from warnings import warn
 from typing import Union
 
 from . import util
-from . import deviceattr as attr
+from . import paramattr as attr
 
-from .deviceattr._bases import (
+from .paramattr._bases import (
     HasTraits,
     Undefined,
     BoundedNumber,

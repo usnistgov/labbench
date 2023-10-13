@@ -38,7 +38,7 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
-from typing import Dict
+from typing import Dict, Any
 
 import psutil
 import pyvisa
@@ -46,8 +46,8 @@ import pyvisa.errors
 
 from . import util
 from ._device import Device
-from .deviceattr import observe
-from . import deviceattr as attr
+from .paramattr import observe
+from . import paramattr as attr
 
 try:
     serial = util.lazy_import("serial")
@@ -1075,7 +1075,7 @@ class VISADevice(Device):
         finally:
             self.backend.close()
 
-    def write(self, msg: str):
+    def write(self, msg: str, kws: Dict[str, Any]={}):
         """sends an SCPI message to the device.
 
         Wraps `self.backend.write`, and handles debug logging and adjustments
@@ -1088,13 +1088,23 @@ class VISADevice(Device):
         Returns:
             None
         """
+
+        # append the *OPC if we're in an overlap and add context
+        # TODO: this implementation doesn't generalize, since not all instruments
+        # support *OPC in this context
         if self._opc:
             msg = msg + ";*OPC"
+
+        # substitute message based on remap() in self._keying
+        kws = {k: self._keying.to_message(v) for k,v in kws.items()}
+        msg = msg.format(**kws)
+
+        # outbound message as truncated event log entry
         msg_out = repr(msg) if len(msg) < 1024 else f"({len(msg)} bytes)"
         self._logger.debug(f"write {msg_out}")
         self.backend.write(msg)
 
-    def query(self, msg: str, timeout=None, remap: bool = False) -> str:
+    def query(self, msg: str, timeout=None, remap: bool = False, kws: Dict[str, Any]={}) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1105,7 +1115,12 @@ class VISADevice(Device):
         """
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
+        
+        # substitute message based on remap() in self._keying
+        kws = {k: self._keying.to_message(v) for k,v in kws.items()}
+        msg = msg.format(**kws)
 
+        # outbound message as truncated event log entry
         msg_out = repr(msg) if len(msg) < 80 else f"({len(msg)} bytes)"
         self._logger.debug(f"query {msg_out}")
 
@@ -1115,11 +1130,12 @@ class VISADevice(Device):
             if timeout is not None:
                 self.backend.timeout = _to
 
+        # inbound response as truncated event log entry
         msg_out = repr(ret) if len(ret) < 80 else f"({len(ret)} bytes)"
         self._logger.debug(f"    → {msg_out}")
 
         if remap:
-            return self._property_keying.message_map[ret]
+            return self._keying.from_message(ret)
         else:
             return ret
 

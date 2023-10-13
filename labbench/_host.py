@@ -35,7 +35,7 @@ import email.mime.text
 from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
-from . import deviceattr as attr
+from . import paramattr as attr
 from . import util
 
 try:
@@ -102,11 +102,15 @@ class Email(core.Device):
     subject line. Stderr is also sent.
     """
 
-    resource = attr.value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use")
+    resource = attr.value.NetworkAddress(
+        default="smtp.nist.gov", help="smtp server to use"
+    )
 
     port = attr.value.int(default=25, min=1, help="TCP/IP port")
 
-    sender = attr.value.str(default="myemail@nist.gov", help="email address of the sender")
+    sender = attr.value.str(
+        default="myemail@nist.gov", help="email address of the sender"
+    )
 
     recipients = attr.value.list(
         default=["myemail@nist.gov"], help="list of email addresses of recipients"

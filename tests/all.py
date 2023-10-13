@@ -28,7 +28,7 @@ import unittest
 import importlib
 import sys
 import labbench as lb
-from labbench import deviceattr as attr
+from labbench import paramattr as attr
 
 lb.util._force_full_traceback(True)
 

@@ -30,7 +30,7 @@ import sys
 import time
 from contextlib import contextmanager
 import labbench as lb
-from labbench import deviceattr as attr
+from labbench import paramattr as attr
 import numpy as np
 
 lb = importlib.reload(lb)

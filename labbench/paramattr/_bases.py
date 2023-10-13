@@ -129,7 +129,7 @@ class Trait:
     # keyword argument types and default values
     default: ThisType = Undefined
     key: Undefined = Undefined
-    func: typing.Callable = None
+    func: None
     # role: str = ROLE_UNSET
     help: str = ""
     label: str = ""

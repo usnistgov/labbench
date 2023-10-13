@@ -5,7 +5,7 @@ import time
 if ".." not in sys.path:
     sys.path.insert(0, "..")
 import labbench as lb
-from labbench import deviceattr as attr
+from labbench import paramattr as attr
 
 lb = importlib.reload(lb)
 

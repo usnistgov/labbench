@@ -79,6 +79,12 @@ class message_keying(_bases.PropertyKeyingBase):
         if len(self.message_map) != len(self.value_map):
             raise ValueError("'remap' has duplicate values")
 
+    def from_message(self, msg):
+        return self.message_map.get(msg, msg)
+
+    def to_message(self, value):
+        return self.value_map.get(value, value)
+
     def get(self, device: _bases.HasTraits, scpi_key: str, trait=None):
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
@@ -98,9 +104,9 @@ class message_keying(_bases.PropertyKeyingBase):
         if self.query_func is None:
             raise ValueError("query_func needs to be set for key get operations")
         query_func = getattr(device, self.query_func)
-        value_str = query_func(self.query_fmt.format(key=scpi_key)).rstrip()
-        return self.message_map.get(value_str, value_str)
-
+        msg = query_func(self.query_fmt.format(key=scpi_key)).rstrip()
+        return self.from_message(msg)
+    
     def set(self, device: _bases.HasTraits, scpi_key: str, value, trait=None):
         """writes an SCPI message to set a parameter with a name key
         to `value`.
@@ -119,9 +125,9 @@ class message_keying(_bases.PropertyKeyingBase):
         if self.write_func is None:
             raise ValueError("write_func needs to be set for key set operations")
 
-        value_str = self.value_map.get(value, value)
+        msg = self.to_message(value)
         write_func = getattr(device, self.write_func)
-        write_func(self.write_fmt.format(key=scpi_key, value=value_str))
+        write_func(self.write_fmt.format(key=scpi_key, value=msg))
 
 
 class visa_keying(message_keying):

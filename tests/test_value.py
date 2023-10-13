@@ -30,7 +30,7 @@ import sys
 import pandas as pd
 import numpy as np
 import labbench as lb
-from labbench import deviceattr as attr
+from labbench import paramattr as attr
 
 lb._force_full_traceback(True)
 

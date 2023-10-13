@@ -26,7 +26,7 @@
 
 import sys
 import labbench as lb
-from labbench import deviceattr as attr
+from labbench import paramattr as attr
 import unittest
 import pandas as pd
 import numpy as np

@@ -499,7 +499,7 @@ class RackMethod(util.Ownable):
 
         # ensure that required devices are connected
         # TODO: let the devices handle this. some interactions with devices are necessary
-        # and good without being connected, for example setting deviceattr.value attributes.
+        # and good without being connected, for example setting paramattr.value attributes.
         # closed = [dev._owned_name for dev in self.dependencies if not dev.isopen]
         # if len(closed) > 0:
         #     closed = ", ".join(closed)

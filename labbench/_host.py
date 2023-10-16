@@ -291,7 +291,7 @@ class Host(core.Device):
         }
 
         # Preload the git repo parameters
-        for name in self._traits:
+        for name in param.get_class_attrs(self).keys():
             if name.startswith("git"):
                 getattr(self, name)
 

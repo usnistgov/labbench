@@ -489,9 +489,11 @@ def validate_parameter(name: str, type: type, **kws):
         def do_validate(*args, **kws):
             # validation goes here
             return f(*args, **kws)
-        
+
         return do_validate
+
     return decorator
+
 
 @hide_in_traceback
 def until_timeout(

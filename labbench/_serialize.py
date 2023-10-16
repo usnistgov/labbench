@@ -7,7 +7,7 @@ from pathlib import Path
 
 from . import util
 from ._rack import Rack, import_as_rack, update_parameter_dict
-
+from . import paramattr as param
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
 # using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
 try:
@@ -220,8 +220,8 @@ def _map_devices(cls):
             before="\n",
         )
 
-        for value_name in dev._value_attrs:
-            if not dev._traits[value_name].sets:
+        for value_name in param.list_value_attrs(dev):
+            if not param.get_class_attrs(dev)[value_name].sets:
                 # only show settable traits
                 continue
 

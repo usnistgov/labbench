@@ -56,39 +56,96 @@ except RuntimeError:
 Undefined = inspect.Parameter.empty
 
 T = typing.TypeVar("T")
-from typing import Any, Union, Callable, List, Dict
+from typing import Any, Union, Callable, List, Dict, Type
+
 
 class ThisType(typing.Generic[T]):
     pass
 
 
-class HasTraitsMeta(type):
-    __cls_namespace__ = []
+class KeyAdapterBase:
+    def __new__(cls, *args, **kws):
+        """set up use as a class decorator"""
+
+        obj = super().__new__(cls)
+
+        if len(args) == 1 and len(kws) == 0 and issubclass(args[0], HasParamAttrs):
+            # instantiated as a decorator without arguments - do the decoration
+            obj.__init__()
+            return obj(args[0])
+        else:
+            # instantiated with arguments - decoration happens later
+            obj.__init__(*args, **kws)
+            return obj
+
+    def __call__(self, owner_cls):
+        # do the decorating
+        owner_cls._keying = self
+        return owner_cls
+
+    def get(self, trait_owner, key, trait=None):
+        raise NotImplementedError(
+            f'key adapter does not implement "get" {repr(type(self))}'
+        )
+
+    def set(self, trait_owner, key, value, trait=None):
+        raise NotImplementedError(
+            f'key adapter does not implement "set" {repr(type(self))}'
+        )
+
+
+class HasParamAttrsClsInfo:
+    attrs: Dict[str, ParamAttr]
+    key_adapter: KeyAdapterBase
+
+    __slots__ = ['attrs', 'key_adapter']
+
+    def __init__(self, attrs: Dict[str, ParamAttr]={}, key_adapter: KeyAdapterBase=KeyAdapterBase()):
+        self.attrs = attrs
+        self.key_adapter = key_adapter
+
+    def value_names(self) -> List[ParamAttr]:
+        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_VALUE]
+
+    def method_names(self) -> List[ParamAttr]:
+        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_METHOD]
+    
+    def property_names(self) -> List[ParamAttr]:
+        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_PROPERTY]    
 
     @classmethod
-    def __prepare__(cls, names, bases, **kws):
-        """Prepare copies of cls._traits, to ensure that all traits can be adjusted
+    def _copy_from(cls, owner: HasParamAttrs):
+        obj = cls(key_adapter=owner._cls_info.key_adapter)
+        obj.attrs = {k: v.copy() for k, v in owner._cls_info.attrs.items()}
+        return obj
+
+
+class HasParamAttrsMeta(type):
+    # hold on to recent namespaces until they can be used to initialize descriptors 
+    ns_pending: list = []
+
+    @classmethod
+    def __prepare__(metacls, names, bases, **kws):
+        """Prepare copies of cls._cls_info.attrs, to ensure that all traits can be adjusted
         afterward without impacting the parent class.
         """
         ns = dict()
         if len(bases) >= 1:
-            if hasattr(bases, "__children__"):
-                ns["__children__"] = {}
-            traits = {k: v.copy() for k, v in bases[0]._traits.items()}
-            ns.update(traits)
-            ns["_traits"] = traits
-            HasTraitsMeta.__cls_namespace__.append(traits)
+            cls_info = ns['_cls_info'] = HasParamAttrsClsInfo._copy_from(bases[0])
+            ns.update(cls_info.attrs)
+            metacls.ns_pending.append(cls_info.attrs)
             return ns
         else:
-            HasTraitsMeta.__cls_namespace__.append({})
-            return dict(_traits=HasTraitsMeta.__cls_namespace__[-1])
+            ns['_cls_info'] = HasParamAttrsClsInfo()
+            metacls.ns_pending.append({})
+        return ns
 
 
-class Trait:
+class ParamAttr:
     """base class for typed descriptors in Device classes. These
     implement type checking, casting, decorators, and callbacks.
 
-    A Device instance supports two types of Traits:
+    A Device instance supports two types of ParamAttrs:
 
     * A _value trait_ acts as an attribute variable in instantiated
       classes
@@ -103,7 +160,7 @@ class Trait:
         default: the default value of the trait (value traits only)
         key: specify automatic implementation with the Device (backend-specific)
 
-        help: the Trait docstring
+        help: the ParamAttr docstring
         label: a label for the quantity, such as units
 
     Arguments:
@@ -120,7 +177,6 @@ class Trait:
 
     ROLE_VALUE = "value"
     ROLE_PROPERTY = "property"
-    ROLE_DATARETURN = "return"
     ROLE_METHOD = "method"
     ROLE_UNSET = "unset"
 
@@ -145,7 +201,7 @@ class Trait:
     # implement communication with a device
     _setter = None
     _getter = None
-    _returner = None
+    _method = None
     _decorated_funcs: list = []
     _keywords: dict = {}
 
@@ -169,7 +225,6 @@ class Trait:
         self.kws = dict(kws)
         self.metadata = {}
         self._decorated_funcs = []
-
 
         cls_defaults = {k: getattr(self, k) for k in self.__annotations__.keys()}
 
@@ -216,7 +271,7 @@ class Trait:
 
     @classmethod
     def __init_subclass__(cls, type=Undefined):
-        """python triggers this call immediately after a Trait subclass
+        """python triggers this call immediately after a ParamAttr subclass
             is defined, allowing us to automatically customize its implementation.
 
         Arguments:
@@ -254,27 +309,23 @@ class Trait:
         obj = new_type(**dict(self.kws, **update_kws))
         obj._getter = self._getter
         obj._setter = self._setter
-        obj._returner = self._returner
+        obj._method = self._method
         return obj
 
     # Descriptor methods (called automatically by the owning class or instance)
     def __set_name__(self, owner_cls, name):
-        """Immediately after an owner class is instantiated, it calls this
-        method for each of its attributes that implements this method.
-
-        Trait takes advantage of this to remember the owning class for debug
-        messages and to register with the owner class.
+        """Called by the owner class when it is instantiated, triggering
         """
         # other owning objects may unintentionally become owners; this causes problems
-        # if they do not implement the HasTraits object protocol
-        if issubclass(owner_cls, HasTraits):
+        # if they do not implement the HasParamAttrs object protocol
+        if issubclass(owner_cls, HasParamAttrs):
             # inspect module expects this name - don't play with it
             self.__objclass__ = owner_cls
 
-            # Take the given name, unless we've bene tagged with a different
+            # Take the given name
             self.name = name
 
-            owner_cls._traits[name] = self
+            owner_cls._cls_info.attrs[name] = self
 
     def __init_owner_subclass__(self, owner_cls):
         """The owner calls this in each of its traits at the end of defining the subclass
@@ -293,7 +344,7 @@ class Trait:
         elif self.role == self.ROLE_METHOD:
             if len(self._decorated_funcs) > 0 and not isinstance(self.argname, str):
                 raise AttributeError(
-                    f'{self} must be defined with the argname argument when used as a decorator'
+                    f"{self} must be defined with the argname argument when used as a decorator"
                 )
         elif len(self._decorated_funcs) == 0:
             return
@@ -312,14 +363,14 @@ class Trait:
             elif len(self._decorated_funcs) == 1:
                 pass
             else:
-                raise AttributeError(f'{self} may not decorate more than one method')
-            
+                raise AttributeError(f"{self} may not decorate more than one method")
+
             for func, argcount in zip(self._decorated_funcs, positional_argcounts):
                 if len(self.help.rstrip().strip()) == 0:
                     # take func docstring as default self.help
                     self.help = (func.__doc__ or "").rstrip().strip()
 
-                self._returner = func
+                self._method = func
 
         elif self.role == self.ROLE_PROPERTY:
             if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
@@ -343,7 +394,7 @@ class Trait:
         pass
 
     @util.hide_in_traceback
-    def __set__(self, owner: HasTraits, value):
+    def __set__(self, owner: HasParamAttrs, value):
         # First, validate the pythonic types
         if not self.sets:
             raise AttributeError(f"{self.__str__()} cannot be set")
@@ -351,7 +402,7 @@ class Trait:
         # Validate the pythonic value
         if value is not None:
             # cast to self.type and validate
-            value = Trait.to_pythonic(self, value)
+            value = ParamAttr.to_pythonic(self, value)
             value = self.validate(value, owner)
 
             if len(self.only) > 0 and not self.contains(self.only, value):
@@ -382,7 +433,7 @@ class Trait:
 
             elif self.key is not None:
                 # otherwise, use the owner's set_key
-                owner._keying.set(owner, self.key, value, self)
+                owner._cls_info.key_adapter.set(owner, self.key, value, self)
 
             else:
                 objname = owner.__class__.__qualname__ + "." + self.name
@@ -419,17 +470,17 @@ class Trait:
         objclass_getter = self.__objclass__.__dict__.get(self.name)
         if cls_getter is not objclass_getter:
             return self
-        elif self.role == self.ROLE_DATARETURN:
-            # inject the labbench Trait hooks into the return value
-            @wraps(self._returner)
+        elif self.role == self.ROLE_METHOD:
+            # inject the labbench ParamAttr hooks into the return value
+            @wraps(self._method)
             def method(*args, **kws):
-                value = self._returner(owner, *args, **kws)
+                value = self._method(owner, *args, **kws)
                 return self.__cast_get__(owner, value)
 
             return method
 
         elif not self.gets:
-            # stop now if this is not a gets Trait
+            # stop now if this is not a gets ParamAttr
             raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not gets")
 
         elif self.role == self.ROLE_VALUE:
@@ -541,7 +592,7 @@ class Trait:
     # Decorator methods
     @util.hide_in_traceback
     def __call__(self, /, func=Undefined, **kwargs):
-        """decorates a class attribute with the Trait"""
+        """decorates a class attribute with the ParamAttr"""
         # only decorate functions.
         if not callable(func):
             raise Exception(
@@ -556,8 +607,8 @@ class Trait:
             self.name = func.__name__
         else:
             self._keywords = kwargs
-        if len(HasTraitsMeta.__cls_namespace__) > 0:
-            HasTraitsMeta.__cls_namespace__[-1][func.__name__] = self
+        if len(HasParamAttrsMeta.ns_pending) > 0:
+            HasParamAttrsMeta.ns_pending[-1][func.__name__] = self
 
         # return self to ensure `self` is the value assigned in the class definition
         return self
@@ -680,8 +731,8 @@ class Trait:
                 )
             trait_params["default"] = default
 
-        def apply_adjusted_trait(owner_cls: HasTraits):
-            if not issubclass(owner_cls, HasTraits):
+        def apply_adjusted_trait(owner_cls: HasParamAttrs):
+            if not issubclass(owner_cls, HasParamAttrs):
                 raise TypeError("adopt must decorate a Device class definition")
             if self.name not in owner_cls.__dict__:
                 raise ValueError(f'no trait "{self.name}" in {repr(owner_cls)}')
@@ -694,7 +745,7 @@ class Trait:
         return apply_adjusted_trait
 
 
-Trait.__init_subclass__()
+ParamAttr.__init_subclass__()
 
 
 @contextmanager
@@ -710,77 +761,73 @@ def hold_trait_notifications(owner):
     owner.__notify__ = original
 
 
-class KeyingBase:
-    def __new__(cls, *args, **kws):
-        """set up use as a class decorator"""
+class HasParamAttrsInstInfo:
+    handlers: Dict[str, Callable]
+    calibrations: Dict[str, Any]
+    cache: Dict[str, Any]
+    methods: Dict[str, Callable]
 
-        obj = super().__new__(cls)
+    __slots__ = handlers, calibrations, cache, methods
 
-        if len(args) == 1 and len(kws) == 0 and issubclass(args[0], HasTraits):
-            # instantiated as a decorator without arguments - do the decoration
-            obj.__init__()
-            return obj(args[0])
-        else:
-            # instantiated with arguments - decoration happens later
-            obj.__init__(*args, **kws)
-            return obj
+    def __init__(self, owner: HasParamAttrs):
+        self.handlers = {}
+        self.cache = {}
+        self.calibrations = {}
 
-    def __call__(self, owner_cls):
-        # do the decorating
-        owner_cls._keying = self
-        return owner_cls
+        for name, attr in owner._cls_info.attrs.items():
+            attr.__init_owner_instance__(self)
 
-    def get(self, trait_owner, key, trait=None):
-        raise NotImplementedError(
-            f'key adapter does not implement "get" {repr(type(self))}'
-        )
-
-    def set(self, trait_owner, key, value, trait=None):
-        raise NotImplementedError(
-            f'key adapter does not implement "set" {repr(type(self))}'
-        )
+            if attr.default is not Undefined:
+                self.cache[name] = attr.default
 
 
-class HasTraits(metaclass=HasTraitsMeta):
-    __notify_list__ = {}
-    __cls_namespace__ = {}
-    _keying = KeyingBase()
+def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> Dict[str, ParamAttr]:
+    """returns a mapping of labbench paramattrs defined in `obj`"""
+    return obj._cls_info.attrs
+
+def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
+    """returns a mapping of names of labbench value paramattrs defined in `obj`"""
+    return obj._cls_info.value_names()
+
+def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
+    """returns a mapping of names of labbench method paramattrs defined in `obj`"""
+    return obj._cls_info.method_names()
+
+def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
+    """returns a list of names of labbench property paramattrs defined in `obj`"""
+    return obj._cls_info.property_names()
+
+class HasParamAttrs(metaclass=HasParamAttrsMeta):
+    # TODO: remove this?
+    # ns_cache = {}
+    # _keying = KeyAdapterBase()
+
+    _attr_store: HasParamAttrsInstInfo
+    _cls_info: HasParamAttrsClsInfo
 
     def __init__(self, **values):
-        # who is informed on new get or set values
-        self.__notify_list__ = {}
-
-        # for cached properties and values in this instance
-        self.__cache__ = {}
-        self._calibrations = {}
-
-        for name, trait in self._traits.items():
-            trait.__init_owner_instance__(self)
-
-            if trait.default is not Undefined:
-                self.__cache__[name] = trait.default
+        self._attr_store = HasParamAttrsInstInfo(self)
 
     @util.hide_in_traceback
     def __init_subclass__(cls):
-        MANAGED_ROLES = Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
+        MANAGED_ROLES = ParamAttr.ROLE_PROPERTY, ParamAttr.ROLE_METHOD
 
-        cls._traits = dict(getattr(cls, "_traits", {}))
-        cls._property_attrs = []
-        cls._value_attrs = []
-        cls._datareturn_attrs = []
+        # cls._cls_info.attrs = dict(getattr(cls, "_attrs", {}))
+        # cls._property_attrs = []
+        # cls._value_attrs = []
+        # cls._method_attrs = []
 
-        # parent_traits = getattr(cls.__mro__[1], "_traits", {})
-
+        # parent_attrs = getattr(cls.__mro__[1], "_attrs", {})
         # annotations = getattr(cls, '__annotations__', {})
 
-        for name, trait in dict(cls._traits).items():
+        for name, trait in dict(cls._cls_info.attrs).items():
             # Apply the trait decorator to the object if it is "part 2" of a decorator
             obj = getattr(cls, name)
 
-            if not isinstance(obj, Trait):
+            if not isinstance(obj, ParamAttr):
                 if trait.role in MANAGED_ROLES and callable(obj):
                     # if it's a method, decorate it
-                    cls._traits[name] = trait(obj)
+                    cls._cls_info.attrs[name] = trait(obj)
                 else:
                     # if not decorating, clear from the traits dict, and emit a warning at runtime
                     thisclsname = cls.__qualname__
@@ -788,27 +835,21 @@ class HasTraits(metaclass=HasTraitsMeta):
                     warn(
                         f"'{name}' in {thisclsname} is not a trait, but replaces one in parent class {parentclsname}"
                     )
-                    del cls._traits[name]
+                    del cls._cls_info.attrs[name]
 
                     continue
 
-            setattr(cls, name, cls._traits[name])
+            setattr(cls, name, cls._cls_info.attrs[name])
 
-        if cls._traits in HasTraitsMeta.__cls_namespace__:
-            HasTraitsMeta.__cls_namespace__.remove(cls._traits)
+        if cls._cls_info.attrs in HasParamAttrsMeta.ns_pending:
+            type(cls).ns_pending.remove(cls._cls_info.attrs)
 
         # finalize trait setup
-        for name, trait in dict(cls._traits).items():
+        for name, trait in dict(cls._cls_info.attrs).items():
             if not hasattr(trait, "__objclass__"):
                 trait.__set_name__(cls, name)
             trait.__init_owner_subclass__(cls)
 
-            if trait.role == Trait.ROLE_VALUE:
-                cls._value_attrs.append(name)
-            elif trait.role == Trait.ROLE_DATARETURN:
-                cls._datareturn_attrs.append(name)
-            elif trait.role == Trait.ROLE_PROPERTY:
-                cls._property_attrs.append(name)
 
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache):
@@ -816,7 +857,7 @@ class HasTraits(metaclass=HasTraitsMeta):
 
         msg = dict(new=value, old=old, owner=self, name=name, type=type, cache=cache)
 
-        for handler in self.__notify_list__.values():
+        for handler in self._attr_store.handlers.values():
             handler(dict(msg))
 
         self.__cache__[name] = value
@@ -847,8 +888,8 @@ class HasTraits(metaclass=HasTraitsMeta):
 
 
 def adjusted(
-    trait: Union[Trait, str], default: Any = Undefined, /, **trait_params
-) -> HasTraits:
+    trait: Union[ParamAttr, str], default: Any = Undefined, /, **trait_params
+) -> HasParamAttrs:
     """decorates a Device subclass to adjust parameters of this trait name.
 
     This can be applied to inherited classes that need traits that vary the
@@ -860,22 +901,22 @@ def adjusted(
         default: new default value (for value traits only)
 
     Raises:
-        ValueError: invalid type of Trait argument, or when d
+        ValueError: invalid type of ParamAttr argument, or when d
         TypeError: _description_
         ValueError: _description_
 
     Returns:
-        HasTraits or Device with adjusted trait value
+        HasParamAttrs or Device with adjusted trait value
     """
-    if isinstance(trait, Trait):
+    if isinstance(trait, ParamAttr):
         name = trait.name
     elif isinstance(trait, builtins.str):
         name = trait
     else:
-        raise ValueError("expected Trait or str instance for `trait` argument")
+        raise ValueError("expected ParamAttr or str instance for `trait` argument")
 
-    def apply_adjusted_trait(owner_cls: HasTraits):
-        if not issubclass(owner_cls, HasTraits):
+    def apply_adjusted_trait(owner_cls: HasParamAttrs):
+        if not issubclass(owner_cls, HasParamAttrs):
             raise TypeError("adopt must decorate a Device class definition")
         if name not in owner_cls.__dict__:
             raise ValueError(f'no trait "{name}" in {repr(owner_cls)}')
@@ -888,7 +929,7 @@ def adjusted(
     return apply_adjusted_trait
 
 
-class Any(Trait, type=None):
+class Any(ParamAttr, type=None):
     """allows any value"""
 
     @util.hide_in_traceback
@@ -900,7 +941,7 @@ class Any(Trait, type=None):
         return value
 
 
-Trait.__annotations__["key"] = Any
+ParamAttr.__annotations__["key"] = Any
 
 
 def observe(obj, handler, name=Any, type_=("get", "set")):
@@ -924,7 +965,7 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
         attr = getattr(type(obj), n, Undefined)
         if attr is Undefined:
             raise TypeError(f'there is no attribute "{n}" to observe in "{obj}"')
-        elif not isinstance(attr, Trait):
+        elif not isinstance(attr, ParamAttr):
             raise TypeError(f"cannot observe {obj}.{n} because it is not a trait")
 
     if not callable(handler):
@@ -952,21 +993,21 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
             return
         elif msg["type"] not in type_:
             return
-        elif isinstance(msg["new"], Trait):
-            raise TypeError("Trait instance returned as a callback value")
+        elif isinstance(msg["new"], ParamAttr):
+            raise TypeError("ParamAttr instance returned as a callback value")
         handler(msg)
 
-    if isinstance(obj, HasTraits):
-        obj.__notify_list__[handler] = wrapped
+    if isinstance(obj, HasParamAttrs):
+        obj._attr_store.handlers[handler] = wrapped
     else:
         raise TypeError("object to observe must be an instance of Device")
 
 
 def unobserve(obj, handler):
     """Unregister a handler function from notifications in obj."""
-    if isinstance(obj, HasTraits):
+    if isinstance(obj, HasParamAttrs):
         try:
-            del obj.__notify_list__[handler]
+            del obj._attr_store.handlers[handler]
         except KeyError as e:
             ex = e
         else:
@@ -978,20 +1019,20 @@ def unobserve(obj, handler):
 
 
 def find_trait_in_mro(cls):
-    if issubclass(cls, DependentTrait):
+    if issubclass(cls, DependentParamAttr):
         return find_trait_in_mro(type(cls._trait_dependencies["base"]))
     else:
         return cls
 
 
-class DependentTrait(Trait):
+class DependentParamAttr(ParamAttr):
     _trait_dependencies = set()
 
     def __set_name__(self, owner_cls, name):
         super().__set_name__(owner_cls, name)
 
         # propagate ownership of dependent traits, if available
-        if isinstance(owner_cls, HasTraits):
+        if isinstance(owner_cls, HasParamAttrs):
             objclass = owner_cls
         elif hasattr(self, "__objclass__"):
             objclass = self.__objclass__
@@ -1021,21 +1062,21 @@ class DependentTrait(Trait):
             )
 
     @classmethod
-    def derive(mixin_cls, template_trait, dependent_traits={}, *init_args, **init_kws):
+    def derive(mixin_cls, template_trait, dependent_attrs={}, *init_args, **init_kws):
         name = template_trait.__class__.__name__
         name = ("" if name.startswith("dependent_") else "dependent_") + name
 
-        dependent_traits["base"] = template_trait
+        dependent_attrs["base"] = template_trait
 
         traits_dict = {}
 
         for c in mixin_cls.__mro__:
-            if issubclass(c, DependentTrait):
+            if issubclass(c, DependentParamAttr):
                 traits_dict.update(c._trait_dependencies)
 
-        traits_dict.update(dependent_traits)
+        traits_dict.update(dependent_attrs)
 
-        ns = dict(_trait_dependencies=traits_dict, **dependent_traits)
+        ns = dict(_trait_dependencies=traits_dict, **dependent_attrs)
 
         ttype = type(name, (mixin_cls, find_trait_in_mro(type(template_trait))), ns)
 
@@ -1043,7 +1084,7 @@ class DependentTrait(Trait):
         return obj
 
 
-class RemappingCorrectionMixIn(DependentTrait):
+class RemappingCorrectionMixIn(DependentParamAttr):
     """act as another BoundedNumber trait calibrated with a mapping"""
 
     mapping: Any = None  # really a pandas Series
@@ -1327,7 +1368,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         super().__set__(owner, cal)
 
 
-class TransformMixIn(DependentTrait):
+class TransformMixIn(DependentParamAttr):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber trait"""
 
     _forward: Any = lambda x, y: x
@@ -1449,7 +1490,7 @@ class TransformMixIn(DependentTrait):
             )
 
 
-class BoundedNumber(Trait):
+class BoundedNumber(ParamAttr):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
 
     default: ThisType = None
@@ -1505,7 +1546,7 @@ class BoundedNumber(Trait):
         label=Undefined,
         allow_none=False,
     ):
-        """generate a new Trait with value dependent on another trait. their configuration
+        """generate a new ParamAttr with value dependent on another trait. their configuration
         comes from a trait in the owner.
 
         Arguments:
@@ -1539,11 +1580,11 @@ class BoundedNumber(Trait):
         label: str = Undefined,
         allow_none: bool = False,
     ):
-        if isinstance(self, DependentTrait):
+        if isinstance(self, DependentParamAttr):
             # This a little unsatisfying, but the alternative would mean
             # solving the trait_expression for the trait `self`
             obj = trait_expression
-            while isinstance(obj, DependentTrait):
+            while isinstance(obj, DependentParamAttr):
                 obj = obj._trait_dependencies["base"]
                 if obj == self:
                     break
@@ -1565,7 +1606,7 @@ class BoundedNumber(Trait):
     #     label=Undefined,
     #     allow_none=False,
     # ):
-    #     """generate a new Trait with value dependent on another trait. their configuration
+    #     """generate a new ParamAttr with value dependent on another trait. their configuration
     #     comes from a trait in the owner.
 
     #     Arguments:
@@ -1600,13 +1641,13 @@ class BoundedNumber(Trait):
 
     def transform(
         self,
-        other_trait: Trait,
+        other_trait: ParamAttr,
         forward: callable,
         reverse: callable,
         help="",
         allow_none=False,
     ):
-        """generate a new Trait subclass that adjusts values in other traits.
+        """generate a new ParamAttr subclass that adjusts values in other traits.
 
         Arguments:
             forward: implementation of the forward transformation
@@ -1615,7 +1656,7 @@ class BoundedNumber(Trait):
 
         obj = TransformMixIn.derive(
             self,
-            dependent_traits={} if other_trait is None else dict(other=other_trait),
+            dependent_attrs={} if other_trait is None else dict(other=other_trait),
             help=help,
             label=self.label,
             sets=self.sets,
@@ -1739,13 +1780,13 @@ class Float(BoundedNumber, type=float):
         return value
 
 
-class Complex(Trait, type=complex):
+class Complex(ParamAttr, type=complex):
     """accepts numerical or str values, following normal python casting procedures (with bounds checking)"""
 
     allow_none: bool = False
 
 
-class Bool(Trait, type=bool):
+class Bool(ParamAttr, type=bool):
     """accepts boolean or numeric values, or a case-insensitive match to one of ('true',b'true','false',b'false')"""
 
     allow_none: bool = False
@@ -1766,7 +1807,7 @@ class Bool(Trait, type=bool):
         )
 
 
-class String(Trait):
+class String(ParamAttr):
     """base class for string types, which adds support for case sensitivity arguments"""
 
     case: bool = True
@@ -1800,7 +1841,7 @@ class Bytes(String, type=bytes):
     default: ThisType = b""
 
 
-class Iterable(Trait):
+class Iterable(ParamAttr):
     """accepts any iterable"""
 
     @util.hide_in_traceback
@@ -1826,7 +1867,7 @@ class Tuple(Iterable, type=tuple):
     sets: bool = False
 
 
-class Path(Trait, type=Path):
+class Path(ParamAttr, type=Path):
     must_exist: bool = False
     """ does the path need to exist when set? """
 
@@ -1884,12 +1925,12 @@ class NetworkAddress(Unicode):
         return value
 
 
-VALID_TRAIT_ROLES = Trait.ROLE_VALUE, Trait.ROLE_PROPERTY, Trait.ROLE_DATARETURN
+VALID_TRAIT_ROLES = ParamAttr.ROLE_VALUE, ParamAttr.ROLE_PROPERTY, ParamAttr.ROLE_METHOD
 
 
 def subclass_namespace_attrs(namespace_dict, role, omit_trait_attrs):
     for name, attr in dict(namespace_dict).items():
-        if isclass(attr) and issubclass(attr, Trait):
+        if isclass(attr) and issubclass(attr, ParamAttr):
             # subclass our traits with the given role
             new_trait = type(name, (attr,), dict(role=role))
             new_trait.role = role
@@ -1903,7 +1944,7 @@ def subclass_namespace_attrs(namespace_dict, role, omit_trait_attrs):
             namespace_dict[name] = new_trait
 
 
-class message_keying(KeyingBase):
+class message_keying(KeyAdapterBase):
     """Device class decorator that implements automatic API that triggers API messages for labbench properties.
 
     Example usage:
@@ -1978,7 +2019,13 @@ class message_keying(KeyingBase):
     def to_message(self, value):
         return self.value_map.get(value, value)
 
-    def get(self, device: HasTraits, scpi_key: str, trait=None, arguments: Dict[str, Any]={}):
+    def get(
+        self,
+        device: HasParamAttrs,
+        scpi_key: str,
+        trait=None,
+        arguments: Dict[str, Any] = {},
+    ):
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
         The command message string is formatted as f'{scpi_key}?'.
@@ -2001,7 +2048,14 @@ class message_keying(KeyingBase):
         value_msg = query_func(self.query_fmt.format(key=expanded_scpi_key)).rstrip()
         return self.from_message(value_msg)
 
-    def set(self, device: HasTraits, scpi_key: str, value, trait=None, arguments: Dict[str, Any]={}):
+    def set(
+        self,
+        device: HasParamAttrs,
+        scpi_key: str,
+        value,
+        trait=None,
+        arguments: Dict[str, Any] = {},
+    ):
         """writes an SCPI message to set a parameter with a name key
         to `value`.
 
@@ -2024,7 +2078,7 @@ class message_keying(KeyingBase):
         write_func = getattr(device, self.write_func)
         write_func(self.write_fmt.format(key=expanded_scpi_key, value=value_msg))
 
-    def method_from_key(self, device: HasTraits, trait: Trait):
+    def method_from_key(self, device: HasParamAttrs, trait: ParamAttr):
         """Autogenerate a parameter getter/setter method based on the message key defined in a method trait."""
 
         checks = {
@@ -2033,25 +2087,29 @@ class message_keying(KeyingBase):
 
         kwarg_params = {
             name: inspect.Parameter(
-                name, kind=inspect.Parameter.KEYWORD_ONLY, annotation=checks.get(name, Undefined)
+                name,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                annotation=checks.get(name, Undefined),
             )
             for name in self.get_key_arguments(trait.key)
         }
         params = {
-            'self': inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
-            'value': inspect.Parameter(
-                "value", default=Undefined, kind=inspect.Parameter.POSITIONAL_ONLY, annotation=trait.type
-                ),
-            **kwarg_params
+            "self": inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
+            "value": inspect.Parameter(
+                "value",
+                default=Undefined,
+                kind=inspect.Parameter.POSITIONAL_ONLY,
+                annotation=trait.type,
+            ),
+            **kwarg_params,
         }
 
         skip_check = lambda x: x
 
-        def method(trait_obj, value: trait.type, /, **params) -> Union[None, trait.type]:
-            arguments = {
-                k: checks.get(k, skip_check)(v)
-                for k, v in params.items()
-            }
+        def method(
+            trait_obj, value: trait.type, /, **params
+        ) -> Union[None, trait.type]:
+            arguments = {k: checks.get(k, skip_check)(v) for k, v in params.items()}
 
             if value is Undefined:
                 return self.get(device, trait_obj.key, trait_obj, arguments)

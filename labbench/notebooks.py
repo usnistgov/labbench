@@ -30,7 +30,7 @@ from ._backends import VISADevice
 from ._host import Host
 from .util import show_messages
 from ._rack import Rack
-from .paramattr import observe
+from .paramattr import observe, get_class_attrs
 
 import logging
 import time
@@ -91,7 +91,7 @@ def trait_table(device):
             return
         else:
             print(name)
-        label = obj._traits[name].label
+        label = get_class_attrs(obj)[name].label
         _df.loc[name] = (str(value) + " " + str("" if label is None else label),)
         _df.sort_index(inplace=True)
         caption = CAPTION_FMT.format(obj._owned_name or repr(obj)).replace(",", "<br>")

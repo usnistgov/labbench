@@ -111,9 +111,9 @@ class ShellBackend(Device):
         self._stderr = Queue()
 
         # Monitor property trait changes
-        properties = set(self._value_attrs).difference(dir(ShellBackend))
+        values = set(param.list_value_attrs(self)).difference(dir(ShellBackend))
 
-        observe(self, check_state_change, name=tuple(properties))
+        observe(self, check_state_change, name=tuple(values))
 
     def run(
         self,
@@ -332,7 +332,7 @@ class ShellBackend(Device):
 
     def _flags_to_argv(self, flags):
         # find keys in flags that do not exist as value traits
-        unsupported = set(flags.keys()).difference(self._value_attrs)
+        unsupported = set(flags.keys()).difference(param.list_value_attrs(self))
         if len(unsupported) > 1:
             raise KeyError(
                 f"flags point to value traits {unsupported} that do not exist in {self}"
@@ -340,7 +340,7 @@ class ShellBackend(Device):
 
         argv = []
         for name, flag_str in flags.items():
-            trait = self._traits[name]
+            trait = self._cls_info.attrs[name]
             trait_value = getattr(self, name)
 
             if not isinstance(flag_str, str) and flag_str is not None:

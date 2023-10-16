@@ -140,15 +140,15 @@ def log_trait_activity(msg):
 
     label = ""
     if msg["type"] == "set":
-        if owner._traits[trait_name].label:
-            label = f"({owner._traits[trait_name].label})"
+        if param.get_class_attrs(owner)[trait_name].label:
+            label = f"({param.get_class_attrs(owner)[trait_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
         owner._logger.debug(f'trait set: "{trait_name}" → {value} {label}'.rstrip())
     elif msg["type"] == "get":
-        if owner._traits[trait_name].label:
-            label = f"({owner._traits[trait_name].label})"
+        if param.get_class_attrs(owner)[trait_name].label:
+            label = f"({param.get_class_attrs(owner)[trait_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
@@ -184,7 +184,9 @@ class Device(HasTraits, util.Ownable):
 
     """
 
-    resource = param.value.str(allow_none=True, cache=True, help="device address or URI")
+    resource = param.value.str(
+        allow_none=True, cache=True, help="device address or URI"
+    )
     concurrency = param.value.bool(
         True, sets=False, help="True if the device supports threading"
     )
@@ -222,6 +224,7 @@ class Device(HasTraits, util.Ownable):
         self.isopen
         param.unobserve(self, log_trait_activity)
 
+    # TODO: can this be safely removed?
     __children__ = {}
 
     @util.hide_in_traceback
@@ -244,7 +247,8 @@ class Device(HasTraits, util.Ownable):
 
         with hold_trait_notifications(self):
             for name, init_value in values.items():
-                if init_value != self._traits[name].default:
+                attrs = param.get_class_attrs(self)
+                if init_value != attrs[name].default:
                     setattr(self, name, init_value)
 
         util.Ownable.__init__(self)
@@ -277,9 +281,9 @@ class Device(HasTraits, util.Ownable):
         ]
 
         settable_values = {
-            name: cls._traits[name]
-            for name in cls._value_attrs
-            if cls._traits[name].sets
+            name: param.get_class_attrs(cls)[name]
+            for name in cls._cls_info.value_names()
+            if param.get_class_attrs(cls)[name].sets
         }
 
         # generate and apply the sequence of call signature parameters
@@ -428,7 +432,7 @@ Device.__init_subclass__()
 def trait_info(device: Device, name: str) -> dict:
     """returns the keywords used to define the trait attribute named `name` in `device`"""
 
-    trait = device._traits[name]
+    trait = param.get_class_attrs(device)[name]
     info = dict(trait.kws)
 
     if isinstance(trait, BoundedNumber):

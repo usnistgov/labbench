@@ -70,7 +70,7 @@ from ._rack import (
     rack_kwargs_template,
 )
 from ._serialize import dump_rack, load_rack
-from .paramattr._bases import Undefined
+from .paramattr._bases import Undefined, get_class_attrs
 from ._version import __version__
 
 # scrub __module__ for cleaner repr() and doc

@@ -99,7 +99,9 @@ class MungerBase(core.Device):
     nonscalar_file_type = param.value.str(
         "csv", help="file format for non-scalar numerical data"
     )
-    metadata_dirname = param.value.str("metadata", help="subdirectory name for metadata")
+    metadata_dirname = param.value.str(
+        "metadata", help="subdirectory name for metadata"
+    )
 
     def __call__(self, index, row):
         """
@@ -169,7 +171,7 @@ class MungerBase(core.Device):
                 # other util.Ownable instances e.g. RelationalTableLogger
                 continue
 
-            for trait_name, trait in owner._traits.items():
+            for trait_name, trait in param.get_class_attrs(owner).items():
                 if trait.role == param.Trait.ROLE_VALUE or trait.cache:
                     summary[key_func(owner_name, trait_name)] = getattr(
                         owner, trait_name
@@ -567,7 +569,7 @@ class Aggregator(util.Ownable):
         if not isinstance(device, core.Device):
             return False
 
-        trait = device._traits[attr]
+        trait = param.get_class_attrs(device)[attr]
 
         return trait.role in self.PERSISTENT_TRAIT_ROLES or trait.cache
 
@@ -1211,7 +1213,7 @@ class TabularLoggerBase(
         if self not in self.aggregator.name_map:
             self.aggregator.update_name_map({self: None})
 
-        self.observe(self.munge, never=self.munge._traits)
+        self.observe(self.munge, never=param.get_class_attrs(self.munge))
         self.observe(self.host, always=["time", "log"])
 
         # configure strings in relational data files that depend on how 'self' is

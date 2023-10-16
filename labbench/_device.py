@@ -41,7 +41,7 @@ from . import util
 from . import paramattr as param
 
 from .paramattr._bases import (
-    HasTraits,
+    HasParamAttrs,
     Undefined,
     BoundedNumber,
     observe,
@@ -157,7 +157,7 @@ def log_trait_activity(msg):
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
-class Device(HasTraits, util.Ownable):
+class Device(HasParamAttrs, util.Ownable):
     r"""base class for labbench device wrappers.
 
     Drivers that subclass `Device` share

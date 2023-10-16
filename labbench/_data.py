@@ -528,7 +528,7 @@ class MungeToTar(MungerBase):
 class Aggregator(util.Ownable):
     """Passive aggregation of data from Device property trait and value traits traits, and from calls to methods in Rack instances"""
 
-    PERSISTENT_TRAIT_ROLES = (param._bases.Trait.ROLE_VALUE,)
+    PERSISTENT_TRAIT_ROLES = (param._bases.ParamAttr.ROLE_VALUE,)
 
     def __init__(self):
         # registry of names to use for trait owners

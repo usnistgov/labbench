@@ -11,5 +11,5 @@ from ._bases import (
     get_class_attrs,
     list_method_attrs,
     list_value_attrs,
-    list_property_attrs
+    list_property_attrs,
 )

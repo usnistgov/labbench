@@ -98,9 +98,13 @@ class HasParamAttrsClsInfo:
     attrs: Dict[str, ParamAttr]
     key_adapter: KeyAdapterBase
 
-    __slots__ = ['attrs', 'key_adapter']
+    __slots__ = ["attrs", "key_adapter"]
 
-    def __init__(self, attrs: Dict[str, ParamAttr]={}, key_adapter: KeyAdapterBase=KeyAdapterBase()):
+    def __init__(
+        self,
+        attrs: Dict[str, ParamAttr] = {},
+        key_adapter: KeyAdapterBase = KeyAdapterBase(),
+    ):
         self.attrs = attrs
         self.key_adapter = key_adapter
 
@@ -109,9 +113,9 @@ class HasParamAttrsClsInfo:
 
     def method_names(self) -> List[ParamAttr]:
         return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_METHOD]
-    
+
     def property_names(self) -> List[ParamAttr]:
-        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_PROPERTY]    
+        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_PROPERTY]
 
     @classmethod
     def _copy_from(cls, owner: HasParamAttrs):
@@ -121,7 +125,7 @@ class HasParamAttrsClsInfo:
 
 
 class HasParamAttrsMeta(type):
-    # hold on to recent namespaces until they can be used to initialize descriptors 
+    # hold on to recent namespaces until they can be used to initialize descriptors
     ns_pending: list = []
 
     @classmethod
@@ -131,12 +135,12 @@ class HasParamAttrsMeta(type):
         """
         ns = dict()
         if len(bases) >= 1:
-            cls_info = ns['_cls_info'] = HasParamAttrsClsInfo._copy_from(bases[0])
+            cls_info = ns["_cls_info"] = HasParamAttrsClsInfo._copy_from(bases[0])
             ns.update(cls_info.attrs)
             metacls.ns_pending.append(cls_info.attrs)
             return ns
         else:
-            ns['_cls_info'] = HasParamAttrsClsInfo()
+            ns["_cls_info"] = HasParamAttrsClsInfo()
             metacls.ns_pending.append({})
         return ns
 
@@ -314,8 +318,7 @@ class ParamAttr:
 
     # Descriptor methods (called automatically by the owning class or instance)
     def __set_name__(self, owner_cls, name):
-        """Called by the owner class when it is instantiated, triggering
-        """
+        """Called by the owner class when it is instantiated, triggering"""
         # other owning objects may unintentionally become owners; this causes problems
         # if they do not implement the HasParamAttrs object protocol
         if issubclass(owner_cls, HasParamAttrs):
@@ -767,7 +770,7 @@ class HasParamAttrsInstInfo:
     cache: Dict[str, Any]
     methods: Dict[str, Callable]
 
-    __slots__ = handlers, calibrations, cache, methods
+    __slots__ = 'handlers', 'calibrations', 'cache', 'methods'
 
     def __init__(self, owner: HasParamAttrs):
         self.handlers = {}
@@ -781,21 +784,27 @@ class HasParamAttrsInstInfo:
                 self.cache[name] = attr.default
 
 
-def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> Dict[str, ParamAttr]:
+def get_class_attrs(
+    obj: Union[HasParamAttrs, Type[HasParamAttrs]]
+) -> Dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
     return obj._cls_info.attrs
+
 
 def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
     """returns a mapping of names of labbench value paramattrs defined in `obj`"""
     return obj._cls_info.value_names()
 
+
 def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
     """returns a mapping of names of labbench method paramattrs defined in `obj`"""
     return obj._cls_info.method_names()
 
+
 def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
     """returns a list of names of labbench property paramattrs defined in `obj`"""
     return obj._cls_info.property_names()
+
 
 class HasParamAttrs(metaclass=HasParamAttrsMeta):
     # TODO: remove this?
@@ -849,7 +858,6 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
             if not hasattr(trait, "__objclass__"):
                 trait.__set_name__(cls, name)
             trait.__init_owner_subclass__(cls)
-
 
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache):

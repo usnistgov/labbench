@@ -1,173 +1,209 @@
 from . import _bases
 
+
 class any(_bases.Any):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-    ): ...
+        default=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False
+    ):
+        ...
     ...
+
 
 class bool(_bases.Bool):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-    ): ...
+        default: bool=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False
+    ):
+        ...
     ...
+
 
 class float(_bases.Float):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = True,
-        min: str = None,
-        max: str = None,
-        path_trait: str = None,
-        index_lookup_trait: str = None,
-        table_index_column: str = None,
-        step: str = None,
-    ): ...
+        default: float=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=True,
+        min: float=None,
+        max: float=None,
+        path_trait=None,
+        index_lookup_trait=None,
+        table_index_column: str=None,
+        step: float=None
+    ):
+        ...
     ...
+
 
 class int(_bases.Int):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = True,
-        min: str = None,
-        max: str = None,
-        path_trait: str = None,
-        index_lookup_trait: str = None,
-        table_index_column: str = None,
-    ): ...
+        default: int=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=True,
+        min: int=None,
+        max: int=None,
+        path_trait=None,
+        index_lookup_trait=None,
+        table_index_column: str=None
+    ):
+        ...
     ...
+
 
 class complex(_bases.Complex):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-    ): ...
+        default: complex=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False
+    ):
+        ...
     ...
+
 
 class str(_bases.Unicode):
+
     def __init__(
-        default: str = "",
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-        case: str = True,
-    ): ...
+        default: str='',
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False,
+        case: bool=True
+    ):
+        ...
     ...
+
 
 class bytes(_bases.Bytes):
+
     def __init__(
-        default: str = b"",
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-        case: str = True,
-    ): ...
+        default: bytes=b'',
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False,
+        case: bool=True
+    ):
+        ...
     ...
+
 
 class list(_bases.List):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-    ): ...
+        default: list=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False
+    ):
+        ...
     ...
+
 
 class tuple(_bases.Tuple):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = False,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-    ): ...
+        default: tuple=None,
+        help: str='',
+        label: str='',
+        sets: bool=False,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False
+    ):
+        ...
     ...
+
 
 class dict(_bases.Dict):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-    ): ...
+        default: dict=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False
+    ):
+        ...
     ...
+
 
 class Path(_bases.Path):
+
     def __init__(
-        default: str = None,
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-        must_exist: str = False,
-    ): ...
+        default: Path=None,
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False,
+        must_exist: bool=False
+    ):
+        ...
     ...
 
+
 class NetworkAddress(_bases.NetworkAddress):
+
     def __init__(
-        default: str = "",
-        help: str = "",
-        label: str = "",
-        sets: str = True,
-        gets: str = True,
-        cache: str = False,
-        only: str = (),
-        allow_none: str = False,
-        case: str = True,
-        accept_port: str = True,
-    ): ...
+        default: str='',
+        help: str='',
+        label: str='',
+        sets: bool=True,
+        gets: bool=True,
+        cache: bool=False,
+        only: tuple=(),
+        allow_none: bool=False,
+        case: bool=True,
+        accept_port: bool=True
+    ):
+        ...
     ...

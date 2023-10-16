@@ -6,10 +6,10 @@ import importlib
 from pathlib import Path
 
 from labbench import Device, Rack, util
-from labbench._traits import Trait, Undefined
+from labbench.paramattr._bases import ParamAttr, Undefined, Any, ThisType, get_class_attrs, list_value_attrs, list_method_attrs, list_property_attrs
 util._force_full_traceback(True)
 
-VALID_PARENTS = Device, Rack, Trait
+VALID_PARENTS = Device, Rack, ParamAttr
 
 import ast
 import typing
@@ -18,7 +18,6 @@ from inspect import isclass
 from ast_decompiler import decompile
 
 from labbench import Device, Rack
-from labbench._traits import Any, ThisType
 
 
 def nameit(obj):
@@ -91,7 +90,7 @@ def update_stubs(path, mod_name, sub_name):
     target_names = [
         name
         for name, obj in namespace.__dict__.items()
-        if isclass(obj) and issubclass(obj, (Trait, Rack, Device))
+        if isclass(obj) and issubclass(obj, (ParamAttr, Rack, Device))
     ]
 
     if len(target_names) > 0:
@@ -117,17 +116,17 @@ def update_stubs(path, mod_name, sub_name):
         cls = getattr(namespace, cls_def.name)
 
         if issubclass(cls, Device):
-            traits = {
-                name: cls._traits[name]
-                for name in cls._value_attrs
-                if cls._traits[name].sets
+            attrs = {
+                name: get_class_attrs(cls)[name]
+                for name in list_value_attrs(cls)
+                if get_class_attrs(cls)[name].sets
             }
 
-            args = ["self"] + list(traits.keys())
-            defaults = [nameit(trait.default) for trait in traits.values()]
-            annotations = {name: nameit(trait.type) for name, trait in traits.items()}
+            args = ["self"] + list(attrs.keys())
+            defaults = [nameit(trait.default) for trait in attrs.values()]
+            annotations = {name: nameit(trait.type) for name, trait in attrs.items()}
 
-        elif issubclass(cls, (Trait, Rack)):
+        elif issubclass(cls, (ParamAttr, Rack)):
             annots = getattr(cls, "__annotations__", {})
             annots = {k: v for k, v in annots.items() if not k.startswith("_")}
 

@@ -42,11 +42,11 @@ shutil.rmtree(DATA_PATH, True)
 db = lb.CSVLogger(path=f"./data")
 
 # automatic logging from `analyzer` in 'output.csv' in each call to db.new_row:
-# (1) each lb.property or lb.value that has been get or set in the device since the last call
+# (1) each attr.property or lb.value that has been get or set in the device since the last call
 db.observe(analyzer)
 
 # automatic logging from `sensor` in 'output.csv' in each call to db.new_row:
-# (1) each lb.property or lb.value that has been get or set in the device since the last call
+# (1) each attr.property or lb.value that has been get or set in the device since the last call
 # (2) explicitly get `sensor.sweep_aperture` (as column "sensor_sweep_aperture")
 db.observe(sensor, always=['sweep_aperture'])
 

@@ -21,6 +21,7 @@ Suppose we need to take a measurement with automation of 2 instruments:
 ```{code-cell} ipython3
 import labbench as lb
 from labbench.testing import SignalGenerator, PowerSensor, SpectrumAnalyzer, pyvisa_sim_resource
+from labbench import paramattr as attr
 ```
 
 Here is an artificial example of how these could be assembled into `Rack` objects 

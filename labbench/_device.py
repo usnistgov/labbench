@@ -38,7 +38,7 @@ from warnings import warn
 from typing import Union
 
 from . import util
-from . import paramattr as attr
+from . import paramattr as param
 
 from .paramattr._bases import (
     HasTraits,
@@ -184,8 +184,8 @@ class Device(HasTraits, util.Ownable):
 
     """
 
-    resource = attr.value.str(allow_none=True, cache=True, help="device address or URI")
-    concurrency = attr.value.bool(
+    resource = param.value.str(allow_none=True, cache=True, help="device address or URI")
+    concurrency = param.value.bool(
         True, sets=False, help="True if the device supports threading"
     )
     """ Container for property trait traits in a Device. Getting or setting property trait traits
@@ -212,7 +212,7 @@ class Device(HasTraits, util.Ownable):
         """Backend implementations overload this to open a backend
         connection to the resource.
         """
-        attr.observe(self, log_trait_activity)
+        param.observe(self, log_trait_activity)
 
     def close(self):
         """Backend implementations must overload this to disconnect an
@@ -220,7 +220,7 @@ class Device(HasTraits, util.Ownable):
         """
         self.backend = DisconnectedBackend(self)
         self.isopen
-        attr.unobserve(self, log_trait_activity)
+        param.unobserve(self, log_trait_activity)
 
     __children__ = {}
 
@@ -411,7 +411,7 @@ class Device(HasTraits, util.Ownable):
             # In case an exception has occurred before __init__
             return f"{name}()"
 
-    @attr.property.bool()
+    @param.property.bool()
     def isopen(self):
         """`True` if the backend is ready for use"""
         try:

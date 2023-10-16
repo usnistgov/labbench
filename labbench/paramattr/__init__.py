@@ -1,3 +1,4 @@
-from . import _bases, property, value, datareturn
+from . import _bases, property, value, method
 
-from ._bases import PropertyKeyingBase, Undefined, adjusted, observe, unobserve
+from ._bases import KeyingBase, Undefined, adjusted, observe, unobserve, visa_keying, message_keying
+

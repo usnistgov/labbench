@@ -58,10 +58,10 @@ class EmulatedInstrument(lb.EmulatedVISADevice):
         up a measurement.
     """
     class state (lb.EmulatedVISADevice.state):
-        initiate_continuous:bool = lb.property(key='INIT:CONT')
-        output_trigger:bool = lb.property(key='OUTP:TRIG')
-        sweep_aperture:float = lb.property(min=20e-6, max=200e-3,help='s')
-        frequency:float = lb.property(min=10e6, max=18e9,step=1e-3,help='Hz')
+        initiate_continuous:bool = attr.property(key='INIT:CONT')
+        output_trigger:bool = attr.property(key='OUTP:TRIG')
+        sweep_aperture:float = attr.property(min=20e-6, max=200e-3,help='s')
+        frequency:float = attr.property(min=10e6, max=18e9,step=1e-3,help='Hz')
 
     def trigger(self):
         """ This would tell the instrument to start a measurement

@@ -47,7 +47,7 @@ import pyvisa.errors
 from . import util
 from ._device import Device
 from .paramattr import observe
-from . import paramattr as attr
+from . import paramattr as param
 
 try:
     serial = util.lazy_import("serial")
@@ -74,11 +74,11 @@ class ShellBackend(Device):
     queued stdout.
     """
 
-    binary_path = attr.value.Path(
+    binary_path = param.value.Path(
         default=None, allow_none=True, help="path to the file to run", cache=True
     )
 
-    timeout = attr.value.float(
+    timeout = param.value.float(
         default=1,
         min=0,
         help="wait time after close before killing background processes",
@@ -524,8 +524,8 @@ class DotNetDevice(Device):
     """
 
     # these can only be set as arguments to a subclass definition
-    library = attr.value.any(None, allow_none=True, sets=False)  # Must be a module
-    dll_name = attr.value.str(None, allow_none=True, sets=False)
+    library = param.value.any(None, allow_none=True, sets=False)  # Must be a module
+    dll_name = param.value.str(None, allow_none=True, sets=False)
 
     _dlls = {}
 
@@ -569,11 +569,11 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
-@attr.property.message_keying(write_fmt="{key} {value}", write_func="write")
+@param.message_keying(write_fmt="{key} {value}", write_func="write")
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
-    Keyed get/set with lb.property are implemented by simple ' command value'.
+    Keyed get/set with param.property are implemented by simple ' command value'.
     Subclasses can therefore implement support for commands in
     specific labview VI similar to VISA commands by
     assigning the commands implemented in the corresponding labview VI.
@@ -582,18 +582,18 @@ class LabviewSocketInterface(Device):
         - backend: connection object mapping {'rx': rxsock, 'tx': txsock}
     """
 
-    resource = attr.value.NetworkAddress(
+    resource = param.value.NetworkAddress(
         "127.0.0.1", accept_port=False, help="LabView VI host address"
     )
-    tx_port = attr.value.int(61551, help="TX port to send to the LabView VI")
-    rx_port = attr.value.int(61552, help="TX port to send to the LabView VI")
-    delay = attr.value.float(
+    tx_port = param.value.int(61551, help="TX port to send to the LabView VI")
+    rx_port = param.value.int(61552, help="TX port to send to the LabView VI")
+    delay = param.value.float(
         1, help="time to wait after each property trait write or query"
     )
-    timeout = attr.value.float(
+    timeout = param.value.float(
         2, help="maximum wait replies before raising TimeoutError"
     )
-    rx_buffer_size = attr.value.int(1024, min=1)
+    rx_buffer_size = param.value.int(1024, min=1)
 
     def open(self):
         self.backend = dict(
@@ -662,25 +662,25 @@ class SerialDevice(Device):
     """
 
     # Connection value traits
-    resource = attr.value.str(help="platform-dependent serial port address")
-    timeout = attr.value.float(
+    resource = param.value.str(help="platform-dependent serial port address")
+    timeout = param.value.float(
         2, min=0, help="Max time to wait for a connection before raising TimeoutError."
     )
-    write_termination = attr.value.bytes(
+    write_termination = param.value.bytes(
         b"\n", help="Termination character to send after a write."
     )
-    baud_rate: int = attr.value.int(
+    baud_rate: int = param.value.int(
         9600, min=1, help="Data rate of the physical serial connection."
     )
-    parity = attr.value.bytes(b"N", help="Parity in the physical serial connection.")
-    stopbits = attr.value.float(
+    parity = param.value.bytes(b"N", help="Parity in the physical serial connection.")
+    stopbits = param.value.float(
         1, min=1, max=2, step=0.5, help="Number of stop bits, one of `[1, 1.5, or 2.]`."
     )
-    xonxoff = attr.value.bool(False, help="`True` to enable software flow control.")
-    rtscts = attr.value.bool(
+    xonxoff = param.value.bool(False, help="`True` to enable software flow control.")
+    rtscts = param.value.bool(
         False, help="`True` to enable hardware (RTS/CTS) flow control."
     )
-    dsrdtr = attr.value.bool(
+    dsrdtr = param.value.bool(
         False, help="`True` to enable hardware (DSR/DTR) flow control."
     )
 
@@ -769,14 +769,14 @@ class SerialLoggingDevice(SerialDevice):
     from the serial port.
     """
 
-    poll_rate = attr.value.float(
+    poll_rate = param.value.float(
         0.1, min=0, help="Data retreival rate from the device (in seconds)"
     )
-    data_format = attr.value.bytes(b"", help="Data format metadata")
-    stop_timeout = attr.value.float(
+    data_format = param.value.bytes(b"", help="Data format metadata")
+    stop_timeout = param.value.float(
         0.5, min=0, help="delay after `stop` before terminating run thread"
     )
-    max_queue_size = attr.value.int(
+    max_queue_size = param.value.int(
         100000, min=1, help="bytes to allocate in the data retreival buffer"
     )
 
@@ -888,8 +888,8 @@ class TelnetDevice(Device):
     """
 
     # Connection value traits
-    resource = attr.value.NetworkAddress("127.0.0.1:23", help="server host address")
-    timeout = attr.value.float(2, min=0, label="s", help="connection timeout")
+    resource = param.value.NetworkAddress("127.0.0.1:23", help="server host address")
+    timeout = param.value.float(2, min=0, label="s", help="connection timeout")
 
     def open(self):
         """Open a telnet connection to the host defined
@@ -909,7 +909,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-@attr.property.visa_keying(
+@param.visa_keying(
     query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"}
 )
 class VISADevice(Device):
@@ -944,15 +944,15 @@ class VISADevice(Device):
     """
 
     # Settings
-    read_termination = attr.value.str(
+    read_termination = param.value.str(
         "\n", cache=True, help="end of line string to expect in query replies"
     )
 
-    write_termination = attr.value.str(
+    write_termination = param.value.str(
         "\n", cache=True, help="end of line string to send after writes"
     )
 
-    open_timeout = attr.value.float(
+    open_timeout = param.value.float(
         None,
         cache=True,
         allow_none=True,
@@ -960,26 +960,26 @@ class VISADevice(Device):
         label="s",
     )
 
-    identity_pattern = attr.value.str(
+    identity_pattern = param.value.str(
         None,
         allow_none=True,
         cache=True,
         help="identity regex pattern to match for automatic connection",
     )
 
-    timeout = attr.value.float(
+    timeout = param.value.float(
         None, cache=True, allow_none=True, help="message response timeout", label="s"
     )
 
     # Common VISA properties
-    identity = attr.property.str(
+    identity = param.property.str(
         key="*IDN",
         sets=False,
         cache=True,
         help="identity string reported by the instrument",
     )
 
-    @attr.property.dict(sets=False)
+    @param.property.dict(sets=False)
     def status_byte(self):
         """instrument status decoded from '*STB?'"""
         code = int(self.query("*STB?"))
@@ -1075,7 +1075,7 @@ class VISADevice(Device):
         finally:
             self.backend.close()
 
-    def write(self, msg: str, kws: Dict[str, Any]={}):
+    def write(self, msg: str, kws: Dict[str, Any] = {}):
         """sends an SCPI message to the device.
 
         Wraps `self.backend.write`, and handles debug logging and adjustments
@@ -1096,7 +1096,7 @@ class VISADevice(Device):
             msg = msg + ";*OPC"
 
         # substitute message based on remap() in self._keying
-        kws = {k: self._keying.to_message(v) for k,v in kws.items()}
+        kws = {k: self._keying.to_message(v) for k, v in kws.items()}
         msg = msg.format(**kws)
 
         # outbound message as truncated event log entry
@@ -1104,7 +1104,9 @@ class VISADevice(Device):
         self._logger.debug(f"write {msg_out}")
         self.backend.write(msg)
 
-    def query(self, msg: str, timeout=None, remap: bool = False, kws: Dict[str, Any]={}) -> str:
+    def query(
+        self, msg: str, timeout=None, remap: bool = False, kws: Dict[str, Any] = {}
+    ) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1115,9 +1117,9 @@ class VISADevice(Device):
         """
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
-        
+
         # substitute message based on remap() in self._keying
-        kws = {k: self._keying.to_message(v) for k,v in kws.items()}
+        kws = {k: self._keying.to_message(v) for k, v in kws.items()}
         msg = msg.format(**kws)
 
         # outbound message as truncated event log entry
@@ -1326,7 +1328,7 @@ class Win32ComDevice(Device):
     # to the dispatched COM object block until the previous calls are completed
     # from within.
 
-    com_object = attr.value.str(
+    com_object = param.value.str(
         default="", sets=False, help="the win32com object string"
     )  # Must be a module
 

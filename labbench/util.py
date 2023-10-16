@@ -482,6 +482,17 @@ def retry(
     return decorator
 
 
+def validate_parameter(name: str, type: type, **kws):
+    # TODO: implement this
+    def decorator(f):
+        @wraps(f)
+        def do_validate(*args, **kws):
+            # validation goes here
+            return f(*args, **kws)
+        
+        return do_validate
+    return decorator
+
 @hide_in_traceback
 def until_timeout(
     exception_or_exceptions, timeout, delay=0, backoff=0, exception_func=lambda: None

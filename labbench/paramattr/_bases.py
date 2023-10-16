@@ -33,6 +33,7 @@ from __future__ import annotations
 import builtins
 import inspect
 import numbers
+import string
 import typing
 from contextlib import contextmanager
 from functools import wraps
@@ -55,8 +56,7 @@ except RuntimeError:
 Undefined = inspect.Parameter.empty
 
 T = typing.TypeVar("T")
-from typing import Any, Union, Callable
-
+from typing import Any, Union, Callable, List, Dict
 
 class ThisType(typing.Generic[T]):
     pass
@@ -121,6 +121,7 @@ class Trait:
     ROLE_VALUE = "value"
     ROLE_PROPERTY = "property"
     ROLE_DATARETURN = "return"
+    ROLE_METHOD = "method"
     ROLE_UNSET = "unset"
 
     type = None
@@ -129,7 +130,7 @@ class Trait:
     # keyword argument types and default values
     default: ThisType = Undefined
     key: Undefined = Undefined
-    func: None
+    argname: Union[str, None] = Undefined
     # role: str = ROLE_UNSET
     help: str = ""
     label: str = ""
@@ -138,6 +139,7 @@ class Trait:
     cache: bool = False
     only: tuple = tuple()
     allow_none: bool = False
+    argchecks: List[Callable] = []
 
     # If the trait is used for a state, it can operate as a decorator to
     # implement communication with a device
@@ -149,22 +151,25 @@ class Trait:
 
     # __decorator_action__ = None
 
-    def __init__(self, *args, **kws):
-        if len(args) >= 1:
-            if len(args) == 1 and self.role == self.ROLE_VALUE:
+    def __init__(self, arg=Undefined, /, **kws):
+        if arg is not Undefined:
+            if self.role == self.ROLE_VALUE:
                 if "default" in kws:
                     raise ValueError(f"duplicate 'default' argument in {self}")
-                kws["default"] = args[0]
-            elif len(args) == 1 and self.role == self.ROLE_DATARETURN:
-                if "func" in kws:
-                    raise ValueError("duplicate 'func' argument")
-                kws["func"] = args[0]
+                else:
+                    kws["default"] = arg
+            elif self.role == self.ROLE_METHOD:
+                if "argname" in kws:
+                    raise ValueError(f"duplicate 'argname' argument in {self}")
+                else:
+                    kws["argname"] = arg
             else:
-                raise ValueError("no positional arguments supported")
+                raise ValueError(f"only keyword arguments are supported for {self}")
 
         self.kws = dict(kws)
         self.metadata = {}
         self._decorated_funcs = []
+
 
         cls_defaults = {k: getattr(self, k) for k in self.__annotations__.keys()}
 
@@ -175,15 +180,15 @@ class Trait:
 
         # check role and related parameter dependencies
         if self.role == self.ROLE_VALUE:
-            invalid_args = ("key", "func")
+            invalid_args = ("key", "argname", "argchecks")
         elif self.role == self.ROLE_PROPERTY:
-            invalid_args = ("default", "func")
-        elif self.role == self.ROLE_DATARETURN:
-            invalid_args = "default", "key", "sets", "gets"
+            invalid_args = ("default", "argname", "argchecks")
+        elif self.role == self.ROLE_METHOD:
+            invalid_args = ("default",)
         else:
             clsname = self.__class__.__qualname__
             raise ValueError(
-                f"{clsname}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_DATARETURN, self.ROLE_VALUE)}, not {repr(self.role)}"
+                f"{clsname}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_METHOD, self.ROLE_VALUE)}, not {repr(self.role)}"
             )
 
         for k in invalid_args:
@@ -196,12 +201,12 @@ class Trait:
             # always go with None when this value is allowed, fallback to self.default
             kws["default"] = self.type()
 
-        if self.role == self.ROLE_DATARETURN:
-            if kws["func"] is not None:
+        if self.role == self.ROLE_METHOD:
+            if kws["argname"] is not Undefined and kws["key"] is not Undefined:
                 # apply a decorator
-                self(kws["func"])
+                raise ValueError('specify exactly one of "argname" and "key" arguments')
 
-        if self.role in (self.ROLE_DATARETURN, self.ROLE_PROPERTY):
+        if self.role != self.ROLE_VALUE:
             # default Undefined so that cache will fill them in
             self.default = Undefined
 
@@ -220,13 +225,8 @@ class Trait:
         if type is not Undefined:
             cls.type = type
 
-        # complete the annotation dictionary with the parent
-        annots = dict(
-            getattr(cls.__mro__[1], "__annotations__", {}),
-            **getattr(cls, "__annotations__", {}),
-        )
-
-        cls.__annotations__ = dict(annots)
+        # cache all type annotations for faster lookup later
+        cls.__annotations__ = typing.get_type_hints(cls)
 
         # # apply an explicit signature to cls.__init__
         # annots = {k: cls.type if v is ThisType else (k, v) \
@@ -290,8 +290,11 @@ class Trait:
             raise AttributeError(
                 f"tried to combine a default value and a decorator implementation in {self}"
             )
-        elif self.role == self.ROLE_DATARETURN and len(self._decorated_funcs) == 0:
-            raise AttributeError("decorate a method to tag its return data")
+        elif self.role == self.ROLE_METHOD:
+            if len(self._decorated_funcs) > 0 and not isinstance(self.argname, str):
+                raise AttributeError(
+                    f'{self} must be defined with the argname argument when used as a decorator'
+                )
         elif len(self._decorated_funcs) == 0:
             return
 
@@ -300,7 +303,17 @@ class Trait:
             for f in self._decorated_funcs
         ]
 
-        if self.role == self.ROLE_DATARETURN:
+        if self.role == self.ROLE_METHOD:
+            if len(self._decorated_funcs) == 0:
+                if self.key is Undefined:
+                    raise AttributeError(
+                        f'{self} must be defined with "key" keyword unless used as a decorator'
+                    )
+            elif len(self._decorated_funcs) == 1:
+                pass
+            else:
+                raise AttributeError(f'{self} may not decorate more than one method')
+            
             for func, argcount in zip(self._decorated_funcs, positional_argcounts):
                 if len(self.help.rstrip().strip()) == 0:
                     # take func docstring as default self.help
@@ -648,7 +661,7 @@ class Trait:
             import labbench as lb
 
             class BaseInstrument(lb.VISADevice):
-                center_frequency = lb.property.float(key='FREQ', label='Hz')
+                center_frequency = attr.property.float(key='FREQ', label='Hz')
 
             @BaseInstrument.center_frequency.adopt(min=10, max=50e9)
             class Instrument50GHzModel(lb.VISADevice):
@@ -697,7 +710,7 @@ def hold_trait_notifications(owner):
     owner.__notify__ = original
 
 
-class PropertyKeyingBase:
+class KeyingBase:
     def __new__(cls, *args, **kws):
         """set up use as a class decorator"""
 
@@ -731,7 +744,7 @@ class PropertyKeyingBase:
 class HasTraits(metaclass=HasTraitsMeta):
     __notify_list__ = {}
     __cls_namespace__ = {}
-    _keying = PropertyKeyingBase()
+    _keying = KeyingBase()
 
     def __init__(self, **values):
         # who is informed on new get or set values
@@ -1888,3 +1901,197 @@ def subclass_namespace_attrs(namespace_dict, role, omit_trait_attrs):
             new_trait.__module__ = namespace_dict["__name__"]
 
             namespace_dict[name] = new_trait
+
+
+class message_keying(KeyingBase):
+    """Device class decorator that implements automatic API that triggers API messages for labbench properties.
+
+    Example usage:
+
+    ```python
+        import labbench as lb
+
+        @lb.message_keying(query_fmt='{key}?', write_fmt='{key} {value}', query_func='get', write_func='set')
+        class MyDevice(lb.Device):
+            def set(self, set_msg: str):
+                # do set
+                pass
+
+            def get(self, get_msg: str):
+                # do get
+                pass
+    ```
+
+    Decorated classes connect traits that are defined with the `key` keyword to trigger
+    backend API calls based on the key. The implementation of the `set` and `get` methods
+    in subclasses of MessagePropertyAdapter determines how the key is used to generate API calls.
+    """
+
+    _formatter = string.Formatter()
+
+    def __init__(
+        self, query_fmt=None, write_fmt=None, write_func=None, query_func=None, remap={}
+    ):
+        super().__init__()
+
+        self.query_fmt = query_fmt
+        self.write_fmt = write_fmt
+        self.write_func = write_func
+        self.query_func = query_func
+
+        if len(remap) == 0:
+            self.value_map = {}
+            self.message_map = {}
+            return
+
+        # ensure str type for messages; keys can be arbitrary python type
+        if not all(isinstance(v, __builtins__["str"]) for v in remap.values()):
+            raise TypeError("all values in remap dict must have type str")
+
+        self.value_map = remap
+
+        # create the reverse mapping
+        self.message_map = __builtins__["dict"](zip(remap.values(), remap.keys()))
+
+        # and ensure all values are unique
+        if len(self.message_map) != len(self.value_map):
+            raise ValueError("'remap' has duplicate values")
+
+    @classmethod
+    def get_key_arguments(cls, s: str) -> List[str]:
+        """returns a list of formatting tokens defined in s
+
+        Example:
+
+            ```python
+
+            # input
+            print(get_key_arguments('CH{channel}:SV:CENTERFrequency'))
+            ['channel']
+            ```
+        """
+        return [tup[1] for tup in cls._formatter.parse(s) if tup[1] is not None]
+
+    def from_message(self, msg):
+        return self.message_map.get(msg, msg)
+
+    def to_message(self, value):
+        return self.value_map.get(value, value)
+
+    def get(self, device: HasTraits, scpi_key: str, trait=None, arguments: Dict[str, Any]={}):
+        """queries a parameter named `scpi_key` by sending an SCPI message string.
+
+        The command message string is formatted as f'{scpi_key}?'.
+        This is automatically called in wrapper objects on accesses to property traits that
+        defined with 'key=' (which then also cast to a pythonic type).
+
+        Arguments:
+            key (str): the name of the parameter to set
+            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
+
+        Returns:
+            response (str)
+        """
+        if self.query_fmt is None:
+            raise ValueError("query_fmt needs to be set for key get operations")
+        if self.query_func is None:
+            raise ValueError("query_func needs to be set for key get operations")
+        query_func = getattr(device, self.query_func)
+        expanded_scpi_key = scpi_key.format(**arguments)
+        value_msg = query_func(self.query_fmt.format(key=expanded_scpi_key)).rstrip()
+        return self.from_message(value_msg)
+
+    def set(self, device: HasTraits, scpi_key: str, value, trait=None, arguments: Dict[str, Any]={}):
+        """writes an SCPI message to set a parameter with a name key
+        to `value`.
+
+        The command message string is formatted as f'{scpi_key} {value}'. This
+        This is automatically called on assignment to property traits that
+        are defined with 'key='.
+
+        Arguments:
+            scpi_key (str): the name of the parameter to set
+            value (str): value to assign
+            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
+        """
+        if self.write_fmt is None:
+            raise ValueError("write_fmt needs to be set for key set operations")
+        if self.write_func is None:
+            raise ValueError("write_func needs to be set for key set operations")
+
+        value_msg = self.to_message(value)
+        expanded_scpi_key = scpi_key.format(**arguments)
+        write_func = getattr(device, self.write_func)
+        write_func(self.write_fmt.format(key=expanded_scpi_key, value=value_msg))
+
+    def method_from_key(self, device: HasTraits, trait: Trait):
+        """Autogenerate a parameter getter/setter method based on the message key defined in a method trait."""
+
+        checks = {
+            # TODO: implement the run-time parameter checks
+        }
+
+        kwarg_params = {
+            name: inspect.Parameter(
+                name, kind=inspect.Parameter.KEYWORD_ONLY, annotation=checks.get(name, Undefined)
+            )
+            for name in self.get_key_arguments(trait.key)
+        }
+        params = {
+            'self': inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
+            'value': inspect.Parameter(
+                "value", default=Undefined, kind=inspect.Parameter.POSITIONAL_ONLY, annotation=trait.type
+                ),
+            **kwarg_params
+        }
+
+        skip_check = lambda x: x
+
+        def method(trait_obj, value: trait.type, /, **params) -> Union[None, trait.type]:
+            arguments = {
+                k: checks.get(k, skip_check)(v)
+                for k, v in params.items()
+            }
+
+            if value is Undefined:
+                return self.get(device, trait_obj.key, trait_obj, arguments)
+            else:
+                self.set(device, trait_obj.key, value, trait_obj, arguments)
+
+        method.__signature__ = inspect.Signature(params, Union[None, trait.type])
+        method.__name__ = trait.name
+
+        return method
+
+
+class visa_keying(message_keying):
+    """Device class decorator that automates SCPI command string interactions for labbench properties.
+
+    Example usage:
+
+    ```python
+        import labbench as lb
+
+        @lb.visa_keying(query_fmt='{key}?', write_fmt='{key} {value}')
+        class MyDevice(lb.VISADevice):
+            pass
+    ```
+
+    This causes access to property traits defined with 'key=' to interact with the
+    VISA instrument. By default, messages in VISADevice objects trigger queries
+    with the `'{key}?'` format, and writes formatted as f'{key} {value}'.
+    """
+
+    def __init__(
+        self,
+        query_fmt="{key}?",
+        write_fmt="{key} {value}",
+        remap={},
+    ):
+        super().__init__(
+            query_fmt=query_fmt,
+            write_fmt=write_fmt,
+            remap=remap,
+            write_func="write",
+            query_func="query",
+        )

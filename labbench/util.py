@@ -24,6 +24,30 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
+from __future__ import annotations
+import ast
+import hashlib
+import importlib.util
+import inspect
+import logging
+import pickle
+import re
+import sys
+import textwrap
+import time
+import traceback
+import types
+from contextlib import _GeneratorContextManager, contextmanager
+from functools import wraps
+from queue import Empty, Queue
+from threading import Event, RLock, Thread, ThreadError
+from typing import Callable, Dict
+from warnings import simplefilter
+
+import coloredlogs
+import psutil
+
+
 __all__ = [  # "misc"
     "hash_caller",
     "kill_by_name",
@@ -55,29 +79,6 @@ __all__ = [  # "misc"
     # helper objects
     "Ownable",
 ]
-
-import ast
-import hashlib
-import importlib.util
-import inspect
-import logging
-import pickle
-import re
-import sys
-import textwrap
-import time
-import traceback
-import types
-from contextlib import _GeneratorContextManager, contextmanager
-from functools import wraps
-from queue import Empty, Queue
-from threading import Event, RLock, Thread, ThreadError
-from typing import Callable
-from warnings import simplefilter
-
-import coloredlogs
-import psutil
-
 
 import_t0 = time.perf_counter()
 
@@ -729,7 +730,7 @@ class Call(object):
         self.queue = queue
 
     @classmethod
-    def wrap_list_to_dict(cls, name_func_pairs):
+    def wrap_list_to_dict(cls, name_func_pairs) -> Dict[str, Call]:
         """adjusts naming and wraps callables with Call"""
         ret = {}
         # First, generate the list of callables
@@ -1253,6 +1254,8 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
     # Run each callable
     for name, wrapper in wrappers.items():
         ret = wrapper()
+        if wrapper.traceback is not None:
+            raise wrapper.traceback[1]
         if ret is not None or params["nones"]:
             results[name] = ret
 
@@ -1314,6 +1317,9 @@ def sequentially(*objs, **kws):
     before execution. If this check returns `False`, this method
     raises a ConcurrentException.
     """
+
+    if kws.get('catch', False):
+        raise ValueError("catch=True is not supported by sequentially")
 
     return enter_or_call(sequentially_call, objs, kws)
 

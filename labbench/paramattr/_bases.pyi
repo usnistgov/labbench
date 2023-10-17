@@ -18,7 +18,7 @@ class KeyAdapterBase():
     def __new__(cls, *args, **kws):
         ...
 
-    def __call__(self, owner_cls):
+    def __call__(self, owner_cls: Type[HasParamAttrs]):
         ...
 
     def get(self, trait_owner, key, trait: Incomplete | None=...) -> None:
@@ -27,12 +27,16 @@ class KeyAdapterBase():
     def set(self, trait_owner, key, value, trait: Incomplete | None=...) -> None:
         ...
 
+    def method_from_key(self, device: HasParamAttrs, trait: ParamAttr):
+        ...
+
 
 class HasParamAttrsClsInfo():
     attrs: Dict[str, ParamAttr]
     key_adapter: KeyAdapterBase
+    methods: Dict[str, Callable]
 
-    def __init__(self, attrs: Dict[str, ParamAttr]=..., key_adapter: KeyAdapterBase=...) -> None:
+    def __init__(self, attrs: Dict[str, ParamAttr], key_adapter: KeyAdapterBase) -> None:
         ...
 
     def value_names(self) -> List[ParamAttr]:
@@ -101,7 +105,7 @@ class ParamAttr():
     def __set_name__(self, owner_cls, name) -> None:
         ...
 
-    def __init_owner_subclass__(self, owner_cls) -> None:
+    def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
         ...
 
     def __init_owner_instance__(self, owner) -> None:
@@ -110,7 +114,7 @@ class ParamAttr():
     def __set__(self, owner: HasParamAttrs, value):
         ...
 
-    def __get__(self, owner, owner_cls: Incomplete | None=...):
+    def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]]=...):
         ...
 
     def __cast_get__(self, owner, value, strict: bool=...):
@@ -151,7 +155,6 @@ class HasParamAttrsInstInfo():
     handlers: Dict[str, Callable]
     calibrations: Dict[str, Any]
     cache: Dict[str, Any]
-    methods: Dict[str, Callable]
 
     def __init__(self, owner: HasParamAttrs) -> None:
         ...
@@ -268,7 +271,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
     mapping: Any
     EMPTY_STORE: Incomplete
 
-    def __init_owner_instance__(self, owner) -> None:
+    def __init_owner_instance__(self, owner: HasParamAttrs):
         ...
 
     def lookup_cal(self, uncal, owner):
@@ -743,60 +746,3 @@ VALID_TRAIT_ROLES: Incomplete
 
 def subclass_namespace_attrs(namespace_dict, role, omit_trait_attrs) -> None:
     ...
-
-
-class message_keying(KeyAdapterBase):
-    query_fmt: Incomplete
-    write_fmt: Incomplete
-    write_func: Incomplete
-    query_func: Incomplete
-    value_map: Incomplete
-    message_map: Incomplete
-
-    def __init__(
-        self,
-        query_fmt: Incomplete | None=...,
-        write_fmt: Incomplete | None=...,
-        write_func: Incomplete | None=...,
-        query_func: Incomplete | None=...,
-        remap=...
-    ) -> None:
-        ...
-
-    @classmethod
-    def get_key_arguments(cls, s: str) -> List[str]:
-        ...
-
-    def from_message(self, msg):
-        ...
-
-    def to_message(self, value):
-        ...
-
-    def get(
-        self,
-        device: HasParamAttrs,
-        scpi_key: str,
-        trait: Incomplete | None=...,
-        arguments: Dict[str, Any]=...
-    ):
-        ...
-
-    def set(
-        self,
-        device: HasParamAttrs,
-        scpi_key: str,
-        value,
-        trait: Incomplete | None=...,
-        arguments: Dict[str, Any]=...
-    ):
-        ...
-
-    def method_from_key(self, device: HasParamAttrs, trait: ParamAttr):
-        ...
-
-
-class visa_keying(message_keying):
-
-    def __init__(self, query_fmt: str=..., write_fmt: str=..., remap=...) -> None:
-        ...

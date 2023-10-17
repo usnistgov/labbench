@@ -126,10 +126,10 @@ channel_check = lb.validate_parameter("channel", int, min=1, max=4)
 
 
 @param.visa_keying(remap={True: "ON", False: "OFF"})
-@param.adjusted("identity_pattern", default=r"Oscilloscope model \#1234")
+@param.adjusted("identity_pattern", default=r"Oscilloscope model #1234")
 class Oscilloscope(lb.VISADevice):
     @param.method.float(
-        "value",
+        "set_value",
         min=10e6,
         max=18e9,
         step=1e-3,
@@ -137,11 +137,11 @@ class Oscilloscope(lb.VISADevice):
         help="channel center frequency",
         argchecks=[channel_check],
     )
-    def center_frequency(self, value=lb.Undefined, /, *, channel: int):
-        if value is lb.Undefined:
+    def center_frequency(self, set_value=lb.Undefined, /, *, channel: int):
+        if set_value is lb.Undefined:
             return self.query(f"CH{channel}:SENS:FREQ?")
         else:
-            self.write(f"CH{channel}:SENS:FREQ {value}")
+            self.write(f"CH{channel}:SENS:FREQ {set_value}")
 
     resolution_bandwidth = param.method.float(
         key="CH{channel}:SENS:BW",

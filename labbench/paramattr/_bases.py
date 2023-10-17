@@ -78,9 +78,9 @@ class KeyAdapterBase:
             obj.__init__(*args, **kws)
             return obj
 
-    def __call__(self, owner_cls):
+    def __call__(self, owner_cls: Type[HasParamAttrs]):
         # do the decorating
-        owner_cls._keying = self
+        owner_cls._cls_info.key_adapter = self
         return owner_cls
 
     def get(self, trait_owner, key, trait=None):
@@ -92,21 +92,30 @@ class KeyAdapterBase:
         raise NotImplementedError(
             f'key adapter does not implement "set" {repr(type(self))}'
         )
+    
+    def method_from_key(self, device: HasParamAttrs, trait: ParamAttr):
+        raise NotImplementedError(
+            f'key adapter does not implement "method_from_key" {repr(type(self))}'
+        )
 
 
 class HasParamAttrsClsInfo:
     attrs: Dict[str, ParamAttr]
     key_adapter: KeyAdapterBase
 
-    __slots__ = ["attrs", "key_adapter"]
+    # unbound methods
+    methods: Dict[str, Callable]
+
+    __slots__ = ["attrs", "key_adapter", "methods"]
 
     def __init__(
         self,
-        attrs: Dict[str, ParamAttr] = {},
-        key_adapter: KeyAdapterBase = KeyAdapterBase(),
+        attrs: Dict[str, ParamAttr],
+        key_adapter: KeyAdapterBase,
     ):
         self.attrs = attrs
         self.key_adapter = key_adapter
+        self.methods = {}
 
     def value_names(self) -> List[ParamAttr]:
         return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_VALUE]
@@ -119,8 +128,9 @@ class HasParamAttrsClsInfo:
 
     @classmethod
     def _copy_from(cls, owner: HasParamAttrs):
-        obj = cls(key_adapter=owner._cls_info.key_adapter)
+        obj = cls(attrs={}, key_adapter=owner._cls_info.key_adapter)
         obj.attrs = {k: v.copy() for k, v in owner._cls_info.attrs.items()}
+        obj.methods = dict(owner._cls_info.methods)
         return obj
 
 
@@ -140,7 +150,7 @@ class HasParamAttrsMeta(type):
             metacls.ns_pending.append(cls_info.attrs)
             return ns
         else:
-            ns["_cls_info"] = HasParamAttrsClsInfo()
+            ns["_cls_info"] = HasParamAttrsClsInfo(attrs={}, key_adapter=KeyAdapterBase())
             metacls.ns_pending.append({})
         return ns
 
@@ -330,7 +340,7 @@ class ParamAttr:
 
             owner_cls._cls_info.attrs[name] = self
 
-    def __init_owner_subclass__(self, owner_cls):
+    def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
         """The owner calls this in each of its traits at the end of defining the subclass
         (near the end of __init_subclass__).
         has been called. Now it is time to ensure properties are compatible with the owner class.
@@ -374,6 +384,12 @@ class ParamAttr:
                     self.help = (func.__doc__ or "").rstrip().strip()
 
                 self._method = func
+
+            # 
+            cls_info = owner_cls._cls_info
+
+            if self.key is not Undefined:
+                cls_info.methods[self.name] = cls_info.key_adapter.method_from_key(owner_cls, self)
 
         elif self.role == self.ROLE_PROPERTY:
             if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
@@ -451,7 +467,7 @@ class ParamAttr:
         owner.__notify__(self.name, value, "set", cache=self.cache)
 
     @util.hide_in_traceback
-    def __get__(self, owner, owner_cls=None):
+    def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None):
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -475,10 +491,15 @@ class ParamAttr:
             return self
         elif self.role == self.ROLE_METHOD:
             # inject the labbench ParamAttr hooks into the return value
-            @wraps(self._method)
-            def method(*args, **kws):
-                value = self._method(owner, *args, **kws)
-                return self.__cast_get__(owner, value)
+            func = owner_cls._cls_info.methods[self.name]
+            method = func.__get__(owner, owner_cls)
+
+            # TODO: inject hooks
+
+            # @wraps(method)
+            # def method(*args, **kws):
+            #     value = func.__get__(owner, owner_cls)(*args, **kws)
+            #     return self.__cast_get__(owner, value)
 
             return method
 
@@ -490,9 +511,9 @@ class ParamAttr:
             return owner.__get_value__(self.name)
 
         # from here on, operate as a property getter
-        if self.cache and self.name in owner.__cache__:
+        if self.cache and self.name in owner._attr_store.cache:
             # return the cached value if applicable
-            return owner.__cache__[self.name]
+            return owner._attr_store.cache[self.name]
 
         elif self._getter is not None:
             # get value with the decorator implementation, if available
@@ -754,10 +775,10 @@ ParamAttr.__init_subclass__()
 @contextmanager
 def hold_trait_notifications(owner):
     def skip_notify(name, value, type, cache):
-        # old = owner.__cache__.setdefault(name, Undefined)
+        # old = owner._attr_store.cache.setdefault(name, Undefined)
         # msg = dict(new=value, old=old, owner=owner, name=name, type=type, cache=cache)
 
-        owner.__cache__[name] = value
+        owner._attr_store.cache[name] = value
 
     original, owner.__notify__ = owner.__notify__, skip_notify
     yield
@@ -768,9 +789,8 @@ class HasParamAttrsInstInfo:
     handlers: Dict[str, Callable]
     calibrations: Dict[str, Any]
     cache: Dict[str, Any]
-    methods: Dict[str, Callable]
 
-    __slots__ = 'handlers', 'calibrations', 'cache', 'methods'
+    __slots__ = "handlers", "calibrations", "cache"
 
     def __init__(self, owner: HasParamAttrs):
         self.handlers = {}
@@ -861,14 +881,14 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache):
-        old = self.__cache__.setdefault(name, Undefined)
+        old = self._attr_store.cache.setdefault(name, Undefined)
 
         msg = dict(new=value, old=old, owner=self, name=name, type=type, cache=cache)
 
         for handler in self._attr_store.handlers.values():
             handler(dict(msg))
 
-        self.__cache__[name] = value
+        self._attr_store.cache[name] = value
 
     @util.hide_in_traceback
     def __get_value__(self, name):
@@ -879,7 +899,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
         Returns:
             cached value, or the trait default if it has not yet been set
         """
-        return self.__cache__[name]
+        return self._attr_store.cache[name]
 
     @util.hide_in_traceback
     def __set_value__(self, name, value):
@@ -1099,21 +1119,21 @@ class RemappingCorrectionMixIn(DependentParamAttr):
 
     EMPTY_STORE = dict(by_cal=None, by_uncal=None)
 
-    def _min(self, owner):
-        by_uncal = owner._calibrations.get(self.name, {}).get("by_uncal", None)
+    def _min(self, owner: HasParamAttrs):
+        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get("by_uncal", None)
         if by_uncal is None:
             return None
         else:
             return by_uncal.min()
 
-    def _max(self, owner):
-        by_uncal = owner._calibrations.get(self.name, {}).get("by_uncal", None)
+    def _max(self, owner: HasParamAttrs):
+        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get("by_uncal", None)
         if by_uncal is None:
             return None
         else:
             return by_uncal.max()
 
-    def __init_owner_instance__(self, owner):
+    def __init_owner_instance__(self, owner: HasParamAttrs):
         self.set_mapping(self.mapping, owner=owner)
         observe(
             owner,
@@ -1132,7 +1152,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
 
     def lookup_cal(self, uncal, owner):
         """look up and return the calibrated value, given the uncalibrated value"""
-        owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+        owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         if owner_cal.get("by_uncal", None) is None:
             return None
 
@@ -1151,7 +1171,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         error, then if `self.allow_none` evaluates as True, triggers return of None, or if
          `self.allow_none` evaluates False, ValueError is raised.
         """
-        owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+        owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
 
         if owner_cal["by_uncal"] is None:
             return None
@@ -1187,7 +1207,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         by_cal = by_cal[~by_cal.index.duplicated(keep="first")].sort_index()
         by_cal.index.name = "cal"
 
-        owner._calibrations.setdefault(self.name, {}).update(
+        owner._attr_store.calibrations.setdefault(self.name, {}).update(
             by_cal=by_cal, by_uncal=by_uncal
         )
 
@@ -1196,7 +1216,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         if owner is None or owner_cls is not self.__objclass__:
             return self
 
-        # by_cal, by_uncal = owner._calibrations.get(self.name, (None, None))
+        # by_cal, by_uncal = owner._attr_store.calibrations.get(self.name, (None, None))
         self._validate_trait_dependencies(owner, self.allow_none, "get")
 
         uncal = self._trait_dependencies["base"].__get__(owner, owner_cls)
@@ -1220,7 +1240,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
 
     @util.hide_in_traceback
     def __set__(self, owner, cal):
-        # owner_cal = owner._calibrations.get(self.name, self.EMPTY_STORE)
+        # owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         self._validate_trait_dependencies(owner, False, "set")
 
         # start with type conversion and validation on the requested calibrated value
@@ -1291,7 +1311,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             path = getattr(owner, self.path_trait.name)
             index = msg["new"]
 
-            if self._CAL_TABLE_KEY not in owner._calibrations.get(self.name, {}):
+            if self._CAL_TABLE_KEY not in owner._attr_store.calibrations.get(self.name, {}):
                 self._load_calibration_table(owner, path)
 
             ret = self._update_index_value(owner, index)
@@ -1315,7 +1335,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
                 cal.drop(self.index_lookup_trait.max, axis=0, inplace=True)
             #    self._cal_offset.values[:] = self._cal_offset.values-self._cal_offset.columns.values[np.newaxis,:]
 
-            owner._calibrations.setdefault(self.name, {}).update(
+            owner._attr_store.calibrations.setdefault(self.name, {}).update(
                 {self._CAL_TABLE_KEY: cal}
             )
 
@@ -1324,7 +1344,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         if path is None:
             if not self.allow_none:
                 raise ValueError(
-                    f"{self} defined with allow_none=False; path_trait must not be None"
+                    f"{self} defined w.cacith allow_none=False; path_trait must not be None"
                 )
             else:
                 return None
@@ -1333,7 +1353,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _touch_table(self, owner):
         # make sure that calibrations have been initialized
-        table = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+        table = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
 
         if table is None:
             path = getattr(owner, self.path_trait.name)
@@ -1345,7 +1365,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _update_index_value(self, owner, index_value):
         """update the calibration on change of index_value"""
-        cal = owner._calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+        cal = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
 
         if cal is None:
             txt = "index_value change has no effect because calibration_data has not been set"
@@ -1950,214 +1970,3 @@ def subclass_namespace_attrs(namespace_dict, role, omit_trait_attrs):
             new_trait.__module__ = namespace_dict["__name__"]
 
             namespace_dict[name] = new_trait
-
-
-class message_keying(KeyAdapterBase):
-    """Device class decorator that implements automatic API that triggers API messages for labbench properties.
-
-    Example usage:
-
-    ```python
-        import labbench as lb
-
-        @lb.message_keying(query_fmt='{key}?', write_fmt='{key} {value}', query_func='get', write_func='set')
-        class MyDevice(lb.Device):
-            def set(self, set_msg: str):
-                # do set
-                pass
-
-            def get(self, get_msg: str):
-                # do get
-                pass
-    ```
-
-    Decorated classes connect traits that are defined with the `key` keyword to trigger
-    backend API calls based on the key. The implementation of the `set` and `get` methods
-    in subclasses of MessagePropertyAdapter determines how the key is used to generate API calls.
-    """
-
-    _formatter = string.Formatter()
-
-    def __init__(
-        self, query_fmt=None, write_fmt=None, write_func=None, query_func=None, remap={}
-    ):
-        super().__init__()
-
-        self.query_fmt = query_fmt
-        self.write_fmt = write_fmt
-        self.write_func = write_func
-        self.query_func = query_func
-
-        if len(remap) == 0:
-            self.value_map = {}
-            self.message_map = {}
-            return
-
-        # ensure str type for messages; keys can be arbitrary python type
-        if not all(isinstance(v, __builtins__["str"]) for v in remap.values()):
-            raise TypeError("all values in remap dict must have type str")
-
-        self.value_map = remap
-
-        # create the reverse mapping
-        self.message_map = __builtins__["dict"](zip(remap.values(), remap.keys()))
-
-        # and ensure all values are unique
-        if len(self.message_map) != len(self.value_map):
-            raise ValueError("'remap' has duplicate values")
-
-    @classmethod
-    def get_key_arguments(cls, s: str) -> List[str]:
-        """returns a list of formatting tokens defined in s
-
-        Example:
-
-            ```python
-
-            # input
-            print(get_key_arguments('CH{channel}:SV:CENTERFrequency'))
-            ['channel']
-            ```
-        """
-        return [tup[1] for tup in cls._formatter.parse(s) if tup[1] is not None]
-
-    def from_message(self, msg):
-        return self.message_map.get(msg, msg)
-
-    def to_message(self, value):
-        return self.value_map.get(value, value)
-
-    def get(
-        self,
-        device: HasParamAttrs,
-        scpi_key: str,
-        trait=None,
-        arguments: Dict[str, Any] = {},
-    ):
-        """queries a parameter named `scpi_key` by sending an SCPI message string.
-
-        The command message string is formatted as f'{scpi_key}?'.
-        This is automatically called in wrapper objects on accesses to property traits that
-        defined with 'key=' (which then also cast to a pythonic type).
-
-        Arguments:
-            key (str): the name of the parameter to set
-            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
-
-        Returns:
-            response (str)
-        """
-        if self.query_fmt is None:
-            raise ValueError("query_fmt needs to be set for key get operations")
-        if self.query_func is None:
-            raise ValueError("query_func needs to be set for key get operations")
-        query_func = getattr(device, self.query_func)
-        expanded_scpi_key = scpi_key.format(**arguments)
-        value_msg = query_func(self.query_fmt.format(key=expanded_scpi_key)).rstrip()
-        return self.from_message(value_msg)
-
-    def set(
-        self,
-        device: HasParamAttrs,
-        scpi_key: str,
-        value,
-        trait=None,
-        arguments: Dict[str, Any] = {},
-    ):
-        """writes an SCPI message to set a parameter with a name key
-        to `value`.
-
-        The command message string is formatted as f'{scpi_key} {value}'. This
-        This is automatically called on assignment to property traits that
-        are defined with 'key='.
-
-        Arguments:
-            scpi_key (str): the name of the parameter to set
-            value (str): value to assign
-            name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
-        """
-        if self.write_fmt is None:
-            raise ValueError("write_fmt needs to be set for key set operations")
-        if self.write_func is None:
-            raise ValueError("write_func needs to be set for key set operations")
-
-        value_msg = self.to_message(value)
-        expanded_scpi_key = scpi_key.format(**arguments)
-        write_func = getattr(device, self.write_func)
-        write_func(self.write_fmt.format(key=expanded_scpi_key, value=value_msg))
-
-    def method_from_key(self, device: HasParamAttrs, trait: ParamAttr):
-        """Autogenerate a parameter getter/setter method based on the message key defined in a method trait."""
-
-        checks = {
-            # TODO: implement the run-time parameter checks
-        }
-
-        kwarg_params = {
-            name: inspect.Parameter(
-                name,
-                kind=inspect.Parameter.KEYWORD_ONLY,
-                annotation=checks.get(name, Undefined),
-            )
-            for name in self.get_key_arguments(trait.key)
-        }
-        params = {
-            "self": inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
-            "value": inspect.Parameter(
-                "value",
-                default=Undefined,
-                kind=inspect.Parameter.POSITIONAL_ONLY,
-                annotation=trait.type,
-            ),
-            **kwarg_params,
-        }
-
-        skip_check = lambda x: x
-
-        def method(
-            trait_obj, value: trait.type, /, **params
-        ) -> Union[None, trait.type]:
-            arguments = {k: checks.get(k, skip_check)(v) for k, v in params.items()}
-
-            if value is Undefined:
-                return self.get(device, trait_obj.key, trait_obj, arguments)
-            else:
-                self.set(device, trait_obj.key, value, trait_obj, arguments)
-
-        method.__signature__ = inspect.Signature(params, Union[None, trait.type])
-        method.__name__ = trait.name
-
-        return method
-
-
-class visa_keying(message_keying):
-    """Device class decorator that automates SCPI command string interactions for labbench properties.
-
-    Example usage:
-
-    ```python
-        import labbench as lb
-
-        @lb.visa_keying(query_fmt='{key}?', write_fmt='{key} {value}')
-        class MyDevice(lb.VISADevice):
-            pass
-    ```
-
-    This causes access to property traits defined with 'key=' to interact with the
-    VISA instrument. By default, messages in VISADevice objects trigger queries
-    with the `'{key}?'` format, and writes formatted as f'{key} {value}'.
-    """
-
-    def __init__(
-        self,
-        query_fmt="{key}?",
-        write_fmt="{key} {value}",
-        remap={},
-    ):
-        super().__init__(
-            query_fmt=query_fmt,
-            write_fmt=write_fmt,
-            remap=remap,
-            write_func="write",
-            query_func="query",
-        )

@@ -1285,9 +1285,16 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
 
     def check_idn(device: VISADevice):
         try:
-            return device.identity
-        except pyvisa.errors.VisaIOError:
+            print('try', device)
+            ret = device.identity
+            print(device, ret)
+            return ret
+        except pyvisa.errors.VisaIOError as ex:
+            print('exception', ex)
             return None
+        except BaseException as ex:
+            print('check_idn: baseexception', ex)
+            raise
 
     def keep_interface(name):
         for iface in skip_interfaces:
@@ -1301,14 +1308,14 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
         if keep_interface(res)
     }
 
-    with util.sequentially(*list(devices.values()), catch=True):
+    with util.concurrently(*list(devices.values()), catch=True):
         calls = [
             util.Call(check_idn, device).rename(res)
             for res, device in devices.items()
             if device.isopen
         ]
 
-        identities = util.sequentially(*calls, catch=True)
+        identities = util.sequentially(*calls, catch=False)
 
     return identities
 

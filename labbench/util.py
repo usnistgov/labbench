@@ -1318,7 +1318,7 @@ def sequentially(*objs, **kws):
     raises a ConcurrentException.
     """
 
-    if kws.get('catch', False):
+    if kws.get("catch", False):
         raise ValueError("catch=True is not supported by sequentially")
 
     return enter_or_call(sequentially_call, objs, kws)

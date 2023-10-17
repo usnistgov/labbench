@@ -19,7 +19,11 @@ from ._data import (
     read as read,
     read_relational as read_relational,
 )
-from ._device import Device as Device, list_devices as list_devices, trait_info as trait_info
+from ._device import (
+    Device as Device,
+    list_devices as list_devices,
+    trait_info as trait_info,
+)
 from ._host import Email as Email
 from ._rack import (
     Rack as Rack,

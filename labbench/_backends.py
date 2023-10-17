@@ -1285,15 +1285,12 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
 
     def check_idn(device: VISADevice):
         try:
-            print('try', device)
             ret = device.identity
-            print(device, ret)
             return ret
         except pyvisa.errors.VisaIOError as ex:
-            print('exception', ex)
             return None
         except BaseException as ex:
-            print('check_idn: baseexception', ex)
+            device._logger.debug(f'visa_list_identities exception on probing identity: {str(ex)}')
             raise
 
     def keep_interface(name):
@@ -1315,7 +1312,7 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
             if device.isopen
         ]
 
-        identities = util.sequentially(*calls, catch=False)
+        identities = util.concurrently(*calls, catch=True)
 
     return identities
 

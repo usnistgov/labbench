@@ -92,7 +92,7 @@ class KeyAdapterBase:
         raise NotImplementedError(
             f'key adapter does not implement "set" {repr(type(self))}'
         )
-    
+
     def method_from_key(self, device: HasParamAttrs, trait: ParamAttr):
         raise NotImplementedError(
             f'key adapter does not implement "method_from_key" {repr(type(self))}'
@@ -150,7 +150,9 @@ class HasParamAttrsMeta(type):
             metacls.ns_pending.append(cls_info.attrs)
             return ns
         else:
-            ns["_cls_info"] = HasParamAttrsClsInfo(attrs={}, key_adapter=KeyAdapterBase())
+            ns["_cls_info"] = HasParamAttrsClsInfo(
+                attrs={}, key_adapter=KeyAdapterBase()
+            )
             metacls.ns_pending.append({})
         return ns
 
@@ -385,11 +387,13 @@ class ParamAttr:
 
                 self._method = func
 
-            # 
+            #
             cls_info = owner_cls._cls_info
 
             if self.key is not Undefined:
-                cls_info.methods[self.name] = cls_info.key_adapter.method_from_key(owner_cls, self)
+                cls_info.methods[self.name] = cls_info.key_adapter.method_from_key(
+                    owner_cls, self
+                )
 
         elif self.role == self.ROLE_PROPERTY:
             if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
@@ -467,7 +471,9 @@ class ParamAttr:
         owner.__notify__(self.name, value, "set", cache=self.cache)
 
     @util.hide_in_traceback
-    def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None):
+    def __get__(
+        self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None
+    ):
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -528,7 +534,7 @@ class ParamAttr:
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
-            value = owner._keying.get(owner, self.key, self)
+            value = owner._cls_info.key_adapter.get(owner, self.key, self)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -1120,14 +1126,18 @@ class RemappingCorrectionMixIn(DependentParamAttr):
     EMPTY_STORE = dict(by_cal=None, by_uncal=None)
 
     def _min(self, owner: HasParamAttrs):
-        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get("by_uncal", None)
+        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get(
+            "by_uncal", None
+        )
         if by_uncal is None:
             return None
         else:
             return by_uncal.min()
 
     def _max(self, owner: HasParamAttrs):
-        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get("by_uncal", None)
+        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get(
+            "by_uncal", None
+        )
         if by_uncal is None:
             return None
         else:
@@ -1311,7 +1321,9 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             path = getattr(owner, self.path_trait.name)
             index = msg["new"]
 
-            if self._CAL_TABLE_KEY not in owner._attr_store.calibrations.get(self.name, {}):
+            if self._CAL_TABLE_KEY not in owner._attr_store.calibrations.get(
+                self.name, {}
+            ):
                 self._load_calibration_table(owner, path)
 
             ret = self._update_index_value(owner, index)
@@ -1353,7 +1365,9 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _touch_table(self, owner):
         # make sure that calibrations have been initialized
-        table = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+        table = owner._attr_store.calibrations.get(self.name, {}).get(
+            self._CAL_TABLE_KEY, None
+        )
 
         if table is None:
             path = getattr(owner, self.path_trait.name)
@@ -1365,7 +1379,9 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _update_index_value(self, owner, index_value):
         """update the calibration on change of index_value"""
-        cal = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+        cal = owner._attr_store.calibrations.get(self.name, {}).get(
+            self._CAL_TABLE_KEY, None
+        )
 
         if cal is None:
             txt = "index_value change has no effect because calibration_data has not been set"

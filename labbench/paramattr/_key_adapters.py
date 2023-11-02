@@ -141,7 +141,7 @@ class message_keying(KeyAdapterBase):
         owner: HasParamAttrs,
         scpi_key: str,
         value,
-        paramattr: ParamAttr = None,
+        attr: ParamAttr = None,
         arguments: Dict[str, Any] = {},
     ):
         """writes an SCPI message to set a parameter with a name key
@@ -210,7 +210,7 @@ class message_keying(KeyAdapterBase):
 
         def method(owner, set_value: trait.type = Undefined, /, **kws) -> Union[None, trait.type]:
             validated_kws = {
-                # cast each parameter, defaulting to
+                # cast each keyword argument
                 k: arg_defs.get(k, no_cast_argument).__cast_get__(owner, v)
                 for k, v in kws.items()
             }

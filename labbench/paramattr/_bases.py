@@ -33,10 +33,8 @@ from __future__ import annotations
 import builtins
 import inspect
 import numbers
-import string
 import typing
 from contextlib import contextmanager
-from functools import wraps
 from inspect import isclass
 
 # for common types
@@ -64,34 +62,37 @@ class ThisType(typing.Generic[T]):
 
 
 class KeyAdapterBase:
-    def __new__(cls, *args, **kws):
+    arguments: Dict[str, ParamAttr]
+
+    def __new__(cls, /, decorated_cls: HasParamAttrs = None, **kws):
         """set up use as a class decorator"""
 
         obj = super().__new__(cls)
 
-        if len(args) == 1 and len(kws) == 0 and issubclass(args[0], HasParamAttrs):
+        if decorated_cls is not None:
             # instantiated as a decorator without arguments - do the decoration
+            if not issubclass(decorated_cls, HasParamAttrs):
+                raise TypeError(f"{cls.__qualname__} must decorate a HasParamAttrs or Device class")
             obj.__init__()
-            return obj(args[0])
+            return obj(decorated_cls)
         else:
             # instantiated with arguments - decoration happens later
-            obj.__init__(*args, **kws)
+            obj.__init__(**kws)
             return obj
+
+    def __init__(self, *, arguments: Dict[str, ParamAttr] = {}):
+        self.arguments = arguments
 
     def __call__(self, owner_cls: Type[HasParamAttrs]):
         # do the decorating
-        owner_cls._cls_info.key_adapter = self
+        owner_cls._attr_defs.key_adapter = self
         return owner_cls
 
     def get(self, trait_owner, key, trait=None):
-        raise NotImplementedError(
-            f'key adapter does not implement "get" {repr(type(self))}'
-        )
+        raise NotImplementedError(f'key adapter does not implement "get" {repr(type(self))}')
 
     def set(self, trait_owner, key, value, trait=None):
-        raise NotImplementedError(
-            f'key adapter does not implement "set" {repr(type(self))}'
-        )
+        raise NotImplementedError(f'key adapter does not implement "set" {repr(type(self))}')
 
     def method_from_key(self, device: HasParamAttrs, trait: ParamAttr):
         raise NotImplementedError(
@@ -128,9 +129,9 @@ class HasParamAttrsClsInfo:
 
     @classmethod
     def _copy_from(cls, owner: HasParamAttrs):
-        obj = cls(attrs={}, key_adapter=owner._cls_info.key_adapter)
-        obj.attrs = {k: v.copy() for k, v in owner._cls_info.attrs.items()}
-        obj.methods = dict(owner._cls_info.methods)
+        obj = cls(attrs={}, key_adapter=owner._attr_defs.key_adapter)
+        obj.attrs = {k: v.copy() for k, v in owner._attr_defs.attrs.items()}
+        obj.methods = dict(owner._attr_defs.methods)
         return obj
 
 
@@ -140,19 +141,17 @@ class HasParamAttrsMeta(type):
 
     @classmethod
     def __prepare__(metacls, names, bases, **kws):
-        """Prepare copies of cls._cls_info.attrs, to ensure that all traits can be adjusted
+        """Prepare copies of cls._attr_defs.attrs, to ensure that all traits can be adjusted
         afterward without impacting the parent class.
         """
         ns = dict()
         if len(bases) >= 1:
-            cls_info = ns["_cls_info"] = HasParamAttrsClsInfo._copy_from(bases[0])
+            cls_info = ns["_attr_defs"] = HasParamAttrsClsInfo._copy_from(bases[0])
             ns.update(cls_info.attrs)
             metacls.ns_pending.append(cls_info.attrs)
             return ns
         else:
-            ns["_cls_info"] = HasParamAttrsClsInfo(
-                attrs={}, key_adapter=KeyAdapterBase()
-            )
+            ns["_attr_defs"] = HasParamAttrsClsInfo(attrs={}, key_adapter=KeyAdapterBase())
             metacls.ns_pending.append({})
         return ns
 
@@ -191,10 +190,11 @@ class ParamAttr:
 
     """
 
-    ROLE_VALUE = "value"
-    ROLE_PROPERTY = "property"
-    ROLE_METHOD = "method"
-    ROLE_UNSET = "unset"
+    ROLE_VALUE = "ROLE_VALUE"
+    ROLE_PROPERTY = "ROLE_PROPERTY"
+    ROLE_METHOD = "ROLE_METHOD"
+    ROLE_UNSET = "ROLE_UNSET"
+    ROLE_ARGUMENT = "ROLE_ARGUMENT"
 
     type = None
     role = ROLE_UNSET
@@ -203,7 +203,6 @@ class ParamAttr:
     default: ThisType = Undefined
     key: Undefined = Undefined
     argname: Union[str, None] = Undefined
-    # role: str = ROLE_UNSET
     help: str = ""
     label: str = ""
     sets: bool = True
@@ -211,7 +210,7 @@ class ParamAttr:
     cache: bool = False
     only: tuple = tuple()
     allow_none: bool = False
-    argchecks: List[Callable] = []
+    arguments: Dict[Any, ParamAttr] = []
 
     # If the trait is used for a state, it can operate as a decorator to
     # implement communication with a device
@@ -225,7 +224,7 @@ class ParamAttr:
 
     def __init__(self, arg=Undefined, /, **kws):
         if arg is not Undefined:
-            if self.role == self.ROLE_VALUE:
+            if self.role in (self.ROLE_VALUE, self.ROLE_ARGUMENT):
                 if "default" in kws:
                     raise ValueError(f"duplicate 'default' argument in {self}")
                 else:
@@ -250,25 +249,23 @@ class ParamAttr:
         kws = dict(cls_defaults, **kws)
 
         # check role and related parameter dependencies
-        if self.role == self.ROLE_VALUE:
-            invalid_args = ("key", "argname", "argchecks")
+        if self.role in (self.ROLE_VALUE, self.ROLE_ARGUMENT):
+            invalid_args = ("key", "argname", "arguments")
         elif self.role == self.ROLE_PROPERTY:
-            invalid_args = ("default", "argname", "argchecks")
+            invalid_args = ("default", "argname", "arguments")
         elif self.role == self.ROLE_METHOD:
             invalid_args = ("default",)
         else:
             clsname = self.__class__.__qualname__
             raise ValueError(
-                f"{clsname}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_METHOD, self.ROLE_VALUE)}, not {repr(self.role)}"
+                f"{clsname}.role must be one of {(self.ROLE_PROPERTY, self.ROLE_METHOD, self.ROLE_VALUE, self.ROLE_ARGUMENT)}, not {repr(self.role)}"
             )
 
         for k in invalid_args:
             if k in cls_defaults and cls_defaults[k] != kws[k]:
-                raise AttributeError(
-                    f"keyword argument '{k}' is not allowed with {self.role}"
-                )
+                raise AttributeError(f"keyword argument '{k}' is not allowed with {self.role}")
 
-        if self.role == self.ROLE_VALUE and kws["default"] is Undefined:
+        if self.role in (self.ROLE_VALUE, self.ROLE_ARGUMENT) and kws["default"] is Undefined:
             # always go with None when this value is allowed, fallback to self.default
             kws["default"] = self.type()
 
@@ -277,7 +274,7 @@ class ParamAttr:
                 # apply a decorator
                 raise ValueError('specify exactly one of "argname" and "key" arguments')
 
-        if self.role != self.ROLE_VALUE:
+        if self.role not in (self.ROLE_VALUE, self.ROLE_ARGUMENT):
             # default Undefined so that cache will fill them in
             self.default = Undefined
 
@@ -330,7 +327,7 @@ class ParamAttr:
 
     # Descriptor methods (called automatically by the owning class or instance)
     def __set_name__(self, owner_cls, name):
-        """Called by the owner class when it is instantiated, triggering"""
+        """Called on owner class instantiation (python object protocol)"""
         # other owning objects may unintentionally become owners; this causes problems
         # if they do not implement the HasParamAttrs object protocol
         if issubclass(owner_cls, HasParamAttrs):
@@ -340,7 +337,7 @@ class ParamAttr:
             # Take the given name
             self.name = name
 
-            owner_cls._cls_info.attrs[name] = self
+            owner_cls._attr_defs.attrs[name] = self
 
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
         """The owner calls this in each of its traits at the end of defining the subclass
@@ -361,12 +358,15 @@ class ParamAttr:
                 raise AttributeError(
                     f"{self} must be defined with the argname argument when used as a decorator"
                 )
+        elif self.role == self.ROLE_ARGUMENT:
+            raise AttributeError(
+                "labbench.paramattr.argument instances should not be used as class attributes"
+            )
         elif len(self._decorated_funcs) == 0:
             return
 
         positional_argcounts = [
-            f.__code__.co_argcount - len(f.__defaults__ or tuple())
-            for f in self._decorated_funcs
+            f.__code__.co_argcount - len(f.__defaults__ or tuple()) for f in self._decorated_funcs
         ]
 
         if self.role == self.ROLE_METHOD:
@@ -388,12 +388,10 @@ class ParamAttr:
                 self._method = func
 
             #
-            cls_info = owner_cls._cls_info
+            cls_info = owner_cls._attr_defs
 
             if self.key is not Undefined:
-                cls_info.methods[self.name] = cls_info.key_adapter.method_from_key(
-                    owner_cls, self
-                )
+                cls_info.methods[self.name] = cls_info.key_adapter.method_from_key(owner_cls, self)
 
         elif self.role == self.ROLE_PROPERTY:
             if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
@@ -418,11 +416,19 @@ class ParamAttr:
 
     @util.hide_in_traceback
     def __set__(self, owner: HasParamAttrs, value):
+        if self.role in (self.ROLE_VALUE, self.ROLE_PROPERTY):
+            return self.set_in_owner(owner, value)
+        elif self.role == self.ROLE_METHOD:
+            raise AttributeError(f"call {self}(...) to set parameter value, not assignment")
+        else:
+            role_name = type(self).__module__
+            raise AttributeError(f"cannot assign to ParamAttr attributes defined as {role_name}")
+
+    @util.hide_in_traceback
+    def set_in_owner(self, owner: HasParamAttrs, value, arguments: Dict[str, Any]={}):
         # First, validate the pythonic types
         if not self.sets:
             raise AttributeError(f"{self.__str__()} cannot be set")
-
-        # Validate the pythonic value
         if value is not None:
             # cast to self.type and validate
             value = ParamAttr.to_pythonic(self, value)
@@ -447,16 +453,16 @@ class ParamAttr:
         if self.role == self.ROLE_VALUE:
             # apply as a value trait
             owner.__set_value__(self.name, value)
-
-        elif self.role == self.ROLE_PROPERTY:
-            # send to the device
+        elif self.role in (self.ROLE_METHOD, self.ROLE_PROPERTY):
+            # The remaining roles act as function calls that are implemented through self.key
+            # or by decorating a function.
             if self._setter is not None:
-                # from the function decorated by this trait
-                self._setter(owner, value)
+                # a decorated setter function, if used as a decorator
+                self._setter(owner, value, **arguments)
 
             elif self.key is not None:
-                # otherwise, use the owner's set_key
-                owner._cls_info.key_adapter.set(owner, self.key, value, self)
+                # send to the key adapter
+                owner._attr_defs.key_adapter.set(owner, self.key, value, self, arguments)
 
             else:
                 objname = owner.__class__.__qualname__ + "." + self.name
@@ -465,15 +471,10 @@ class ParamAttr:
                     f"setter and no key argument"
                 )
 
-        else:
-            raise AttributeError("data return traits cannot be set")
-
         owner.__notify__(self.name, value, "set", cache=self.cache)
 
     @util.hide_in_traceback
-    def __get__(
-        self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None
-    ):
+    def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None):
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -495,9 +496,10 @@ class ParamAttr:
         objclass_getter = self.__objclass__.__dict__.get(self.name)
         if cls_getter is not objclass_getter:
             return self
+        
         elif self.role == self.ROLE_METHOD:
             # inject the labbench ParamAttr hooks into the return value
-            func = owner_cls._cls_info.methods[self.name]
+            func = owner_cls._attr_defs.methods[self.name]
             method = func.__get__(owner, owner_cls)
 
             # TODO: inject hooks
@@ -508,25 +510,32 @@ class ParamAttr:
             #     return self.__cast_get__(owner, value)
 
             return method
+        elif self.role == self.ROLE_ARGUMENT:
+            role_name = type(self).__module__
+            raise AttributeError(f"cannot retrieve owner values for ParamAttr attributes defined as {role_name}")
+        else:
+            return self.get_from_owner(owner)
 
-        elif not self.gets:
+    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any]={}):
+        if not self.gets:
             # stop now if this is not a gets ParamAttr
-            raise AttributeError(f"{self.__repr__(owner_inst=owner)} is not gets")
+            raise AttributeError(f"{self.__repr__(owner_inst=owner)} does not support get operations")
 
-        elif self.role == self.ROLE_VALUE:
+        if self.role == self.ROLE_VALUE:
             return owner.__get_value__(self.name)
 
-        # from here on, operate as a property getter
+        # The remaining roles act as function calls that are implemented through self.key
+        # or by decorating a function.
         if self.cache and self.name in owner._attr_store.cache:
             # return the cached value if applicable
             return owner._attr_store.cache[self.name]
 
         elif self._getter is not None:
             # get value with the decorator implementation, if available
-            value = self._getter(owner)
+            value = self._getter(owner, **arguments)
 
         else:
-            # otherwise, get with the key owner's key adapter, if available
+            # otherwise, use the key owner's key adapter, if available
             if self.key is None:
                 # otherwise, 'get'
                 objname = owner.__class__.__qualname__
@@ -534,7 +543,7 @@ class ParamAttr:
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
                 )
-            value = owner._cls_info.key_adapter.get(owner, self.key, self)
+            value = owner._attr_defs.key_adapter.get(owner, self.key, self, arguments)
 
         return self.__cast_get__(owner, value, strict=False)
 
@@ -556,8 +565,7 @@ class ParamAttr:
             except BaseException as e:
                 # name = owner.__class__.__qualname__ + '.' + self.name
                 e.args = (
-                    e.args[0]
-                    + f" in attempt to get '{self.__repr__(owner_inst=owner)}'",
+                    e.args[0] + f" in attempt to get '{self.__repr__(owner_inst=owner)}'",
                 ) + e.args[1:]
                 raise e
 
@@ -611,9 +619,7 @@ class ParamAttr:
         if not isinstance(value, self.type):
             typename = self.type.__qualname__
             valuetypename = type(value).__qualname__
-            raise ValueError(
-                f"{repr(self)} type must be '{typename}', not '{valuetypename}'"
-            )
+            raise ValueError(f"{repr(self)} type must be '{typename}', not '{valuetypename}'")
         return value
 
     def contains(self, iterable, value):
@@ -625,9 +631,7 @@ class ParamAttr:
         """decorates a class attribute with the ParamAttr"""
         # only decorate functions.
         if not callable(func):
-            raise Exception(
-                f"object of type '{func.__class__.__qualname__}' must be callable"
-            )
+            raise Exception(f"object of type '{func.__class__.__qualname__}' must be callable")
 
         self._decorated_funcs.append(func)
 
@@ -692,7 +696,7 @@ class ParamAttr:
         return ",".join(pairs)
 
     def __repr__(self, omit=["help"], owner_inst=None):
-        declaration = f"{self.role}.{type(self).__qualname__}({self.doc_params(omit)})"
+        declaration = f"{type(self).__module__}.{type(self).__qualname__}({self.doc_params(omit)})"
 
         if owner_inst is None:
             return declaration
@@ -752,9 +756,7 @@ class ParamAttr:
 
         if default is not Undefined:
             if self.role != self.ROLE_VALUE:
-                raise ValueError(
-                    "non-keyword arguments are allowed only for value traits"
-                )
+                raise ValueError("non-keyword arguments are allowed only for value traits")
             if "default" in trait_params.keys():
                 raise ValueError(
                     '"default" keyword argument conflicts with default value passed as non-keyword'
@@ -803,33 +805,31 @@ class HasParamAttrsInstInfo:
         self.cache = {}
         self.calibrations = {}
 
-        for name, attr in owner._cls_info.attrs.items():
+        for name, attr in owner._attr_defs.attrs.items():
             attr.__init_owner_instance__(self)
 
             if attr.default is not Undefined:
                 self.cache[name] = attr.default
 
 
-def get_class_attrs(
-    obj: Union[HasParamAttrs, Type[HasParamAttrs]]
-) -> Dict[str, ParamAttr]:
+def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> Dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
-    return obj._cls_info.attrs
+    return obj._attr_defs.attrs
 
 
 def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
     """returns a mapping of names of labbench value paramattrs defined in `obj`"""
-    return obj._cls_info.value_names()
+    return obj._attr_defs.value_names()
 
 
 def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
     """returns a mapping of names of labbench method paramattrs defined in `obj`"""
-    return obj._cls_info.method_names()
+    return obj._attr_defs.method_names()
 
 
 def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
     """returns a list of names of labbench property paramattrs defined in `obj`"""
-    return obj._cls_info.property_names()
+    return obj._attr_defs.property_names()
 
 
 class HasParamAttrs(metaclass=HasParamAttrsMeta):
@@ -838,7 +838,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
     # _keying = KeyAdapterBase()
 
     _attr_store: HasParamAttrsInstInfo
-    _cls_info: HasParamAttrsClsInfo
+    _attr_defs: HasParamAttrsClsInfo
 
     def __init__(self, **values):
         self._attr_store = HasParamAttrsInstInfo(self)
@@ -847,7 +847,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
     def __init_subclass__(cls):
         MANAGED_ROLES = ParamAttr.ROLE_PROPERTY, ParamAttr.ROLE_METHOD
 
-        # cls._cls_info.attrs = dict(getattr(cls, "_attrs", {}))
+        # cls._attr_defs.attrs = dict(getattr(cls, "_attrs", {}))
         # cls._property_attrs = []
         # cls._value_attrs = []
         # cls._method_attrs = []
@@ -855,14 +855,14 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
         # parent_attrs = getattr(cls.__mro__[1], "_attrs", {})
         # annotations = getattr(cls, '__annotations__', {})
 
-        for name, trait in dict(cls._cls_info.attrs).items():
+        for name, trait in dict(cls._attr_defs.attrs).items():
             # Apply the trait decorator to the object if it is "part 2" of a decorator
             obj = getattr(cls, name)
 
             if not isinstance(obj, ParamAttr):
                 if trait.role in MANAGED_ROLES and callable(obj):
                     # if it's a method, decorate it
-                    cls._cls_info.attrs[name] = trait(obj)
+                    cls._attr_defs.attrs[name] = trait(obj)
                 else:
                     # if not decorating, clear from the traits dict, and emit a warning at runtime
                     thisclsname = cls.__qualname__
@@ -870,17 +870,17 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
                     warn(
                         f"'{name}' in {thisclsname} is not a trait, but replaces one in parent class {parentclsname}"
                     )
-                    del cls._cls_info.attrs[name]
+                    del cls._attr_defs.attrs[name]
 
                     continue
 
-            setattr(cls, name, cls._cls_info.attrs[name])
+            setattr(cls, name, cls._attr_defs.attrs[name])
 
-        if cls._cls_info.attrs in HasParamAttrsMeta.ns_pending:
-            type(cls).ns_pending.remove(cls._cls_info.attrs)
+        if cls._attr_defs.attrs in HasParamAttrsMeta.ns_pending:
+            type(cls).ns_pending.remove(cls._attr_defs.attrs)
 
         # finalize trait setup
-        for name, trait in dict(cls._cls_info.attrs).items():
+        for name, trait in dict(cls._attr_defs.attrs).items():
             if not hasattr(trait, "__objclass__"):
                 trait.__set_name__(cls, name)
             trait.__init_owner_subclass__(cls)
@@ -963,7 +963,7 @@ def adjusted(
     return apply_adjusted_trait
 
 
-class Any(ParamAttr, type=None):
+class Any(ParamAttr, type=object):
     """allows any value"""
 
     @util.hide_in_traceback
@@ -1003,9 +1003,7 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
             raise TypeError(f"cannot observe {obj}.{n} because it is not a trait")
 
     if not callable(handler):
-        raise ValueError(
-            f"argument 'handler' is {repr(handler)}, which is not a callable"
-        )
+        raise ValueError(f"argument 'handler' is {repr(handler)}, which is not a callable")
 
     if isinstance(name, str):
         validate_name(name)
@@ -1126,18 +1124,14 @@ class RemappingCorrectionMixIn(DependentParamAttr):
     EMPTY_STORE = dict(by_cal=None, by_uncal=None)
 
     def _min(self, owner: HasParamAttrs):
-        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get(
-            "by_uncal", None
-        )
+        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get("by_uncal", None)
         if by_uncal is None:
             return None
         else:
             return by_uncal.min()
 
     def _max(self, owner: HasParamAttrs):
-        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get(
-            "by_uncal", None
-        )
+        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get("by_uncal", None)
         if by_uncal is None:
             return None
         else:
@@ -1321,9 +1315,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             path = getattr(owner, self.path_trait.name)
             index = msg["new"]
 
-            if self._CAL_TABLE_KEY not in owner._attr_store.calibrations.get(
-                self.name, {}
-            ):
+            if self._CAL_TABLE_KEY not in owner._attr_store.calibrations.get(self.name, {}):
                 self._load_calibration_table(owner, path)
 
             ret = self._update_index_value(owner, index)
@@ -1365,9 +1357,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _touch_table(self, owner):
         # make sure that calibrations have been initialized
-        table = owner._attr_store.calibrations.get(self.name, {}).get(
-            self._CAL_TABLE_KEY, None
-        )
+        table = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
 
         if table is None:
             path = getattr(owner, self.path_trait.name)
@@ -1379,9 +1369,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def _update_index_value(self, owner, index_value):
         """update the calibration on change of index_value"""
-        cal = owner._attr_store.calibrations.get(self.name, {}).get(
-            self._CAL_TABLE_KEY, None
-        )
+        cal = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
 
         if cal is None:
             txt = "index_value change has no effect because calibration_data has not been set"
@@ -1637,9 +1625,7 @@ class BoundedNumber(ParamAttr):
                     "calibration target trait must the first trait in the calibration expression"
                 )
 
-        return self.update(
-            trait_expression, help=help, label=label, allow_none=allow_none
-        )
+        return self.update(trait_expression, help=help, label=label, allow_none=allow_none)
 
     # def calibrate(
     #     self,
@@ -1716,9 +1702,7 @@ class BoundedNumber(ParamAttr):
         def neg(x, y=None):
             return None if x is None else -x
 
-        return self.transform(
-            None, neg, neg, allow_none=self.allow_none, help=f"-1*({self.help})"
-        )
+        return self.transform(None, neg, neg, allow_none=self.allow_none, help=f"-1*({self.help})")
 
     def __add__(self, other):
         def add(x, y):
@@ -1891,9 +1875,7 @@ class Iterable(ParamAttr):
     @util.hide_in_traceback
     def validate(self, value, owner=None):
         if not hasattr(value, "__iter__"):
-            raise ValueError(
-                f"'{type(self).__qualname__}' traits accept only iterable values"
-            )
+            raise ValueError(f"'{type(self).__qualname__}' traits accept only iterable values")
         return value
 
 
@@ -1956,9 +1938,7 @@ class NetworkAddress(Unicode):
                 raise ValueError(f'port {port} in "{value}" is invalid')
 
             if not self.accept_port:
-                raise ValueError(
-                    f"{self} does not accept a port number (accept_port=False)"
-                )
+                raise ValueError(f"{self} does not accept a port number (accept_port=False)")
 
         for validate in _val.ipv4, _val.ipv6, _val.domain, _val.slug:
             if validate(host):

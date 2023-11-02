@@ -102,15 +102,11 @@ class Email(core.Device):
     subject line. Stderr is also sent.
     """
 
-    resource = param.value.NetworkAddress(
-        default="smtp.nist.gov", help="smtp server to use"
-    )
+    resource = param.value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use")
 
     port = param.value.int(default=25, min=1, help="TCP/IP port")
 
-    sender = param.value.str(
-        default="myemail@nist.gov", help="email address of the sender"
-    )
+    sender = param.value.str(default="myemail@nist.gov", help="email address of the sender")
 
     recipients = param.value.list(
         default=["myemail@nist.gov"], help="list of email addresses of recipients"
@@ -272,10 +268,7 @@ class Host(core.Device):
         try:
             repo = git.Repo(".", search_parent_directories=True)
             self._logger.debug("running in git repository")
-            if (
-                self.git_commit_in is not None
-                and repo.active_branch == self.git_commit_in
-            ):
+            if self.git_commit_in is not None and repo.active_branch == self.git_commit_in:
                 repo.index.commit("start of measurement")
                 self._logger.debug("git commit finished")
         except git.NoSuchPathError:
@@ -314,13 +307,9 @@ class Host(core.Device):
     def __python_module_versions(self):
         """Enumerate the versions of installed python modules"""
 
-        versions = dict(
-            [str(d).lower().split(" ") for d in pip.get_installed_distributions()]
-        )
+        versions = dict([str(d).lower().split(" ") for d in pip.get_installed_distributions()])
         running = dict(
-            sorted(
-                [(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions]
-            )
+            sorted([(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions])
         )
         return pd.Series(running).sort_index()
 

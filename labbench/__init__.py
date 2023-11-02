@@ -31,7 +31,6 @@ from .util import (
     _force_full_traceback,
     concurrently,
     logger,
-    validate_parameter,
     retry,
     sequentially,
     show_messages,

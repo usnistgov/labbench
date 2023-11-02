@@ -21,9 +21,7 @@ class PowerSensor(lb.VISADevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = param.property.bool(
-        key="INIT:CONT", help="trigger continuously if True"
-    )
+    initiate_continuous = param.property.bool(key="INIT:CONT", help="trigger continuously if True")
     trigger_count = param.property.int(
         key="TRIG:COUN", min=1, max=200, help="acquisition count", label="samples"
     )
@@ -104,9 +102,7 @@ class SpectrumAnalyzer(lb.VISADevice):
 @param.visa_keying(remap={True: "YES", False: "NO"})
 @param.adjusted("identity_pattern", default=r"Signal generator model \#1234")
 class SignalGenerator(lb.VISADevice):
-    output_enabled = param.property.bool(
-        key="OUT:ENABL", help="when True, output an RF tone"
-    )
+    output_enabled = param.property.bool(key="OUT:ENABL", help="when True, output an RF tone")
     center_frequency = param.property.float(
         key="SENS:FREQ",
         min=10e6,
@@ -122,10 +118,10 @@ class SignalGenerator(lb.VISADevice):
         self.write("TRIG")
 
 
-channel_check = lb.validate_parameter("channel", int, min=1, max=4)
-
-
-@param.visa_keying(remap={True: "ON", False: "OFF"})
+@param.visa_keying(
+    remap={True: "ON", False: "OFF"},
+    arguments={"channel": param.argument.int(min=1, max=4, help="input channel")},
+)
 @param.adjusted("identity_pattern", default=r"Oscilloscope model #1234")
 class Oscilloscope(lb.VISADevice):
     @param.method.float(
@@ -135,9 +131,8 @@ class Oscilloscope(lb.VISADevice):
         step=1e-3,
         label="Hz",
         help="channel center frequency",
-        argchecks=[channel_check],
     )
-    def center_frequency(self, set_value=lb.Undefined, /, *, channel: int):
+    def center_frequency(self, set_value=lb.Undefined, /, *, channel):
         if set_value is lb.Undefined:
             return self.query(f"CH{channel}:SENS:FREQ?")
         else:
@@ -150,7 +145,7 @@ class Oscilloscope(lb.VISADevice):
         step=1e-3,
         help="channel resolution bandwidth",
         label="Hz",
-        # argchecks omitted deliberately for testing
+        # arguments omitted deliberately for testing
     )
 
     def load_state(self, remote_filename: str):

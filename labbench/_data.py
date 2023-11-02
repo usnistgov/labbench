@@ -96,12 +96,8 @@ class MungerBase(core.Device):
         "{id}",
         help="directory name format for data in each row keyed on column",
     )
-    nonscalar_file_type = param.value.str(
-        "csv", help="file format for non-scalar numerical data"
-    )
-    metadata_dirname = param.value.str(
-        "metadata", help="subdirectory name for metadata"
-    )
+    nonscalar_file_type = param.value.str("csv", help="file format for non-scalar numerical data")
+    metadata_dirname = param.value.str("metadata", help="subdirectory name for metadata")
 
     def __call__(self, index, row):
         """
@@ -173,9 +169,7 @@ class MungerBase(core.Device):
 
             for trait_name, trait in param.get_class_attrs(owner).items():
                 if trait.role == param.Trait.ROLE_VALUE or trait.cache:
-                    summary[key_func(owner_name, trait_name)] = getattr(
-                        owner, trait_name
-                    )
+                    summary[key_func(owner_name, trait_name)] = getattr(owner, trait_name)
         summary = {k: process_value(v, k) for k, v in summary.items()}
 
         metadata = dict(summary=pd.DataFrame([summary], index=["Value"]).T)
@@ -744,9 +738,7 @@ class Aggregator(util.Ownable):
 
         for obj, name in ownables.items():
             if not isinstance(obj, util.Ownable):
-                raise ValueError(
-                    f"{obj} is not a Device or other ownable labbench type"
-                )
+                raise ValueError(f"{obj} is not a Device or other ownable labbench type")
 
             if name is not None:
                 # if obj in self.name_map and name != self.name_map[obj]:
@@ -907,18 +899,14 @@ class Aggregator(util.Ownable):
                 else:
                     break
             else:
-                raise RuntimeError(
-                    f"failed to automatically label {repr(target)} by inspection"
-                )
+                raise RuntimeError(f"failed to automatically label {repr(target)} by inspection")
         finally:
             del f, frame
 
         return ret
 
 
-class TabularLoggerBase(
-    Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)
-):
+class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)):
     """Base class for loggers that queue dictionaries of data before writing
     to disk. This extends :class:`Aggregator` to support
 
@@ -1023,9 +1011,7 @@ class TabularLoggerBase(
             never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
         """
 
-        self.aggregator.observe(
-            devices=devices, changes=changes, always=always, never=never
-        )
+        self.aggregator.observe(devices=devices, changes=changes, always=always, never=never)
 
     def set_row_preprocessor(self, func):
         """Define a function that is called to modify each pending data row
@@ -1305,9 +1291,7 @@ class CSVLogger(TabularLoggerBase):
                 # test access by starting the root table
                 file_path.touch(exist_ok=self._append)
             except FileExistsError:
-                raise IOError(
-                    f"root table already exists at '{file_path}', while append=False"
-                )
+                raise IOError(f"root table already exists at '{file_path}', while append=False")
 
             if self._append and file_path.stat().st_size > 0:
                 # there's something here and we plan to append
@@ -1444,9 +1428,7 @@ class MungeToHDF(Device):
         for owner, owner_name in name.items():
             if owner_name.endswith("_values"):
                 for trait in owner:
-                    summary[key_func(owner_name, trait.name)] = getattr(
-                        owner, trait.name
-                    )
+                    summary[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
         summary = {k: process_value(v, k) for k, v in summary.items()}
 
         metadata = pd.DataFrame([summary], index=["Value"]).T
@@ -1663,9 +1645,7 @@ class SQLiteLogger(TabularLoggerBase):
                 self._columns = df.columns
                 self.output_index = df.index[-1] + 1
             else:
-                raise IOError(
-                    f"root table already exists at '{path}', but append=False"
-                )
+                raise IOError(f"root table already exists at '{path}', but append=False")
         else:
             self._columns = None
         self.inprogress = {}
@@ -1796,9 +1776,7 @@ def to_feather(data, path):
 
     try:
         if not (
-            data.index.is_monotonic
-            and data.index[0] == 0
-            and data.index[-1] == data.shape[0] - 1
+            data.index.is_monotonic and data.index[0] == 0 and data.index[-1] == data.shape[0] - 1
         ):
             data = data.reset_index()
         data.columns = np.array(data.columns).astype(np.str)
@@ -1864,9 +1842,7 @@ def read(
     }
 
     try:
-        reader_guess.update(
-            {"f": feather.read_feather, "feather": feather.read_feather}
-        )
+        reader_guess.update({"f": feather.read_feather, "feather": feather.read_feather})
     except BaseException:
         warnings.warn(
             "feather format is not available in this pandas installation, and will not be supported in labbench"
@@ -1881,16 +1857,12 @@ def read(
             format = os.path.splitext(path_or_buf)[-1][1:]
     else:
         if format == "auto":
-            raise ValueError(
-                "can only guess format for string path - specify extension"
-            )
+            raise ValueError("can only guess format for string path - specify extension")
 
     try:
         reader = reader_guess[format]
     except KeyError as e:
-        raise Exception(
-            f"couldn't guess a reader from extension of file {path_or_buf}"
-        ) from e
+        raise Exception(f"couldn't guess a reader from extension of file {path_or_buf}") from e
 
     if reader == read_sqlite:
         return reader(path_or_buf, columns=columns, nrows=nrows, **kws)

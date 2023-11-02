@@ -184,12 +184,8 @@ class Device(HasParamAttrs, util.Ownable):
 
     """
 
-    resource = param.value.str(
-        allow_none=True, cache=True, help="device address or URI"
-    )
-    concurrency = param.value.bool(
-        True, sets=False, help="True if the device supports threading"
-    )
+    resource = param.value.str(allow_none=True, cache=True, help="device address or URI")
+    concurrency = param.value.bool(True, sets=False, help="True if the device supports threading")
     """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
         value on the Device. Therefore, getting or setting property trait traits
@@ -282,7 +278,7 @@ class Device(HasParamAttrs, util.Ownable):
 
         settable_values = {
             name: param.get_class_attrs(cls)[name]
-            for name in cls._cls_info.value_names()
+            for name in cls._attr_defs.value_names()
             if param.get_class_attrs(cls)[name].sets
         }
 
@@ -368,9 +364,7 @@ class Device(HasParamAttrs, util.Ownable):
             self._logger.debug("closed")
         finally:
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(
-                    f"multiple exceptions while closing {self}"
-                )
+                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
                 ex.thread_exceptions = all_ex
                 raise ex
 

@@ -100,9 +100,7 @@ class ShellBackend(Device):
                 )
 
         if not os.path.exists(self.binary_path):
-            raise OSError(
-                f'executable does not exist at resource=r"{self.binary_path}"'
-            )
+            raise OSError(f'executable does not exist at resource=r"{self.binary_path}"')
 
         # a Queue for stdout
         self.backend = None
@@ -202,9 +200,7 @@ class ShellBackend(Device):
             pass
 
         self._logger.debug(f"shell execute '{repr(' '.join(cmdl))}'")
-        cp = sp.run(
-            cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return
-        )
+        cp = sp.run(cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return)
         ret = cp.stdout
 
         err = cp.stderr.strip().rstrip().decode()
@@ -334,13 +330,11 @@ class ShellBackend(Device):
         # find keys in flags that do not exist as value traits
         unsupported = set(flags.keys()).difference(param.list_value_attrs(self))
         if len(unsupported) > 1:
-            raise KeyError(
-                f"flags point to value traits {unsupported} that do not exist in {self}"
-            )
+            raise KeyError(f"flags point to value traits {unsupported} that do not exist in {self}")
 
         argv = []
         for name, flag_str in flags.items():
-            trait = self._cls_info.attrs[name]
+            trait = self._attr_defs.attrs[name]
             trait_value = getattr(self, name)
 
             if not isinstance(flag_str, str) and flag_str is not None:
@@ -381,9 +375,7 @@ class ShellBackend(Device):
                 argv += [flag_str, str(trait_value)]
 
             else:
-                raise ValueError(
-                    "unexpected error condition (this should not be possible)"
-                )
+                raise ValueError("unexpected error condition (this should not be possible)")
 
         return argv
 
@@ -425,9 +417,7 @@ class ShellBackend(Device):
         result = ""
 
         if not self.isopen:
-            raise ConnectionError(
-                "open the device to read stdout from the background process"
-            )
+            raise ConnectionError("open the device to read stdout from the background process")
 
         try:
             n = 0
@@ -550,17 +540,13 @@ class DotNetDevice(Device):
         from System.Reflection import Assembly
 
         try:
-            contents = importlib.util.find_spec(library.__package__).loader.get_data(
-                str(dll_path)
-            )
+            contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))
         except BaseException:
             with open(dll_path, "rb") as f:
                 contents = f.read()
 
         # binary file contents
-        contents = importlib.util.find_spec(library.__package__).loader.get_data(
-            str(dll_path)
-        )
+        contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))
 
         # dump that into dotnet
         Assembly.Load(System.Array[System.Byte](contents))
@@ -587,12 +573,8 @@ class LabviewSocketInterface(Device):
     )
     tx_port = param.value.int(61551, help="TX port to send to the LabView VI")
     rx_port = param.value.int(61552, help="TX port to send to the LabView VI")
-    delay = param.value.float(
-        1, help="time to wait after each property trait write or query"
-    )
-    timeout = param.value.float(
-        2, help="maximum wait replies before raising TimeoutError"
-    )
+    delay = param.value.float(1, help="time to wait after each property trait write or query")
+    timeout = param.value.float(2, help="maximum wait replies before raising TimeoutError")
     rx_buffer_size = param.value.int(1024, min=1)
 
     def open(self):
@@ -677,12 +659,8 @@ class SerialDevice(Device):
         1, min=1, max=2, step=0.5, help="Number of stop bits, one of `[1, 1.5, or 2.]`."
     )
     xonxoff = param.value.bool(False, help="`True` to enable software flow control.")
-    rtscts = param.value.bool(
-        False, help="`True` to enable hardware (RTS/CTS) flow control."
-    )
-    dsrdtr = param.value.bool(
-        False, help="`True` to enable hardware (DSR/DTR) flow control."
-    )
+    rtscts = param.value.bool(False, help="`True` to enable hardware (RTS/CTS) flow control.")
+    dsrdtr = param.value.bool(False, help="`True` to enable hardware (DSR/DTR) flow control.")
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):
@@ -729,9 +707,7 @@ class SerialDevice(Device):
         ports = OrderedDict(ports)
 
         if hwid is not None:
-            ports = [
-                (port, meta) for port, meta in list(ports.items()) if meta["id"] == hwid
-            ]
+            ports = [(port, meta) for port, meta in list(ports.items()) if meta["id"] == hwid]
 
         return dict(ports)
 
@@ -787,9 +763,7 @@ class SerialLoggingDevice(SerialDevice):
         This is a stub that does nothing --- it should be implemented by a
         subclass for a specific serial logger device.
         """
-        self._logger.debug(
-            f"{repr(self)}: no device-specific configuration implemented"
-        )
+        self._logger.debug(f"{repr(self)}: no device-specific configuration implemented")
 
     def start(self):
         """Start a background thread that acquires log data into a queue.
@@ -909,9 +883,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-@param.visa_keying(
-    query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"}
-)
+@param.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
 
@@ -1104,9 +1076,7 @@ class VISADevice(Device):
         self._logger.debug(f"write {msg_out}")
         self.backend.write(msg)
 
-    def query(
-        self, msg: str, timeout=None, remap: bool = False, kws: Dict[str, Any] = {}
-    ) -> str:
+    def query(self, msg: str, timeout=None, remap: bool = False, kws: Dict[str, Any] = {}) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1152,9 +1122,7 @@ class VISADevice(Device):
         self._logger.debug(f"query_ascii_values {msg_out}")
 
         try:
-            ret = self.backend.query_ascii_values(
-                msg, type_, separator, container, delay
-            )
+            ret = self.backend.query_ascii_values(msg, type_, separator, container, delay)
         finally:
             if timeout is not None:
                 self.backend.timeout = _to
@@ -1290,7 +1258,7 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
         except pyvisa.errors.VisaIOError as ex:
             return None
         except BaseException as ex:
-            device._logger.debug(f'visa_list_identities exception on probing identity: {str(ex)}')
+            device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")
             raise
 
     def keep_interface(name):
@@ -1299,11 +1267,7 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
                 return False
         return True
 
-    devices = {
-        res: make_test_device(res)
-        for res in visa_list_resources()
-        if keep_interface(res)
-    }
+    devices = {res: make_test_device(res) for res in visa_list_resources() if keep_interface(res)}
 
     with util.concurrently(*list(devices.values()), catch=True):
         calls = [

@@ -1,4 +1,4 @@
-from . import _bases, property, value, method
+from . import _bases, argument, property, value, method
 
 from ._bases import (
     KeyAdapterBase,

@@ -47,5 +47,4 @@ from .util import (
     stopwatch as stopwatch,
     timeout_iter as timeout_iter,
     until_timeout as until_timeout,
-    validate_parameter as validate_parameter,
 )

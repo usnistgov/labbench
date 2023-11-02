@@ -91,5 +91,5 @@ class NetworkAddress(_bases.NetworkAddress):
 _bases.subclass_namespace_attrs(
     locals(),
     role=_bases.ParamAttr.ROLE_VALUE,
-    omit_trait_attrs=["key", "argchecks", "argname"],
+    omit_trait_attrs=["key", "arguments", "argname"],
 )

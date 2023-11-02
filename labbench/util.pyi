@@ -1,7 +1,7 @@
 from _typeshed import Incomplete
 from collections.abc import Generator
 from threading import ThreadError
-from typing import Callable
+from typing import Callable, Dict
 
 import_t0: Incomplete
 logger: Incomplete
@@ -43,11 +43,7 @@ def retry(
     exception_func=...,
 ): ...
 def until_timeout(
-    exception_or_exceptions,
-    timeout,
-    delay: int = ...,
-    backoff: int = ...,
-    exception_func=...,
+    exception_or_exceptions, timeout, delay: int = ..., backoff: int = ..., exception_func=...
 ): ...
 def timeout_iter(duration) -> Generator[Incomplete, None, None]: ...
 def kill_by_name(*names) -> None: ...
@@ -67,7 +63,7 @@ class Call:
     def __call__(self): ...
     def set_queue(self, queue) -> None: ...
     @classmethod
-    def wrap_list_to_dict(cls, name_func_pairs): ...
+    def wrap_list_to_dict(cls, name_func_pairs) -> Dict[str, Call]: ...
 
 class MultipleContexts:
     abort: bool

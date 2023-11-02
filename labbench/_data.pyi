@@ -19,7 +19,7 @@ INSPECT_SKIP_FILES: Incomplete
 class MungerBase(core.Device):
     def __init__(
         self,
-        resource: str = "WindowsPath",
+        resource: str = "PosixPath",
         text_relational_min: str = "int",
         force_relational: str = "list",
         relational_name_fmt: str = "str",
@@ -40,7 +40,7 @@ class MungerBase(core.Device):
 class MungeToDirectory(MungerBase):
     def __init__(
         self,
-        resource: str = "WindowsPath",
+        resource: str = "PosixPath",
         text_relational_min: str = "int",
         force_relational: str = "list",
         relational_name_fmt: str = "str",
@@ -62,7 +62,7 @@ class TarFileIO(io.BytesIO):
 class MungeToTar(MungerBase):
     def __init__(
         self,
-        resource: str = "WindowsPath",
+        resource: str = "PosixPath",
         text_relational_min: str = "int",
         force_relational: str = "list",
         relational_name_fmt: str = "str",
@@ -155,7 +155,7 @@ class CSVLogger(TabularLoggerBase):
     def open(self) -> None: ...
 
 class MungeToHDF(Device):
-    def __init__(self, resource: str = "WindowsPath", key_fmt: str = "str"): ...
+    def __init__(self, resource: str = "PosixPath", key_fmt: str = "str"): ...
     resource: Incomplete
     key_fmt: Incomplete
     backend: Incomplete
@@ -172,12 +172,7 @@ class HDFLogger(TabularLoggerBase):
     munge: Incomplete
 
     def __init__(
-        self,
-        path: Path = ...,
-        *,
-        append: bool = ...,
-        key_fmt: str = ...,
-        git_commit_in: str = ...,
+        self, path: Path = ..., *, append: bool = ..., key_fmt: str = ..., git_commit_in: str = ...
     ) -> None: ...
     df: Incomplete
 
@@ -205,11 +200,7 @@ def read_sqlite(
     index_col=...,
 ): ...
 def read(
-    path_or_buf: str,
-    columns: List[str] = ...,
-    nrows: int = ...,
-    format: str = ...,
-    **kws,
+    path_or_buf: str, columns: List[str] = ..., nrows: int = ..., format: str = ..., **kws
 ): ...
 
 class MungeTarReader:

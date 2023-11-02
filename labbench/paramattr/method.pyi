@@ -11,7 +11,7 @@ class bool(_bases.Bool):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ...
 
@@ -26,7 +26,7 @@ class float(_bases.Float):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        arguments: List = [],
+        arguments: Dict = [],
         min: float = None,
         max: float = None,
         path_trait=None,
@@ -47,7 +47,7 @@ class int(_bases.Int):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        arguments: List = [],
+        arguments: Dict = [],
         min: int = None,
         max: int = None,
         path_trait=None,
@@ -67,7 +67,7 @@ class complex(_bases.Complex):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ...
 
@@ -82,7 +82,7 @@ class str(_bases.Unicode):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         case: bool = True,
     ): ...
     ...
@@ -98,7 +98,7 @@ class bytes(_bases.Bytes):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         case: bool = True,
     ): ...
     ...
@@ -114,7 +114,7 @@ class list(_bases.List):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ...
 
@@ -129,7 +129,7 @@ class tuple(_bases.Tuple):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ...
 
@@ -144,7 +144,7 @@ class dict(_bases.Dict):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ...
 
@@ -159,7 +159,7 @@ class Path(_bases.Path):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         must_exist: bool = False,
     ): ...
     ...
@@ -175,7 +175,7 @@ class NetworkAddress(_bases.NetworkAddress):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         case: bool = True,
         accept_port: bool = True,
     ): ...

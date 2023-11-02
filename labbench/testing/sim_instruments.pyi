@@ -55,8 +55,6 @@ class SignalGenerator(lb.VISADevice):
 
     def trigger(self) -> None: ...
 
-channel_check: Incomplete
-
 class Oscilloscope(lb.VISADevice):
     def __init__(
         self,
@@ -67,7 +65,7 @@ class Oscilloscope(lb.VISADevice):
         identity_pattern: str = "str",
         timeout: str = "NoneType",
     ): ...
-    def center_frequency(self, value=..., *, channel: int): ...
+    def center_frequency(self, set_value=..., *, channel): ...
     resolution_bandwidth: Incomplete
 
     def load_state(self, remote_filename: str): ...

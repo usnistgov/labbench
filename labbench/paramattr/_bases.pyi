@@ -12,7 +12,10 @@ T = typing.TypeVar("T")
 class ThisType(typing.Generic[T]): ...
 
 class KeyAdapterBase:
-    def __new__(cls, *args, **kws): ...
+    arguments: Dict[str, ParamAttr]
+
+    def __new__(cls, decorated_cls: HasParamAttrs = ..., **kws): ...
+    def __init__(self, *, arguments: Dict[str, ParamAttr] = ...) -> None: ...
     def __call__(self, owner_cls: Type[HasParamAttrs]): ...
     def get(self, trait_owner, key, trait: Incomplete | None = ...) -> None: ...
     def set(self, trait_owner, key, value, trait: Incomplete | None = ...) -> None: ...
@@ -46,12 +49,13 @@ class ParamAttr:
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ROLE_VALUE: str
     ROLE_PROPERTY: str
     ROLE_METHOD: str
     ROLE_UNSET: str
+    ROLE_ARGUMENT: str
     type: Incomplete
     role = ROLE_UNSET
     default: ThisType
@@ -64,7 +68,7 @@ class ParamAttr:
     cache: bool
     only: tuple
     allow_none: bool
-    arguments: List[Callable]
+    arguments: Dict[Any, ParamAttr]
     kws: Incomplete
     metadata: Incomplete
 
@@ -78,7 +82,9 @@ class ParamAttr:
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]): ...
     def __init_owner_instance__(self, owner) -> None: ...
     def __set__(self, owner: HasParamAttrs, value): ...
+    def set_in_owner(self, owner: HasParamAttrs, value, arguments: Dict[str, Any] = ...): ...
     def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = ...): ...
+    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = ...): ...
     def __cast_get__(self, owner, value, strict: bool = ...): ...
     def to_pythonic(self, value): ...
     def from_pythonic(self, value): ...
@@ -113,9 +119,9 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
 def adjusted(trait: Union[ParamAttr, str], default: Any = ..., **trait_params) -> HasParamAttrs: ...
 
-class Any(ParamAttr, type=None):
+class Any(ParamAttr, type=object):
     def __init__(
-        default=None,
+        default: object = None,
         key=None,
         argname: Optional = None,
         help: str = "",
@@ -125,7 +131,7 @@ class Any(ParamAttr, type=None):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
     def to_pythonic(self, value): ...
@@ -146,7 +152,7 @@ class DependentParamAttr(ParamAttr):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     def __set_name__(self, owner_cls, name) -> None: ...
     @classmethod
@@ -164,7 +170,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         mapping=None,
     ): ...
     mapping: Any
@@ -174,10 +180,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
     def lookup_cal(self, uncal, owner): ...
     def find_uncal(self, cal, owner): ...
     def set_mapping(
-        self,
-        series_or_uncal,
-        cal: Incomplete | None = ...,
-        owner: Incomplete | None = ...,
+        self, series_or_uncal, cal: Incomplete | None = ..., owner: Incomplete | None = ...
     ) -> None: ...
     def __get__(self, owner, owner_cls: Incomplete | None = ...): ...
     def __set__(self, owner, cal) -> None: ...
@@ -194,7 +197,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         mapping=None,
         table_index_column: str = None,
     ): ...
@@ -218,7 +221,7 @@ class TransformMixIn(DependentParamAttr):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     def __init_owner_instance__(self, owner) -> None: ...
     def __owner_event__(self, msg) -> None: ...
@@ -237,7 +240,7 @@ class BoundedNumber(ParamAttr):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        arguments: List = [],
+        arguments: Dict = [],
         min=None,
         max=None,
         path_trait=None,
@@ -265,11 +268,7 @@ class BoundedNumber(ParamAttr):
         allow_none: bool = ...,
     ): ...
     def calibrate_from_expression(
-        self,
-        trait_expression,
-        help: str = ...,
-        label: str = ...,
-        allow_none: bool = ...,
+        self, trait_expression, help: str = ..., label: str = ..., allow_none: bool = ...
     ): ...
     def transform(
         self,
@@ -293,7 +292,7 @@ class BoundedNumber(ParamAttr):
 
 class NonScalar(Any):
     def __init__(
-        default=None,
+        default: object = None,
         key=None,
         argname: Optional = None,
         help: str = "",
@@ -303,7 +302,7 @@ class NonScalar(Any):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
 
@@ -319,7 +318,7 @@ class Int(BoundedNumber, type=int):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        arguments: List = [],
+        arguments: Dict = [],
         min: int = None,
         max: int = None,
         path_trait=None,
@@ -340,7 +339,7 @@ class Float(BoundedNumber, type=float):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = True,
-        arguments: List = [],
+        arguments: Dict = [],
         min: float = None,
         max: float = None,
         path_trait=None,
@@ -364,7 +363,7 @@ class Complex(ParamAttr, type=complex):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     allow_none: bool
 
@@ -380,7 +379,7 @@ class Bool(ParamAttr, type=bool):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     allow_none: bool
 
@@ -398,7 +397,7 @@ class String(ParamAttr):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         case: bool = True,
     ): ...
     case: bool
@@ -417,7 +416,7 @@ class Unicode(String, type=str):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         case: bool = True,
     ): ...
     default: ThisType
@@ -436,7 +435,7 @@ class Bytes(String, type=bytes):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         case: bool = True,
     ): ...
     default: ThisType
@@ -453,7 +452,7 @@ class Iterable(ParamAttr):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     def validate(self, value, owner: Incomplete | None = ...): ...
 
@@ -469,7 +468,7 @@ class Dict(Iterable, type=dict):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ...
 
@@ -485,7 +484,7 @@ class List(Iterable, type=list):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     ...
 
@@ -501,7 +500,7 @@ class Tuple(Iterable, type=tuple):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
     ): ...
     sets: bool
 
@@ -517,7 +516,7 @@ class Path(ParamAttr, type=Path):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         must_exist: bool = False,
     ): ...
     must_exist: bool
@@ -536,7 +535,7 @@ class NetworkAddress(Unicode):
         cache: bool = False,
         only: tuple = (),
         allow_none: bool = False,
-        arguments: List = [],
+        arguments: Dict = [],
         case: bool = True,
         accept_port: bool = True,
     ): ...

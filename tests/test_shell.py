@@ -43,11 +43,7 @@ class Shell_Python(lb.ShellBackend):
     command = attr.value.str(key="-c", help="execute a python command")
 
     def _flag_names(self):
-        return (
-            name
-            for name, trait in self._traits.items()
-            if trait.key is not lb.Undefined
-        )
+        return (name for name, trait in self._traits.items() if trait.key is not lb.Undefined)
 
     def _commandline(self, **flags):
         """Form a list of commandline argument strings for foreground
@@ -77,9 +73,7 @@ class Shell_Python(lb.ShellBackend):
                 continue
             elif trait.key in (None, ""):
                 cmd = cmd + (value,)
-            elif (
-                not isinstance(trait.key, str) and trait.key is not lb._traits.Undefined
-            ):
+            elif not isinstance(trait.key, str) and trait.key is not lb._traits.Undefined:
                 raise TypeError(f"keys defined in {self} must be strings")
             else:
                 cmd = cmd + (trait.key, value)

@@ -425,7 +425,7 @@ class ParamAttr:
             raise AttributeError(f"cannot assign to ParamAttr attributes defined as {role_name}")
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, value, arguments: Dict[str, Any]={}):
+    def set_in_owner(self, owner: HasParamAttrs, value, arguments: Dict[str, Any] = {}):
         # First, validate the pythonic types
         if not self.sets:
             raise AttributeError(f"{self.__str__()} cannot be set")
@@ -496,7 +496,7 @@ class ParamAttr:
         objclass_getter = self.__objclass__.__dict__.get(self.name)
         if cls_getter is not objclass_getter:
             return self
-        
+
         elif self.role == self.ROLE_METHOD:
             # inject the labbench ParamAttr hooks into the return value
             func = owner_cls._attr_defs.methods[self.name]
@@ -512,14 +512,18 @@ class ParamAttr:
             return method
         elif self.role == self.ROLE_ARGUMENT:
             role_name = type(self).__module__
-            raise AttributeError(f"cannot retrieve owner values for ParamAttr attributes defined as {role_name}")
+            raise AttributeError(
+                f"cannot retrieve owner values for ParamAttr attributes defined as {role_name}"
+            )
         else:
             return self.get_from_owner(owner)
 
-    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any]={}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = {}):
         if not self.gets:
             # stop now if this is not a gets ParamAttr
-            raise AttributeError(f"{self.__repr__(owner_inst=owner)} does not support get operations")
+            raise AttributeError(
+                f"{self.__repr__(owner_inst=owner)} does not support get operations"
+            )
 
         if self.role == self.ROLE_VALUE:
             return owner.__get_value__(self.name)

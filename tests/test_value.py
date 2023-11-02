@@ -76,9 +76,7 @@ class TestValueTraits(unittest.TestCase):
                 else:
                     allow_types = trait.type
 
-                self.assertTrue(
-                    issubclass(type(value), allow_types), msg=f"trait {name}"
-                )
+                self.assertTrue(issubclass(type(value), allow_types), msg=f"trait {name}")
 
     def test_scalar_defaults(self):
         with TrialDevice() as m:
@@ -90,9 +88,7 @@ class TestValueTraits(unittest.TestCase):
 
                 value = getattr(m, name)
 
-                self.assertEqual(
-                    getattr(m, name), trait.default, msg=f"defaults: {name}"
-                )
+                self.assertEqual(getattr(m, name), trait.default, msg=f"defaults: {name}")
 
     def assertArrayEqual(self, a1, a2):
         self.assertEqual(a1.dtype, a2.dtype)

@@ -8,6 +8,7 @@ from functools import partialmethod
 
 class no_cast_argument:
     """duck-typed stand-in for an argument of arbitrary type"""
+
     @classmethod
     def __cast_get__(self, owner, value):
         return value
@@ -102,7 +103,7 @@ class message_keying(KeyAdapterBase):
         self,
         owner: HasParamAttrs,
         scpi_key: str,
-        paramattr: ParamAttr=None,
+        paramattr: ParamAttr = None,
         arguments: Dict[str, Any] = {},
     ):
         """queries a parameter named `scpi_key` by sending an SCPI message string.
@@ -128,7 +129,9 @@ class message_keying(KeyAdapterBase):
         except KeyError:
             expected_kws = set(self.get_key_arguments(scpi_key))
             missing_kws = expected_kws - set(arguments.keys())
-            raise TypeError(f"{paramattr._owned_name(owner)}() missing required positional argument(s) {str(missing_kws)[1:-1]}")
+            raise TypeError(
+                f"{paramattr._owned_name(owner)}() missing required positional argument(s) {str(missing_kws)[1:-1]}"
+            )
 
         value_msg = query_func(self.query_fmt.format(key=expanded_scpi_key)).rstrip()
         return self.from_message(value_msg)
@@ -138,7 +141,7 @@ class message_keying(KeyAdapterBase):
         owner: HasParamAttrs,
         scpi_key: str,
         value,
-        paramattr: ParamAttr=None,
+        paramattr: ParamAttr = None,
         arguments: Dict[str, Any] = {},
     ):
         """writes an SCPI message to set a parameter with a name key
@@ -202,7 +205,7 @@ class message_keying(KeyAdapterBase):
                 default=Undefined,
                 kind=inspect.Parameter.POSITIONAL_ONLY,
                 annotation=Optional[trait.type],
-            )
+            ),
         ]
 
         def method(owner, set_value: trait.type = Undefined, /, **kws) -> Union[None, trait.type]:

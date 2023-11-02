@@ -51,9 +51,7 @@ class EmulatedInstrument(EmulatedVISADevice):
     # properties
     initiate_continuous = attr.property.bool(key="INIT:CONT")
     output_trigger = attr.property.bool(key="OUTP:TRIG")
-    sweep_aperture = attr.property.float(
-        key="SWE:APER", min=20e-6, max=200e-3, help="time (in s)"
-    )
+    sweep_aperture = attr.property.float(key="SWE:APER", min=20e-6, max=200e-3, help="time (in s)")
     frequency = attr.property.float(
         key="SENS:FREQ", min=10e6, max=18e9, help="center frequency (in Hz)"
     )

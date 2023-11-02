@@ -46,9 +46,7 @@ class LaggyInstrument(EmulatedVISADevice):
 
     delay = attr.value.float(0, min=0, help="connection time")
     fetch_time = attr.value.float(0, min=0, help="fetch time")
-    fail_disconnect = attr.value.bool(
-        False, help="whether to raise DivideByZero on disconnect"
-    )
+    fail_disconnect = attr.value.bool(False, help="whether to raise DivideByZero on disconnect")
 
     def open(self):
         self.perf = {}
@@ -148,9 +146,7 @@ class TestConcurrency(unittest.TestCase):
         with inst1, inst2:
             self.assertEqual(inst1.isopen, True)
             self.assertEqual(inst2.isopen, True)
-            ret = lb.concurrently(
-                **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
-            )
+            ret = lb.concurrently(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
         self.assertIn(inst1.resource, ret)
         self.assertIn(inst2.resource, ret)
         self.assertEqual(ret[inst1.resource], inst1.fetch_time)
@@ -199,9 +195,7 @@ class TestConcurrency(unittest.TestCase):
         with inst1, inst2:
             self.assertEqual(inst1.isopen, True)
             self.assertEqual(inst2.isopen, True)
-            ret = lb.sequentially(
-                **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
-            )
+            ret = lb.sequentially(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
         self.assertIn(inst1.resource, ret)
         self.assertIn(inst2.resource, ret)
         self.assertEqual(ret[inst1.resource], inst1.fetch_time)

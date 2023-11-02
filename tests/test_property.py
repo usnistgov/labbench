@@ -238,9 +238,7 @@ class TestProperty:
                 )  # +1 get (unless cached)
 
                 # make sure there weren't any unecessary extra 'get' operations
-                self.assertEqual(
-                    m.get_get_count(trait_name), 0 if trait.cache else 1, msg=msg
-                )
+                self.assertEqual(m.get_get_count(trait_name), 0 if trait.cache else 1, msg=msg)
 
     def test_disabled_set(self):
         with self.TestDevice() as m:

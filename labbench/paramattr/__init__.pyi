@@ -1,4 +1,4 @@
-from . import method as method, property as property, value as value
+from . import argument as argument, method as method, property as property, value as value
 from ._bases import (
     KeyAdapterBase as KeyAdapterBase,
     Undefined as Undefined,

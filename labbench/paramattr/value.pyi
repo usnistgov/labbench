@@ -2,7 +2,7 @@ from . import _bases
 
 class any(_bases.Any):
     def __init__(
-        default=None,
+        default: object = None,
         help: str = "",
         label: str = "",
         sets: bool = True,

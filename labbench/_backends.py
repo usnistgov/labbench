@@ -1281,7 +1281,7 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
     return identities
 
 
-@Device.concurrency.adopt(True)
+@param.adjusted("concurrency", True)
 class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 

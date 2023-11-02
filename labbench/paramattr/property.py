@@ -67,18 +67,6 @@ class Path(_bases.Path):
     pass
 
 
-# class DataFrame(_bases.PandasDataFrame):
-#     pass
-
-
-# class Series(_bases.PandasSeries):
-#     pass
-
-
-# class ndarray(_bases.NumpyArray):
-#     pass
-
-
 class NetworkAddress(_bases.NetworkAddress):
     pass
 

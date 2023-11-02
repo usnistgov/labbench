@@ -734,52 +734,6 @@ class ParamAttr:
         obj.__dict__.update(attrs)
         return obj
 
-    # def adopt(self, default=Undefined, /, **trait_params):
-    #     """decorates a Device subclass to adjust parameters of this trait name.
-
-    #     This can be applied to inherited classes that need traits that vary the
-    #     parameters of a trait defined in a parent. Multiple decorators can be applied to the
-    #     same class definition.
-
-    #     Arguments:
-    #         default: the default value (for value traits only)
-    #         trait_params: keyword arguments that are valid for the corresponding trait type
-
-    #     Examples:
-    #     ```
-    #         import labbench as lb
-
-    #         class BaseInstrument(lb.VISADevice):
-    #             center_frequency = attr.property.float(key='FREQ', label='Hz')
-
-    #         @BaseInstrument.center_frequency.adopt(min=10, max=50e9)
-    #         class Instrument50GHzModel(lb.VISADevice):
-    #             pass
-    #     ```
-    #     """
-
-    #     if default is not Undefined:
-    #         if self.role != self.ROLE_VALUE:
-    #             raise ValueError("non-keyword arguments are allowed only for value traits")
-    #         if "default" in trait_params.keys():
-    #             raise ValueError(
-    #                 '"default" keyword argument conflicts with default value passed as non-keyword'
-    #             )
-    #         trait_params["default"] = default
-
-    #     def apply_adjusted_trait(owner_cls: HasParamAttrs):
-    #         if not issubclass(owner_cls, HasParamAttrs):
-    #             raise TypeError("adopt must decorate a Device class definition")
-    #         if self.name not in owner_cls.__dict__:
-    #             raise ValueError(f'no trait "{self.name}" in {repr(owner_cls)}')
-
-    #         trait = getattr(owner_cls, self.name)
-    #         trait.update(**trait_params)
-    #         owner_cls.__update_signature__()
-    #         return owner_cls
-
-    #     return apply_adjusted_trait
-
 
 ParamAttr.__init_subclass__()
 
@@ -837,10 +791,6 @@ def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[
 
 
 class HasParamAttrs(metaclass=HasParamAttrsMeta):
-    # TODO: remove this?
-    # ns_cache = {}
-    # _keying = KeyAdapterBase()
-
     _attr_store: HasParamAttrsInstInfo
     _attr_defs: HasParamAttrsClsInfo
 
@@ -1623,48 +1573,6 @@ class BoundedNumber(ParamAttr):
 
         return self.update(trait_expression, help=help, label=label, allow_none=allow_none)
 
-    # def calibrate(
-    #     self,
-    #     offset=Undefined,
-    #     mapping=Undefined,
-    #     table=Undefined,
-    #     help="",
-    #     label=Undefined,
-    #     allow_none=False,
-    # ):
-    #     """generate a new ParamAttr with value dependent on another trait. their configuration
-    #     comes from a trait in the owner.
-
-    #     Arguments:
-    #         offset_name: the name of a value trait in the owner containing a numerical offset
-    #         lookup1d: a table containing calibration data, or None to configure later
-    #     """
-
-    #     params = {}
-    #     if mapping is not Undefined:
-    #         mixin = RemappingCorrectionMixIn
-    #         params["mapping"] = mapping
-
-    #     elif offset is not Undefined:
-    #         mixin = OffsetCorrectionMixIn
-    #         params["offset"] = offset
-
-    #     if label is Undefined:
-    #         label = self.label
-
-    #     if len(params) != 1:
-    #         raise ValueError(f"must set exactly one of `offset`, `lookup1d`, and `lookup2d`")
-
-    #     return mixin.derive(
-    #         self,
-    #         help=help,
-    #         label=self.label,
-    #         sets=self.sets,
-    #         gets=self.gets,
-    #         allow_none=allow_none,
-    #         **params,
-    #     )
-
     def transform(
         self,
         other_trait: ParamAttr,
@@ -1901,18 +1809,6 @@ class Path(ParamAttr, type=Path):
             raise IOError()
 
         return path
-
-
-# class PandasDataFrame(NonScalar, type=pd.DataFrame):
-#     pass
-
-
-# class PandasSeries(NonScalar, type=pd.Series):
-#     pass
-
-
-# class NumpyArray(NonScalar, type=np.ndarray):
-#     pass
 
 
 class NetworkAddress(Unicode):

@@ -1,6 +1,7 @@
 import unittest
 import labbench as lb
 
+
 class TestParamAttr(unittest.TestCase):
     # set this in a subclass
     DeviceClass = lb.Undefined

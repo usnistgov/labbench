@@ -36,12 +36,14 @@ import sys
 import traceback
 from warnings import warn
 from typing import Union
+from typing_extensions import dataclass_transform
 
 from . import util
 from . import paramattr as param
 
 from .paramattr._bases import (
     HasParamAttrs,
+    HasParamAttrsMeta,
     Undefined,
     BoundedNumber,
     observe,
@@ -157,73 +159,9 @@ def log_trait_activity(msg):
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
-class Device(HasParamAttrs, util.Ownable):
-    r"""base class for labbench device wrappers.
-
-    Drivers that subclass `Device` share
-
-    * standardized connection management via context blocks (the `with` statement)
-    * hooks for automatic data logging and heads-up displays
-    * API style consistency
-    * bounds checking and casting for typed attributes
-
-    .. note::
-        This `Device` base class has convenience
-        functions for device control, but no implementation.
-
-        Some wrappers for particular APIs labbench Device subclasses:
-
-            * VISADevice: pyvisa,
-            * ShellBackend: binaries and scripts
-            * Serial: pyserial
-            * DotNetDevice: pythonnet
-
-        (and others). If you are implementing a driver that uses one of
-        these backends, inherit from the corresponding class above, not
-        `Device`.
-
-    """
-
-    resource: str = param.value.str(allow_none=True, cache=True, help="device address or URI")
-    concurrency: bool = param.value.bool(True, sets=False, help="True if the device supports threading")
-    """ Container for property trait traits in a Device. Getting or setting property trait traits
-        triggers live updates: communication with the device to get or set the
-        value on the Device. Therefore, getting or setting property trait traits
-        needs the device to be connected.
-
-        To set a property trait value inside the device, use normal python assigment::
-
-            device.parameter = value
-
-        To get a property trait value from the device, you can also use it as a normal python variable::
-
-            variable = device.parameter + 1
-    """
-    backend = DisconnectedBackend(None)
-    """ .. this attribute is some reference to a controller for the device.
-        it is to be set in `connect` and `disconnect` by the subclass that implements the backend.
-    """
-
-    # Backend classes may optionally overload these, and do not need to call the parents
-    # defined here
-    def open(self):
-        """Backend implementations overload this to open a backend
-        connection to the resource.
-        """
-        param.observe(self, log_trait_activity)
-
-    def close(self):
-        """Backend implementations must overload this to disconnect an
-        existing connection to the resource encapsulated in the object.
-        """
-        self.backend = DisconnectedBackend(self)
-        self.isopen
-        param.unobserve(self, log_trait_activity)
-
-    # TODO: can this be safely removed?
-    __children__ = {}
-
-    @util.hide_in_traceback
+@dataclass_transform(kw_only_default=True, eq_default=False, field_specifiers=param.value._ALL_TYPES)
+class _DeviceDataClass(HasParamAttrs, util.Ownable):
+    """This (particularly the __init__) needed to be split from Device to appease static type checkers"""
     def __init__(self, resource=Undefined, **values):
         """Update default values with these arguments on instantiation."""
 
@@ -234,7 +172,7 @@ class Device(HasParamAttrs, util.Ownable):
             self.__imports__()
 
         # validate presence of required arguments
-        inspect.signature(self.__init__).bind(resource, **values)
+        inspect.signature(self.__init__).bind(**values)
 
         if resource is not Undefined:
             values["resource"] = resource
@@ -249,12 +187,10 @@ class Device(HasParamAttrs, util.Ownable):
 
         util.Ownable.__init__(self)
 
-        self.backend = DisconnectedBackend(self)
+        self.__init_context__()
 
-        # Instantiate property trait now. It needed to wait until this point, after values are fully
-        # instantiated, in case property trait implementation depends on values
-        setattr(self, "open", self.__open_wrapper__)
-        setattr(self, "close", self.__close_wrapper__)
+    def __init_context__(self):
+        pass
 
     @classmethod
     @util.hide_in_traceback
@@ -301,6 +237,83 @@ class Device(HasParamAttrs, util.Ownable):
         # generate the __init__ docstring
         value_docs = "".join((f"    {t.doc()}\n" for t in settable_values.values()))
         cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
+
+
+class Device(_DeviceDataClass):
+    r"""base class for labbench device wrappers.
+
+    Drivers that subclass `Device` share
+
+    * standardized connection management via context blocks (the `with` statement)
+    * hooks for automatic data logging and heads-up displays
+    * API style consistency
+    * bounds checking and casting for typed attributes
+
+    .. note::
+        This `Device` base class has convenience
+        functions for device control, but no implementation.
+
+        Some wrappers for particular APIs labbench Device subclasses:
+
+            * VISADevice: pyvisa,
+            * ShellBackend: binaries and scripts
+            * Serial: pyserial
+            * DotNetDevice: pythonnet
+
+        (and others). If you are implementing a driver that uses one of
+        these backends, inherit from the corresponding class above, not
+        `Device`.
+
+    """
+
+    resource: str = param.value.str(default="", allow_none=True, cache=True, help="device address or URI")
+    concurrency = param.value.bool(default=True, sets=False, help="True if the device backend supports threading")
+
+    """ Container for property trait traits in a Device. Getting or setting property trait traits
+        triggers live updates: communication with the device to get or set the
+        value on the Device. Therefore, getting or setting property trait traits
+        needs the device to be connected.
+
+        To set a property trait value inside the device, use normal python assigment::
+
+            device.parameter = value
+
+        To get a property trait value from the device, you can also use it as a normal python variable::
+
+            variable = device.parameter + 1
+    """
+    backend = DisconnectedBackend(None)
+    """ .. this attribute is some reference to a controller for the device.
+        it is to be set in `connect` and `disconnect` by the subclass that implements the backend.
+    """
+
+    # Backend classes may optionally overload these, and do not need to call the parents
+    # defined here
+    def open(self):
+        """Backend implementations overload this to open a backend
+        connection to the resource.
+        """
+        param.observe(self, log_trait_activity)
+
+    def close(self):
+        """Backend implementations must overload this to disconnect an
+        existing connection to the resource encapsulated in the object.
+        """
+        self.backend = DisconnectedBackend(self)
+        self.isopen
+        param.unobserve(self, log_trait_activity)
+
+    # TODO: can this be safely removed?
+    __children__ = {}
+
+    @util.hide_in_traceback
+    def __init_context__(self):
+        self.backend = DisconnectedBackend(self)
+
+        # Instantiate property trait now. It needed to wait until this point, after values are fully
+        # instantiated, in case property trait implementation depends on values
+        setattr(self, "open", self.__open_wrapper__)
+        setattr(self, "close", self.__close_wrapper__)
 
     @util.hide_in_traceback
     @wraps(open)

@@ -41,7 +41,7 @@ from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
-from typing import Callable, Dict
+from typing import Callable, Dict, Any
 from warnings import simplefilter
 
 import coloredlogs
@@ -263,8 +263,9 @@ sys._debug_tb = False
 
 TRACEBACK_HIDE_TAG = "🦙 hide from traceback 🦙"
 
+TFunc = Callable[..., Any]
 
-def hide_in_traceback(func):
+def hide_in_traceback(func: TFunc) -> TFunc:
     def adjust(f):
         code = f.__code__
 

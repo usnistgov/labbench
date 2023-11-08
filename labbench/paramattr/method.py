@@ -27,51 +27,57 @@
 from . import _bases
 
 
-class bool(_bases.Bool):
+_ParamAttrType = _bases.Method
+
+class any(_ParamAttrType, _bases.Any):
     pass
 
 
-class float(_bases.Float):
+class bool(_ParamAttrType, _bases.Bool):
     pass
 
 
-class int(_bases.Int):
+class float(_ParamAttrType, _bases.Float):
     pass
 
 
-class complex(_bases.Complex):
+class int(_ParamAttrType, _bases.Int):
     pass
 
 
-class str(_bases.Unicode):
+class complex(_ParamAttrType, _bases.Complex):
     pass
 
 
-class bytes(_bases.Bytes):
+class str(_ParamAttrType, _bases.Unicode):
     pass
 
 
-class list(_bases.List):
+class bytes(_ParamAttrType, _bases.Bytes):
     pass
 
 
-class tuple(_bases.Tuple):
+class list(_ParamAttrType, _bases.List):
     pass
 
 
-class dict(_bases.Dict):
+class tuple(_ParamAttrType, _bases.Tuple):
     pass
 
 
-class Path(_bases.Path):
+class dict(_ParamAttrType, _bases.Dict):
     pass
 
 
-class NetworkAddress(_bases.NetworkAddress):
+class Path(_ParamAttrType, _bases.Path):
     pass
 
 
-# mutate these traits into the right role
-_bases.subclass_namespace_attrs(
-    locals(), role=_bases.ParamAttr.ROLE_METHOD, omit_param_attrs=["default"]
-)
+class NetworkAddress(_ParamAttrType, _bases.NetworkAddress):
+    pass
+
+
+# # mutate these traits into the right role
+# _bases.subclass_namespace_attrs(
+#     locals(), role=_bases.ParamAttr.ROLE_METHOD, omit_param_attrs=["default"]
+# )

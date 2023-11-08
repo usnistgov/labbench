@@ -27,57 +27,59 @@
 from . import _bases
 
 
-class any(_bases.Any):
+_ParamAttrType = _bases.Argument
+
+class any(_ParamAttrType, _bases.Any):
     pass
 
 
-class bool(_bases.Bool):
+class bool(_ParamAttrType, _bases.Bool):
     pass
 
 
-class float(_bases.Float):
+class float(_ParamAttrType, _bases.Float):
     pass
 
 
-class int(_bases.Int):
+class int(_ParamAttrType, _bases.Int):
     pass
 
 
-class complex(_bases.Complex):
+class complex(_ParamAttrType, _bases.Complex):
     pass
 
 
-class str(_bases.Unicode):
+class str(_ParamAttrType, _bases.Unicode):
     pass
 
 
-class bytes(_bases.Bytes):
+class bytes(_ParamAttrType, _bases.Bytes):
     pass
 
 
-class list(_bases.List):
+class list(_ParamAttrType, _bases.List):
     pass
 
 
-class tuple(_bases.Tuple):
+class tuple(_ParamAttrType, _bases.Tuple):
     pass
 
 
-class dict(_bases.Dict):
+class dict(_ParamAttrType, _bases.Dict):
     pass
 
 
-class Path(_bases.Path):
+class Path(_ParamAttrType, _bases.Path):
     pass
 
 
-class NetworkAddress(_bases.NetworkAddress):
+class NetworkAddress(_ParamAttrType, _bases.NetworkAddress):
     pass
 
 
-# mutate these traits into the right role
-_bases.subclass_namespace_attrs(
-    locals(),
-    role=_bases.ParamAttr.ROLE_ARGUMENT,
-    omit_param_attrs=["key", "arguments"],
-)
+# # mutate these traits into the right role
+# _bases.subclass_namespace_attrs(
+#     locals(),
+#     role=_bases.ParamAttr.ROLE_ARGUMENT,
+#     omit_param_attrs=["key", "arguments"],
+# )

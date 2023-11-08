@@ -34,6 +34,7 @@ import traceback
 from ctypes import ArgumentError
 from dataclasses import dataclass
 from functools import wraps
+from typing_extensions import dataclass_transform
 
 from . import _device as core
 from . import util as util
@@ -1206,6 +1207,7 @@ class Sequence(util.Ownable):
     #     return inspect.Signature(parameters=agg_params.values())
 
 
+@dataclass_transform()
 class RackMeta(type):
     """metaclass for helpful exceptions"""
 

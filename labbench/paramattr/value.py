@@ -25,59 +25,56 @@
 # licenses.
 
 from . import _bases
+from ._bases import Value
+import typing as _typing
 
 
-class any(_bases.Any):
-    pass
+class any(Value, _bases.Any):
+    default: _typing.Any = None
 
 
-class bool(_bases.Bool):
-    pass
+class bool(Value, _bases.Bool):
+    default: _typing.Union[bool,None] = None
 
 
-class float(_bases.Float):
-    pass
+class float(Value, _bases.Float):
+    default: _typing.Union[float,None] = None
 
 
-class int(_bases.Int):
-    pass
+class int(Value, _bases.Int):
+    default: _typing.Union[int,None] = None
 
 
-class complex(_bases.Complex):
-    pass
+class complex(Value, _bases.Complex):
+    default: _typing.Union[_bases.Complex.type,None] = None
 
 
-class str(_bases.Unicode):
-    pass
+class str(Value, _bases.Unicode):
+    default: _typing.Union[str,None] = ""
 
 
-class bytes(_bases.Bytes):
-    pass
+class bytes(Value, _bases.Bytes):
+    default: _typing.Union[bytes,None] = b""
 
 
-class list(_bases.List):
-    pass
+class list(Value, _bases.List):
+    default: _typing.Union[list,None] = None
 
 
-class tuple(_bases.Tuple):
-    pass
+class tuple(Value, _bases.Tuple):
+    default: _typing.Union[tuple,None] = None
 
 
-class dict(_bases.Dict):
-    pass
+class dict(Value, _bases.Dict):
+    default: _typing.Union[dict,None] = None
 
 
-class Path(_bases.Path):
-    pass
+class Path(Value, _bases.Path):
+    default: _typing.Union[_bases.Path.type,None] = None
 
 
-class NetworkAddress(_bases.NetworkAddress):
-    pass
+class NetworkAddress(Value, _bases.NetworkAddress):
+    default: _typing.Union[_bases.NetworkAddress.type,None] = None
 
-
-# mutate these traits into the right role
-_bases.subclass_namespace_attrs(
-    locals(),
-    role=_bases.ParamAttr.ROLE_VALUE,
-    omit_param_attrs=["key", "arguments"],
-)
+# used to set up hints for static type checking
+_ALL_TYPES = any, bool, float, int, complex, str, bytes, list, tuple, dict, Path, NetworkAddress

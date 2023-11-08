@@ -85,19 +85,19 @@ class MungerBase(core.Device):
 
     resource: Path = param.value.Path(help="base directory for all data")
     text_relational_min: int = param.value.int(
-        1024,
+        default=1024,
         min=0,
         help="minimum size threshold that triggers storing text in a relational file",
     )
     force_relational: list = param.value.list(
-        [], help="list of column names to always save as relational data"
+        default=[], help="list of column names to always save as relational data"
     )
     relational_name_fmt: str = param.value.str(
-        "{id}",
+        default="{id}",
         help="directory name format for data in each row keyed on column",
     )
-    nonscalar_file_type: str = param.value.str("csv", help="file format for non-scalar numerical data")
-    metadata_dirname: str = param.value.str("metadata", help="subdirectory name for metadata")
+    nonscalar_file_type: str = param.value.str(default="csv", help="file format for non-scalar numerical data")
+    metadata_dirname: str = param.value.str(default="metadata", help="subdirectory name for metadata")
 
     def __call__(self, index, row):
         """
@@ -1360,7 +1360,7 @@ class MungeToHDF(Device):
 
     resource: Path = param.value.Path(help="hdf file location")
     key_fmt: str = param.value.str(
-        "{id} {host_time}",
+        default="{id} {host_time}",
         help="format for linked data in the root database (keyed on column)",
     )
 

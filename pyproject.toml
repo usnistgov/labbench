@@ -83,6 +83,7 @@ dev = [
     "pip",
     "myst-nb @ git+https://github.com/executablebooks/MyST-NB@master",
     "pyvisa-sim>=0.5.1",
+    "attrs>=23.1.0",
 ]
 
 [tool.black]

@@ -166,12 +166,12 @@ if __name__ == "__main__":
     lb.show_messages("debug")
     lb.util._force_full_traceback(True)
 
-    # specify the VISA address to use the power sensor
-    inst = pyvisa_sim.Oscilloscope()  # (resource='USB::0x1111::0x2233::0x9876::INSTR')
-    print(inst._attr_defs.attrs.keys())
+    # # specify the VISA address to use the power sensor
+    # inst = pyvisa_sim.Oscilloscope()  # (resource='USB::0x1111::0x2233::0x9876::INSTR')
+    # print(inst._attr_defs.attrs.keys())
 
-    with inst:
-        inst.resolution_bandwidth(10e3, channel=2)
-        print(repr(inst.resolution_bandwidth(channel=1)))
+    # with inst:
+    #     inst.resolution_bandwidth(10e3, channel=2)
+    #     print(repr(inst.resolution_bandwidth(channel=1)))
 
     unittest.main()

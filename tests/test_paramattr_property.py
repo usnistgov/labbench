@@ -22,43 +22,36 @@ class StoreTestDevice(store_backend.ParamAttrTestDevice):
     }
 
     # test both getting and setting
-    bool_keyed = param.method.bool(key="bool_keyed")
-    int_keyed_unbounded = param.method.int(key="int_keyed_unbounded")
+    bool_keyed = param.property.bool(key="bool_keyed")
+    int_keyed_unbounded = param.property.int(key="int_keyed_unbounded")
 
-    @param.method.int(min=0, sets=False)
+    @param.property.int(min=0, sets=False)
     def int_decorated_low_bound_getonly(self):
         return self.backend.setdefault("int_decorated_low_bound_getonly", 0)
 
-    @param.method.int(min=10, gets=False)
+    @param.property.int(min=10, gets=False)
     def int_decorated_low_bound_setonly(self, set_value=lb.Undefined, *, channel=1):
         self.backend["int_decorated_high_bound_setonly"] = set_value
 
-    str_or_none = param.method.str(key="str_or_none", allow_none=True)
-    str_cached = param.method.str(key="str_cached", cache=True)
+    str_or_none = param.property.str(key="str_or_none", allow_none=True)
+    str_cached = param.property.str(key="str_cached", cache=True)
 
 
-class TestMethod(paramattr_tooling.TestParamAttr):
+class TestPropertyParamAttr(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
 
     def set_param(self, device, attr_name, value, arguments={}):
-        attr_def = getattr(type(device), attr_name)
-        if len(attr_def.get_key_arguments(type(device))) > 0:
-            raise ValueError('argument tests not implemented yet')
-
-        param_method = getattr(device, attr_name)
-        param_method(value, **arguments)
+        if len(arguments) > 0:
+            raise ValueError('properties do not accept arguments')
+        setattr(device, attr_name, value)
 
     def get_param(self, device, attr_name, arguments={}):
-        attr_def = getattr(type(device), attr_name)
-        if len(attr_def.get_key_arguments(type(device))) > 0:
-            raise ValueError('argument tests not implemented yet')
+        if len(arguments) > 0:
+            raise ValueError('properties do not accept arguments')
+        return getattr(device, attr_name)
 
-        param_method = getattr(device, attr_name)
-        return param_method(**arguments)
-    
     def test_all_set_then_get(self):
-        return super().test_all_set_then_get(lb.paramattr.ParamAttr.ROLE_METHOD)
-
+        return super().test_all_set_then_get(lb.paramattr.ParamAttr.ROLE_PROPERTY)
     
 # class TestProperty:
 #     # set this in a subclass

@@ -2059,22 +2059,3 @@ class NetworkAddress(Unicode):
             raise ValueError("invalid host address")
 
         return value
-
-
-VALID_PARAMATTR_ROLES = ParamAttr.ROLE_VALUE, ParamAttr.ROLE_PROPERTY, ParamAttr.ROLE_METHOD
-
-
-def subclass_namespace_attrs(namespace_dict, role, omit_param_attrs):
-    for name, attr in dict(namespace_dict).items():
-        if isclass(attr) and issubclass(attr, ParamAttr):
-            # subclass our ParamAttr with the given role
-            new_attr = type(name, (attr,), dict(role=role))
-            new_attr.role = role
-
-            # clean out annotations for stub generation
-            new_attr.__annotations__ = dict(new_attr.__annotations__)
-            for drop_attr in omit_param_attrs:
-                new_attr.__annotations__.pop(drop_attr)
-            new_attr.__module__ = namespace_dict["__name__"]
-
-            namespace_dict[name] = new_attr

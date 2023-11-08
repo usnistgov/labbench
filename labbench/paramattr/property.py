@@ -25,7 +25,7 @@
 # licenses.
 
 from . import _bases
-
+from ._bases import Property
 
 _ParamAttrType = _bases.Property
 
@@ -75,11 +75,3 @@ class Path(_ParamAttrType, _bases.Path):
 
 class NetworkAddress(_ParamAttrType, _bases.NetworkAddress):
     pass
-
-
-# # mutate these traits into the right role
-# _bases.subclass_namespace_attrs(
-#     locals(),
-#     role=_bases.ParamAttr.ROLE_PROPERTY,
-#     omit_param_attrs=["default", "arguments"],
-# )

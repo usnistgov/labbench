@@ -1,7 +1,6 @@
 import unittest
 import labbench as lb
 
-
 class TestParamAttr(unittest.TestCase):
     # set this in a subclass
     DeviceClass = lb.Undefined
@@ -42,15 +41,9 @@ class TestParamAttr(unittest.TestCase):
         }
 
         for attr_name, attr_def in attrs.items():
-            print(attr_name, attr_def)
             test_name = f'{role} "{attr_name}"'
 
             device.backend.clear_counts()
-
-            if len(attr_def.get_key_arguments(type(device))) > 0:
-                # only test methods that don't require additional arguments beyond the set value
-                # TODO: fix this
-                continue
 
             result = self.eval_set_then_get(device, attr_name)
 

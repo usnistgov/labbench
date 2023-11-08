@@ -903,10 +903,10 @@ class VISADevice(Device):
                 print(inst.query_ascii_values(':FETCH?'))
 
     See also:
-    .. _installing a proprietary OS service for VISA:
-        https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
-    .. _resource strings and basic configuration:
-        https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
+       * Installing a proprietary OS service for VISA:
+           https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
+       * Resource strings and basic configuration:
+           https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
 
     Attributes:
         backend (pyvisa.Resource): instance of a pyvisa instrument object (when open)

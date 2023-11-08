@@ -828,12 +828,6 @@ class Aggregator(util.Ownable):
         else:
             raise ValueError("argument 'never' must be a str or iterable of str")
 
-        # if isinstance(role, (str,bytes)):
-        #     role = [role]
-        # TODO: remove this for good?
-        # if role not in VALID_PARAMATTR_ROLES:
-        #     raise ValueError(f"the 'role' argument must be one of {str(VALID_PARAMATTR_ROLES)}, not {role}")
-
         self.update_name_map(devices)
 
         # Register handlers

@@ -25,6 +25,7 @@
 # licenses.
 
 from . import _bases
+from ._bases import Argument
 
 
 _ParamAttrType = _bases.Argument

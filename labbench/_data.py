@@ -83,21 +83,21 @@ class MungerBase(core.Device):
 
     """
 
-    resource = param.value.Path(help="base directory for all data")
-    text_relational_min = param.value.int(
+    resource: Path = param.value.Path(help="base directory for all data")
+    text_relational_min: int = param.value.int(
         1024,
         min=0,
         help="minimum size threshold that triggers storing text in a relational file",
     )
-    force_relational = param.value.list(
+    force_relational: list = param.value.list(
         [], help="list of column names to always save as relational data"
     )
-    relational_name_fmt = param.value.str(
+    relational_name_fmt: str = param.value.str(
         "{id}",
         help="directory name format for data in each row keyed on column",
     )
-    nonscalar_file_type = param.value.str("csv", help="file format for non-scalar numerical data")
-    metadata_dirname = param.value.str("metadata", help="subdirectory name for metadata")
+    nonscalar_file_type: str = param.value.str("csv", help="file format for non-scalar numerical data")
+    metadata_dirname: str = param.value.str("metadata", help="subdirectory name for metadata")
 
     def __call__(self, index, row):
         """
@@ -193,9 +193,9 @@ class MungerBase(core.Device):
 
         def write(stream, ext, value):
             if ext == "csv":
-                param.value.to_csv(stream)
+                value.to_csv(stream)
             elif ext == "json":
-                param.value.to_json(stream)
+                value.to_json(stream)
             elif ext in ("p", "pickle"):
                 pickle.dump(value, stream, 2)
             elif ext == "feather":
@@ -215,7 +215,7 @@ class MungerBase(core.Device):
 
         try:
             value = pd.DataFrame(value)
-            if param.value.shape[0] == 0:
+            if value.shape[0] == 0:
                 value = pd.DataFrame([value])
         except BaseException:
             # We couldn't make a DataFrame
@@ -831,8 +831,8 @@ class Aggregator(util.Ownable):
         # if isinstance(role, (str,bytes)):
         #     role = [role]
         # TODO: remove this for good?
-        # if role not in VALID_TRAIT_ROLES:
-        #     raise ValueError(f"the 'role' argument must be one of {str(VALID_TRAIT_ROLES)}, not {role}")
+        # if role not in VALID_PARAMATTR_ROLES:
+        #     raise ValueError(f"the 'role' argument must be one of {str(VALID_PARAMATTR_ROLES)}, not {role}")
 
         self.update_name_map(devices)
 
@@ -1358,8 +1358,8 @@ class MungeToHDF(Device):
 
     """
 
-    resource = param.value.Path(help="hdf file location")
-    key_fmt = param.value.str(
+    resource: Path = param.value.Path(help="hdf file location")
+    key_fmt: str = param.value.str(
         "{id} {host_time}",
         help="format for linked data in the root database (keyed on column)",
     )

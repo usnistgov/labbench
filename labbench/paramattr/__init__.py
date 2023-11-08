@@ -2,6 +2,8 @@ from . import _bases, argument, property, value, method
 
 from ._bases import (
     KeyAdapterBase,
+    HasParamAttrs,
+    ParamAttr,
     Undefined,
     adjusted,
     observe,

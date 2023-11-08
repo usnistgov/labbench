@@ -74,11 +74,11 @@ class ShellBackend(Device):
     queued stdout.
     """
 
-    binary_path = param.value.Path(
+    binary_path: Path = param.value.Path(
         default=None, allow_none=True, help="path to the file to run", cache=True
     )
 
-    timeout = param.value.float(
+    timeout: float = param.value.float(
         default=1,
         min=0,
         help="wait time after close before killing background processes",
@@ -568,14 +568,14 @@ class LabviewSocketInterface(Device):
         - backend: connection object mapping {'rx': rxsock, 'tx': txsock}
     """
 
-    resource = param.value.NetworkAddress(
+    resource: str = param.value.NetworkAddress(
         "127.0.0.1", accept_port=False, help="LabView VI host address"
     )
-    tx_port = param.value.int(61551, help="TX port to send to the LabView VI")
-    rx_port = param.value.int(61552, help="TX port to send to the LabView VI")
-    delay = param.value.float(1, help="time to wait after each property trait write or query")
-    timeout = param.value.float(2, help="maximum wait replies before raising TimeoutError")
-    rx_buffer_size = param.value.int(1024, min=1)
+    tx_port: int = param.value.int(61551, help="TX port to send to the LabView VI")
+    rx_port: int = param.value.int(61552, help="TX port to send to the LabView VI")
+    delay: float = param.value.float(1, help="time to wait after each property trait write or query")
+    timeout: float = param.value.float(2, help="maximum wait replies before raising TimeoutError")
+    rx_buffer_size: int = param.value.int(1024, min=1)
 
     def open(self):
         self.backend = dict(
@@ -633,6 +633,7 @@ class LabviewSocketInterface(Device):
                     continue
 
 
+@param.adjusted('resource', help="platform-dependent serial port address")
 class SerialDevice(Device):
     """Base class for wrappers that communicate via pyserial.
 
@@ -644,23 +645,20 @@ class SerialDevice(Device):
     """
 
     # Connection value traits
-    resource = param.value.str(help="platform-dependent serial port address")
-    timeout = param.value.float(
+    timeout: float = param.value.float(
         2, min=0, help="Max time to wait for a connection before raising TimeoutError."
     )
-    write_termination = param.value.bytes(
+    write_termination: bytes = param.value.bytes(
         b"\n", help="Termination character to send after a write."
     )
     baud_rate: int = param.value.int(
         9600, min=1, help="Data rate of the physical serial connection."
     )
-    parity = param.value.bytes(b"N", help="Parity in the physical serial connection.")
-    stopbits = param.value.float(
-        1, min=1, max=2, step=0.5, help="Number of stop bits, one of `[1, 1.5, or 2.]`."
-    )
-    xonxoff = param.value.bool(False, help="`True` to enable software flow control.")
-    rtscts = param.value.bool(False, help="`True` to enable hardware (RTS/CTS) flow control.")
-    dsrdtr = param.value.bool(False, help="`True` to enable hardware (DSR/DTR) flow control.")
+    parity: bytes = param.value.bytes(b"N", help="Parity in the physical serial connection.")
+    stopbits: float = param.value.float(1, only=[1, 1.5, 2], help="number of stop bits")
+    xonxoff: bool = param.value.bool(False, help="`True` to enable software flow control.")
+    rtscts: bool = param.value.bool(False, help="`True` to enable hardware (RTS/CTS) flow control.")
+    dsrdtr: bool = param.value.bool(False, help="`True` to enable hardware (DSR/DTR) flow control.")
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):
@@ -745,14 +743,14 @@ class SerialLoggingDevice(SerialDevice):
     from the serial port.
     """
 
-    poll_rate = param.value.float(
+    poll_rate: float = param.value.float(
         0.1, min=0, help="Data retreival rate from the device (in seconds)"
     )
-    data_format = param.value.bytes(b"", help="Data format metadata")
-    stop_timeout = param.value.float(
+    data_format: bytes = param.value.bytes(b"", help="Data format metadata")
+    stop_timeout: float = param.value.float(
         0.5, min=0, help="delay after `stop` before terminating run thread"
     )
-    max_queue_size = param.value.int(
+    max_queue_size: int = param.value.int(
         100000, min=1, help="bytes to allocate in the data retreival buffer"
     )
 
@@ -862,8 +860,8 @@ class TelnetDevice(Device):
     """
 
     # Connection value traits
-    resource = param.value.NetworkAddress("127.0.0.1:23", help="server host address")
-    timeout = param.value.float(2, min=0, label="s", help="connection timeout")
+    resource: str = param.value.NetworkAddress("127.0.0.1:23", help="server host address")
+    timeout: float = param.value.float(2, min=0, label="s", help="connection timeout")
 
     def open(self):
         """Open a telnet connection to the host defined
@@ -916,15 +914,15 @@ class VISADevice(Device):
     """
 
     # Settings
-    read_termination = param.value.str(
+    read_termination: str = param.value.str(
         "\n", cache=True, help="end of line string to expect in query replies"
     )
 
-    write_termination = param.value.str(
+    write_termination: str = param.value.str(
         "\n", cache=True, help="end of line string to send after writes"
     )
 
-    open_timeout = param.value.float(
+    open_timeout: float = param.value.float(
         None,
         cache=True,
         allow_none=True,
@@ -932,15 +930,15 @@ class VISADevice(Device):
         label="s",
     )
 
+    timeout: float = param.value.float(
+        None, cache=True, allow_none=True, help="message response timeout", label="s"
+    )
+
     identity_pattern = param.value.str(
         None,
         allow_none=True,
         cache=True,
         help="identity regex pattern to match for automatic connection",
-    )
-
-    timeout = param.value.float(
-        None, cache=True, allow_none=True, help="message response timeout", label="s"
     )
 
     # Common VISA properties

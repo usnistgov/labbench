@@ -102,23 +102,20 @@ class Email(core.Device):
     subject line. Stderr is also sent.
     """
 
-    resource = param.value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use")
-
-    port = param.value.int(default=25, min=1, help="TCP/IP port")
-
-    sender = param.value.str(default="myemail@nist.gov", help="email address of the sender")
-
-    recipients = param.value.list(
+    resource: str = param.value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use")
+    port: int = param.value.int(default=25, min=1, help="TCP/IP port")
+    sender: str = param.value.str(default="myemail@nist.gov", help="email address of the sender")
+    recipients: list = param.value.list(
         default=["myemail@nist.gov"], help="list of email addresses of recipients"
     )
 
-    success_message = param.value.str(
+    success_message: str = param.value.str(
         default="Test finished normally",
         allow_none=True,
         help="subject line for test success emails (None to suppress the emails)",
     )
 
-    failure_message = param.value.str(
+    failure_message: str = param.value.str(
         default="Exception ended test early",
         allow_none=True,
         help="subject line for test failure emails (None to suppress the emails)",
@@ -239,7 +236,7 @@ class JSONFormatter(logging.Formatter):
 
 class Host(core.Device):
     # Settings
-    git_commit_in = param.value.str(
+    git_commit_in: str = param.value.str(
         default=None,
         allow_none=True,
         help="git commit on open() if run inside a git repo with this branch name",

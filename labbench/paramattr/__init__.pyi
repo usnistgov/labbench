@@ -1,6 +1,8 @@
 from . import argument as argument, method as method, property as property, value as value
 from ._bases import (
+    HasParamAttrs as HasParamAttrs,
     KeyAdapterBase as KeyAdapterBase,
+    ParamAttr as ParamAttr,
     Undefined as Undefined,
     adjusted as adjusted,
     get_class_attrs as get_class_attrs,

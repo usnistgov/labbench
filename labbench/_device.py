@@ -46,7 +46,7 @@ from .paramattr._bases import (
     BoundedNumber,
     observe,
     unobserve,
-    hold_trait_notifications,
+    hold_attr_notifications,
 )
 
 __all__ = ["Device", "list_devices", "property", "value", "trait_info"]
@@ -184,8 +184,8 @@ class Device(HasParamAttrs, util.Ownable):
 
     """
 
-    resource = param.value.str(allow_none=True, cache=True, help="device address or URI")
-    concurrency = param.value.bool(True, sets=False, help="True if the device supports threading")
+    resource: str = param.value.str(allow_none=True, cache=True, help="device address or URI")
+    concurrency: bool = param.value.bool(True, sets=False, help="True if the device supports threading")
     """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
         value on the Device. Therefore, getting or setting property trait traits
@@ -241,7 +241,7 @@ class Device(HasParamAttrs, util.Ownable):
 
         super().__init__()
 
-        with hold_trait_notifications(self):
+        with hold_attr_notifications(self):
             for name, init_value in values.items():
                 attrs = param.get_class_attrs(self)
                 if init_value != attrs[name].default:

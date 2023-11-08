@@ -1,17 +1,8 @@
 from ._bases import KeyAdapterBase, HasParamAttrs, ParamAttr, Undefined
 from . import argument
 import string
-import inspect
 from typing import Dict, List, Union, Any, Optional, Type
 from functools import partialmethod
-
-
-class no_cast_argument:
-    """duck-typed stand-in for an argument of arbitrary type"""
-
-    @classmethod
-    def __cast_get__(self, owner, value):
-        return value
 
 
 class message_keying(KeyAdapterBase):
@@ -51,14 +42,12 @@ class message_keying(KeyAdapterBase):
         arguments: Dict[Any, ParamAttr] = {},
         strict_arguments: bool = False,
     ):
-        super().__init__(arguments=arguments)
+        super().__init__(arguments=arguments, strict_arguments=strict_arguments)
 
         self.query_fmt = query_fmt
         self.write_fmt = write_fmt
         self.write_func = write_func
         self.query_func = query_func
-        self.arguments = arguments
-        self.strict_arguments = strict_arguments
 
         if len(remap) == 0:
             self.value_map = {}
@@ -78,20 +67,19 @@ class message_keying(KeyAdapterBase):
         if len(self.message_map) != len(self.value_map):
             raise ValueError("'remap' has duplicate values")
 
-    @classmethod
-    def get_key_arguments(cls, s: str) -> List[str]:
-        """returns a list of formatting tokens defined in s
+    def get_key_arguments(self, s: str) -> List[str]:
+        """returns an argument list based on f-string style curly-brace formatting tokens.
 
         Example:
 
             ```python
 
             # input
-            print(get_key_arguments('CH{channel}:SV:CENTERFrequency'))
+            print(key_adapter.get_key_arguments('CH{channel}:SV:CENTERFrequency'))
             ['channel']
             ```
         """
-        return [tup[1] for tup in cls._formatter.parse(s) if tup[1] is not None]
+        return [tup[1] for tup in self._formatter.parse(s) if tup[1] is not None]
 
     def from_message(self, msg):
         return self.message_map.get(msg, msg)
@@ -165,70 +153,6 @@ class message_keying(KeyAdapterBase):
         expanded_scpi_key = scpi_key.format(**arguments)
         write_func = getattr(owner, self.write_func)
         write_func(self.write_fmt.format(key=expanded_scpi_key, value=value_msg))
-
-    def method_from_key(self, owner_cls: Type[HasParamAttrs], trait: ParamAttr):
-        """Autogenerate a parameter getter/setter method based on the message key defined in a ParamAttr method."""
-
-        if len(trait.arguments) == 0:
-            arg_defs = self.arguments
-        else:
-            arg_defs = dict(self.arguments, **trait.arguments)
-
-        kwargs_params = []
-        defaults = {}
-        for name in self.get_key_arguments(trait.key):
-            try:
-                arg_annotation = arg_defs[name].type
-                if arg_defs[name].default is not Undefined:
-                    defaults[name] = arg_defs[name].default
-            except KeyError as err:
-                if self.strict_arguments:
-                    trait_desc = f"{owner_cls.__qualname__}.{trait.name}"
-                    raise AttributeError(
-                        f'"{name}" keyword argument declaration missing in method "{trait_desc}"'
-                    )
-                else:
-                    arg_annotation = Any
-
-            kwargs_params.append(
-                inspect.Parameter(
-                    name,
-                    kind=inspect.Parameter.KEYWORD_ONLY,
-                    annotation=arg_annotation,
-                )
-            )
-
-        pos_params = [
-            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
-            inspect.Parameter(
-                "set_value",
-                default=Undefined,
-                kind=inspect.Parameter.POSITIONAL_ONLY,
-                annotation=Optional[trait.type],
-            ),
-        ]
-
-        def method(owner, set_value: trait.type = Undefined, /, **kws) -> Union[None, trait.type]:
-            validated_kws = {
-                # cast each keyword argument
-                k: arg_defs.get(k, no_cast_argument).__cast_get__(owner, v)
-                for k, v in kws.items()
-            }
-
-            if set_value is Undefined:
-                return trait.get_from_owner(owner, validated_kws)
-            else:
-                return trait.set_in_owner(owner, set_value, validated_kws)
-
-        method.__signature__ = inspect.Signature(
-            pos_params + kwargs_params, return_annotation=Optional[trait.type]
-        )
-        method.__name__ = trait.name
-        method.__module__ = f"{owner_cls.__module__}"
-        method.__qualname__ = f"{owner_cls.__qualname__}.{trait.name}"
-        method.__doc__ = trait.doc()
-
-        return method
 
 
 class visa_keying(message_keying):

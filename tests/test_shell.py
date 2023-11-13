@@ -28,7 +28,7 @@ import unittest
 import importlib
 import sys
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import paramattr as param
 
 lb = importlib.reload(lb)
 
@@ -36,11 +36,11 @@ flag_start = False
 
 
 class Shell_Python(lb.ShellBackend):
-    binary_path = attr.value.str(f"python")
+    binary_path = param.value.str(f"python")
 
-    path = attr.value.str(key=None, help="path to a python script file")
+    path = param.value.str(key=None, help="path to a python script file")
 
-    command = attr.value.str(key="-c", help="execute a python command")
+    command = param.value.str(key="-c", help="execute a python command")
 
     def _flag_names(self):
         return (name for name, trait in self._traits.items() if trait.key is not lb.Undefined)

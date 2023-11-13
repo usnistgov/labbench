@@ -103,7 +103,7 @@ class TestParamAttr(unittest.TestCase):
             )
             self.assertEqual(
                 result['set_count'],
-                0 if has_reduced_access_count else 1,
+                0 if attr_def.role == attr_def.ROLE_VALUE else 1,
                 msg=f'{test_name} - "set" notification count',
             )
 

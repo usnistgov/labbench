@@ -28,7 +28,7 @@ import unittest
 import importlib
 import sys
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import paramattr as param
 
 lb = importlib.reload(lb)
 
@@ -37,7 +37,7 @@ int_stop = 10
 
 
 class Child(lb.Device):
-    param = attr.property.int(min=0, max=10)
+    param = param.property.int(min=0, max=10)
 
     def open(self):
         print("connect child")

@@ -37,7 +37,7 @@ except:
     from emulate import EmulatedVISADevice
 from contextlib import contextmanager
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import paramattr as param
 import numpy as np
 
 
@@ -45,11 +45,11 @@ class LaggyInstrument(EmulatedVISADevice):
     """A fake "instrument" with traits and fetch methods"""
 
     # Connection and driver value traits
-    delay = attr.value.float(0, min=0, help="connection time")
-    fetch_time = attr.value.float(0, min=0, help="fetch time")
-    fail_disconnect = attr.value.bool(False, help="True to raise DivideByZero on disconnect")
+    delay = param.value.float(0, min=0, help="connection time")
+    fetch_time = param.value.float(0, min=0, help="fetch time")
+    fail_disconnect = param.value.bool(False, help="True to raise DivideByZero on disconnect")
 
-    variable_setting = attr.value.int(0)
+    variable_setting = param.value.int(0)
 
     def open(self):
         self.perf = {}

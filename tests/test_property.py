@@ -27,7 +27,7 @@
 import unittest
 import sys
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import paramattr as param
 
 lb._force_full_traceback(True)
 
@@ -116,7 +116,7 @@ class MockDirectProperty(MockBase):
         "str2": "hi",
     }
 
-    @attr.property.int(min=0, max=10)
+    @param.property.int(min=0, max=10)
     def int0(self, value):
         self.remote_values["int0"] = value
 
@@ -124,7 +124,7 @@ class MockDirectProperty(MockBase):
         self.add_get_count("int0")
         return self.remote_values["int0"]
 
-    @attr.property.bool()
+    @param.property.bool()
     def bool0(self, value):
         self.remote_values["bool0"] = value
 
@@ -132,7 +132,7 @@ class MockDirectProperty(MockBase):
         self.add_get_count("bool0")
         return self.remote_values["bool0"]
 
-    @attr.property.str(key="str0", cache=True)
+    @param.property.str(key="str0", cache=True)
     def str0(self, value):
         self.remote_values["str0"] = value
 
@@ -140,7 +140,7 @@ class MockDirectProperty(MockBase):
         self.add_get_count("str0")
         return self.remote_values["str0"]
 
-    @attr.property.str(key="str1", cache=True)
+    @param.property.str(key="str1", cache=True)
     def str1(self, value):
         self.remote_values["str1"] = value
 
@@ -148,7 +148,7 @@ class MockDirectProperty(MockBase):
         self.add_get_count("str1")
         return self.remote_values["str1"]
 
-    @attr.property.str(key="str2", sets=False)
+    @param.property.str(key="str2", sets=False)
     def str2(self, value):
         self.remote_values["str2"] = value
 
@@ -188,19 +188,19 @@ class MockKeyedAdapterProperty(MockBase):
         "str2": "hi",
     }
 
-    int0 = attr.property.int(key="int0", min=0, max=10)
-    bool0 = attr.property.bool(key="bool0")
-    str0 = attr.property.str(key="str0", cache=True)
-    str1 = attr.property.str(key="str1", cache=False)
-    str2 = attr.property.str(key="str2", sets=False)
+    int0 = param.property.int(key="int0", min=0, max=10)
+    bool0 = param.property.bool(key="bool0")
+    str0 = param.property.str(key="str0", cache=True)
+    str1 = param.property.str(key="str1", cache=False)
+    str2 = param.property.str(key="str2", sets=False)
 
 
 class MockDataReturn(MockBase):
-    @attr.datareturn.float()
+    @param.datareturn.float()
     def fetch_float0(self, a, b, c):
         return a + b + c
 
-    @attr.datareturn.float
+    @param.datareturn.float
     def fetch_float1(self, a, b, c):
         return a + b + c
 

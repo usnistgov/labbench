@@ -26,7 +26,7 @@
 
 import sys
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import paramattr as param
 
 if __name__ == "__main__":
     lb.show_messages("info")

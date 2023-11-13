@@ -195,6 +195,7 @@ class Ownable:
     _logger = logger
 
     def __init__(self):
+        print('ownable init ', self)
         self._logger = logging.LoggerAdapter(
             logger.logger,
             extra=logger_metadata(self),
@@ -263,33 +264,15 @@ sys._debug_tb = False
 
 TRACEBACK_HIDE_TAG = "🦙 hide from traceback 🦙"
 
-TFunc = Callable[..., Any]
+from typing_extensions import TypeVar, ParamSpec
 
-def hide_in_traceback(func: TFunc) -> TFunc:
-    def adjust(f):
-        code = f.__code__
+T = TypeVar('T')
+P = ParamSpec('P')
 
-        if tuple(sys.version_info)[:2] >= (3, 8):
-            f.__code__ = code.replace(co_consts=code.co_consts + (TRACEBACK_HIDE_TAG,))
-        else:
-            # python < 3.8
-            f.__code__ = types.CodeType(
-                code.co_argcount,
-                code.co_kwonlyargcount,
-                code.co_nlocals,
-                code.co_stacksize,
-                code.co_flags,
-                code.co_code,
-                code.co_consts + (TRACEBACK_HIDE_TAG,),
-                code.co_names,
-                code.co_varnames,
-                code.co_filename,
-                code.co_name,
-                code.co_firstlineno,
-                code.co_lnotab,
-                code.co_freevars,
-                code.co_cellvars,
-            )
+def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
+    def adjust(f: Callable[P, T]) -> None:
+        code_obj = f.__code__
+        f.__code__ = f.__code__.replace(co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,))
 
     if not callable(func):
         raise TypeError(f"{func} is not callable")

@@ -6,7 +6,7 @@ import paramattr_tooling
 
 lb._force_full_traceback(True)
 
-
+# @lb.key_argument('channel', param.argument.int(min=1, max=4))
 @store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
 class StoreTestDevice(store_backend.ParamAttrTestDevice):
     LOOP_TEST_VALUES = {
@@ -15,10 +15,7 @@ class StoreTestDevice(store_backend.ParamAttrTestDevice):
         float: 3.14,
         str: "hi",
         bool: True,
-    }
-
-    ARGUMENTS = {
-        'channel': [1, 2]
+        object: None
     }
 
     # test both getting and setting
@@ -35,10 +32,12 @@ class StoreTestDevice(store_backend.ParamAttrTestDevice):
 
     str_or_none = param.property.str(key="str_or_none", allow_none=True)
     str_cached = param.property.str(key="str_cached", cache=True)
+    any = param.property.any(key='any', allow_none=True)
 
 
 class TestPropertyParamAttr(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
+    role = lb.paramattr.ParamAttr.ROLE_PROPERTY
 
     def set_param(self, device, attr_name, value, arguments={}):
         if len(arguments) > 0:
@@ -50,9 +49,39 @@ class TestPropertyParamAttr(paramattr_tooling.TestParamAttr):
             raise ValueError('properties do not accept arguments')
         return getattr(device, attr_name)
 
-    def test_all_set_then_get(self):
-        return super().test_all_set_then_get(lb.paramattr.ParamAttr.ROLE_PROPERTY)
-    
+    def test_basic_get(self):
+        device = self.DeviceClass()
+        device.open()
+
+        self.get_param(device, 'any')
+
+    def test_basic_set(self):
+        device = self.DeviceClass()
+        device.open()
+
+        self.set_param(device, 'any', 5)
+        self.assertEqual(self.get_param(device, 'any'), 5)
+
+    def test_cache(self):
+        device = self.DeviceClass()
+        device.open()
+
+        # repeat to set->get to ensure proper caching
+        self.eval_set_then_get(device, 'str_cached')
+        result = self.eval_set_then_get(device, 'str_cached')
+
+        self.assertEqual(
+            result['get_count'],
+            0,
+            msg=f'cache test - second "get" operation count',
+        )
+        self.assertEqual(
+            result['set_count'],
+            2,
+            msg=f'cache test - second "get" operation count',
+        )
+
+
 # class TestProperty:
 #     # set this in a subclass
 #     TestDevice: lb.Device = None

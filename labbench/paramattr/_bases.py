@@ -37,12 +37,12 @@ import typing
 from contextlib import contextmanager
 from inspect import isclass
 from typing_extensions import dataclass_transform
+from . import _base_typing
+from ._base_typing import Undefined, T
+from typing import Union, Callable, Type, Optional, Generic, Any
 
 # for common types
-from pathlib import Path
 from warnings import warn
-
-import validators as _val
 
 from .. import util
 
@@ -52,14 +52,6 @@ except RuntimeError:
     # not executed: help coding tools recognize lazy_imports as imports
     import pandas as pd
 
-Undefined = inspect.Parameter.empty
-
-T = typing.TypeVar("T")
-from typing import Any, Union, Callable, List, Dict, Type, Optional
-
-
-class ThisType(typing.Generic[T]):
-    pass
 
 
 class no_cast_argument:
@@ -72,7 +64,7 @@ class no_cast_argument:
 T = typing.TypeVar('T')
 
 class KeyAdapterBase:
-    arguments: Dict[str, ParamAttr]
+    arguments: typing.Dict[str, ParamAttr]
 
     def __new__(cls, /, decorated_cls: Type[HasParamAttrs] = None, **kws):
         """set up use as a class decorator"""
@@ -90,11 +82,11 @@ class KeyAdapterBase:
             obj.__init__(**kws)
             return obj
 
-    def __init__(self, *, arguments: Dict[str, ParamAttr] = {}, strict_arguments: bool = False):
+    def __init__(self, *, arguments: typing.Dict[str, ParamAttr] = {}, strict_arguments: bool = False):
         self.arguments = arguments
         self.strict_arguments = strict_arguments
 
-    def __call__(self, owner_cls: T) -> T:
+    def __call__(self, owner_cls: Type[T]) -> Type[T]:
         # do the decorating
         owner_cls._attr_defs.key_adapter = self
         return owner_cls
@@ -109,7 +101,7 @@ class KeyAdapterBase:
         `labbench.parameter.property` attributes that are implemented through the `key` keyword. """
         raise NotImplementedError(f'key adapter does not implement "set" {repr(type(self))}')
 
-    def get_key_arguments(self, key: Any) -> List[str]:
+    def get_key_arguments(self, key: Any) -> typing.List[str]:
         """returns a list of arguments for the parameter attribute key.
 
         This must be implemented in order to define `labbench.paramattr.method` attributes
@@ -129,7 +121,7 @@ class KeyAdapterBase:
         defaults = {}
         for name in self.get_key_arguments(trait.key):
             try:
-                arg_annotation = arg_defs[name].type
+                arg_annotation = arg_defs[name]._type
                 if arg_defs[name].default is not Undefined:
                     defaults[name] = arg_defs[name].default
             except KeyError as err:
@@ -155,15 +147,15 @@ class KeyAdapterBase:
                 "set_value",
                 default=Undefined,
                 kind=inspect.Parameter.POSITIONAL_ONLY,
-                annotation=Optional[trait.type],
+                annotation=Optional[trait._type],
             ),
         ]
 
-        def method(owner, set_value: trait.type = Undefined, /, **kws) -> Union[None, trait.type]:
+        def method(owner, set_value: trait._type = Undefined, /, **key_arguments) -> Union[None, trait._type]:
             validated_kws = {
                 # cast each keyword argument
                 k: arg_defs.get(k, no_cast_argument).__cast_get__(owner, v)
-                for k, v in kws.items()
+                for k, v in key_arguments.items()
             }
 
             if set_value is Undefined:
@@ -172,7 +164,7 @@ class KeyAdapterBase:
                 return trait.set_in_owner(owner, set_value, validated_kws)
 
         method.__signature__ = inspect.Signature(
-            pos_params + kwargs_params, return_annotation=Optional[trait.type]
+            pos_params + kwargs_params, return_annotation=Optional[trait._type]
         )
         method.__name__ = trait.name
         method.__module__ = f"{owner_cls.__module__}"
@@ -183,37 +175,41 @@ class KeyAdapterBase:
 
 
 class HasParamAttrsClsInfo:
-    attrs: Dict[str, ParamAttr]
+    attrs: typing.Dict[str, ParamAttr]
     key_adapter: KeyAdapterBase
+    key_arguments: typing.Dict[str, Argument]
 
-    # unbound methods
-    methods: Dict[str, Callable]
+    # unbound methods``
+    methods: typing.Dict[str, Callable]
 
-    __slots__ = ["attrs", "key_adapter", "methods"]
+    __slots__ = ["attrs", "key_adapter", "key_arguments", "methods"]
 
     def __init__(
         self,
-        attrs: Dict[str, ParamAttr],
+        attrs: typing.Dict[str, ParamAttr],
         key_adapter: KeyAdapterBase,
+        key_arguments: typing.Dict[str, Argument],
     ):
         self.attrs = attrs
         self.key_adapter = key_adapter
+        self.key_arguments = {}
         self.methods = {}
 
-    def value_names(self) -> List[ParamAttr]:
+    def value_names(self) -> typing.List[ParamAttr]:
         return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_VALUE]
 
-    def method_names(self) -> List[ParamAttr]:
+    def method_names(self) -> typing.List[ParamAttr]:
         return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_METHOD]
 
-    def property_names(self) -> List[ParamAttr]:
+    def property_names(self) -> typing.List[ParamAttr]:
         return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_PROPERTY]
 
     @classmethod
     def _copy_from(cls, owner: HasParamAttrs):
-        obj = cls(attrs={}, key_adapter=owner._attr_defs.key_adapter)
+        obj = cls(attrs={}, key_adapter=owner._attr_defs.key_adapter, key_arguments=owner._attr_defs.key_arguments)
         obj.attrs = {k: v.copy() for k, v in owner._attr_defs.attrs.items()}
         obj.methods = dict(owner._attr_defs.methods)
+        obj.key_arguments = dict(owner._attr_defs.key_arguments)
         return obj
 
 
@@ -233,7 +229,7 @@ class HasParamAttrsMeta(type):
             metacls.ns_pending.append(cls_info.attrs)
             return ns
         else:
-            ns["_attr_defs"] = HasParamAttrsClsInfo(attrs={}, key_adapter=KeyAdapterBase())
+            ns["_attr_defs"] = HasParamAttrsClsInfo(attrs={}, key_adapter=KeyAdapterBase(), key_arguments={})
             metacls.ns_pending.append({})
         return ns
 
@@ -242,8 +238,75 @@ def _parameter_maybe_positional(param: inspect.Parameter):
     return param.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.POSITIONAL_ONLY)
 
 
+# This is only used for method types
+TCall = typing.TypeVar('TCall')
+
+
 @dataclass_transform(eq_default=False)
-class ParamAttr:
+class _ParamAttrDataclass:
+    _defaults = {}
+
+    def __init__(self, **kws):
+        # apply the dataclass entries
+        self.kws = dict(kws)
+
+        # set value attributes
+        for k, v in dict(self._defaults, **kws).items():
+            setattr(self, k, v)
+
+
+# class _ParamAttrMeta(type, Generic[T]):
+#     pass
+
+#     _ParamAttrT = typing.TypeVar('_ParamAttrT')
+#     _T = typing.TypeVar('_T')
+
+#     @classmethod
+#     def with_type(metacls: _ParamAttrMeta, type: _T) -> ParamAttr[_T]:
+#         return metacls(type=type)
+
+
+#     def __new__(metacls, name, bases, attrs, type: typing.Type[_T]):
+#         """python triggers this call immediately after a ParamAttr subclass
+#             is defined, allowing us to automatically customize its implementation.
+
+#         Arguments:
+#             type: the python type of the parameter
+#         """
+#         cls = super(_ParamAttrMeta, metacls).__new__(metacls, name, bases, attrs)
+#         if type is not Undefined:
+#             cls._type = type
+
+#         # cache all type annotations for faster lookup later
+#         cls.__annotations__ = typing.get_type_hints(cls)
+#         cls._defaults = {k: getattr(cls, k) for k in cls.__annotations__.keys()}
+
+#         # Help to reduce memory use by __slots__ definition (instead of __dict__)
+#         cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
+#             "metadata",
+#             "kind",
+#             "name",
+#         ]
+#         return cls
+
+    # def __init__(cls, name, bases, attrs, type: Type[_T] = Undefined):
+    #     if type is not Undefined:
+    #         cls._type = type
+
+
+        # # cache all type annotations for faster lookup later
+        # cls.__annotations__ = typing.get_type_hints(cls)
+        # cls._defaults = {k: getattr(cls, k) for k in cls.__annotations__.keys()}
+
+        # # Help to reduce memory use by __slots__ definition (instead of __dict__)
+        # cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
+        #     "metadata",
+        #     "kind",
+        #     "name",
+        # ]
+
+
+class ParamAttr(_ParamAttrDataclass, Generic[T]):
     """base class for typed descriptors in Device classes. These
     implement type checking, casting, decorators, and callbacks.
 
@@ -279,7 +342,7 @@ class ParamAttr:
     ROLE_UNSET = "ROLE_UNSET"
     ROLE_ARGUMENT = "ROLE_ARGUMENT"
 
-    type = None
+    _type: typing.Type[T] = None
     role = ROLE_UNSET
 
     # keyword argument types and default values
@@ -293,19 +356,14 @@ class ParamAttr:
 
     _keywords = {}
 
-    def __init__(self, **kws):
-        self.kws = dict(kws)
-        self.metadata = {}
-
-        cls_defaults = {k: getattr(self, k) for k in self.__annotations__.keys()}
-        kws = dict(cls_defaults, **kws)
-
-        # set value attributes
-        for k, v in kws.items():
-            setattr(self, k, v)
+    def copy(self, new_type=None, **update_kws):
+        if new_type is None:
+            new_type = type(self)
+        obj = new_type(**dict(self.kws, **update_kws))
+        return obj
 
     @classmethod
-    def __init_subclass__(cls, type=Undefined):
+    def __init_subclass__(cls, type: typing.Type[T]=Undefined):
         """python triggers this call immediately after a ParamAttr subclass
             is defined, allowing us to automatically customize its implementation.
 
@@ -313,10 +371,11 @@ class ParamAttr:
             type: the python type of the parameter
         """
         if type is not Undefined:
-            cls.type = type
+            cls._type = type
 
         # cache all type annotations for faster lookup later
         cls.__annotations__ = typing.get_type_hints(cls)
+        cls._defaults = {k: getattr(cls, k) for k in cls.__annotations__.keys()}
 
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
         cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
@@ -324,12 +383,6 @@ class ParamAttr:
             "kind",
             "name",
         ]
-
-    def copy(self, new_type=None, **update_kws):
-        if new_type is None:
-            new_type = type(self)
-        obj = new_type(**dict(self.kws, **update_kws))
-        return obj
 
     # Descriptor methods (called automatically by the owning class or instance)
     def __set_name__(self, owner_cls, name):
@@ -359,13 +412,13 @@ class ParamAttr:
         pass
 
     @util.hide_in_traceback
-    def _prepare_set_value(self, owner: HasParamAttrs, value, arguments: Dict[str, Any] = {}):
+    def _prepare_set_value(self, owner: HasParamAttrs, value, arguments: typing.Dict[str, Any] = {}):
         # First, validate the pythonic types
         if not self.sets:
             raise AttributeError(f"{self.__str__()} cannot be set")
         if value is not None:
-            # cast to self.type and validate
-            value = ParamAttr.to_pythonic(self, value)
+            # cast to self._type and validate
+            value = self.to_pythonic(value)
             value = self.validate(value, owner)
 
             if len(self.only) > 0 and not self.contains(self.only, value):
@@ -386,10 +439,10 @@ class ParamAttr:
         
         return value
 
-    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
         raise NotImplementedError
     
-    def set_in_owner(self, owner: HasParamAttrs, value, arguments: Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, value, arguments: typing.Dict[str, Any] = {}):
         raise NotImplementedError
 
     @util.hide_in_traceback
@@ -433,8 +486,8 @@ class ParamAttr:
 
     @util.hide_in_traceback
     def to_pythonic(self, value):
-        """Convert a value from an unknown type to self.type."""
-        return self.type(value)
+        """Convert a value from an unknown type to self._type."""
+        return self._type(value)
 
     @util.hide_in_traceback
     def from_pythonic(self, value):
@@ -443,7 +496,7 @@ class ParamAttr:
 
     @util.hide_in_traceback
     def validate(self, value, owner=None):
-        """This is the default validator, which requires that attribute value have the same type as self.type.
+        """This is the default validator, which requires that attribute value have the same type as self._type.
         A ValueError is raised for other types.
 
         Arguments:
@@ -451,8 +504,8 @@ class ParamAttr:
         Returns:
             a valid value
         """
-        if not isinstance(value, self.type):
-            typename = self.type.__qualname__
+        if not isinstance(value, self._type):
+            typename = self._type.__qualname__
             valuetypename = type(value).__qualname__
             raise ValueError(f"{repr(self)} type must be '{typename}', not '{valuetypename}'")
         return value
@@ -462,7 +515,7 @@ class ParamAttr:
 
     # introspection
     def doc(self, as_argument=False, anonymous=False):
-        typename = "Any" if self.type is None else self.type.__qualname__
+        typename = "Any" if self._type is None else self._type.__qualname__
 
         if self.label:
             typename += f" ({self.label})"
@@ -544,24 +597,23 @@ class ParamAttr:
         return obj
 
 
-ParamAttr.__init_subclass__()
-
-
-class Value(ParamAttr):
+class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
-    default: ThisType = Undefined
+    default: T = Undefined
 
-    def __init__(self, *, default: Optional[Any] = Undefined, **kws):
+    @typing.overload
+    def __init__(self, *, default: Union[T, None] = Undefined, allow_none:bool=True, **kws): ...
+    @typing.overload
+    def __init__(self, *, default: T = Undefined, allow_none:bool=False, **kws): ...
+    def __init__(self, *, default: T = Undefined, **kws):
         # default _must_ be keyword-only in order to support static type checking
         super().__init__(**kws)
 
-        if default is Undefined:
-            self.default = self.type()
-        else:
+        if default is not Undefined:
             self.default = default
 
     @util.hide_in_traceback
-    def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None):
+    def __get__(self: Value[T], owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None) -> T:
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -587,10 +639,10 @@ class Value(ParamAttr):
             return self.get_from_owner(owner)
 
     @util.hide_in_traceback
-    def __set__(self, owner: HasParamAttrs, value):
+    def __set__(self, owner: HasParamAttrs, value: T):
         return self.set_in_owner(owner, value)
 
-    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}) -> T:
         if not self.gets:
             # stop now if this is not a gets ParamAttr
             raise AttributeError(
@@ -600,27 +652,9 @@ class Value(ParamAttr):
         return owner.__get_value__(self.name)
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, value, arguments: Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, value: T, arguments: typing.Dict[str, Any] = {}):
         value = self._prepare_set_value(owner, value, arguments)
         owner.__set_value__(self.name, value)
-
-        # The remaining roles act as function calls that are implemented through self.key
-        # or by decorating a function.
-        if self._setter is not None:
-            # a decorated setter function, if used as a decorator
-            self._setter(owner, value, **arguments)
-
-        elif self.key is not None:
-            # send to the key adapter
-            owner._attr_defs.key_adapter.set(owner, self.key, value, self, arguments)
-
-        else:
-            objname = owner.__class__.__qualname__ + "." + self.name
-            raise AttributeError(
-                f"cannot set {objname}: no @{self.__repr__(owner_inst=owner)}."
-                f"setter and no key argument"
-            )
-
         owner.__notify__(self.name, value, "set", cache=self.cache)
 
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
@@ -634,7 +668,7 @@ class Argument(ParamAttr):
         super().__init__(**kws)
         
         if default is Undefined:
-            self.default = self.type()
+            self.default = self._type()
         else:
             self.default = default
 
@@ -657,7 +691,7 @@ class Argument(ParamAttr):
         return self
 
 
-class OwnerAccessAttr(ParamAttr):
+class OwnerAccessAttr(ParamAttr[T], Generic[T, TCall]):
     _setter = None
     _getter = None
     _method = None
@@ -687,9 +721,9 @@ class OwnerAccessAttr(ParamAttr):
 
         # return self to ensure `self` is the value assigned in the class definition
         return self
-    
+
     @util.hide_in_traceback
-    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
         if not self.gets:
             # stop now if this is not a gets ParamAttr
             raise AttributeError(
@@ -722,7 +756,7 @@ class OwnerAccessAttr(ParamAttr):
         return value
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, value, arguments: Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, value, arguments: typing.Dict[str, Any] = {}):
         value = self._prepare_set_value(owner, value, arguments)
 
         # The remaining roles act as function calls that are implemented through self.key
@@ -752,10 +786,21 @@ class OwnerAccessAttr(ParamAttr):
         return obj
 
 
-class Method(OwnerAccessAttr):
+@dataclass_transform(eq_default=False)
+class _MethodDataClass(OwnerAccessAttr[T]):
+    # typing shim to get the callable signature type hints
+    @typing.overload
+    def __new__(cls: Type[typing.Self], key: typing.Any, **arguments) -> Type[typing.Self][T, _base_typing.TKeyedMethodCallable[T]]: ...
+    @typing.overload
+    def __new__(cls: Type[typing.Self], key: type(Undefined), **arguments) -> Type[typing.Self][T, _base_typing.TDecoratorCallable[T]]: ...
+    def __new__(cls, **arguments):
+        return super().__new__(cls, **arguments)
+
+
+class Method(_MethodDataClass[T]):
     role = ParamAttr.ROLE_METHOD
     key: Any = Undefined
-    arguments: Dict[Any, ParamAttr] = []
+    arguments: typing.Dict[Any, Argument] = {}
 
     def get_key_arguments(self, owner_cls, validate=False):
         if self.key is not Undefined:
@@ -838,8 +883,9 @@ class Method(OwnerAccessAttr):
             cls_info = owner_cls._attr_defs
             cls_info.methods[self.name] = cls_info.key_adapter.method_from_key(owner_cls, self)
 
+
     @util.hide_in_traceback
-    def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None):
+    def __get__(self, owner: Union[None, HasParamAttrs], owner_cls: Type[HasParamAttrs] = None) -> _base_typing.TKeyedMethodCallable[T]:
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -880,7 +926,7 @@ class Method(OwnerAccessAttr):
         raise AttributeError(f"call {self}(...) to set parameter value, not assignment")
 
 
-class Property(OwnerAccessAttr):
+class Property(OwnerAccessAttr[T]):
     role = ParamAttr.ROLE_PROPERTY
     key: Any = Undefined
 
@@ -918,7 +964,7 @@ class Property(OwnerAccessAttr):
                 self._setter = func
 
     @util.hide_in_traceback
-    def __get__(self, owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None):
+    def __get__(self: Property[T], owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None) -> T:
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -961,9 +1007,9 @@ def hold_attr_notifications(owner):
 
 
 class HasParamAttrsInstInfo:
-    handlers: Dict[str, Callable]
-    calibrations: Dict[str, Any]
-    cache: Dict[str, Any]
+    handlers: typing.Dict[str, Callable]
+    calibrations: typing.Dict[str, Any]
+    cache: typing.Dict[str, Any]
 
     __slots__ = "handlers", "calibrations", "cache"
 
@@ -979,22 +1025,24 @@ class HasParamAttrsInstInfo:
                 self.cache[name] = attr.default
 
 
-def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> Dict[str, ParamAttr]:
+def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.Dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
     return obj._attr_defs.attrs
 
+def get_key_adapter(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> KeyAdapterBase:
+    return obj._attr_defs.key_adapter
 
-def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
+def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.List[str]:
     """returns a mapping of names of labbench value paramattrs defined in `obj`"""
     return obj._attr_defs.value_names()
 
 
-def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
+def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.List[str]:
     """returns a mapping of names of labbench method paramattrs defined in `obj`"""
     return obj._attr_defs.method_names()
 
 
-def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> List[str]:
+def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.List[str]:
     """returns a list of names of labbench property paramattrs defined in `obj`"""
     return obj._attr_defs.property_names()
 
@@ -1028,7 +1076,8 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
             setattr(cls, name, cls._attr_defs.attrs[name])
 
-        if cls._attr_defs.attrs in HasParamAttrsMeta.ns_pending:
+        # clear the initialized attributes from the pending entries in the metaclass
+        if cls._attr_defs.attrs in type(cls).ns_pending:
             type(cls).ns_pending.remove(cls._attr_defs.attrs)
 
         # finalize attribute setup
@@ -1075,7 +1124,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
 def adjusted(
     paramattr: Union[ParamAttr, str], default: Any = Undefined, /, **kws
-) -> Type[HasParamAttrs]:
+) -> Callable[[Type[T]], Type[T]]:
     """decorates a Device subclass to copy the specified ParamAttr with a specified name.
 
     This can be applied to inherited classes that need one of its parents attributes 
@@ -1115,19 +1164,36 @@ def adjusted(
     return apply_adjusted_paramattr
 
 
-class Any(ParamAttr, type=object):
-    """allows any value"""
+def register_key_argument(
+    name: str, argument: Argument
+) -> Callable[[Type[T]], Type[T]]:
+    """decorates a Device subclass to copy the specified ParamAttr with a specified name.
 
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        return value
+    This can be applied to inherited classes that need one of its parents attributes 
+    with an adjusted definition. Multiple decorators can be stacked to the
+    same class definition.
 
-    @util.hide_in_traceback
-    def to_pythonic(self, value):
-        return value
+    Args:
+        paramattr: ParamAttr instance or name of the attribute to adjust in the wrapped class
+        default: new default value (for value attributes only)
+
+    Raises:
+        ValueError: invalid type of ParamAttr argument, or when d
+        TypeError: _description_
+        ValueError: _description_
+
+    Returns:
+        HasParamAttrs or Device with adjusted attributes value
+    """
+
+    def adjust_owner(owner_cls: HasParamAttrs) -> HasParamAttrs:
+        owner_cls._attr_defs.key_arguments[name] = argument
+        return owner_cls
+
+    return adjust_owner
 
 
-def observe(obj, handler, name=Any, type_=("get", "set")):
+def observe(obj, handler, name=Undefined, type_=("get", "set")):
     """Register a handler function to be called on changes to attributes defined with ParamAttr.
 
     The handler function takes a single message argument. This
@@ -1160,9 +1226,9 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
     elif isinstance(name, (tuple, list)):
         for n in name:
             validate_name(n)
-    elif name is not Any:
+    elif name is not Undefined:
         raise ValueError(
-            f"name argument {name} has invalid type - must be one of (str, tuple, list), or the value Any"
+            f"name argument {name} has invalid type - must be one of (str, tuple, list), or the value Undefined"
         )
 
     if isinstance(type, str):
@@ -1170,7 +1236,7 @@ def observe(obj, handler, name=Any, type_=("get", "set")):
 
     def wrapped(msg):
         # filter according to name and type
-        if name is not Any and msg["name"] not in name:
+        if name is not Undefined and msg["name"] not in name:
             return
         elif msg["type"] not in type_:
             return
@@ -1365,7 +1431,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         )
 
     @util.hide_in_traceback
-    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
         # by_cal, by_uncal = owner._attr_store.calibrations.get(self.name, (None, None))
         self._validate_attr_dependencies(owner, self.allow_none, "get")
 
@@ -1389,7 +1455,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         return ret
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: typing.Dict[str, Any] = {}):
 
         # owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         self._validate_attr_dependencies(owner, False, "set")
@@ -1531,12 +1597,12 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         self.set_mapping(cal, owner=owner)
 
     @util.hide_in_traceback
-    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
         self._touch_table(owner)
         return super().get_from_owner(owner, arguments)
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: typing.Dict[str, Any] = {}):
         self._touch_table(owner)
         super().set_in_owner(owner, cal_value, arguments)
 
@@ -1615,7 +1681,7 @@ class TransformMixIn(DependentParamAttr):
         else:
             return max(lo, hi)
 
-    def get_from_owner(self, owner: HasParamAttrs, arguments: Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
         base_value = self._paramattr_dependencies["base"].get_from_owner(owner, arguments)
 
         if "other" in self._paramattr_dependencies:
@@ -1660,12 +1726,12 @@ class TransformMixIn(DependentParamAttr):
             )
 
 
-class BoundedNumber(ParamAttr):
+class BoundedNumber(ParamAttr[T]):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
 
     allow_none: bool = True
-    min: Any = None
-    max: Any = None
+    min: T = None
+    max: T = None
 
     @util.hide_in_traceback
     def validate(self, value, owner=None):
@@ -1707,7 +1773,7 @@ class BoundedNumber(ParamAttr):
 
     def calibrate_from_table(
         self,
-        path_attr: Unicode,
+        path_attr: ParamAttr,
         index_lookup_attr: ParamAttr,
         *,
         table_index_column: str = None,
@@ -1908,154 +1974,4 @@ class NonScalar(Any):
             raise ValueError("given text data but expected a non-scalar data")
         if not hasattr(value, "__iter__") and not hasattr(value, "__len__"):
             raise ValueError("expected non-scalar data but given a non-iterable")
-        return value
-
-
-class Int(BoundedNumber, type=int):
-    """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
-    
-    min: Union[int, None] = None
-    max: Union[int, None] = None
-
-class Float(BoundedNumber, type=float):
-    """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
-
-    min: Union[float, None] = None
-    max: Union[float, None] = None
-    step: Union[float, None] = None
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        value = super().validate(value, owner)
-        if self.step is not None:
-            mod = value % self.step
-            if mod < self.step / 2:
-                return value - mod
-            else:
-                return value - (mod - self.step)
-        return value
-
-
-class Complex(ParamAttr, type=complex):
-    """accepts numerical or str values, following normal python casting procedures (with bounds checking)"""
-
-    allow_none: bool = False
-
-
-class Bool(ParamAttr, type=bool):
-    """accepts boolean or numeric values, or a case-insensitive match to one of ('true',b'true','false',b'false')"""
-
-    allow_none: bool = False
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        if isinstance(value, (bool, numbers.Number)):
-            return value
-        elif isinstance(value, (str, bytes)):
-            lvalue = value.lower()
-            if lvalue in ("true", b"true"):
-                return True
-            elif lvalue in ("false", b"false"):
-                return False
-        raise ValueError(
-            f"'{self.__repr__(owner_inst=owner)}' accepts only boolean, numerical values,"
-            "or one of ('true',b'true','false',b'false'), case-insensitive"
-        )
-
-
-class String(ParamAttr):
-    """base class for string types, which adds support for case sensitivity arguments"""
-
-    case: bool = True
-    # allow_none: bool = True # let's not override this default
-
-    @util.hide_in_traceback
-    def contains(self, iterable, value):
-        if not self.case:
-            iterable = [v.lower() for v in iterable]
-            value = value.lower()
-        return value in iterable
-
-
-class Unicode(String, type=str):
-    """accepts strings or numeric values only; convert others explicitly before assignment"""
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        if not isinstance(value, (str, numbers.Number)):
-            raise ValueError(
-                f"'{type(self).__qualname__}' attributes accept values of str or numerical type, not {type(value).__name__}"
-            )
-        return value
-
-
-class Bytes(String, type=bytes):
-    """accepts bytes objects only - encode str (unicode) explicitly before assignment"""
-
-
-class Iterable(ParamAttr):
-    """accepts any iterable"""
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        if not hasattr(value, "__iter__"):
-            raise ValueError(f"'{type(self).__qualname__}' attributes accept only iterable values")
-        return value
-
-
-class Dict(Iterable, type=dict):
-    """accepts any type of iterable value accepted by python `dict()`"""
-
-
-class List(Iterable, type=list):
-    """accepts any type of iterable value accepted by python `list()`"""
-
-
-class Tuple(Iterable, type=tuple):
-    """accepts any type of iterable value accepted by python `tuple()`"""
-
-    sets: bool = False
-
-
-class Path(ParamAttr, type=Path):
-    must_exist: bool = False
-    """ does the path need to exist when set? """
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        path = self.type(value)
-
-        if self.must_exist and not path.exists():
-            raise IOError()
-
-        return path
-
-
-class NetworkAddress(Unicode):
-    """a IDN-compatible network address string, such as an IP address or DNS hostname"""
-
-    accept_port: bool = True
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        """Rough IDN compatible domain validator"""
-
-        host, *extra = value.split(":", 1)
-
-        if len(extra) > 0:
-            port = extra[0]
-            try:
-                int(port)
-            except ValueError:
-                raise ValueError(f'port {port} in "{value}" is invalid')
-
-            if not self.accept_port:
-                raise ValueError(f"{self} does not accept a port number (accept_port=False)")
-
-        for validate in _val.ipv4, _val.ipv6, _val.domain, _val.slug:
-            if validate(host):
-                break
-        else:
-            raise ValueError("invalid host address")
-
         return value

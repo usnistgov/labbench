@@ -24,57 +24,55 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _bases
+from . import _types
 from ._bases import Argument
 
 
-_ParamAttrType = _bases.Argument
-
-class any(_ParamAttrType, _bases.Any):
+class any(Argument, _types.Any):
     pass
 
 
-class bool(_ParamAttrType, _bases.Bool):
+class bool(Argument, _types.Bool):
     pass
 
 
-class float(_ParamAttrType, _bases.Float):
+class float(Argument, _types.Float):
     pass
 
 
-class int(_ParamAttrType, _bases.Int):
+class int(Argument, _types.Int):
     pass
 
 
-class complex(_ParamAttrType, _bases.Complex):
+class complex(Argument, _types.Complex):
     pass
 
 
-class str(_ParamAttrType, _bases.Unicode):
+class str(Argument, _types.Unicode):
     pass
 
 
-class bytes(_ParamAttrType, _bases.Bytes):
+class bytes(Argument, _types.Bytes):
     pass
 
 
-class list(_ParamAttrType, _bases.List):
+class list(Argument, _types.List):
     pass
 
 
-class tuple(_ParamAttrType, _bases.Tuple):
+class tuple(Argument, _types.Tuple):
     pass
 
 
-class dict(_ParamAttrType, _bases.Dict):
+class dict(Argument, _types.Dict):
     pass
 
 
-class Path(_ParamAttrType, _bases.Path):
+class Path(Argument, _types.Path):
     pass
 
 
-class NetworkAddress(_ParamAttrType, _bases.NetworkAddress):
+class NetworkAddress(Argument, _types.NetworkAddress):
     pass
 
 

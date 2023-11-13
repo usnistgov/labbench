@@ -5,6 +5,8 @@ class TestParamAttr(unittest.TestCase):
     # set this in a subclass
     DeviceClass = lb.Undefined
 
+    ROLE = lb.Undefined
+
     def set_param(self, device, attr_name, value, arguments={}):
         raise NotImplementedError
     
@@ -30,18 +32,25 @@ class TestParamAttr(unittest.TestCase):
             'notifications': device.backend.notifications
         }
 
-    def test_all_set_then_get(self, role):
+    def test_instantiate(self):
+        device = self.DeviceClass()
+
+    def test_open(self):
+        with self.DeviceClass():
+            pass
+
+    def test_all_set_then_get(self):
         device = self.DeviceClass()
         device.open()
 
         attrs = {
             name: attr
             for name, attr in device.get_attr_defs().items()
-            if attr.role == role and attr.sets and attr.gets and not hasattr(lb.Device, name)
+            if attr.role == self.role and attr.sets and attr.gets and not hasattr(lb.Device, name)
         }
 
         for attr_name, attr_def in attrs.items():
-            test_name = f'{role} "{attr_name}"'
+            test_name = f'{self.role} "{attr_name}"'
 
             device.backend.clear_counts()
 
@@ -53,11 +62,20 @@ class TestParamAttr(unittest.TestCase):
                 msg=f"{test_name} - set-get input and output values",
             )
 
-            self.assertEqual(
-                len(result['notifications']),
-                1 if attr_def.cache else 2,
-                msg=f"{test_name} - callback notification count"
-            )
+            if attr_def.cache:
+                self.assertEqual(
+                    len(result['notifications']),
+                    1,
+                    msg=f"{test_name} - callback notification count"
+                )
+            else:
+                print(result['notifications'])
+                self.assertEqual(
+                    len(result['notifications']),
+                    2,
+                    msg=f"{test_name} - callback notification count"
+                )
+
 
             self.assertEqual(
                 result['notifications'][0]['old'],
@@ -83,21 +101,6 @@ class TestParamAttr(unittest.TestCase):
                 1,
                 msg=f'{test_name} - "set" notification count',
             )
-
-            if attr_def.cache:
-                # repeat to set->get to ensure proper caching
-                result = self.eval_set_then_get(device, attr_name)
-
-                self.assertEqual(
-                    result['get_count'],
-                    0,
-                    msg=f'{test_name} - second "get" operation count',
-                )
-                self.assertEqual(
-                    result['set_count'],
-                    2,
-                    msg=f'{test_name} - second "set" operation count',
-                )
 
     # def test_disabled_set(self):
     #     with self.DeviceClass() as m:
@@ -132,3 +135,5 @@ class TestParamAttr(unittest.TestCase):
     #                     msg=msg,
     #                 )
     #                 self.assertEqual(m.get_get_count(trait_name), 1, msg=msg)
+
+lb.VISADevice

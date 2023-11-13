@@ -165,12 +165,6 @@ class _DeviceDataClass(HasParamAttrs, util.Ownable):
     def __init__(self, resource=Undefined, **values):
         """Update default values with these arguments on instantiation."""
 
-        if hasattr(self, "__imports__"):
-            warn(
-                "the use of __imports__ has been deprecated. switch to importing each backend-specific module in each method that uses it."
-            )
-            self.__imports__()
-
         # validate presence of required arguments
         inspect.signature(self.__init__).bind(**values)
 
@@ -181,9 +175,7 @@ class _DeviceDataClass(HasParamAttrs, util.Ownable):
 
         with hold_attr_notifications(self):
             for name, init_value in values.items():
-                attrs = param.get_class_attrs(self)
-                if init_value != attrs[name].default:
-                    setattr(self, name, init_value)
+                setattr(self, name, init_value)
 
         util.Ownable.__init__(self)
 
@@ -208,7 +200,7 @@ class _DeviceDataClass(HasParamAttrs, util.Ownable):
                 "resource",
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
                 default=cls.resource.default,
-                annotation=cls.resource.type,
+                annotation=cls.resource._type,
             ),
         ]
 
@@ -224,7 +216,7 @@ class _DeviceDataClass(HasParamAttrs, util.Ownable):
                 name,
                 kind=inspect.Parameter.KEYWORD_ONLY,
                 default=trait.default,
-                annotation=trait.type,
+                annotation=trait._type,
             )
             for name, trait in settable_values.items()
             if name != "resource"

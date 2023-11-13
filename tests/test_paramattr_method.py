@@ -15,6 +15,7 @@ class StoreTestDevice(store_backend.ParamAttrTestDevice):
         float: 3.14,
         str: "hi",
         bool: True,
+        object: None
     }
 
     ARGUMENTS = {
@@ -35,10 +36,12 @@ class StoreTestDevice(store_backend.ParamAttrTestDevice):
 
     str_or_none = param.method.str(key="str_or_none", allow_none=True)
     str_cached = param.method.str(key="str_cached", cache=True)
+    any = param.method.any(key='any', allow_none=True)
 
 
 class TestMethod(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
+    role = lb.paramattr.ParamAttr.ROLE_METHOD
 
     def set_param(self, device, attr_name, value, arguments={}):
         attr_def = getattr(type(device), attr_name)
@@ -55,11 +58,26 @@ class TestMethod(paramattr_tooling.TestParamAttr):
 
         param_method = getattr(device, attr_name)
         return param_method(**arguments)
-    
-    def test_all_set_then_get(self):
-        return super().test_all_set_then_get(lb.paramattr.ParamAttr.ROLE_METHOD)
 
-    
+    def test_cache(self):
+        device = self.DeviceClass()
+        device.open()
+
+        # repeat to set->get to ensure proper caching
+        self.eval_set_then_get(device, 'str_cached')
+        result = self.eval_set_then_get(device, 'str_cached')
+
+        self.assertEqual(
+            result['get_count'],
+            0,
+            msg=f'cache test - second "get" operation count',
+        )
+        self.assertEqual(
+            result['set_count'],
+            2,
+            msg=f'cache test - second "get" operation count',
+        )
+
 # class TestProperty:
 #     # set this in a subclass
 #     TestDevice: lb.Device = None
@@ -151,12 +169,21 @@ class TestMethod(paramattr_tooling.TestParamAttr):
 #     TestDevice = MockDirectProperty
 
 
+param.register_key_argument('channel', param.argument(min=1, max=4))
+class SimpleDevice(lb.VISADevice):
+    v: int = param.value.int(default=4)
+    m = param.method.float(key='ch{channel}:bw')
+
 if __name__ == "__main__":
     lb.visa_default_resource_manager(pyvisa_sim_resource)
 
     # print the low-level actions of the code
     lb.show_messages("debug")
     lb.util._force_full_traceback(True)
+    d = SimpleDevice()
+    
+
+    m = k.method_from_key(SimpleDevice, 'm')
 
     # # specify the VISA address to use the power sensor
     # inst = pyvisa_sim.Oscilloscope()  # (resource='USB::0x1111::0x2233::0x9876::INSTR')

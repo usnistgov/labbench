@@ -24,57 +24,57 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _bases
+from . import _types
 from ._bases import Value
 import typing as _typing
 
 
-class any(Value, _bases.Any):
+class any(Value, _types.Any):
     default: _typing.Any = None
 
 
-class bool(Value, _bases.Bool):
+class bool(Value, _types.Bool):
     default: _typing.Union[bool,None] = None
 
 
-class float(Value, _bases.Float):
+class float(Value, _types.Float):
     default: _typing.Union[float,None] = None
 
 
-class int(Value, _bases.Int):
+class int(Value, _types.Int):
     default: _typing.Union[int,None] = None
 
 
-class complex(Value, _bases.Complex):
-    default: _typing.Union[_bases.Complex.type,None] = None
+class complex(Value, _types.Complex):
+    default: _typing.Union[_types.Complex._type,None] = None
 
 
-class str(Value, _bases.Unicode):
+class str(Value, _types.Unicode):
     default: _typing.Union[str,None] = ""
 
 
-class bytes(Value, _bases.Bytes):
+class bytes(Value, _types.Bytes):
     default: _typing.Union[bytes,None] = b""
 
 
-class list(Value, _bases.List):
+class list(Value, _types.List):
     default: _typing.Union[list,None] = None
 
 
-class tuple(Value, _bases.Tuple):
+class tuple(Value, _types.Tuple):
     default: _typing.Union[tuple,None] = None
 
 
-class dict(Value, _bases.Dict):
+class dict(Value, _types.Dict):
     default: _typing.Union[dict,None] = None
 
 
-class Path(Value, _bases.Path):
-    default: _typing.Union[_bases.Path.type,None] = None
+class Path(Value, _types.Path):
+    default: _typing.Union[_types.Path._type,None] = None
 
 
-class NetworkAddress(Value, _bases.NetworkAddress):
-    default: _typing.Union[_bases.NetworkAddress.type,None] = None
+class NetworkAddress(Value, _types.NetworkAddress):
+    default: _typing.Union[_types.NetworkAddress._type,None] = None
 
 # used to set up hints for static type checking
 _ALL_TYPES = any, bool, float, int, complex, str, bytes, list, tuple, dict, Path, NetworkAddress

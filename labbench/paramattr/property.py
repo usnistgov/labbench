@@ -24,54 +24,52 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from . import _bases
+from . import _types
 from ._bases import Property
 
-_ParamAttrType = _bases.Property
-
-class any(_ParamAttrType, _bases.Any):
+class any(Property, _types.Any):
     pass
 
 
-class bool(_ParamAttrType, _bases.Bool):
+class bool(Property, _types.Bool):
     pass
 
 
-class float(_ParamAttrType, _bases.Float):
+class float(Property, _types.Float):
     pass
 
 
-class int(_ParamAttrType, _bases.Int):
+class int(Property, _types.Int):
     pass
 
 
-class complex(_ParamAttrType, _bases.Complex):
+class complex(Property, _types.Complex):
     pass
 
 
-class str(_ParamAttrType, _bases.Unicode):
+class str(Property, _types.Unicode):
     pass
 
 
-class bytes(_ParamAttrType, _bases.Bytes):
+class bytes(Property, _types.Bytes):
     pass
 
 
-class list(_ParamAttrType, _bases.List):
+class list(Property, _types.List):
     pass
 
 
-class tuple(_ParamAttrType, _bases.Tuple):
+class tuple(Property, _types.Tuple):
     pass
 
 
-class dict(_ParamAttrType, _bases.Dict):
+class dict(Property, _types.Dict):
     pass
 
 
-class Path(_ParamAttrType, _bases.Path):
+class Path(Property, _types.Path):
     pass
 
 
-class NetworkAddress(_ParamAttrType, _bases.NetworkAddress):
+class NetworkAddress(Property, _types.NetworkAddress):
     pass

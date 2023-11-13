@@ -921,6 +921,7 @@ class VISADevice(Device):
     write_termination: str = param.value.str(
         default="\n", cache=True, help="end of line string to send after writes"
     )
+    """write docstring here"""
 
     open_timeout: float = param.value.float(
         default=None,

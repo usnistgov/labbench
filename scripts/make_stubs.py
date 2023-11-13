@@ -124,7 +124,7 @@ def update_stubs(path, mod_name, sub_name):
 
             args = ["self"] + list(attrs.keys())
             defaults = [nameit(trait.default) for trait in attrs.values()]
-            annotations = {name: nameit(trait.type) for name, trait in attrs.items()}
+            annotations = {name: nameit(trait._type) for name, trait in attrs.items()}
 
         elif issubclass(cls, (ParamAttr, Rack)):
             annots = getattr(cls, "__annotations__", {})
@@ -134,7 +134,7 @@ def update_stubs(path, mod_name, sub_name):
             defaults = [getattr(cls, name) for name in annots.keys()]
             defaults = [None if d is Undefined else d for d in defaults]
             annotations = {
-                name: cls.type if type_ is ThisType else type_
+                name: cls._type if type_ is ThisType else type_
                 for name, type_ in annots.items()
             }
             annotations = {

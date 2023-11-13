@@ -1,4 +1,3 @@
-from . import pyvisa_sim, store_backend
 from pathlib import Path
 
 path = Path(__file__).parent

@@ -15,7 +15,6 @@ class TKeyedMethodCallable(Protocol[T]):
     def __call__(self, set_value: Optional[T] = Undefined, **arguments) -> Union[None, T]:
         ...
 
-
 class TDecoratorCallable(Protocol[T]):
     _P = ParamSpec('_P')
 

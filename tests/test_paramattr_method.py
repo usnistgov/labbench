@@ -169,7 +169,7 @@ class TestMethod(paramattr_tooling.TestParamAttr):
 #     TestDevice = MockDirectProperty
 
 
-param.register_key_argument('channel', param.argument(min=1, max=4))
+param.register_key_argument('channel', param.argument.int(min=1, max=4))
 class SimpleDevice(lb.VISADevice):
     v: int = param.value.int(default=4)
     m = param.method.float(key='ch{channel}:bw')
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     d = SimpleDevice()
     
 
-    m = k.method_from_key(SimpleDevice, 'm')
+    # m = k.method_from_key(SimpleDevice, 'm')
 
     # # specify the VISA address to use the power sensor
     # inst = pyvisa_sim.Oscilloscope()  # (resource='USB::0x1111::0x2233::0x9876::INSTR')

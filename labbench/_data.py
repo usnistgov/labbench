@@ -43,7 +43,7 @@ from . import _device as core
 from . import _host, _rack, util
 from . import paramattr as param
 from ._device import Device
-from ._rack import Owner, Rack
+from ._rack import Owner
 from .paramattr import observe
 
 try:

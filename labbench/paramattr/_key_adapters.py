@@ -1,8 +1,6 @@
-from ._bases import KeyAdapterBase, HasParamAttrs, ParamAttr, Undefined
-from . import argument
+from ._bases import KeyAdapterBase, HasParamAttrs, ParamAttr
 import string
-from typing import Dict, List, Union, Any, Optional, Type
-from functools import partialmethod
+from typing import Dict, List, Any
 
 
 class message_keying(KeyAdapterBase):

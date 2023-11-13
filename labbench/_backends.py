@@ -976,7 +976,6 @@ class VISADevice(Device):
         this is called automatically and does not need
         to be invoked.
         """
-        from pyvisa import constants
 
         self._opc = False
 
@@ -1254,7 +1253,7 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
         try:
             ret = device.identity
             return ret
-        except pyvisa.errors.VisaIOError as ex:
+        except pyvisa.errors.VisaIOError:
             return None
         except BaseException as ex:
             device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")

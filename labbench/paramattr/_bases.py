@@ -35,7 +35,6 @@ import inspect
 import numbers
 import typing
 from contextlib import contextmanager
-from inspect import isclass
 from typing_extensions import dataclass_transform
 from . import _base_typing
 from ._base_typing import Undefined, T
@@ -60,8 +59,6 @@ class no_cast_argument:
     @classmethod
     def __cast_get__(self, owner, value):
         return value
-
-T = typing.TypeVar('T')
 
 class KeyAdapterBase:
     arguments: typing.Dict[str, ParamAttr]
@@ -107,7 +104,7 @@ class KeyAdapterBase:
         This must be implemented in order to define `labbench.paramattr.method` attributes
         using the `key` keyword.
         """
-        raise NotImplementedError(f'key adapter needs "get_key_arguments" to implement methods by "key" keyword')
+        raise NotImplementedError('key adapter needs "get_key_arguments" to implement methods by "key" keyword')
 
     def method_from_key(self, owner_cls: Type[HasParamAttrs], trait: ParamAttr):
         """Autogenerate a parameter getter/setter method based on the message key defined in a ParamAttr method."""
@@ -124,7 +121,7 @@ class KeyAdapterBase:
                 arg_annotation = arg_defs[name]._type
                 if arg_defs[name].default is not Undefined:
                     defaults[name] = arg_defs[name].default
-            except KeyError as err:
+            except KeyError:
                 if self.strict_arguments:
                     trait_desc = f"{owner_cls.__qualname__}.{trait.name}"
                     raise AttributeError(
@@ -242,7 +239,7 @@ def _parameter_maybe_positional(param: inspect.Parameter):
 TCall = typing.TypeVar('TCall')
 
 
-@dataclass_transform(eq_default=False)
+@dataclass_transform(eq_default=False, kw_only_default=True)
 class _ParamAttrDataclass:
     _defaults = {}
 
@@ -253,57 +250,6 @@ class _ParamAttrDataclass:
         # set value attributes
         for k, v in dict(self._defaults, **kws).items():
             setattr(self, k, v)
-
-
-# class _ParamAttrMeta(type, Generic[T]):
-#     pass
-
-#     _ParamAttrT = typing.TypeVar('_ParamAttrT')
-#     _T = typing.TypeVar('_T')
-
-#     @classmethod
-#     def with_type(metacls: _ParamAttrMeta, type: _T) -> ParamAttr[_T]:
-#         return metacls(type=type)
-
-
-#     def __new__(metacls, name, bases, attrs, type: typing.Type[_T]):
-#         """python triggers this call immediately after a ParamAttr subclass
-#             is defined, allowing us to automatically customize its implementation.
-
-#         Arguments:
-#             type: the python type of the parameter
-#         """
-#         cls = super(_ParamAttrMeta, metacls).__new__(metacls, name, bases, attrs)
-#         if type is not Undefined:
-#             cls._type = type
-
-#         # cache all type annotations for faster lookup later
-#         cls.__annotations__ = typing.get_type_hints(cls)
-#         cls._defaults = {k: getattr(cls, k) for k in cls.__annotations__.keys()}
-
-#         # Help to reduce memory use by __slots__ definition (instead of __dict__)
-#         cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
-#             "metadata",
-#             "kind",
-#             "name",
-#         ]
-#         return cls
-
-    # def __init__(cls, name, bases, attrs, type: Type[_T] = Undefined):
-    #     if type is not Undefined:
-    #         cls._type = type
-
-
-        # # cache all type annotations for faster lookup later
-        # cls.__annotations__ = typing.get_type_hints(cls)
-        # cls._defaults = {k: getattr(cls, k) for k in cls.__annotations__.keys()}
-
-        # # Help to reduce memory use by __slots__ definition (instead of __dict__)
-        # cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
-        #     "metadata",
-        #     "kind",
-        #     "name",
-        # ]
 
 
 class ParamAttr(_ParamAttrDataclass, Generic[T]):
@@ -342,7 +288,7 @@ class ParamAttr(_ParamAttrDataclass, Generic[T]):
     ROLE_UNSET = "ROLE_UNSET"
     ROLE_ARGUMENT = "ROLE_ARGUMENT"
 
-    _type: typing.Type[T] = None
+    _type = None
     role = ROLE_UNSET
 
     # keyword argument types and default values
@@ -601,16 +547,16 @@ class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
     default: T = Undefined
 
-    @typing.overload
-    def __init__(self, *, default: Union[T, None] = Undefined, allow_none:bool=True, **kws): ...
-    @typing.overload
-    def __init__(self, *, default: T = Undefined, allow_none:bool=False, **kws): ...
-    def __init__(self, *, default: T = Undefined, **kws):
-        # default _must_ be keyword-only in order to support static type checking
-        super().__init__(**kws)
+    # @typing.overload
+    # def __init__(self, *, default: Union[T, None] = Undefined, allow_none:bool=True, **kws): ...
+    # @typing.overload
+    # def __init__(self, *, default: T = Undefined, allow_none:bool=False, **kws): ...
+    # def __init__(self, *, default: T = Undefined, **kws):
+    #     # default _must_ be keyword-only in order to support static type checking
+    #     super().__init__(**kws)
 
-        if default is not Undefined:
-            self.default = default
+    #     if default is not Undefined:
+    #         self.default = default
 
     @util.hide_in_traceback
     def __get__(self: Value[T], owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None) -> T:
@@ -793,9 +739,8 @@ class _MethodDataClass(OwnerAccessAttr[T]):
     def __new__(cls: Type[typing.Self], key: typing.Any, **arguments) -> Type[typing.Self][T, _base_typing.TKeyedMethodCallable[T]]: ...
     @typing.overload
     def __new__(cls: Type[typing.Self], key: type(Undefined), **arguments) -> Type[typing.Self][T, _base_typing.TDecoratorCallable[T]]: ...
-    def __new__(cls, **arguments):
-        return super().__new__(cls, **arguments)
 
+    __new__ = OwnerAccessAttr.__new__
 
 class Method(_MethodDataClass[T]):
     role = ParamAttr.ROLE_METHOD
@@ -1610,8 +1555,13 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 class TransformMixIn(DependentParamAttr):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber """
 
-    _forward: Any = lambda x, y: x
-    _reverse: Any = lambda x, y: x
+    @staticmethod
+    def _forward(x, y):
+        return x
+    
+    @staticmethod
+    def _reverse(x, y):
+        return x
 
     def __init_owner_instance__(self, owner):
         super().__init_owner_instance__(owner)

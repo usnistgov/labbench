@@ -34,8 +34,6 @@ from functools import wraps
 import inspect
 import sys
 import traceback
-from warnings import warn
-from typing import Union
 from typing_extensions import dataclass_transform
 
 from . import util
@@ -43,15 +41,12 @@ from . import paramattr as param
 
 from .paramattr._bases import (
     HasParamAttrs,
-    HasParamAttrsMeta,
     Undefined,
     BoundedNumber,
-    observe,
-    unobserve,
     hold_attr_notifications,
 )
 
-__all__ = ["Device", "list_devices", "property", "value", "trait_info"]
+__all__ = ["Device", "list_devices", "property", "trait_info"]
 
 
 def trace_methods(cls, name, until_cls=None):
@@ -75,7 +70,7 @@ def trace_methods(cls, name, until_cls=None):
 
 def list_devices(depth=1):
     """Look for Device instances, and their names, in the calling
-    code context (depth == 1) or its callers (if depth in (2,3,...)).
+    code context (depth == 1), its caller (depth == 2), and so on.
     Checks locals() in that context first.
     If no Device instances are found there, search the first
     argument of the first function argument, in case this is

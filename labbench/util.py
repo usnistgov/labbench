@@ -41,7 +41,8 @@ from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
-from typing import Callable, Dict, Any
+from typing import Callable, Dict
+from typing_extensions import TypeVar, ParamSpec
 from warnings import simplefilter
 
 import coloredlogs
@@ -195,7 +196,6 @@ class Ownable:
     _logger = logger
 
     def __init__(self):
-        print('ownable init ', self)
         self._logger = logging.LoggerAdapter(
             logger.logger,
             extra=logger_metadata(self),
@@ -264,12 +264,23 @@ sys._debug_tb = False
 
 TRACEBACK_HIDE_TAG = "🦙 hide from traceback 🦙"
 
-from typing_extensions import TypeVar, ParamSpec
-
 T = TypeVar('T')
 P = ParamSpec('P')
 
+
 def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
+    """decorates a method or function to hide it from tracebacks.
+
+    The intent is to remove clutter in the middle of deep stacks in object call stacks.
+
+    To disable this behavior in all methods, call `force_full_traceback(True)`.
+
+    Args:
+        func: The function to skip in 
+
+    Returns:
+        Callable[P, T]: _description_
+    """
     def adjust(f: Callable[P, T]) -> None:
         code_obj = f.__code__
         f.__code__ = f.__code__.replace(co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,))
@@ -285,9 +296,14 @@ def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
     return func
 
 
-def _force_full_traceback(force: bool):
+def force_full_traceback(force: bool) -> None:
+    """configure whether to disable traceback hiding for internal API calls inside labbench"""
     sys._debug_tb = force
 
+def _force_full_traceback(force: bool) -> None:
+    """configure whether to disable traceback hiding for internal API calls inside labbench"""
+    logger.warning('_force_full_traceback has been deprecated - use force_full_traceback instead')
+    force_full_traceback(True)
 
 class _filtered_exc_info:
     """a monkeypatch for sys.exc_info that removes functions from tracebacks
@@ -882,9 +898,7 @@ def enter_or_call(flexible_caller, objs, kws):
     params = dict(catch=False, nones=False, traceback_delay=False, flatten=True, name=None)
 
     def merge_inputs(dicts: list, candidates: list):
-        """Merge nested returns and check for return data key conflicts in
-        the callable
-        """
+        """merges nested returns and check for data key conflicts"""
         ret = {}
         for name, d in dicts:
             common = set(ret.keys()).difference(d.keys())

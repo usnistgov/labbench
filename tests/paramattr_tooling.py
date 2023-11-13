@@ -17,7 +17,7 @@ class TestParamAttr(unittest.TestCase):
         attr_def = getattr(type(device), attr_name)
 
         if value_in is lb.Undefined:
-            value_in = device.LOOP_TEST_VALUES[attr_def.type]
+            value_in = device.LOOP_TEST_VALUES[attr_def._type]
 
         self.set_param(device, attr_name, value_in, arguments)
         value_out = self.get_param(device, attr_name, arguments)
@@ -69,7 +69,6 @@ class TestParamAttr(unittest.TestCase):
                     msg=f"{test_name} - callback notification count"
                 )
             else:
-                print(result['notifications'])
                 self.assertEqual(
                     len(result['notifications']),
                     2,

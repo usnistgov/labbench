@@ -544,18 +544,13 @@ class ParamAttr(_ParamAttrDataclass, Generic[T]):
 
 class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
-    default: T = Undefined
+    default: T = None
 
-    # @typing.overload
-    # def __init__(self, *, default: Union[T, None] = Undefined, allow_none:bool=True, **kws): ...
-    # @typing.overload
-    # def __init__(self, *, default: T = Undefined, allow_none:bool=False, **kws): ...
-    # def __init__(self, *, default: T = Undefined, **kws):
-    #     # default _must_ be keyword-only in order to support static type checking
-    #     super().__init__(**kws)
+    def __init__(self, **kws):
+        super().__init__(**kws)
 
-    #     if default is not Undefined:
-    #         self.default = default
+        if self.default is None and not self.allow_none:
+            raise ValueError("set allow_none=True or set an explicit default value")
 
     @util.hide_in_traceback
     def __get__(self: Value[T], owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None) -> T:
@@ -594,12 +589,16 @@ class Value(ParamAttr[T]):
                 f"{self.__repr__(owner_inst=owner)} does not support get operations"
             )
 
-        return owner.__get_value__(self.name)
+        need_notify = (self.name not in owner._attr_store.cache)
+        value = owner._attr_store.cache.setdefault(self.name, self.default)
+        if need_notify:
+            owner.__notify__(self.name, value, "get", cache=self.cache)
+        return value
 
     @util.hide_in_traceback
     def set_in_owner(self, owner: HasParamAttrs, value: T, arguments: typing.Dict[str, Any] = {}):
         value = self._prepare_set_value(owner, value, arguments)
-        owner.__set_value__(self.name, value)
+        owner._attr_store.cache[self.name] = value
         owner.__notify__(self.name, value, "set", cache=self.cache)
 
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
@@ -965,8 +964,8 @@ class HasParamAttrsInstInfo:
         for name, attr in owner._attr_defs.attrs.items():
             attr.__init_owner_instance__(self)
 
-            if isinstance(attr, Value):
-                self.cache[name] = attr.default
+            # if isinstance(attr, Value):
+            #     self.cache[name] = attr.default
 
 
 def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.Dict[str, ParamAttr]:
@@ -1678,7 +1677,6 @@ class TransformMixIn(DependentParamAttr):
 class BoundedNumber(ParamAttr[T]):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
 
-    allow_none: bool = True
     min: T = None
     max: T = None
 

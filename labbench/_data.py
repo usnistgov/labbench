@@ -83,7 +83,7 @@ class MungerBase(core.Device):
 
     """
 
-    resource: Path = param.value.Path(help="base directory for all data")
+    resource: Path = param.value.Path(allow_none=True, help="base directory for all data")
     text_relational_min: int = param.value.int(
         default=1024,
         min=0,
@@ -1352,7 +1352,7 @@ class MungeToHDF(Device):
 
     """
 
-    resource: Path = param.value.Path(help="hdf file location")
+    resource: Path = param.value.Path(allow_none=True, help="hdf file location")
     key_fmt: str = param.value.str(
         default="{id} {host_time}",
         help="format for linked data in the root database (keyed on column)",

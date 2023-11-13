@@ -24,12 +24,17 @@ class TestParamAttr(unittest.TestCase):
 
         backend_key = device.backend.get_backend_key(device, attr_def, arguments)
 
+        notifications = [
+            n for n in device.backend.notifications
+            if n['name'] == attr_name
+        ]
+
         return {
             'value_in': value_in,
             'value_out': value_out, 
             'get_count': device.backend.get_count[backend_key],
             'set_count': device.backend.set_count[backend_key],
-            'notifications': device.backend.notifications
+            'notifications': notifications
         }
 
     def test_instantiate(self):
@@ -51,6 +56,7 @@ class TestParamAttr(unittest.TestCase):
 
         for attr_name, attr_def in attrs.items():
             test_name = f'{self.role} "{attr_name}"'
+            has_reduced_access_count = attr_def.cache or attr_def.role == attr_def.ROLE_VALUE
 
             device.backend.clear_counts()
 
@@ -62,27 +68,27 @@ class TestParamAttr(unittest.TestCase):
                 msg=f"{test_name} - set-get input and output values",
             )
 
-            if attr_def.cache:
-                self.assertEqual(
-                    len(result['notifications']),
-                    1,
-                    msg=f"{test_name} - callback notification count"
-                )
-            else:
-                self.assertEqual(
-                    len(result['notifications']),
-                    2,
-                    msg=f"{test_name} - callback notification count"
-                )
-
-
             self.assertEqual(
-                result['notifications'][0]['old'],
-                lb.Undefined,
-                msg=f"{test_name} - callback notification prior value for 'set'"
+                len(result['notifications']),
+                1 if has_reduced_access_count else 2,
+                msg=f"{test_name} - callback notification count"
             )
 
-            if not attr_def.cache:
+            if attr_def.role == attr_def.ROLE_VALUE:
+                if len(result['notifications']) > 1:
+                    self.assertEqual(
+                        result['notifications'][0]['old'],
+                        attr_def.default,
+                        msg=f"{test_name} - callback notification prior value for 'set'"
+                    )
+            else:
+                self.assertEqual(
+                    result['notifications'][0]['old'],
+                    lb.Undefined,
+                    msg=f"{test_name} - callback notification prior value for 'set'"
+                )
+
+            if not attr_def.cache and len(result['notifications']) > 1:
                 self.assertEqual(
                     result['notifications'][1]['old'],
                     result['value_in'],
@@ -92,12 +98,12 @@ class TestParamAttr(unittest.TestCase):
             # make sure there weren't any unecessary extra 'get' operations
             self.assertEqual(
                 result['get_count'],
-                0 if attr_def.cache else 1,
+                0 if has_reduced_access_count else 1,
                 msg=f'{test_name} - "get" notification count',
             )
             self.assertEqual(
                 result['set_count'],
-                1,
+                0 if has_reduced_access_count else 1,
                 msg=f'{test_name} - "set" notification count',
             )
 

@@ -46,8 +46,6 @@ from .paramattr._bases import (
     hold_attr_notifications,
 )
 
-__all__ = ["Device", "list_devices", "property", "trait_info"]
-
 
 def trace_methods(cls, name, until_cls=None):
     """Look for a method called `name` in cls and all of its parent classes."""

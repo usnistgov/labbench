@@ -39,7 +39,8 @@ dependencies = [
     "comtypes; sys_platform == 'win32'",
     "numpy>=1.19",
     "h5py>=3",
-    "pip"
+    "pip",
+    "pyvisa-sim>=0.5.1",
 ]
 
 [project.optional-dependencies]
@@ -67,24 +68,26 @@ write_template = "__version__ = '{}'"
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "black[jupyter]",
+    # python kernel bells and whistles
+    "ipykernel",
+    "pip",
     "ipython",
+    "ipywidgets",
+    # linting
+    "black[jupyter]",    
     "flake8",
+    # introspection
     "ast_decompiler",
     "mypy",
+    # testing
     "pytest",
     "pytest-cov",
+    # documentation
     "sphinx>=7",
-    "ipywidgets",
     "twine",
     "toml",
     "jupytext>=1.6.0",
-    "ipykernel",
-    "pip",
     "myst-nb @ git+https://github.com/executablebooks/MyST-NB@master",
-    "pyvisa-sim>=0.5.1",
-    "attrs>=23.1.0",
-    "ruff>=0.1.5",
 ]
 
 [tool.black]

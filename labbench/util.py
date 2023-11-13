@@ -77,6 +77,7 @@ __all__ = [  # "misc"
     # traceback scrubbing
     "hide_in_traceback",
     "_force_full_traceback",
+    "force_full_traceback",
     # helper objects
     "Ownable",
 ]

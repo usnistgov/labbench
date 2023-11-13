@@ -52,7 +52,6 @@ except RuntimeError:
     import pandas as pd
 
 
-
 class no_cast_argument:
     """duck-typed stand-in for an argument of arbitrary type"""
 

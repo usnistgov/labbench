@@ -28,8 +28,6 @@
 
 from .util import (
     Call,
-    _force_full_traceback,
-    force_full_traceback,
     concurrently,
     logger,
     retry,
@@ -41,9 +39,10 @@ from .util import (
     until_timeout,
 )
 
-force_full_traceback(True)
+from . import util
 
-from . import util, paramattr
+util.force_full_traceback(True)
+
 
 from .paramattr import Undefined, adjusted, observe, unobserve
 
@@ -82,4 +81,10 @@ for _obj in dict(locals()).values():
         _obj.__module__ = "labbench"
 del _obj
 
-force_full_traceback(False)
+util.force_full_traceback(False)
+
+
+def force_full_traceback(force: bool) -> None:
+    """configure whether to disable traceback hiding for internal API calls inside labbench"""
+    logger.warning('labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead')
+    util.force_full_traceback(True)

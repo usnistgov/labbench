@@ -10,9 +10,8 @@ if __name__ == '__main__':
 
     # print the low-level actions of the code
     lb.show_messages("debug")
-    lb.util._force_full_traceback(True)
+    lb.util.force_full_traceback(True)
 
     with inst:
         inst.resolution_bandwidth(10e3, channel=2)
         print(repr(inst.resolution_bandwidth(channel=1)))
-

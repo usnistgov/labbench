@@ -1,5 +1,9 @@
 import unittest
 import labbench as lb
+from labbench import paramattr as param
+
+def has_steps(attr: param.ParamAttr):
+    return getattr(attr, 'step', None) is not None    
 
 class TestParamAttr(unittest.TestCase):
     # set this in a subclass
@@ -51,7 +55,7 @@ class TestParamAttr(unittest.TestCase):
         attrs = {
             name: attr
             for name, attr in device.get_attr_defs().items()
-            if attr.role == self.role and attr.sets and attr.gets and not hasattr(lb.Device, name)
+            if attr.role == self.role and attr.sets and attr.gets and not hasattr(lb.Device, name) and not has_steps(attr)
         }
 
         for attr_name, attr_def in attrs.items():
@@ -140,5 +144,3 @@ class TestParamAttr(unittest.TestCase):
     #                     msg=msg,
     #                 )
     #                 self.assertEqual(m.get_get_count(trait_name), 1, msg=msg)
-
-lb.VISADevice

@@ -8,7 +8,7 @@ lb._force_full_traceback(True)
 
 
 @store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
-class StoreTestDevice(store_backend.ParamAttrTestDevice):
+class StoreTestDevice(store_backend.TestStoreDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
         int: 5,

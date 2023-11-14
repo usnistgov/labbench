@@ -84,7 +84,7 @@ del _obj
 util.force_full_traceback(False)
 
 
-def force_full_traceback(force: bool) -> None:
+def _force_full_traceback(force: bool) -> None:
     """configure whether to disable traceback hiding for internal API calls inside labbench"""
     logger.warning('labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead')
     util.force_full_traceback(True)

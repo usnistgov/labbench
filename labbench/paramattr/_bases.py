@@ -544,13 +544,13 @@ class ParamAttr(_ParamAttrDataclass, Generic[T]):
 
 class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
-    default: T = None
+    default: T = Undefined
 
-    def __init__(self, **kws):
+    def __init__(self, default=Undefined, **kws):
         super().__init__(**kws)
 
-        if self.default is None and not self.allow_none:
-            raise ValueError("set allow_none=True or set an explicit default value")
+        if self.default is None and not (self.allow_none or None in self.only):
+            raise TypeError("set allow_none=True or set an explicit default value")
 
     @util.hide_in_traceback
     def __get__(self: Value[T], owner: HasParamAttrs, owner_cls: Union[None, Type[HasParamAttrs]] = None) -> T:

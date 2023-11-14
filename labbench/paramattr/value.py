@@ -24,57 +24,58 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
+
 from . import _types
 from ._bases import Value
-import typing as _typing
 
 
 class any(Value, _types.Any):
-    default: _typing.Any = None
+    """defines a value attribute that validates any python object"""
 
 
 class bool(Value, _types.Bool):
-    default: _typing.Union[bool,None] = None
+    """defines a value attribute that casts to python builtin bool"""
 
 
 class float(Value, _types.Float):
-    default: _typing.Union[float,None] = None
+    """defines a value attribute that casts to python builtin float"""
 
 
 class int(Value, _types.Int):
-    default: _typing.Union[int,None] = None
+    """defines a value attribute that casts to python builtin int"""
 
 
 class complex(Value, _types.Complex):
-    default: _typing.Union[_types.Complex._type,None] = None
+    """defines a value attribute that casts to python complex"""
 
 
 class str(Value, _types.Unicode):
-    default: _typing.Union[str,None] = ""
+    """defines a value attribute that casts to python builtin str"""
 
 
 class bytes(Value, _types.Bytes):
-    default: _typing.Union[bytes,None] = b""
+    """defines a value attribute that casts to python builtin bytes"""
 
 
 class list(Value, _types.List):
-    default: _typing.Union[list,None] = None
+    """defines a value attribute that casts to python builtin list"""
 
 
 class tuple(Value, _types.Tuple):
-    default: _typing.Union[tuple,None] = None
+    """defines a value attribute that casts to python builtin tuple"""
 
 
 class dict(Value, _types.Dict):
-    default: _typing.Union[dict,None] = None
+    """defines a value attribute that casts to python builtin dict"""
 
 
 class Path(Value, _types.Path):
-    default: _typing.Union[_types.Path._type,None] = None
+    """defines a value attribute that casts to python pathlib.Path"""
 
 
 class NetworkAddress(Value, _types.NetworkAddress):
-    default: _typing.Union[_types.NetworkAddress._type,None] = None
+    """defines a value attribute that casts to a network address"""
+
 
 # used to set up hints for static type checking
 _ALL_TYPES = any, bool, float, int, complex, str, bytes, list, tuple, dict, Path, NetworkAddress

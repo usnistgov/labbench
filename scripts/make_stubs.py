@@ -6,8 +6,8 @@ import importlib
 from pathlib import Path
 
 from labbench import Device, Rack, util
-from labbench.paramattr._bases import ParamAttr, Undefined, Any, ThisType, get_class_attrs, list_value_attrs, list_method_attrs, list_property_attrs
-util._force_full_traceback(True)
+from labbench.paramattr._bases import ParamAttr, Undefined, Any, T, get_class_attrs, list_value_attrs, list_method_attrs, list_property_attrs
+util.force_full_traceback(True)
 
 VALID_PARENTS = Device, Rack, ParamAttr
 
@@ -134,7 +134,7 @@ def update_stubs(path, mod_name, sub_name):
             defaults = [getattr(cls, name) for name in annots.keys()]
             defaults = [None if d is Undefined else d for d in defaults]
             annotations = {
-                name: cls._type if type_ is ThisType else type_
+                name: cls._type if type_ is T else type_
                 for name, type_ in annots.items()
             }
             annotations = {

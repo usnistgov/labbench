@@ -17,11 +17,13 @@ class Any(_bases.ParamAttr[typing.Any], type=object):
     def to_pythonic(self, value):
         return value
 
+
 class Int(_bases.BoundedNumber[int], type=int):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
-    
+
     min: typing.Union[int, None] = None
     max: typing.Union[int, None] = None
+
 
 class Float(_bases.BoundedNumber[float], type=float):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
@@ -105,7 +107,9 @@ class Iterable(_bases.ParamAttr):
     @util.hide_in_traceback
     def validate(self, value, owner=None):
         if not hasattr(value, "__iter__"):
-            raise ValueError(f"'{type(self).__qualname__}' attributes accept only iterable values")
+            raise ValueError(
+                f"'{type(self).__qualname__}' attributes accept only iterable values"
+            )
         return value
 
 
@@ -156,7 +160,9 @@ class NetworkAddress(Unicode):
                 raise ValueError(f'port {port} in "{value}" is invalid')
 
             if not self.accept_port:
-                raise ValueError(f"{self} does not accept a port number (accept_port=False)")
+                raise ValueError(
+                    f"{self} does not accept a port number (accept_port=False)"
+                )
 
         for validate in _val.ipv4, _val.ipv6, _val.domain, _val.slug:
             if validate(host):

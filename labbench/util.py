@@ -86,7 +86,9 @@ import_t0 = time.perf_counter()
 
 logger = logging.LoggerAdapter(
     logging.getLogger("labbench"),
-    dict(label="labbench"),  # description of origin within labbench (for screen logs only)
+    dict(
+        label="labbench"
+    ),  # description of origin within labbench (for screen logs only)
 )
 
 _LOG_LEVEL_NAMES = {
@@ -129,7 +131,11 @@ def show_messages(minimum_level, colors=True):
             f"message level must be a flag {tuple(err_map)} or an integer, not {repr(minimum_level)}"
         )
 
-    level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
+    level = (
+        err_map[minimum_level.lower()]
+        if isinstance(minimum_level, str)
+        else minimum_level
+    )
 
     logger.setLevel(level)
 
@@ -150,7 +156,9 @@ def show_messages(minimum_level, colors=True):
             coloredlogs.DEFAULT_FIELD_STYLES,
             label=dict(color="blue"),
         )
-        formatter = coloredlogs.ColoredFormatter(log_fmt, style="{", field_styles=styles)
+        formatter = coloredlogs.ColoredFormatter(
+            log_fmt, style="{", field_styles=styles
+        )
     else:
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
         formatter = logging.Formatter(log_fmt, style="{")
@@ -265,8 +273,8 @@ sys._debug_tb = False
 
 TRACEBACK_HIDE_TAG = "🦙 hide from traceback 🦙"
 
-T = TypeVar('T')
-P = ParamSpec('P')
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
 def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
@@ -277,14 +285,17 @@ def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
     To disable this behavior in all methods, call `force_full_traceback(True)`.
 
     Args:
-        func: The function to skip in 
+        func: The function to skip in
 
     Returns:
         Callable[P, T]: _description_
     """
+
     def adjust(f: Callable[P, T]) -> None:
         code_obj = f.__code__
-        f.__code__ = f.__code__.replace(co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,))
+        f.__code__ = f.__code__.replace(
+            co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,)
+        )
 
     if not callable(func):
         raise TypeError(f"{func} is not callable")
@@ -300,6 +311,7 @@ def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
 def force_full_traceback(force: bool) -> None:
     """configure whether to disable traceback hiding for internal API calls inside labbench"""
     sys._debug_tb = force
+
 
 class _filtered_exc_info:
     """a monkeypatch for sys.exc_info that removes functions from tracebacks
@@ -399,7 +411,9 @@ def check_hanging_thread():
 
 
 @hide_in_traceback
-def retry(exception_or_exceptions, tries=4, delay=0, backoff=0, exception_func=lambda: None):
+def retry(
+    exception_or_exceptions, tries=4, delay=0, backoff=0, exception_func=lambda: None
+):
     """This decorator causes the function call to repeat, suppressing specified exception(s), until a
     maximum number of retries has been attempted.
     - If the function raises the exception the specified number of times, the underlying exception is raised.
@@ -648,7 +662,9 @@ def stopwatch(desc: str = "", threshold: float = 0, logger_level="info"):
             try:
                 level = _LOG_LEVEL_NAMES[logger_level]
             except KeyError:
-                raise ValueError(f"logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}")
+                raise ValueError(
+                    f"logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}"
+                )
 
             logger.log(level, msg.lstrip())
 
@@ -675,7 +691,8 @@ class Call(object):
 
     def __repr__(self):
         args = ",".join(
-            [repr(v) for v in self.args] + [(k + "=" + repr(v)) for k, v in self.kws.items()]
+            [repr(v) for v in self.args]
+            + [(k + "=" + repr(v)) for k, v in self.kws.items()]
         )
         qualname = self.func.__module__ + "." + self.func.__qualname__
         return f"Call({qualname},{args})"
@@ -749,7 +766,9 @@ class MultipleContexts:
     __enter__ was called.
     """
 
-    def __init__(self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list):
+    def __init__(
+        self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list
+    ):
         """
             call_handler: one of `sequentially_call` or `concurrently_call`
             params: a dictionary of operating parameters (see `concurrently`)
@@ -815,7 +834,9 @@ class MultipleContexts:
 
     @hide_in_traceback
     def __exit__(self, *exc):
-        with stopwatch(f"{self.params['name']} - context exit", 0.5, logger_level="debug"):
+        with stopwatch(
+            f"{self.params['name']} - context exit", 0.5, logger_level="debug"
+        ):
             for name in tuple(self._entered.keys())[::-1]:
                 context = self._entered[name]
 
@@ -891,7 +912,9 @@ def enter_or_call(flexible_caller, objs, kws):
 
     # Treat keyword arguments passed as callables should be left as callables;
     # otherwise, override the parameter
-    params = dict(catch=False, nones=False, traceback_delay=False, flatten=True, name=None)
+    params = dict(
+        catch=False, nones=False, traceback_delay=False, flatten=True, name=None
+    )
 
     def merge_inputs(dicts: list, candidates: list):
         """merges nested returns and check for data key conflicts"""
@@ -952,7 +975,9 @@ def enter_or_call(flexible_caller, objs, kws):
             continue
 
         thisone = RUNNERS[
-            (callable(obj) and not isinstance(obj, _GeneratorContextManager)),  # Is it callable?
+            (
+                callable(obj) and not isinstance(obj, _GeneratorContextManager)
+            ),  # Is it callable?
             (
                 hasattr(obj, "__enter__") or isinstance(obj, _GeneratorContextManager)
             ),  # Is it a context manager?
@@ -1021,7 +1046,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         concurrent execution or not.
         """
         func = func_in.func if isinstance(func_in, Call) else func_in
-        if hasattr(func, "__self__") and not getattr(func.__self__, "concurrency", True):
+        if hasattr(func, "__self__") and not getattr(
+            func.__self__, "concurrency", True
+        ):
             # is this a Device that does not support concurrency?
             raise ConcurrentException(f"{func.__self__} does not support concurrency")
         return func_in
@@ -1089,7 +1116,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 try:
                     traceback.print_exception(*tb)
                 except BaseException as e:
-                    sys.stderr.write("\nthread exception, but failed to print exception")
+                    sys.stderr.write(
+                        "\nthread exception, but failed to print exception"
+                    )
                     sys.stderr.write(str(e))
                     sys.stderr.write("\n")
         else:
@@ -1358,7 +1387,9 @@ class ThreadSandbox(object):
         # Start the thread and block until it's ready
         self._requestq = Queue(1)
         ready = Queue(1)
-        self.__thread = Thread(target=self.__worker, args=(factory, ready, should_sandbox_func))
+        self.__thread = Thread(
+            target=self.__worker, args=(factory, ready, should_sandbox_func)
+        )
         self.__thread.start()
         exc = ready.get(True)
         if exc is not None:
@@ -1588,6 +1619,9 @@ def accessed_attributes(method):
     self_name = func.args.args[0].arg
 
     def isselfattr(node):
-        return isinstance(node, ast.Attribute) and getattr(node.value, "id", None) == self_name
+        return (
+            isinstance(node, ast.Attribute)
+            and getattr(node.value, "id", None) == self_name
+        )
 
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})

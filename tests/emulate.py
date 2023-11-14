@@ -30,8 +30,12 @@ class EmulatedVISADevice(lb.Device):
     """Act as a VISA device without dispatching any visa keys"""
 
     # Settings
-    read_termination = param.value.str("\n", help="end-of-receive termination character")
-    write_termination = param.value.str("\n", help="end-of-transmit termination character")
+    read_termination = param.value.str(
+        "\n", help="end-of-receive termination character"
+    )
+    write_termination = param.value.str(
+        "\n", help="end-of-transmit termination character"
+    )
 
     # States
     @param.property.str(key="*IDN", sets=False, cache=True)

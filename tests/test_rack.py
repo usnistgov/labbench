@@ -47,7 +47,9 @@ class LaggyInstrument(EmulatedVISADevice):
     # Connection and driver value traits
     delay = param.value.float(0, min=0, help="connection time")
     fetch_time = param.value.float(0, min=0, help="fetch time")
-    fail_disconnect = param.value.bool(False, help="True to raise DivideByZero on disconnect")
+    fail_disconnect = param.value.bool(
+        False, help="True to raise DivideByZero on disconnect"
+    )
 
     variable_setting = param.value.int(0)
 
@@ -152,7 +154,9 @@ class MyRack(lb.Rack):
         ),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
-        force_relational=["host_log"],  # Data in these columns will always be relational
+        force_relational=[
+            "host_log"
+        ],  # Data in these columns will always be relational
         dirname_fmt="{id} {host_time}",  # Format string that generates relational data (keyed on data column)
         nonscalar_file_type="csv",  # Default format of numerical data, when possible
         metadata_dirname="metadata",  # metadata will be stored in this subdirectory

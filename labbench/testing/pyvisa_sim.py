@@ -4,7 +4,8 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any
 
-__all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
+__all__ = ["PowerSensor", "Oscilloscope", "SignalGenerator"]
+
 
 @param.visa_keying(
     # the default SCPI query and write formats
@@ -23,7 +24,9 @@ class PowerSensor(VISADevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = param.property.bool(key="INIT:CONT", help="trigger continuously if True")
+    initiate_continuous = param.property.bool(
+        key="INIT:CONT", help="trigger continuously if True"
+    )
     trigger_count = param.property.int(
         key="TRIG:COUN", min=1, max=200, help="acquisition count", label="samples"
     )
@@ -104,7 +107,9 @@ class SpectrumAnalyzer(VISADevice):
 @param.visa_keying(remap={True: "YES", False: "NO"})
 @param.adjusted("identity_pattern", default=r"Signal generator model \#1234")
 class SignalGenerator(VISADevice):
-    output_enabled = param.property.bool(key="OUT:ENABL", help="when True, output an RF tone")
+    output_enabled = param.property.bool(
+        key="OUT:ENABL", help="when True, output an RF tone"
+    )
     center_frequency = param.property.float(
         key="SENS:FREQ",
         min=10e6,

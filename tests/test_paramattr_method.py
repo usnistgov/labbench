@@ -7,7 +7,9 @@ import paramattr_tooling
 lb._force_full_traceback(True)
 
 
-@store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
+@store_backend.key_store_adapter(
+    defaults={"str_or_none": None, "str_cached": "cached string"}
+)
 class StoreTestDevice(store_backend.TestStoreDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
@@ -15,12 +17,10 @@ class StoreTestDevice(store_backend.TestStoreDevice):
         float: 3.14,
         str: "hi",
         bool: True,
-        object: None
+        object: None,
     }
 
-    ARGUMENTS = {
-        'channel': [1, 2]
-    }
+    ARGUMENTS = {"channel": [1, 2]}
 
     # test both getting and setting
     bool_keyed = param.method.bool(key="bool_keyed")
@@ -36,7 +36,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
 
     str_or_none = param.method.str(key="str_or_none", allow_none=True)
     str_cached = param.method.str(key="str_cached", cache=True)
-    any = param.method.any(key='any', allow_none=True)
+    any = param.method.any(key="any", allow_none=True)
 
 
 class TestMethod(paramattr_tooling.TestParamAttr):
@@ -46,7 +46,7 @@ class TestMethod(paramattr_tooling.TestParamAttr):
     def set_param(self, device, attr_name, value, arguments={}):
         attr_def = getattr(type(device), attr_name)
         if len(attr_def.get_key_arguments(type(device))) > 0:
-            raise ValueError('argument tests not implemented yet')
+            raise ValueError("argument tests not implemented yet")
 
         param_method = getattr(device, attr_name)
         param_method(value, **arguments)
@@ -54,7 +54,7 @@ class TestMethod(paramattr_tooling.TestParamAttr):
     def get_param(self, device, attr_name, arguments={}):
         attr_def = getattr(type(device), attr_name)
         if len(attr_def.get_key_arguments(type(device))) > 0:
-            raise ValueError('argument tests not implemented yet')
+            raise ValueError("argument tests not implemented yet")
 
         param_method = getattr(device, attr_name)
         return param_method(**arguments)
@@ -64,19 +64,20 @@ class TestMethod(paramattr_tooling.TestParamAttr):
         device.open()
 
         # repeat to set->get to ensure proper caching
-        self.eval_set_then_get(device, 'str_cached')
-        result = self.eval_set_then_get(device, 'str_cached')
+        self.eval_set_then_get(device, "str_cached")
+        result = self.eval_set_then_get(device, "str_cached")
 
         self.assertEqual(
-            result['get_count'],
+            result["get_count"],
             0,
             msg=f'cache test - second "get" operation count',
         )
         self.assertEqual(
-            result['set_count'],
+            result["set_count"],
             2,
             msg=f'cache test - second "get" operation count',
         )
+
 
 # class TestProperty:
 #     # set this in a subclass
@@ -169,10 +170,13 @@ class TestMethod(paramattr_tooling.TestParamAttr):
 #     TestDevice = MockDirectProperty
 
 
-param.register_key_argument('channel', param.argument.int(min=1, max=4))
+param.register_key_argument("channel", param.argument.int(min=1, max=4))
+
+
 class SimpleDevice(lb.VISADevice):
     v: int = param.value.int(default=4)
-    m = param.method.float(key='ch{channel}:bw')
+    m = param.method.float(key="ch{channel}:bw")
+
 
 if __name__ == "__main__":
     lb.visa_default_resource_manager(pyvisa_sim_resource)

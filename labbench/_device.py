@@ -152,9 +152,12 @@ def log_trait_activity(msg):
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
-@dataclass_transform(kw_only_default=True, eq_default=False, field_specifiers=param.value._ALL_TYPES)
+@dataclass_transform(
+    kw_only_default=True, eq_default=False, field_specifiers=param.value._ALL_TYPES
+)
 class _DeviceDataClass(HasParamAttrs, util.Ownable):
     """This (particularly the __init__) needed to be split from Device to appease static type checkers"""
+
     def __init__(self, resource=Undefined, **values):
         """Update default values with these arguments on instantiation."""
 
@@ -251,8 +254,12 @@ class Device(_DeviceDataClass):
 
     """
 
-    resource: str = param.value.str(default="", allow_none=True, cache=True, help="device address or URI")
-    concurrency = param.value.bool(default=True, sets=False, help="True if the device backend supports threading")
+    resource: str = param.value.str(
+        default="", allow_none=True, cache=True, help="device address or URI"
+    )
+    concurrency = param.value.bool(
+        default=True, sets=False, help="True if the device backend supports threading"
+    )
 
     """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
@@ -362,7 +369,9 @@ class Device(_DeviceDataClass):
             self._logger.debug("closed")
         finally:
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
+                ex = util.ConcurrentException(
+                    f"multiple exceptions while closing {self}"
+                )
                 ex.thread_exceptions = all_ex
                 raise ex
 

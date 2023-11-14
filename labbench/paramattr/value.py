@@ -78,4 +78,17 @@ class NetworkAddress(Value, _types.NetworkAddress):
 
 
 # used to set up hints for static type checking
-_ALL_TYPES = any, bool, float, int, complex, str, bytes, list, tuple, dict, Path, NetworkAddress
+_ALL_TYPES = (
+    any,
+    bool,
+    float,
+    int,
+    complex,
+    str,
+    bytes,
+    list,
+    tuple,
+    dict,
+    Path,
+    NetworkAddress,
+)

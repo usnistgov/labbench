@@ -5,12 +5,15 @@ import labbench as lb
 from labbench.testing.store_backend import TestStoreDevice
 from labbench import paramattr as param
 
+
 class LaggyInstrument(TestStoreDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
 
     delay = param.value.float(default=0, min=0, help="connection time")
     fetch_time = param.value.float(default=0, min=0, help="fetch time")
-    fail_disconnect = param.value.bool(default=False, help="whether to raise DivideByZero on disconnect")
+    fail_disconnect = param.value.bool(
+        default=False, help="whether to raise DivideByZero on disconnect"
+    )
 
     def open(self):
         self.perf = {}
@@ -110,7 +113,9 @@ class TestConcurrency(unittest.TestCase):
         with inst1, inst2:
             self.assertEqual(inst1.isopen, True)
             self.assertEqual(inst2.isopen, True)
-            ret = lb.concurrently(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
+            ret = lb.concurrently(
+                **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
+            )
         self.assertIn(inst1.resource, ret)
         self.assertIn(inst2.resource, ret)
         self.assertEqual(ret[inst1.resource], inst1.fetch_time)
@@ -159,7 +164,9 @@ class TestConcurrency(unittest.TestCase):
         with inst1, inst2:
             self.assertEqual(inst1.isopen, True)
             self.assertEqual(inst2.isopen, True)
-            ret = lb.sequentially(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
+            ret = lb.sequentially(
+                **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
+            )
         self.assertIn(inst1.resource, ret)
         self.assertIn(inst2.resource, ret)
         self.assertEqual(ret[inst1.resource], inst1.fetch_time)
@@ -289,5 +296,5 @@ class TestConcurrency(unittest.TestCase):
 
 if __name__ == "__main__":
     lb.show_messages("warning")
-    lb.util.force_full_traceback(True)    
+    lb.util.force_full_traceback(True)
     unittest.main()

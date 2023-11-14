@@ -27,6 +27,7 @@
 from . import _types
 from ._bases import Property
 
+
 class any(Property, _types.Any):
     pass
 

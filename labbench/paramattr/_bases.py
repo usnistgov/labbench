@@ -59,10 +59,15 @@ class no_cast_argument:
     def __cast_get__(self, owner, value):
         return value
 
-class KeyAdapterBase:
+
+class KeyAdapterBase(Generic[T]):
     arguments: typing.Dict[str, ParamAttr]
 
-    def __new__(cls, /, decorated_cls: Type[HasParamAttrs] = None, **kws):
+    @typing.overload
+    def __new__(cls, /, decorated_cls: Type[T], **kws) -> Type[T]: ...
+    @typing.overload
+    def __new__(cls, /, **kws) -> KeyAdapterBase: ...
+    def __new__(cls, /, decorated_cls: Type[T] = None, **kws):
         """set up use as a class decorator"""
 
         obj = super().__new__(cls)

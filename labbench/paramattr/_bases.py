@@ -36,7 +36,6 @@ import numbers
 import typing
 from contextlib import contextmanager
 from typing_extensions import dataclass_transform
-from ._base_typing import Undefined, T
 from typing import Union, Callable, Type, Optional, Generic, Any
 
 Undefined = inspect.Parameter.empty

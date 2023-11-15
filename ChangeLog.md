@@ -5,8 +5,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.33 - unreleased]
+This is a significant API change.
+
+### 
 
 ### Changed
+- The various types of descriptors supported by Device objects are now known as parameter attributes.
+  Before, they were called traits. They are encapsulated within the `labbench.paramattr` module.
+  The definition syntax for existing is otherwise similar:
+
+  ```python
+    import labbench as lb
+    from labbench import paramattr as attr
+
+    class Device(lb.Device):
+        frequency: attr.PassIn = attr.value.float(default=5e9, min=10e6, max=6e9)
+  ```
+- Two new types of paramattr descriptors are now available: `method` and `argument`. Methods
+  correspond with callable methods in the owning class. Like `labbench.paramattr.property`
+  descriptors, these support keyed auto-generation using the `key` argument.
 - Fix an exception handling bug in `lb.sequentially`
 
 ## [0.32 - 2023-10-11]

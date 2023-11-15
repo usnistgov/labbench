@@ -41,7 +41,7 @@ from typing import List, Dict, Union
 from . import _device
 from . import _device as core
 from . import _host, _rack, util
-from . import paramattr as param
+from . import paramattr as attr
 from ._device import Device
 from ._rack import Owner
 from .paramattr import observe
@@ -63,7 +63,7 @@ except RuntimeWarning:
 
 EMPTY = inspect._empty
 
-INSPECT_SKIP_FILES = _device.__file__, param.__file__, _rack.__file__, __file__
+INSPECT_SKIP_FILES = _device.__file__, attr.__file__, _rack.__file__, __file__
 
 
 class MungerBase(core.Device):
@@ -83,25 +83,25 @@ class MungerBase(core.Device):
 
     """
 
-    resource: Path = param.value.Path(
+    resource: Path = attr.value.Path(
         allow_none=True, help="base directory for all data"
     )
-    text_relational_min: int = param.value.int(
+    text_relational_min: int = attr.value.int(
         default=1024,
         min=0,
         help="minimum size threshold that triggers storing text in a relational file",
     )
-    force_relational: list = param.value.list(
+    force_relational: list = attr.value.list(
         default=[], help="list of column names to always save as relational data"
     )
-    relational_name_fmt: str = param.value.str(
+    relational_name_fmt: str = attr.value.str(
         default="{id}",
         help="directory name format for data in each row keyed on column",
     )
-    nonscalar_file_type: str = param.value.str(
+    nonscalar_file_type: str = attr.value.str(
         default="csv", help="file format for non-scalar numerical data"
     )
-    metadata_dirname: str = param.value.str(
+    metadata_dirname: str = attr.value.str(
         default="metadata", help="subdirectory name for metadata"
     )
 
@@ -173,8 +173,8 @@ class MungerBase(core.Device):
                 # other util.Ownable instances e.g. RelationalTableLogger
                 continue
 
-            for trait_name, trait in param.get_class_attrs(owner).items():
-                if trait.role == param.Trait.ROLE_VALUE or trait.cache:
+            for trait_name, trait in attr.get_class_attrs(owner).items():
+                if trait.role == attr.Trait.ROLE_VALUE or trait.cache:
                     summary[key_func(owner_name, trait_name)] = getattr(
                         owner, trait_name
                     )
@@ -530,7 +530,7 @@ class MungeToTar(MungerBase):
 class Aggregator(util.Ownable):
     """Passive aggregation of data from Device property trait and value traits traits, and from calls to methods in Rack instances"""
 
-    PERSISTENT_TRAIT_ROLES = (param._bases.ParamAttr.ROLE_VALUE,)
+    PERSISTENT_TRAIT_ROLES = (attr._bases.ParamAttr.ROLE_VALUE,)
 
     def __init__(self):
         # registry of names to use for trait owners
@@ -571,7 +571,7 @@ class Aggregator(util.Ownable):
         if not isinstance(device, core.Device):
             return False
 
-        trait = param.get_class_attrs(device)[attr]
+        trait = attr.get_class_attrs(device)[attr]
 
         return trait.role in self.PERSISTENT_TRAIT_ROLES or trait.cache
 
@@ -1209,7 +1209,7 @@ class TabularLoggerBase(
         if self not in self.aggregator.name_map:
             self.aggregator.update_name_map({self: None})
 
-        self.observe(self.munge, never=param.get_class_attrs(self.munge))
+        self.observe(self.munge, never=attr.get_class_attrs(self.munge))
         self.observe(self.host, always=["time", "log"])
 
         # configure strings in relational data files that depend on how 'self' is
@@ -1370,8 +1370,8 @@ class MungeToHDF(Device):
 
     """
 
-    resource: Path = param.value.Path(allow_none=True, help="hdf file location")
-    key_fmt: str = param.value.str(
+    resource: Path = attr.value.Path(allow_none=True, help="hdf file location")
+    key_fmt: str = attr.value.str(
         default="{id} {host_time}",
         help="format for linked data in the root database (keyed on column)",
     )

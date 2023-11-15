@@ -55,6 +55,9 @@ except RuntimeError:
     import pandas as pd
 
 
+
+
+
 class no_cast_argument:
     """duck-typed stand-in for an argument of arbitrary type"""
 
@@ -132,26 +135,26 @@ class KeyAdapterBase(Generic[T]):
             'key adapter needs "get_key_arguments" to implement methods by "key" keyword'
         )
 
-    def method_from_key(self, owner_cls: Type[HasParamAttrs], trait: ParamAttr):
+    def method_from_key(self, owner_cls: Type[HasParamAttrs], paramattr: ParamAttr):
         """Autogenerate a parameter getter/setter method based on the message key defined in a ParamAttr method."""
 
-        if len(trait.arguments) == 0:
+        if len(paramattr.arguments) == 0:
             arg_defs = self.arguments
         else:
-            arg_defs = dict(self.arguments, **trait.arguments)
+            arg_defs = dict(self.arguments, **paramattr.arguments)
 
         kwargs_params = []
         defaults = {}
-        for name in self.get_key_arguments(trait.key):
+        for name in self.get_key_arguments(paramattr.key):
             try:
                 arg_annotation = arg_defs[name]._type
                 if arg_defs[name].default is not Undefined:
                     defaults[name] = arg_defs[name].default
             except KeyError:
                 if self.strict_arguments:
-                    trait_desc = f"{owner_cls.__qualname__}.{trait.name}"
+                    paramattr_desc = f"{owner_cls.__qualname__}.{paramattr.name}"
                     raise AttributeError(
-                        f'"{name}" keyword argument declaration missing in method "{trait_desc}"'
+                        f'"{name}" keyword argument declaration missing in method "{paramattr_desc}"'
                     )
                 else:
                     arg_annotation = Any
@@ -170,13 +173,13 @@ class KeyAdapterBase(Generic[T]):
                 "set_value",
                 default=Undefined,
                 kind=inspect.Parameter.POSITIONAL_ONLY,
-                annotation=Optional[trait._type],
+                annotation=Optional[paramattr._type],
             ),
         ]
 
         def method(
-            owner, set_value: trait._type = Undefined, /, **key_arguments
-        ) -> Union[None, trait._type]:
+            owner, set_value: paramattr._type = Undefined, /, **key_arguments
+        ) -> Union[None, paramattr._type]:
             validated_kws = {
                 # cast each keyword argument
                 k: arg_defs.get(k, no_cast_argument).__cast_get__(owner, v)
@@ -184,17 +187,17 @@ class KeyAdapterBase(Generic[T]):
             }
 
             if set_value is Undefined:
-                return trait.get_from_owner(owner, validated_kws)
+                return paramattr.get_from_owner(owner, validated_kws)
             else:
-                return trait.set_in_owner(owner, set_value, validated_kws)
+                return paramattr.set_in_owner(owner, set_value, validated_kws)
 
         method.__signature__ = inspect.Signature(
-            pos_params + kwargs_params, return_annotation=Optional[trait._type]
+            pos_params + kwargs_params, return_annotation=Optional[paramattr._type]
         )
-        method.__name__ = trait.name
+        method.__name__ = paramattr.name
         method.__module__ = f"{owner_cls.__module__}"
-        method.__qualname__ = f"{owner_cls.__qualname__}.{trait.name}"
-        method.__doc__ = trait.doc()
+        method.__qualname__ = f"{owner_cls.__qualname__}.{paramattr.name}"
+        method.__doc__ = paramattr.doc()
 
         return method
 
@@ -277,19 +280,7 @@ TCall = typing.TypeVar("TCall")
 
 
 @dataclass_transform(eq_default=False, kw_only_default=True)
-class _ParamAttrDataclass:
-    _defaults = {}
-
-    def __init__(self, **kws):
-        # apply the dataclass entries
-        self.kws = dict(kws)
-
-        # set value attributes
-        for k, v in dict(self._defaults, **kws).items():
-            setattr(self, k, v)
-
-
-class ParamAttr(_ParamAttrDataclass, Generic[T]):
+class ParamAttr(Generic[T]):
     """base class for typed descriptors in Device classes. These
     implement type checking, casting, decorators, and callbacks.
 
@@ -338,6 +329,25 @@ class ParamAttr(_ParamAttrDataclass, Generic[T]):
     allow_none: bool = False
 
     _keywords = {}
+    _defaults = {}
+    name = None
+
+    def __init__(self, **kws):
+        # apply the dataclass entries
+        self.kws = dict(kws)
+
+        public_names = {name for name in kws.keys() if not name.startswith('_')}
+        private_names = set(self.__slots__) - public_names
+        unexpected = (
+            (public_names - set(self.__annotations__)) # "public" annotated names
+            | (private_names - set(self.__slots__)) # secret "private" arguments starting with _
+        )
+        if len(unexpected) > 0:
+            raise TypeError(f'invalid keyword argument(s) "{unexpected}"')
+        
+        # set value attributes
+        for k, v in dict(self._defaults, **kws).items():
+            setattr(self, k, v)
 
     def copy(self, new_type=None, **update_kws):
         if new_type is None:
@@ -558,7 +568,7 @@ class ParamAttr(_ParamAttrDataclass, Generic[T]):
         if owner_inst is None:
             return declaration
         else:
-            return f"<{declaration} as {owner_inst}.{self.name}>"
+            return f"<{owner_inst}.{self.name} defined as {declaration}>"
 
     __str__ = __repr__
 
@@ -592,12 +602,6 @@ class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
     default: T = Undefined
 
-    def __init__(self, default=Undefined, **kws):
-        super().__init__(**kws)
-
-        if self.default is None and not (self.allow_none or None in self.only):
-            raise TypeError("set allow_none=True or set an explicit default value")
-
     @util.hide_in_traceback
     def __get__(
         self: Value[T],
@@ -617,7 +621,7 @@ class Value(ParamAttr[T]):
         # instance, and owning class is a match for what we were told in __set_name__.
         # otherwise, someone else is trying to access `self` and we
         # shouldn't get in their way.
-        if owner is None:
+        if owner is None:# or not isinstance(owner, HasParamAttrs):
             # escape an infinite recursion loop before accessing any class members
             return self
 
@@ -630,7 +634,10 @@ class Value(ParamAttr[T]):
 
     @util.hide_in_traceback
     def __set__(self, owner: HasParamAttrs, value: T):
-        return self.set_in_owner(owner, value)
+        if isinstance(owner, HasParamAttrs):
+            return self.set_in_owner(owner, value)
+        else:
+            return self
 
     def get_from_owner(
         self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}
@@ -869,8 +876,8 @@ class Method(_MethodDataClass[T]):
         if not validate:
             return tuple(params.keys())
 
-        for name, param in params.items():
-            if param.kind in (
+        for name, attr_def in params.items():
+            if attr_def.kind in (
                 inspect.Parameter.VAR_KEYWORD,
                 inspect.Parameter.VAR_POSITIONAL,
             ):
@@ -879,7 +886,7 @@ class Method(_MethodDataClass[T]):
                     f"{label}: keyword arguments must be explicit in ParamAttr methods - variable argument for '{name}' is not supported"
                 )
 
-            if _parameter_maybe_positional(param):
+            if _parameter_maybe_positional(attr_def):
                 label = f"{owner_cls.__qualname__}{self.name}"
                 if value_argument_name is None:
                     suggested = f"(self, *, {name}..."
@@ -1072,13 +1079,6 @@ class HasParamAttrsInstInfo:
         self.cache = {}
         self.calibrations = {}
 
-        for name, attr in owner._attr_defs.attrs.items():
-            attr.__init_owner_instance__(self)
-
-            # if isinstance(attr, Value):
-            #     self.cache[name] = attr.default
-
-
 def get_class_attrs(
     obj: Union[HasParamAttrs, Type[HasParamAttrs]]
 ) -> typing.Dict[str, ParamAttr]:
@@ -1114,6 +1114,8 @@ def list_property_attrs(
 class HasParamAttrs(metaclass=HasParamAttrsMeta):
     def __init__(self, **values):
         self._attr_store = HasParamAttrsInstInfo(self)
+        for name, attr in self._attr_defs.attrs.items():
+            attr.__init_owner_instance__(self)
 
     @util.hide_in_traceback
     def __init_subclass__(cls):
@@ -1139,6 +1141,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
                     continue
 
             setattr(cls, name, cls._attr_defs.attrs[name])
+
 
         # clear the initialized attributes from the pending entries in the metaclass
         if cls._attr_defs.attrs in type(cls).ns_pending:
@@ -1352,8 +1355,8 @@ class DependentParamAttr(ParamAttr):
         else:
             return
 
-        for param in self._paramattr_dependencies.values():
-            param.__objclass__ = objclass
+        for attr_def in self._paramattr_dependencies.values():
+            attr_def.__objclass__ = objclass
 
     def _validate_attr_dependencies(self, owner, allow_none: bool, operation="access"):
         if allow_none:
@@ -1467,7 +1470,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         if owner_cal["by_uncal"] is None:
             return None
 
-        i = owner_cal["by_cal"].index.get_loc(cal, method="nearest")
+        i = owner_cal["by_cal"].index.get_indexer([cal], method="nearest")[0]
         return owner_cal["by_cal"].iloc[i]
 
     def set_mapping(self, series_or_uncal, cal=None, owner=None):
@@ -1498,8 +1501,10 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         by_cal = by_cal[~by_cal.index.duplicated(keep="first")].sort_index()
         by_cal.index.name = "cal"
 
-        owner._attr_store.calibrations.setdefault(self.name, {}).update(
-            by_cal=by_cal, by_uncal=by_uncal
+        (
+            owner._attr_store.calibrations
+            .setdefault(self.name, {})
+            .update(by_cal=by_cal, by_uncal=by_uncal)
         )
 
     @util.hide_in_traceback
@@ -1568,8 +1573,8 @@ class RemappingCorrectionMixIn(DependentParamAttr):
 class TableCorrectionMixIn(RemappingCorrectionMixIn):
     _CAL_TABLE_KEY = "table"
 
-    path_attr = None  # a dependent Unicode ParamAttr
-    index_lookup_attr = None  # a dependent ParamAttr
+    path_attr: ParamAttr = None  # a dependent Unicode ParamAttr
+    index_lookup_attr: ParamAttr = None  # a dependent ParamAttr
     table_index_column: str = None
 
     def __init_owner_instance__(self, owner):
@@ -1672,7 +1677,8 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             txt = "set {owner}.{self.index_lookup_attr.name} to enable calibration"
         else:
             # pull in the calibration mapping specific to this index_value
-            i_freq = cal.index.get_loc(index_value, "nearest")
+            # i_freq = cal.index.get_loc(index_value, "nearest")
+            i_freq = cal.index.get_indexer([index_value], method="nearest")[0]
             cal = cal.iloc[i_freq]
             txt = f"calibrated to {index_value} {self.label}"
         owner._logger.debug(txt)

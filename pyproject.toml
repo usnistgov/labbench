@@ -74,7 +74,7 @@ dev = [
     "ipython",
     "ipywidgets",
     # linting
-    "black[jupyter]",    
+    "black[jupyter]",
     "flake8",
     # introspection
     "ast_decompiler",
@@ -88,6 +88,8 @@ dev = [
     "toml",
     "jupytext>=1.6.0",
     "myst-nb @ git+https://github.com/executablebooks/MyST-NB@master",
+    "pyperf>=2.6.2",
+    "gprof2dot>=2022.7.29",
 ]
 
 [tool.black]

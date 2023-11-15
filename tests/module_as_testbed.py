@@ -3,7 +3,7 @@ import sys
 import time
 
 import labbench as lb
-from labbench import paramattr as param
+from labbench import paramattr as attr
 
 lb = importlib.reload(lb)
 
@@ -18,9 +18,9 @@ class LaggyInstrument(EmulatedVISADevice):
     """
 
     # Connection and driver value traits
-    delay = param.value.float(default=0, min=0, help="connection time (s)")
-    fetch_time = param.value.float(default=0, min=0, help="fetch time (s)")
-    fail_disconnect = param.value.bool(
+    delay = attr.value.float(default=0, min=0, help="connection time (s)")
+    fetch_time = attr.value.float(default=0, min=0, help="fetch time (s)")
+    fail_disconnect = attr.value.bool(
         default=False, help="raise DivideByZero on disconnect?"
     )
 

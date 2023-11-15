@@ -1548,20 +1548,14 @@ def lazy_import(name):
     except KeyError:
         pass
 
-    try:
-        spec = importlib.util.find_spec(name)
-        if spec is None:
-            raise ImportError(f'no module found named "{name}"')
-        spec.loader = importlib.util.LazyLoader(spec.loader)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        module.__getattribute__ = single_threaded_call_lock(module.__getattribute__)
-        return module
-    except ValueError as ex:
-        if "substituted" in str(ex):
-            return sys.modules[name]
-        else:
-            raise
+    spec = importlib.util.find_spec(name)
+    if spec is None:
+        raise ImportError(f'no module found named "{name}"')
+    spec.loader = importlib.util.LazyLoader(spec.loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 class TTLCache:

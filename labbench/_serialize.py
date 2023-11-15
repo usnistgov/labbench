@@ -7,7 +7,7 @@ from pathlib import Path
 
 from . import util
 from ._rack import Rack, import_as_rack, update_parameter_dict
-from . import paramattr as param
+from . import paramattr as attr
 
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
 # using ruamel yaml instead of pyyaml because it allows us to place comments for human readability

@@ -1,5 +1,5 @@
 from .. import VISADevice, Device, Undefined
-from .. import paramattr as param
+from .. import paramattr as attr
 import pandas as pd
 import numpy as np
 from typing import Dict, Any
@@ -7,14 +7,14 @@ from typing import Dict, Any
 __all__ = ["PowerSensor", "Oscilloscope", "SignalGenerator"]
 
 
-@param.visa_keying(
+@attr.visa_keying(
     # the default SCPI query and write formats
     query_fmt="{key}?",
     write_fmt="{key} {value}",
     # map python True and False values to these SCPI strings
     remap={True: "ON", False: "OFF"},
 )
-@param.adjusted(
+@attr.adjusted(
     # set the identity_pattern
     "identity_pattern",
     default=r"Power Sensor model \#1234",
@@ -24,21 +24,21 @@ class PowerSensor(VISADevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = param.property.bool(
+    initiate_continuous = attr.property.bool(
         key="INIT:CONT", help="trigger continuously if True"
     )
-    trigger_count = param.property.int(
+    trigger_count = attr.property.int(
         key="TRIG:COUN", min=1, max=200, help="acquisition count", label="samples"
     )
-    measurement_rate = param.property.str(
+    measurement_rate = attr.property.str(
         key="SENS:MRAT",
         only=RATES,
         case=False,
     )
-    sweep_aperture = param.property.float(
+    sweep_aperture = attr.property.float(
         key="SWE:APER", min=20e-6, max=200e-3, help="measurement duration", label="s"
     )
-    frequency = param.property.float(
+    frequency = attr.property.float(
         key="SENS:FREQ",
         min=10e6,
         max=18e9,
@@ -64,10 +64,10 @@ class PowerSensor(VISADevice):
         return self.write("TRIG")
 
 
-@param.visa_keying(remap={True: "ON", False: "OFF"})
-@param.adjusted("identity_pattern", default=r"Spectrum analyzer model \#1234")
+@attr.visa_keying(remap={True: "ON", False: "OFF"})
+@attr.adjusted("identity_pattern", default=r"Spectrum analyzer model \#1234")
 class SpectrumAnalyzer(VISADevice):
-    center_frequency = param.property.float(
+    center_frequency = attr.property.float(
         key="SENS:FREQ",
         min=10e6,
         max=18e9,
@@ -75,7 +75,7 @@ class SpectrumAnalyzer(VISADevice):
         help="input signal center frequency",
         label="Hz",
     )
-    resolution_bandwidth = param.property.float(
+    resolution_bandwidth = attr.property.float(
         key="SENS:BW",
         min=1,
         max=40e6,
@@ -104,13 +104,13 @@ class SpectrumAnalyzer(VISADevice):
         return self.write("TRIG")
 
 
-@param.visa_keying(remap={True: "YES", False: "NO"})
-@param.adjusted("identity_pattern", default=r"Signal generator model \#1234")
+@attr.visa_keying(remap={True: "YES", False: "NO"})
+@attr.adjusted("identity_pattern", default=r"Signal generator model \#1234")
 class SignalGenerator(VISADevice):
-    output_enabled = param.property.bool(
+    output_enabled = attr.property.bool(
         key="OUT:ENABL", help="when True, output an RF tone"
     )
-    center_frequency = param.property.float(
+    center_frequency = attr.property.float(
         key="SENS:FREQ",
         min=10e6,
         max=18e9,
@@ -118,20 +118,20 @@ class SignalGenerator(VISADevice):
         help="input signal center frequency",
         label="Hz",
     )
-    mode = param.property.str(key="MODE", only=["sweep", "tone", "iq"], case=False)
+    mode = attr.property.str(key="MODE", only=["sweep", "tone", "iq"], case=False)
 
     def trigger(self):
         """revert to instrument preset state"""
         self.write("TRIG")
 
 
-@param.visa_keying(
+@attr.visa_keying(
     remap={True: "ON", False: "OFF"},
-    arguments={"channel": param.argument.int(min=1, max=4, help="input channel")},
+    arguments={"channel": attr.argument.int(min=1, max=4, help="input channel")},
 )
-@param.adjusted("identity_pattern", default=r"Oscilloscope model #1234")
+@attr.adjusted("identity_pattern", default=r"Oscilloscope model #1234")
 class Oscilloscope(VISADevice):
-    @param.method.float(
+    @attr.method.float(
         min=10e6,
         max=18e9,
         step=1e-3,
@@ -144,7 +144,7 @@ class Oscilloscope(VISADevice):
         else:
             self.write(f"CH{channel}:SENS:FREQ {set_value}")
 
-    resolution_bandwidth = param.method.float(
+    resolution_bandwidth = attr.method.float(
         key="CH{channel}:SENS:BW",
         min=1,
         max=40e6,
@@ -175,7 +175,5 @@ class Oscilloscope(VISADevice):
 
 
 class LocalStoreDevice(Device):
-    backend: Dict[str, Any]
-
     def open(self):
         self.backend = {}

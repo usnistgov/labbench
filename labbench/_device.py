@@ -34,10 +34,11 @@ from functools import wraps
 import inspect
 import sys
 import traceback
+import typing
 from typing_extensions import dataclass_transform
 
 from . import util
-from . import paramattr as param
+from . import paramattr as attr
 
 from .paramattr._bases import (
     HasParamAttrs,
@@ -135,15 +136,15 @@ def log_trait_activity(msg):
 
     label = ""
     if msg["type"] == "set":
-        if param.get_class_attrs(owner)[trait_name].label:
-            label = f"({param.get_class_attrs(owner)[trait_name].label})"
+        if attr.get_class_attrs(owner)[trait_name].label:
+            label = f"({attr.get_class_attrs(owner)[trait_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
         owner._logger.debug(f'trait set: "{trait_name}" → {value} {label}'.rstrip())
     elif msg["type"] == "get":
-        if param.get_class_attrs(owner)[trait_name].label:
-            label = f"({param.get_class_attrs(owner)[trait_name].label})"
+        if attr.get_class_attrs(owner)[trait_name].label:
+            label = f"({attr.get_class_attrs(owner)[trait_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
@@ -153,81 +154,9 @@ def log_trait_activity(msg):
 
 
 @dataclass_transform(
-    kw_only_default=True, eq_default=False, field_specifiers=param.value._ALL_TYPES
+    kw_only_default=True, eq_default=False, field_specifiers=attr.value._ALL_TYPES
 )
-class _DeviceDataClass(HasParamAttrs, util.Ownable):
-    """This (particularly the __init__) needed to be split from Device to appease static type checkers"""
-
-    def __init__(self, resource=Undefined, **values):
-        """Update default values with these arguments on instantiation."""
-
-        # validate presence of required arguments
-        inspect.signature(self.__init__).bind(**values)
-
-        if resource is not Undefined:
-            values["resource"] = resource
-
-        super().__init__()
-
-        with hold_attr_notifications(self):
-            for name, init_value in values.items():
-                setattr(self, name, init_value)
-
-        util.Ownable.__init__(self)
-
-        self.__init_context__()
-
-    def __init_context__(self):
-        pass
-
-    @classmethod
-    @util.hide_in_traceback
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        cls.__update_signature__()
-
-    @classmethod
-    @util.hide_in_traceback
-    def __update_signature__(cls):
-        # Generate a signature for documentation and code autocomplete
-        params = [
-            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
-            inspect.Parameter(
-                "resource",
-                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                default=cls.resource.default,
-                annotation=cls.resource._type,
-            ),
-        ]
-
-        settable_values = {
-            name: param.get_class_attrs(cls)[name]
-            for name in cls._attr_defs.value_names()
-            if param.get_class_attrs(cls)[name].sets
-        }
-
-        # generate and apply the sequence of call signature parameters
-        params += [
-            inspect.Parameter(
-                name,
-                kind=inspect.Parameter.KEYWORD_ONLY,
-                default=trait.default,
-                annotation=trait._type,
-            )
-            for name, trait in settable_values.items()
-            if name != "resource"
-        ]
-
-        # we need a wrapper so that __init__ can be modified separately for each subclass
-        cls.__init__ = util.copy_func(cls.__init__)
-        cls.__init__.__signature__ = inspect.Signature(params)
-
-        # generate the __init__ docstring
-        value_docs = "".join((f"    {t.doc()}\n" for t in settable_values.values()))
-        cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
-
-
-class Device(_DeviceDataClass):
+class Device(HasParamAttrs, util.Ownable):
     r"""base class for labbench device wrappers.
 
     Drivers that subclass `Device` share
@@ -254,10 +183,10 @@ class Device(_DeviceDataClass):
 
     """
 
-    resource: str = param.value.str(
-        default="", allow_none=True, cache=True, help="device address or URI"
+    resource: str = attr.value.str(
+        default=None, allow_none=True, cache=True, help="device address or URI"
     )
-    concurrency = param.value.bool(
+    concurrency = attr.value.bool(
         default=True, sets=False, help="True if the device backend supports threading"
     )
 
@@ -279,13 +208,109 @@ class Device(_DeviceDataClass):
         it is to be set in `connect` and `disconnect` by the subclass that implements the backend.
     """
 
+    def __init__(self, resource=Undefined, **values):
+        """Update default values with these arguments on instantiation."""
+
+        if resource is Undefined:
+            values['resource'] = type(self).resource.default
+        else:
+            values['resource'] = resource
+
+        # validate presence of required arguments
+        inspect.signature(self.__init__).bind(**values)
+
+        super().__init__()
+
+        with hold_attr_notifications(self):
+            for name, init_value in values.items():
+                setattr(self, name, init_value)
+
+            other_names = set(self._attr_defs.value_names()) - set(values.keys())
+            for name in other_names:
+                attr_def = getattr(type(self), name)
+                if isinstance(attr_def, attr.value.Value):
+                    if attr_def.default is not Undefined:
+                        self._attr_store.cache[name] = attr_def.default
+                    elif attr_def.allow_none:
+                        self._attr_store.cache[name] = None
+                    else:
+                        attr_desc = attr.__repr__(owner_inst=self)
+                        raise TypeError(f"unable to determine an initial value for {attr_desc} - define it with allow_none=True or default=<default value>")
+
+        util.Ownable.__init__(self)
+
+        self.backend = DisconnectedBackend(self)
+
+        # Instantiate property trait now. It needed to wait until this point, after values are fully
+        # instantiated, in case property trait implementation depends on values
+        setattr(self, "open", self.__open_wrapper__)
+        setattr(self, "close", self.__close_wrapper__)
+
+    @classmethod
+    @util.hide_in_traceback
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        cls.__annotations__ = typing.get_type_hints(cls)
+        cls.__update_signature__()
+
+    @classmethod
+    @util.hide_in_traceback
+    def __update_signature__(cls):
+        # Generate a signature for documentation and code autocomplete
+        params = [
+            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            inspect.Parameter(
+                "resource",
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                default=cls.resource.default,
+                annotation=cls.resource._type,
+            ),
+        ]
+
+        # generate and apply the sequence of call signature parameters
+        constructor_attrs = []
+        for name in cls.__annotations__.keys():
+            attr_def = getattr(cls, name)
+
+            if not isinstance(attr_def, attr.value.Value):
+                annot_desc = f'{name}: {cls.__annotations__[name].__name__}'
+                wrong_type = type(attr_def)
+                raise TypeError(f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {repr(wrong_type)}')
+
+            elif not attr_def.sets:
+                raise TypeError(f"the labbench.parametter value '{name}' in class {cls.__qualname__} is annotated for setting on instantiation, but it is read-only (sets=False)")
+
+            elif name == "resource":
+                # defined above for its POSITIONAL_OR_KEYWORD special casing
+                continue
+
+            else:
+                params.append(inspect.Parameter(
+                    name,
+                    kind=inspect.Parameter.KEYWORD_ONLY,
+                    default=attr_def.default,
+                    annotation=cls.__annotations__[name],
+                ))
+                constructor_attrs.append(attr_def)
+
+        # we need a wrapper so that __init__ can be modified separately for each subclass
+        cls.__init__ = util.copy_func(cls.__init__)
+        cls.__init__.__signature__ = inspect.Signature(params)
+
+        # generate the __init__ docstring
+        value_docs = "".join([
+            f"    {t.doc()}\n"
+            for t in constructor_attrs
+        ])
+        cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
+
     # Backend classes may optionally overload these, and do not need to call the parents
     # defined here
     def open(self):
         """Backend implementations overload this to open a backend
         connection to the resource.
         """
-        param.observe(self, log_trait_activity)
+        attr.observe(self, log_trait_activity)
 
     def close(self):
         """Backend implementations must overload this to disconnect an
@@ -293,19 +318,7 @@ class Device(_DeviceDataClass):
         """
         self.backend = DisconnectedBackend(self)
         self.isopen
-        param.unobserve(self, log_trait_activity)
-
-    # TODO: can this be safely removed?
-    __children__ = {}
-
-    @util.hide_in_traceback
-    def __init_context__(self):
-        self.backend = DisconnectedBackend(self)
-
-        # Instantiate property trait now. It needed to wait until this point, after values are fully
-        # instantiated, in case property trait implementation depends on values
-        setattr(self, "open", self.__open_wrapper__)
-        setattr(self, "close", self.__close_wrapper__)
+        attr.unobserve(self, log_trait_activity)
 
     @util.hide_in_traceback
     @wraps(open)
@@ -416,7 +429,7 @@ class Device(_DeviceDataClass):
             # In case an exception has occurred before __init__
             return f"{name}()"
 
-    @param.property.bool()
+    @attr.property.bool()
     def isopen(self):
         """`True` if the backend is ready for use"""
         try:
@@ -433,7 +446,7 @@ Device.__init_subclass__()
 def trait_info(device: Device, name: str) -> dict:
     """returns the keywords used to define the trait attribute named `name` in `device`"""
 
-    trait = param.get_class_attrs(device)[name]
+    trait = attr.get_class_attrs(device)[name]
     info = dict(trait.kws)
 
     if isinstance(trait, BoundedNumber):

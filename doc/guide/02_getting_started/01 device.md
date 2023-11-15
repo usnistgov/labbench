@@ -27,9 +27,9 @@ Let's start by a simple demonstration with [VISA](https://en.wikipedia.org/wiki/
 ```{code-cell} ipython3
 # sim_instrument1.py
 import labbench as lb
-from labbench import paramattr as param
+from labbench import paramattr as attr
 
-@param.visa_keying(
+@attr.visa_keying(
     # the default SCPI query and write formats
     query_fmt="{key}?",
     write_fmt="{key} {value}",
@@ -37,7 +37,7 @@ from labbench import paramattr as param
     # map python True and False values to these SCPI strings
     remap={True: "ON", False: "OFF"}
 )
-@param.adjusted(
+@attr.adjusted(
     # set the identity_pattern 
     'identity_pattern', default=r'Power Sensor model \#1234'
 )
@@ -46,22 +46,22 @@ class PowerSensor(lb.VISADevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = param.property.bool(
+    initiate_continuous = attr.property.bool(
         key="INIT:CONT", help="trigger continuously if True"
     )
-    trigger_count = param.property.int(
+    trigger_count = attr.property.int(
         key="TRIG:COUN", min=1, max=200,
         help="acquisition count", label="samples"
     )
-    measurement_rate = param.property.str(
+    measurement_rate = attr.property.str(
         key="SENS:MRAT", only=RATES, case=False,
         
     )
-    sweep_aperture = param.property.float(
+    sweep_aperture = attr.property.float(
         key="SWE:APER", min=20e-6, max=200e-3,
         help="measurement duration", label="s"
     )
-    frequency = param.property.float(
+    frequency = attr.property.float(
         key="SENS:FREQ",
         min=10e6, max=18e9, step=1e-3,
         help="calibration frequency", label="Hz",
@@ -122,7 +122,7 @@ with sensor:
 
 Creating the `sensor` instance brings the `PowerSensor` class definition to life. This means:
 * The connection remains open for VISA communication inside the `with` block
-* Attributes that were defined with `param.property` in `PowerSensor` become interactive for instrument automation in `sensor`. This means that assigning to `sensor.frequency`, `sensor.measurement_rate` trigger VISA writes to set these parameters on the instrument. Similarly, _getting_ each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.
+* Attributes that were defined with `attr.property` in `PowerSensor` become interactive for instrument automation in `sensor`. This means that assigning to `sensor.frequency`, `sensor.measurement_rate` trigger VISA writes to set these parameters on the instrument. Similarly, _getting_ each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.
 
 ```{admonition} Getting started with a new instrument
 Some trial and error is often needed, and it is best to iterate in small steps:

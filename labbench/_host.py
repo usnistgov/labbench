@@ -35,7 +35,7 @@ import email.mime.text
 from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
-from . import paramattr as param
+from . import paramattr as attr
 from . import util
 
 try:
@@ -102,24 +102,24 @@ class Email(core.Device):
     subject line. Stderr is also sent.
     """
 
-    resource: str = param.value.NetworkAddress(
+    resource: str = attr.value.NetworkAddress(
         default="smtp.nist.gov", help="smtp server to use"
     )
-    port: int = param.value.int(default=25, min=1, help="TCP/IP port")
-    sender: str = param.value.str(
+    port: int = attr.value.int(default=25, min=1, help="TCP/IP port")
+    sender: str = attr.value.str(
         default="myemail@nist.gov", help="email address of the sender"
     )
-    recipients: list = param.value.list(
+    recipients: list = attr.value.list(
         default=["myemail@nist.gov"], help="list of email addresses of recipients"
     )
 
-    success_message: str = param.value.str(
+    success_message: str = attr.value.str(
         default="Test finished normally",
         allow_none=True,
         help="subject line for test success emails (None to suppress the emails)",
     )
 
-    failure_message: str = param.value.str(
+    failure_message: str = attr.value.str(
         default="Exception ended test early",
         allow_none=True,
         help="subject line for test failure emails (None to suppress the emails)",
@@ -240,7 +240,7 @@ class JSONFormatter(logging.Formatter):
 
 class Host(core.Device):
     # Settings
-    git_commit_in: str = param.value.str(
+    git_commit_in: str = attr.value.str(
         default=None,
         allow_none=True,
         help="git commit on open() if run inside a git repo with this branch name",
@@ -288,7 +288,7 @@ class Host(core.Device):
         }
 
         # Preload the git repo parameters
-        for name in param.get_class_attrs(self).keys():
+        for name in attr.get_class_attrs(self).keys():
             if name.startswith("git"):
                 getattr(self, name)
 
@@ -321,13 +321,13 @@ class Host(core.Device):
         )
         return pd.Series(running).sort_index()
 
-    @param.property.str()
+    @attr.property.str()
     def time(self):
         """Get a timestamp of the current time"""
         now = datetime.datetime.now()
         return f"{now.strftime(self.time_format)}.{now.microsecond}"
 
-    @param.property.list()
+    @attr.property.list()
     def log(self):
         """Get the current host log contents."""
         self.backend["log_handler"].flush()
@@ -342,7 +342,7 @@ class Host(core.Device):
         else:
             return {}
 
-    @param.property.str(cache=True)
+    @attr.property.str(cache=True)
     def git_commit_id(self):
         """Try to determine the current commit hash of the current git repo"""
 
@@ -352,7 +352,7 @@ class Host(core.Device):
         except git.NoSuchPathError:
             return ""
 
-    @param.property.str(cache=True)
+    @attr.property.str(cache=True)
     def git_remote_url(self):
         """Try to identify the remote URL of the repository of the current git repo"""
         try:
@@ -360,17 +360,17 @@ class Host(core.Device):
         except BaseException:
             return ""
 
-    @param.property.str(cache=True)
+    @attr.property.str(cache=True)
     def hostname(self):
         """Get the name of the current host"""
         return socket.gethostname()
 
-    @param.property.str(cache=True)
+    @attr.property.str(cache=True)
     def git_browse_url(self):
         """URL for browsing the current git repository"""
         return f"{self.git_remote_url}/tree/{self.git_commit_id}"
 
-    @param.property.str(cache=True)
+    @attr.property.str(cache=True)
     def git_pending_changes(self):
         if self.backend["repo"] is not None:
             diffs = self.backend["repo"].index.diff(None)

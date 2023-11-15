@@ -3,15 +3,15 @@ import time
 from contextlib import contextmanager
 import labbench as lb
 from labbench.testing.store_backend import TestStoreDevice
-from labbench import paramattr as param
+from labbench import paramattr as attr
 
 
 class LaggyInstrument(TestStoreDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
 
-    delay = param.value.float(default=0, min=0, help="connection time")
-    fetch_time = param.value.float(default=0, min=0, help="fetch time")
-    fail_disconnect = param.value.bool(
+    delay: float = attr.value.float(default=0, min=0, help="connection time")
+    fetch_time: float = attr.value.float(default=0, min=0, help="fetch time")
+    fail_disconnect = attr.value.bool(
         default=False, help="whether to raise DivideByZero on disconnect"
     )
 

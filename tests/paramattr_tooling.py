@@ -1,9 +1,9 @@
 import unittest
 import labbench as lb
-from labbench import paramattr as param
+from labbench import paramattr as attr
 
 
-def has_steps(attr: param.ParamAttr):
+def has_steps(attr: attr.ParamAttr):
     return getattr(attr, "step", None) is not None
 
 

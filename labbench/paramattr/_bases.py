@@ -602,6 +602,14 @@ class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
     default: T = Undefined
 
+    def __init__(self, **kws):
+        if kws.get('default', Undefined) is None:
+            if 'allow_none' in kws and not kws['allow_none']:
+                raise TypeError("cannot set default=None with allow_none=True")
+            else:
+                kws['allow_none'] = True
+        super().__init__(**kws)
+
     @util.hide_in_traceback
     def __get__(
         self: Value[T],

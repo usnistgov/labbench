@@ -183,9 +183,7 @@ class Device(HasParamAttrs, util.Ownable):
 
     """
 
-    resource: str = attr.value.str(
-        default=None, allow_none=True, cache=True, help="device address or URI"
-    )
+    resource: str = attr.value.str(default=None, cache=True, help="device address or URI")
     concurrency = attr.value.bool(
         default=True, sets=False, help="True if the device backend supports threading"
     )

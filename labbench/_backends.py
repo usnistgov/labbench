@@ -956,7 +956,6 @@ class VISADevice(Device):
 
     Attributes:
         backend (pyvisa.Resource): instance of a pyvisa instrument object (when open)
-
     """
 
     # Settings

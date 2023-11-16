@@ -46,8 +46,8 @@ import pyvisa.errors
 
 from . import util
 from ._device import Device
-from .paramattr import observe
-from . import paramattr as attr
+from .argument import observe
+from . import argument as attr
 
 try:
     serial = util.lazy_import("serial")

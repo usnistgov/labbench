@@ -37,7 +37,7 @@ except:
     from emulate import EmulatedVISADevice
 from contextlib import contextmanager
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import argument as attr
 import numpy as np
 
 

@@ -30,7 +30,7 @@ from ._backends import VISADevice
 from ._host import Host
 from .util import show_messages
 from ._rack import Rack
-from .paramattr import observe, get_class_attrs
+from .argument import observe, get_class_attrs
 
 import logging
 import time

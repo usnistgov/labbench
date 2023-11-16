@@ -1,5 +1,5 @@
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import argument as attr
 
 
 class EmulatedVISAPropertyAdapter(lb.VISAPropertyAdapter):

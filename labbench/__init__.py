@@ -44,7 +44,7 @@ from . import util
 util.force_full_traceback(True)
 
 
-from .paramattr import Undefined, adjusted, observe, unobserve
+from .argument import Undefined, adjusted, observe, unobserve
 
 from ._backends import (
     DotNetDevice,

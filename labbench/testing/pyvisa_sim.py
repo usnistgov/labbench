@@ -1,5 +1,5 @@
 from .. import VISADevice, Device, Undefined
-from .. import paramattr as attr
+from .. import argument as attr
 import pandas as pd
 import numpy as np
 from typing import Dict, Any

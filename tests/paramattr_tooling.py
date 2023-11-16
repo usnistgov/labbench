@@ -1,6 +1,6 @@
 import unittest
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import argument as attr
 
 
 def has_steps(attr: attr.ParamAttr):
@@ -50,20 +50,29 @@ class TestParamAttr(unittest.TestCase):
             pass
 
     def test_all_set_then_get(self):
+        def want_to_set_get(attr):
+            return (
+                attr.role == self.role
+                and attr.sets
+                and attr.gets
+                and not hasattr(lb.Device, attr.name)
+                and not has_steps(attr) # steps can make set != get
+            )
+
         device = self.DeviceClass()
         device.open()
 
         attrs = {
             name: attr
             for name, attr in device.get_attr_defs().items()
-            if attr.role == self.role
-            and attr.sets
-            and attr.gets
-            and not hasattr(lb.Device, name)
-            and not has_steps(attr)
+            if want_to_set_get(attr)
         }
 
         for attr_name, attr_def in attrs.items():
+            if isinstance(attr_def, attr.method.Method):
+                # skip methods with arguments for now
+                if len(attr_def.get_key_arguments(type(device))) > 0:
+                    continue
             test_name = f'{self.role} "{attr_name}"'
             has_reduced_access_count = (
                 attr_def.cache or attr_def.role == attr_def.ROLE_VALUE

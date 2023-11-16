@@ -35,7 +35,7 @@ import email.mime.text
 from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
-from . import paramattr as attr
+from . import argument as attr
 from . import util
 
 try:

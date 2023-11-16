@@ -6,7 +6,7 @@ import importlib
 from pathlib import Path
 
 from labbench import Device, Rack, util
-from labbench.paramattr._bases import ParamAttr, Undefined, Any, T, get_class_attrs, list_value_attrs, list_method_attrs, list_property_attrs
+from labbench.argument._bases import ParamAttr, Undefined, Any, T, get_class_attrs, list_value_attrs, list_method_attrs, list_property_attrs
 util.force_full_traceback(True)
 
 VALID_PARENTS = Device, Rack, ParamAttr

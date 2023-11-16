@@ -3,7 +3,7 @@ import sys
 import time
 
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import argument as attr
 
 lb = importlib.reload(lb)
 

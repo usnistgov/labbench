@@ -1,7 +1,7 @@
 from labbench.testing import pyvisa_sim, store_backend, pyvisa_sim_resource
 from numbers import Number
 import labbench as lb
-from labbench import paramattr as attr
+from labbench import argument as attr
 import unittest
 import paramattr_tooling
 import time

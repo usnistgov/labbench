@@ -1,6 +1,6 @@
 from labbench.testing import pyvisa_sim, store_backend, pyvisa_sim_resource
 import labbench as lb
-from labbench import argument as attr
+from labbench import paramattr as attr
 import unittest
 import paramattr_tooling
 
@@ -40,7 +40,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
 
 class TestPropertyParamAttr(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
-    role = lb.argument.ParamAttr.ROLE_PROPERTY
+    role = lb.paramattr.ParamAttr.ROLE_PROPERTY
 
     def set_param(self, device, attr_name, value, arguments={}):
         if len(arguments) > 0:

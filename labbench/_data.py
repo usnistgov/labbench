@@ -41,10 +41,10 @@ from typing import List, Dict, Union
 from . import _device
 from . import _device as core
 from . import _host, _rack, util
-from . import argument as attr
+from . import paramattr as attr
 from ._device import Device
 from ._rack import Owner
-from .argument import observe
+from .paramattr import observe
 
 try:
     h5py = util.lazy_import("h5py")

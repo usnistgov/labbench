@@ -1,7 +1,7 @@
 from labbench.testing import pyvisa_sim, store_backend, pyvisa_sim_resource
 from numbers import Number
 import labbench as lb
-from labbench import argument as attr
+from labbench import paramattr as attr
 import unittest
 import paramattr_tooling
 
@@ -65,7 +65,7 @@ def has_steps(attr: attr.ParamAttr):
 
 class TestValueParamAttr(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
-    role = lb.argument.ParamAttr.ROLE_VALUE
+    role = lb.paramattr.ParamAttr.ROLE_VALUE
 
     def set_param(self, device, attr_name, value, arguments={}):
         if len(arguments) > 0:
@@ -258,7 +258,7 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
 
 class TestAdjustedValueParamAttr(TestValueParamAttr):
     DeviceClass = AdjustedTestDevice
-    role = lb.argument.ParamAttr.ROLE_VALUE
+    role = lb.paramattr.ParamAttr.ROLE_VALUE
 
     def test_numeric_step(self):
         device = self.DeviceClass()

@@ -38,9 +38,9 @@ import typing
 from typing_extensions import dataclass_transform
 
 from . import util
-from . import argument as attr
+from . import paramattr as attr
 
-from .argument._bases import (
+from .paramattr._bases import (
     HasParamAttrs,
     Undefined,
     BoundedNumber,

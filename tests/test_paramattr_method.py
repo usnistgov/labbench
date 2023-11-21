@@ -1,6 +1,6 @@
 from labbench.testing import store_backend
 import labbench as lb
-from labbench import argument as attr
+from labbench import paramattr as attr
 import unittest
 import paramattr_tooling
 
@@ -46,11 +46,13 @@ class StoreTestDevice(store_backend.TestStoreDevice):
             self.backend.set(key, set_value)
         else:
             return self.backend.get(key, None)
+        
+    bla = attr.method.str(arguments={'decorated_channel': attr.argument.int(min=1, max=4)})
 
 
 class TestMethod(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
-    role = lb.argument.ParamAttr.ROLE_METHOD
+    role = lb.paramattr.ParamAttr.ROLE_METHOD
 
     def set_param(self, device, attr_name, value, arguments={}):
         param_method = getattr(device, attr_name)
@@ -87,7 +89,7 @@ class TestMethod(paramattr_tooling.TestParamAttr):
 
         with self.assertRaises(ValueError):
             device.str_keyed_with_arg(TEST_VALUE, registered_channel=0)
-        
+
         device.str_keyed_with_arg(TEST_VALUE, registered_channel=1)
         expected_key = ('str_with_arg_ch_{registered_channel}', frozenset({('registered_channel', 1)}))
         self.assertEqual(device.backend.values[expected_key], TEST_VALUE)
@@ -103,6 +105,12 @@ class TestMethod(paramattr_tooling.TestParamAttr):
         device.str_decorated_with_arg(TEST_VALUE, decorated_channel=1)
         expected_key = ('str_decorated_with_arg', frozenset({('decorated_channel', 1)}))
         self.assertEqual(device.backend.values[expected_key], TEST_VALUE)
+
+def func(i: int):
+    pass
+
+bare = attr.method.str(arguments={'decorated_channel': attr.argument.int(min=1, max=4)})
+wrapped = bare(func)
 
 # class SimpleDevice(lb.VISADevice):
 #     v: int = attr.value.int(default=4)

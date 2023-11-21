@@ -78,7 +78,6 @@ dev = [
     "flake8",
     # introspection
     "ast_decompiler",
-    "mypy",
     # testing
     "pytest",
     "pytest-cov",
@@ -90,6 +89,10 @@ dev = [
     "myst-nb @ git+https://github.com/executablebooks/MyST-NB@master",
     "pyperf>=2.6.2",
     "gprof2dot>=2022.7.29",
+    "typing-extensions>=4.8.0",
+    "mypy-extensions>=1.0.0",
+    "mypy>=1.7.0",
+    "astor>=0.8.1",
 ]
 
 [tool.black]

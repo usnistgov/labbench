@@ -1,6 +1,6 @@
 import unittest
 import labbench as lb
-from labbench import argument as attr
+from labbench import paramattr as attr
 
 
 def has_steps(attr: attr.ParamAttr):

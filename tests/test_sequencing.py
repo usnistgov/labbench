@@ -3,7 +3,7 @@ import time
 from contextlib import contextmanager
 import labbench as lb
 from labbench.testing.store_backend import TestStoreDevice
-from labbench import argument as attr
+from labbench import paramattr as attr
 
 
 class LaggyInstrument(TestStoreDevice):

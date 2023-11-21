@@ -1,5 +1,5 @@
 from .. import VISADevice, Device, Undefined
-from .. import argument as attr
+from .. import paramattr as attr
 import pandas as pd
 import numpy as np
 from typing import Dict, Any
@@ -127,7 +127,7 @@ class SignalGenerator(VISADevice):
 
 @attr.visa_keying(
     remap={True: "ON", False: "OFF"},
-    arguments={"channel": attr.argument.int(min=1, max=4, help="input channel")},
+    key_arguments={"channel": attr.argument.int(min=1, max=4, help="input channel")},
 )
 @attr.adjusted("identity_pattern", default=r"Oscilloscope model #1234")
 class Oscilloscope(VISADevice):

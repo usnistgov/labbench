@@ -312,6 +312,12 @@ def force_full_traceback(force: bool) -> None:
     """configure whether to disable traceback hiding for internal API calls inside labbench"""
     sys._debug_tb = force
 
+def _force_full_traceback(force: bool) -> None:
+    """configure whether to disable traceback hiding for internal API calls inside labbench"""
+    logger.warning(
+        "labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead"
+    )
+    force_full_traceback(force)
 
 class _filtered_exc_info:
     """a monkeypatch for sys.exc_info that removes functions from tracebacks

@@ -30,44 +30,43 @@ from labbench.util import sequentially
 import sys
 import unittest
 import time
+from labbench.testing.store_backend import TestStoreDevice
 
-try:
-    from .emulate import EmulatedVISADevice
-except:
-    from emulate import EmulatedVISADevice
+# try:
+#     from .emulate import EmulatedVISADevice
+# except:
+#     from emulate import EmulatedVISADevice
 from contextlib import contextmanager
 import labbench as lb
 from labbench import paramattr as attr
 import numpy as np
 
 
-class LaggyInstrument(EmulatedVISADevice):
-    """A fake "instrument" with traits and fetch methods"""
+class LaggyInstrument(TestStoreDevice):
+    """A mock "instrument" to measure time response in (a)sync operations"""
 
-    # Connection and driver value traits
-    delay = attr.value.float(0, min=0, help="connection time")
-    fetch_time = attr.value.float(0, min=0, help="fetch time")
+    delay: float = attr.value.float(default=0, min=0, help="connection time")
+    fetch_time: float = attr.value.float(default=0, min=0, help="fetch time")
     fail_disconnect = attr.value.bool(
-        False, help="True to raise DivideByZero on disconnect"
+        default=False, help="whether to raise DivideByZero on disconnect"
     )
-
-    variable_setting = attr.value.int(0)
 
     def open(self):
         self.perf = {}
+        self._logger.info(f"{self} connect start")
         t0 = time.perf_counter()
         lb.sleep(self.delay)
         self.perf["open"] = time.perf_counter() - t0
+        self._logger.info(f"{self} connected")
 
     def fetch(self):
         """Return the argument after a 1s delay"""
-        import pandas as pd
-
         lb.logger.info(f"{self}.fetch start")
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
+        lb.logger.info(f"{self}.fetch done")
         self.perf["fetch"] = time.perf_counter() - t0
-        return pd.Series([1, 2, 3, 4, 5, 6])
+        return self.fetch_time
 
     def dict(self):
         return {self.resource: self.resource}
@@ -77,8 +76,9 @@ class LaggyInstrument(EmulatedVISADevice):
         return None
 
     def close(self):
+        self._logger.info(f"{self} disconnected")
         if self.fail_disconnect:
-            1 // 0
+            1 / 0
 
 
 class Rack1(lb.Rack):
@@ -157,7 +157,6 @@ class MyRack(lb.Rack):
         force_relational=[
             "host_log"
         ],  # Data in these columns will always be relational
-        dirname_fmt="{id} {host_time}",  # Format string that generates relational data (keyed on data column)
         nonscalar_file_type="csv",  # Default format of numerical data, when possible
         metadata_dirname="metadata",  # metadata will be stored in this subdirectory
         tar=False,  # `True` to embed relational data folders within `data.tar`
@@ -173,12 +172,12 @@ class MyRack(lb.Rack):
     rack3 = Rack3(dev=inst2)
 
     run = lb.Sequence(
-        setup=(rack1.setup, rack2.setup),  # 2 methods run concurrently
-        arm=rack1.arm,
-        acquire1=rack2.acquire,
-        acquire2=rack3.acquire,
-        fetch=(rack2.fetch, rack3.fetch),  # 2 also run concurrently
-        finish=db.new_row,
+        (rack1.setup, rack2.setup),  # 2 methods run concurrently
+        rack1.arm,
+        rack2.acquire,
+        rack3.acquire,
+        (rack2.fetch, rack3.fetch),  # 2 also run concurrently
+        db.new_row,
     )
 
     def open(self):
@@ -186,7 +185,6 @@ class MyRack(lb.Rack):
 
     def close(self):
         pass
-
 
 with rack:
     pass
@@ -196,7 +194,7 @@ import inspect
 
 if __name__ == "__main__":
     lb.show_messages("debug")
-    lb.util._force_full_traceback(True)
+    lb.util.force_full_traceback(True)
 
     # # Testbed = lb.Rack.take_module('module_as_testbed')
     Testbed = MyRack

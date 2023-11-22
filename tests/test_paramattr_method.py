@@ -114,6 +114,14 @@ class TestMethod(paramattr_tooling.TestParamAttr):
         device.str_decorated_with_arg(TEST_VALUE, **test_kws)
         self.assertEqual(device.backend.values[expected_key], TEST_VALUE)
 
+    def test_decorated_argument_with_default(self):
+        with self.assertRaises(TypeError):
+            # the 'default' argument is only allowed on registering key arguments,
+            # not for decorators
+            class TestDevice(store_backend.TestStoreDevice):
+                @attr.kwarg.float(name='bandwidth', default=10e3)
+                def str_decorated_with_arg(self, set_value=lb.Undefined, *, bandwidth):
+                    pass
 
 
 if __name__ == "__main__":

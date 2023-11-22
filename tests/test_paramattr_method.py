@@ -100,17 +100,20 @@ class TestMethod(paramattr_tooling.TestParamAttr):
 
         TEST_VALUE = "text"
         with self.assertRaises(ValueError):
+            # channel too small
             device.str_decorated_with_arg(TEST_VALUE, decorated_channel=0, bandwidth=50e6)
 
+        with self.assertRaises(ValueError):
+            # bandwidth too small
+            device.str_decorated_with_arg(TEST_VALUE, decorated_channel=1, bandwidth=0)
+
+        # valid channel and bandwidth
         test_kws = dict(decorated_channel=1, bandwidth=51e6)
-        device.str_decorated_with_arg(TEST_VALUE, **test_kws)
         expected_key = ('str_decorated_with_arg', frozenset(test_kws.items()))
+
+        device.str_decorated_with_arg(TEST_VALUE, **test_kws)
         self.assertEqual(device.backend.values[expected_key], TEST_VALUE)
 
-
-# class SimpleDevice(lb.VISADevice):
-#     v: int = attr.value.int(default=4)
-#     m = attr.method.float(key="ch{channel}:bw")
 
 
 if __name__ == "__main__":

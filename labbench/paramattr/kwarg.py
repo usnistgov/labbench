@@ -25,61 +25,53 @@
 # licenses.
 
 from . import _types
-from ._bases import Argument
+from ._bases import KeywordArgument
 import typing as _typing
 
 
-class any(Argument, _types.Any):
+class any(KeywordArgument, _types.Any):
     pass
 
 
-class bool(Argument, _types.Bool):
+class bool(KeywordArgument, _types.Bool):
     pass
 
 
-class float(Argument, _types.Float):
+class float(KeywordArgument, _types.Float):
     pass
 
 
-class int(Argument, _types.Int):
+class int(KeywordArgument, _types.Int):
     pass
 
 
-class complex(Argument, _types.Complex):
+class complex(KeywordArgument, _types.Complex):
     pass
 
 
-class str(Argument, _types.Unicode):
+class str(KeywordArgument, _types.Unicode):
     pass
 
 
-class bytes(Argument, _types.Bytes):
+class bytes(KeywordArgument, _types.Bytes):
     pass
 
 
-class list(Argument, _types.List):
+class list(KeywordArgument, _types.List):
     pass
 
 
-class tuple(Argument, _types.Tuple):
+class tuple(KeywordArgument, _types.Tuple):
     pass
 
 
-class dict(Argument, _types.Dict):
+class dict(KeywordArgument, _types.Dict):
     pass
 
 
-class Path(Argument, _types.Path):
+class Path(KeywordArgument, _types.Path):
     pass
 
 
-class NetworkAddress(Argument, _types.NetworkAddress):
+class NetworkAddress(KeywordArgument, _types.NetworkAddress):
     pass
-
-
-# # mutate these traits into the right role
-# _bases.subclass_namespace_attrs(
-#     locals(),
-#     role=_bases.ParamAttr.ROLE_ARGUMENT,
-#     omit_param_attrs=["key", "arguments"],
-# )

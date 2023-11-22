@@ -38,9 +38,8 @@ class message_keying(KeyAdapterBase):
         query_func=None,
         remap={},
         key_arguments: Dict[Any, ParamAttr] = {},
-        strict_arguments: bool = False,
     ):
-        super().__init__(key_arguments=key_arguments, strict_arguments=strict_arguments)
+        super().__init__(key_arguments=key_arguments)
 
         self.query_fmt = query_fmt
         self.write_fmt = write_fmt

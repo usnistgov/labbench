@@ -63,4 +63,4 @@ if __name__ == "__main__":
     lb.util.force_full_traceback(True)
 
     # unittest.main()
-    device = StoreTestDevice()
+    device = StoreTestDevice(frequency=100e6)

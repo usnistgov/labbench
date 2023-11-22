@@ -652,6 +652,7 @@ class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
     default: T = field[T](default=Undefined, kw_only=False)
     allow_none: Union[bool, None] = None
+    key: Any = None
 
     def __init__(self, *args, **kws):
         # kw_only is for the type checker only

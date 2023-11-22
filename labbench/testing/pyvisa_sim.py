@@ -127,7 +127,7 @@ class SignalGenerator(VISADevice):
 
 @attr.visa_keying(
     remap={True: "ON", False: "OFF"},
-    key_arguments={"channel": attr.argument.int(min=1, max=4, help="input channel")},
+    key_arguments={"channel": attr.kwarg.int(min=1, max=4, help="input channel")},
 )
 @attr.adjusted("identity_pattern", default=r"Oscilloscope model #1234")
 class Oscilloscope(VISADevice):

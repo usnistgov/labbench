@@ -41,6 +41,7 @@ dependencies = [
     "h5py>=3",
     "pip",
     "pyvisa-sim>=0.5.1",
+    "typing-extensions>=4.8.0",
 ]
 
 [project.optional-dependencies]
@@ -86,10 +87,8 @@ dev = [
     "twine",
     "toml",
     "jupytext>=1.6.0",
-    "myst-nb @ git+https://github.com/executablebooks/MyST-NB@master",
+    "myst-nb>=1.0",
     "pyperf>=2.6.2",
-    "gprof2dot>=2022.7.29",
-    "typing-extensions>=4.8.0",
     "mypy-extensions>=1.0.0",
     "mypy>=1.7.0",
     "astor>=0.8.1",

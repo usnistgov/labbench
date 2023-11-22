@@ -289,7 +289,23 @@ def _parameter_maybe_positional(param: inspect.Parameter):
 TCall = typing.TypeVar("TCall")
 
 
-@dataclass_transform(eq_default=False, kw_only_default=True)
+class field(Generic[T]):
+    # __slots__ = 'kw_only', 'default'
+
+    def __new__(cls, default: T = Undefined, kw_only=True) -> T:
+        if not kw_only:
+            ret = object.__new__(cls)
+            cls.__init__(ret, default=default, kw_only=kw_only)
+        else:
+            ret = default
+        return ret
+
+    def __init__(self, default=Undefined, kw_only=True):
+        self.kw_only = kw_only
+        self.default = default
+
+
+@dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field[T],))
 class ParamAttr(Generic[T]):
     """base class for typed descriptors in Device classes. These
     implement type checking, casting, decorators, and callbacks.
@@ -340,11 +356,15 @@ class ParamAttr(Generic[T]):
 
     _keywords = {}
     _defaults = {}
+    _positional = []
     name = None
 
-    def __init__(self, **kws):
+    def __init__(self, *args, **kws):
         # apply the dataclass entries
-        self.kws = dict(kws)
+        for arg, name in zip(args, self._positional):
+            kws[name] = arg
+
+        self.kws = kws
 
         public_names = {name for name in kws.keys() if not name.startswith('_')}
         defaults = set(self._defaults.keys())
@@ -355,12 +375,14 @@ class ParamAttr(Generic[T]):
             | (private_names - defaults) # secret "private" arguments starting with _
         )
         if len(unexpected) > 0:
-            raise TypeError(f'invalid keyword argument(s) {unexpected}')
+            unexpected = ', '.join(unexpected)
+            raise TypeError(f'invalid keyword argument(s): {unexpected}')
 
         required = annotated_names - defaults
         missing_required = required - public_names
         if len(missing_required) > 0:
-            raise TypeError(f'missing required keyword argument(s) {missing_required}')
+            missing_required = ', '.join(missing_required)
+            raise TypeError(f'missing required keyword argument(s): {missing_required}')
 
         # set value attributes
         for k, v in dict(self._defaults, **kws).items():
@@ -383,9 +405,18 @@ class ParamAttr(Generic[T]):
         if type is not Undefined:
             cls._type = type
 
-        # cache all type annotations for faster lookup later
+        # cache annotated fields in the class for faster lookup later
         cls.__annotations__ = typing.get_type_hints(cls)
-        cls._defaults = {k: getattr(cls, k) for k in cls.__annotations__.keys()}
+        cls._defaults = {}
+        cls._positional = []
+        for k in cls.__annotations__.keys():
+            obj = getattr(cls, k)
+            if isinstance(obj, field):
+                if not obj.kw_only:
+                    cls._positional.append(k)
+                cls._defaults[k] = obj.default
+            else:
+                cls._defaults[k] = getattr(cls, k)
 
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
         cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
@@ -572,7 +603,9 @@ class ParamAttr(Generic[T]):
 
             # only show non-defaults
             v = getattr(self, name)
-            if v == default:
+            if v is Undefined:
+                continue
+            elif name not in self._positional and v == default:
                 continue
 
             pairs.append(f"{name}={repr(v)}")
@@ -617,12 +650,13 @@ class ParamAttr(Generic[T]):
 
 class Value(ParamAttr[T]):
     role = ParamAttr.ROLE_VALUE
-    default: T = Undefined
+    default: T = field[T](default=Undefined, kw_only=False)
     allow_none: Union[bool, None] = None
 
-    def __init__(self, *, kw_only=True, **kws):
+    def __init__(self, *args, **kws):
         # kw_only is for the type checker only
-        super().__init__(**kws)
+        kws.pop('kw_only', None)
+        super().__init__(*args, **kws)
 
         if self.allow_none is None:
             if self.default is None:
@@ -696,16 +730,19 @@ class Value(ParamAttr[T]):
         pass
 
 
+# import dataclasses
+# dataclasses.dataclass
+
 R = typing.TypeVar('R')
 class KeywordArgument(ParamAttr[T]):
     role = ParamAttr.ROLE_ARGUMENT
+    name: str = field(kw_only=False)
     default: T = Undefined
-    name: str
     required: bool = False
 
-    def __init__(self, name, **kws):
-        super().__init__(**kws)
-        self.name = name
+    # def __init__(self, name, **kws):
+    #     super().__init__(**kws)
+    #     self.name = name
 
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
         raise AttributeError(
@@ -926,16 +963,11 @@ class _MethodDataClass(OwnerAccessAttr[T]):
 
     __new__ = OwnerAccessAttr.__new__
 
-    def __init__(self, **arguments):
-        super().__init__(**arguments)
-        self._arguments = {}
-
 
 class Method(_MethodDataClass[T]):
 # class Method(_MethodDataClass[T], Generic[T,Tcall]):
     role = ParamAttr.ROLE_METHOD
     key: Any = Undefined
-    _arguments = {}
 
     def get_key_arguments(self, owner_cls, validate=False):
         if self.key is not Undefined:

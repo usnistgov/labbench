@@ -39,7 +39,7 @@ from .util import (
     until_timeout,
 )
 
-from . import util
+from . import util, paramattr
 
 util.force_full_traceback(True)
 

@@ -6,7 +6,10 @@ import paramattr_tooling
 
 lb.util.force_full_traceback(True)
 
-@attr.register_key_argument(attr.kwarg.int(name='registered_channel', min=1, max=4))
+attr.kwarg.int()
+attr.value.int()
+
+@attr.register_key_argument(attr.kwarg.int('registered_channel', min=1, max=4))
 @store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
 class StoreTestDevice(store_backend.TestStoreDevice):
     LOOP_TEST_VALUES = {

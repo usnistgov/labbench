@@ -227,9 +227,6 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 wrong_type = type(attr_def)
                 raise TypeError(f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {repr(wrong_type)}')
 
-            elif not attr_def.sets:
-                raise TypeError(f"the labbench.parametter value '{name}' in class {cls.__qualname__} is annotated for setting on instantiation, but it is read-only (sets=False)")
-
             elif name == "resource":
                 # defined above for its POSITIONAL_OR_KEYWORD special casing
                 continue

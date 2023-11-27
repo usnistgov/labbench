@@ -173,11 +173,10 @@ class MungerBase(core.Device):
                 # other util.Ownable instances e.g. RelationalTableLogger
                 continue
 
-            for trait_name, trait in attr.get_class_attrs(owner).items():
-                if trait.role == attr.Trait.ROLE_VALUE or trait.cache:
-                    summary[key_func(owner_name, trait_name)] = getattr(
-                        owner, trait_name
-                    )
+            for attr_name, attr_def in attr.get_class_attrs(owner).items():
+                if isinstance(attr_def, attr.value.Value) or attr_def.cache:
+                    summary_key = key_func(owner_name, attr_name)
+                    summary[summary_key] = getattr(owner, attr_name)
         summary = {k: process_value(v, k) for k, v in summary.items()}
 
         metadata = dict(summary=pd.DataFrame([summary], index=["Value"]).T)
@@ -530,8 +529,6 @@ class MungeToTar(MungerBase):
 class Aggregator(util.Ownable):
     """Passive aggregation of data from Device property trait and value traits traits, and from calls to methods in Rack instances"""
 
-    PERSISTENT_TRAIT_ROLES = (attr._bases.ParamAttr.ROLE_VALUE,)
-
     def __init__(self):
         # registry of names to use for trait owners
         self.name_map = {}
@@ -567,13 +564,13 @@ class Aggregator(util.Ownable):
         _rack.notify.unobserve_calls(self._receive_rack_input)
         # _rack.notify.unobserve_call_iteration(self._receive_rack_input)
 
-    def is_always_trait(self, device, attr):
+    def is_always_trait(self, device, attr_name):
         if not isinstance(device, core.Device):
             return False
 
-        trait = attr.get_class_attrs(device)[attr]
+        attr_def = attr.get_class_attrs(device)[attr_name]
 
-        return trait.role in self.PERSISTENT_TRAIT_ROLES or trait.cache
+        return isinstance(attr_def, attr.value.Value) or attr_def.cache
 
     def get(self) -> list([dict, dict]):
         """return an aggregated dictionary output data (from Device traits and Rack method returns)

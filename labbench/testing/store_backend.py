@@ -96,13 +96,13 @@ class TestStore:
         self.set_count = defaultdict(int)
         self.notifications = []
 
-    def get_store_key(self, attr: attr.ParamAttr) -> str:
-        if attr.role == attr.ROLE_VALUE or attr.key is Undefined:
-            return attr.name
-        elif isinstance(attr.key, str):
-            return attr.key
+    def get_store_key(self, attr_def: attr.ParamAttr) -> str:
+        if isinstance(attr_def, attr.value.Value) or attr_def.key is Undefined:
+            return attr_def.name
+        elif isinstance(attr_def.key, str):
+            return attr_def.key
         else:
-            return attr.key[0]
+            return attr_def.key[0]
 
     def get_backend_key(self, owner, attr_def, arguments={}):
         store_name = self.get_store_key(attr_def)

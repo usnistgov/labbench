@@ -11,7 +11,9 @@ class TestParamAttr(unittest.TestCase):
     # set this in a subclass
     DeviceClass = lb.Undefined
 
-    ROLE = lb.Undefined
+    # define this in a subclass to select the type of ParamAttr to test:
+    # attr.value.Value, attr.property.Property, etc.
+    ROLE_TYPE = None
 
     def set_param(self, device, attr_name, value, arguments={}):
         raise NotImplementedError
@@ -50,22 +52,22 @@ class TestParamAttr(unittest.TestCase):
             pass
 
     def test_all_set_then_get(self):
-        def want_to_set_get(attr):
+        def want_to_set_get(attr_def):
             return (
-                attr.role == self.role
-                and attr.sets
-                and attr.gets
-                and not hasattr(lb.Device, attr.name)
-                and not has_steps(attr) # steps can make set != get
+                isinstance(attr_def, self.ROLE_TYPE)
+                and attr_def.sets
+                and attr_def.gets
+                and not hasattr(lb.Device, attr_def.name)
+                and not has_steps(attr_def) # steps can make set != get
             )
 
         device = self.DeviceClass()
         device.open()
 
         attrs = {
-            name: attr
-            for name, attr in device.get_attr_defs().items()
-            if want_to_set_get(attr)
+            name: attr_def
+            for name, attr_def in device.get_attr_defs().items()
+            if want_to_set_get(attr_def)
         }
 
         for attr_name, attr_def in attrs.items():
@@ -73,9 +75,9 @@ class TestParamAttr(unittest.TestCase):
                 # skip methods with arguments for now
                 if len(attr_def.get_key_arguments(type(device))) > 0:
                     continue
-            test_name = f'{self.role} "{attr_name}"'
+            test_name = f'{attr_def.ROLE} "{attr_name}"'
             has_reduced_access_count = (
-                attr_def.cache or attr_def.role == attr_def.ROLE_VALUE
+                attr_def.cache or isinstance(attr_def, attr.value.Value)
             )
 
             device.backend.clear_counts()
@@ -94,7 +96,7 @@ class TestParamAttr(unittest.TestCase):
                 msg=f"{test_name} - callback notification count",
             )
 
-            if attr_def.role == attr_def.ROLE_VALUE:
+            if isinstance(attr_def, attr.value.Value):
                 if len(result["notifications"]) > 1:
                     self.assertEqual(
                         result["notifications"][0]["old"],
@@ -123,7 +125,7 @@ class TestParamAttr(unittest.TestCase):
             )
             self.assertEqual(
                 result["set_count"],
-                0 if attr_def.role == attr_def.ROLE_VALUE else 1,
+                0 if isinstance(attr_def, attr.value.Value) else 1,
                 msg=f'{test_name} - "set" notification count',
             )
 

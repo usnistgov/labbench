@@ -40,7 +40,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
 
 class TestPropertyParamAttr(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
-    role = lb.paramattr.ParamAttr.ROLE_PROPERTY
+    ROLE_TYPE = attr.property.Property
 
     def set_param(self, device, attr_name, value, arguments={}):
         if len(arguments) > 0:

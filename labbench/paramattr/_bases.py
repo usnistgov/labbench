@@ -237,13 +237,13 @@ class HasParamAttrsClsInfo:
         self.key_adapter = key_adapter
 
     def value_names(self) -> typing.List[ParamAttr]:
-        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_VALUE]
+        return [k for k, v in self.attrs.items() if isinstance(v, Value)]
 
     def method_names(self) -> typing.List[ParamAttr]:
-        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_METHOD]
+        return [k for k, v in self.attrs.items() if isinstance(v, Method)]
 
     def property_names(self) -> typing.List[ParamAttr]:
-        return [k for k, v in self.attrs.items() if v.role == ParamAttr.ROLE_PROPERTY]
+        return [k for k, v in self.attrs.items() if isinstance(v, Property)]
 
     @classmethod
     def _copy_from(cls, owner: HasParamAttrs):
@@ -336,14 +336,11 @@ class ParamAttr(Generic[T]):
 
     """
 
-    ROLE_VALUE = "ROLE_VALUE"
-    ROLE_PROPERTY = "ROLE_PROPERTY"
-    ROLE_METHOD = "ROLE_METHOD"
-    ROLE_UNSET = "ROLE_UNSET"
-    ROLE_ARGUMENT = "ROLE_ARGUMENT"
-
+    # the python type representation defined by ParamAttr subclasses
     _type = None
-    role = ROLE_UNSET
+
+    # description of the general behavior of this subclass
+    ROLE = 'base class'
 
     # keyword argument types and default values
     help: str = ""
@@ -518,14 +515,14 @@ class ParamAttr(Generic[T]):
         if value is None:
             log = getattr(owner, "_logger", warn)
             log(
-                f"'{self.__repr__(owner_inst=owner)}' {self.role} received value None, which"
+                f"'{self.__repr__(owner_inst=owner)}' {self.ROLE} received value None, which"
                 f"is not allowed for {repr(self)}"
             )
 
         if len(self.only) > 0 and not self.contains(self.only, value):
             log = getattr(owner, "_logger", warn)
             log(
-                f"'{self.__repr__(owner_inst=owner)}' {self.role} received {repr(value)}, which"
+                f"'{self.__repr__(owner_inst=owner)}' {self.ROLE} received {repr(value)}, which"
                 f"is not in the valid value list {repr(self.only)}"
             )
 
@@ -649,10 +646,11 @@ class ParamAttr(Generic[T]):
 
 
 class Value(ParamAttr[T]):
-    role = ParamAttr.ROLE_VALUE
     default: T = field[T](default=Undefined, kw_only=False)
     allow_none: Union[bool, None] = None
     key: Any = None
+
+    ROLE = 'value'
 
     def __init__(self, *args, **kws):
         # kw_only is for the type checker only
@@ -731,19 +729,12 @@ class Value(ParamAttr[T]):
         pass
 
 
-# import dataclasses
-# dataclasses.dataclass
-
 R = typing.TypeVar('R')
 class KeywordArgument(ParamAttr[T]):
-    role = ParamAttr.ROLE_ARGUMENT
     name: str = field(kw_only=False)
     default: T = Undefined
     required: bool = False
-
-    # def __init__(self, name, **kws):
-    #     super().__init__(**kws)
-    #     self.name = name
+    ROLE = 'keyword argument'
 
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
         raise AttributeError(
@@ -887,9 +878,7 @@ class OwnerAccessAttr(ParamAttr[T], Generic[T, TCall]):
             value = get_owner_defs(owner).key_adapter.get(owner, self.key, self, arguments)
 
         value = self._finalize_get_value(owner, value, strict=False)
-        owner.__notify__(
-            self.name, value, "get", cache=self.cache or (self.role == self.ROLE_VALUE)
-        )
+        owner.__notify__(self.name, value, "get", cache=self.cache)
         return value
 
     @util.hide_in_traceback
@@ -966,9 +955,8 @@ class _MethodDataClass(OwnerAccessAttr[T]):
 
 
 class Method(_MethodDataClass[T]):
-# class Method(_MethodDataClass[T], Generic[T,Tcall]):
-    role = ParamAttr.ROLE_METHOD
     key: Any = Undefined
+    ROLE = 'method'
 
     def get_key_arguments(self, owner_cls, validate=False):
         if self.key is not Undefined:
@@ -1164,10 +1152,11 @@ class TDecorator(Method[T]):
     def __call__(self, func: typing.Callable[_P,typing.Union[None,T]]) -> TDecoratedMethod[T,_P]:
         ...
 
-
 class Property(OwnerAccessAttr[T]):
-    role = ParamAttr.ROLE_PROPERTY
     key: Any = Undefined
+
+    # for descriptive purposes
+    ROLE = 'property'
 
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
         """The owner calls this in each of its ParamAttr attributes at the end of defining the subclass
@@ -1290,13 +1279,11 @@ def list_property_attrs(
 class HasParamAttrs(metaclass=HasParamAttrsMeta):
     def __init__(self, **values):
         self._attr_store = HasParamAttrsInstInfo(self)
-        for name, attr in get_class_attrs(self).items():
-            attr.__init_owner_instance__(self)
+        for attr_def in get_class_attrs(self).values():
+            attr_def.__init_owner_instance__(self)
 
     @util.hide_in_traceback
     def __init_subclass__(cls):
-        MANAGED_ROLES = ParamAttr.ROLE_PROPERTY, ParamAttr.ROLE_METHOD
-
         attr_defs = get_class_attrs(cls)
 
         for name, attr_def in dict(attr_defs).items():
@@ -1304,7 +1291,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
             obj = getattr(cls, name)
 
             if not isinstance(obj, ParamAttr):
-                if attr_def.role in MANAGED_ROLES and callable(obj):
+                if isinstance(attr_def, OwnerAccessAttr) and callable(obj):
                     # if it's a method, decorate it
                     attr_defs[name] = attr_def(obj)
                 else:
@@ -1707,7 +1694,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
                 self.name,
                 ret,
                 "get",
-                cache=self.cache or (self.role == self.ROLE_VALUE),
+                cache=self.cache or isinstance(self, Value),
             )
 
         return ret
@@ -1745,7 +1732,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
                 self.name,
                 cal_value,
                 "set",
-                cache=self.cache or (self.role == self.ROLE_VALUE),
+                cache=self.cache or isinstance(self, Value),
             )
 
 
@@ -1978,7 +1965,7 @@ class TransformMixIn(DependentParamAttr):
                 self.name,
                 ret,
                 "get",
-                cache=self.cache or (self.role == self.ROLE_VALUE),
+                cache=self.cache or isinstance(self, Value),
             )
 
         return ret
@@ -2005,7 +1992,7 @@ class TransformMixIn(DependentParamAttr):
                 self.name,
                 value,
                 "set",
-                cache=self.cache or (self.role == self.ROLE_VALUE),
+                cache=self.cache or isinstance(self, Value),
             )
 
 

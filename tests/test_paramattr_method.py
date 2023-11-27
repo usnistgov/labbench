@@ -55,7 +55,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
 
 class TestMethod(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
-    role = lb.paramattr.ParamAttr.ROLE_METHOD
+    ROLE_TYPE = attr.method.Method
 
     def set_param(self, device, attr_name, value, arguments={}):
         param_method = getattr(device, attr_name)

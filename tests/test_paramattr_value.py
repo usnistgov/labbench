@@ -65,16 +65,18 @@ def has_steps(attr: attr.ParamAttr):
 
 class TestValueParamAttr(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
-    role = lb.paramattr.ParamAttr.ROLE_VALUE
+    ROLE_TYPE = attr.value.Value
 
     def set_param(self, device, attr_name, value, arguments={}):
         if len(arguments) > 0:
-            raise ValueError(f"{self.role} do not accept arguments")
+            attr_def = attr.get_class_attrs(device)[attr_name]
+            raise ValueError(f"{attr_def.ROLE} do not accept arguments")
         setattr(device, attr_name, value)
 
     def get_param(self, device, attr_name, arguments={}):
         if len(arguments) > 0:
-            raise ValueError(f"{self.role} properties do not accept arguments")
+            attr_def = attr.get_class_attrs(device)[attr_name]
+            raise ValueError(f"{attr_def.ROLE} properties do not accept arguments")
         return getattr(device, attr_name)
 
     def test_basic_get(self):
@@ -105,14 +107,13 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
         device = self.DeviceClass()
         device.open()
 
-        attrs = {
-            name: attr
-            for name, attr in device.get_attr_defs().items()
-            if attr.role == self.role
+        attr_defs = {
+            name: attr_def
+            for name, attr_def in device.get_attr_defs().items()
+            if isinstance(attr_def, self.ROLE_TYPE)
         }
 
-        for attr_name, attr in attrs.items():
-            test_name = f'{self.role} "{attr_name}"'
+        for attr_name, attr in attr_defs.items():
             value = getattr(device, attr_name)
 
             if attr.allow_none:
@@ -132,16 +133,14 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
         device = self.DeviceClass()
         device.open()
 
-        attrs = {
-            name: attr
-            for name, attr in device.get_attr_defs().items()
-            if attr.role == self.role
+        attr_defs = {
+            name: attr_def
+            for name, attr_def in device.get_attr_defs().items()
+            if isinstance(attr_def, self.ROLE_TYPE)
         }
 
-        for attr_name, attr in attrs.items():
-            test_name = f'{self.role} "{attr_name}"'
+        for attr_name, attr in attr_defs.items():
             value = getattr(device, attr_name)
-
             self.assertTrue(value == attr.default, msg=f"pythonic type of {attr_name}")
 
     def test_only(self):
@@ -234,16 +233,24 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
         self.assertEqual(device.float_stepped, 0)
 
     def test_device_initialization(self):
-        attrs = {
-            name: attr
-            for name, attr in self.DeviceClass.get_attr_defs().items()
-            if name in self.DeviceClass.__annotations__ and attr.role == self.role and attr.sets and not has_steps(attr)
+        def should_test_this_attr(attr_def: attr.ParamAttr):
+            return (
+                attr_def.name in self.DeviceClass.__annotations__
+                and isinstance(attr_def, self.ROLE_TYPE)
+                and attr_def.sets
+                and not has_steps(attr_def)
+            )
+
+        attr_defs = {
+            name: attr_def
+            for name, attr_def in self.DeviceClass.get_attr_defs().items()
+            if should_test_this_attr(attr_def)
         }
 
-        for attr_name, attr in attrs.items():
-            test_name = f'{self.role} "{attr_name}"'
+        for attr_name, attr_def in attr_defs.items():
+            test_name = f'{attr_def.ROLE} "{attr_name}"'
 
-            value_in = self.DeviceClass.LOOP_TEST_VALUES[attr._type]
+            value_in = self.DeviceClass.LOOP_TEST_VALUES[attr_def._type]
 
             device = self.DeviceClass(**{attr_name: value_in})
 
@@ -258,7 +265,7 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
 
 class TestAdjustedValueParamAttr(TestValueParamAttr):
     DeviceClass = AdjustedTestDevice
-    role = lb.paramattr.ParamAttr.ROLE_VALUE
+    ROLE_TYPE = attr.value.Value
 
     def test_numeric_step(self):
         device = self.DeviceClass()

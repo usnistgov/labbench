@@ -24,9 +24,7 @@ class PowerSensor(VISADevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = attr.property.bool(
-        key="INIT:CONT", help="trigger continuously if True"
-    )
+    initiate_continuous = attr.property.bool(key="INIT:CONT", help="trigger continuously if True")
     trigger_count = attr.property.int(
         key="TRIG:COUN", min=1, max=200, help="acquisition count", label="samples"
     )
@@ -107,9 +105,7 @@ class SpectrumAnalyzer(VISADevice):
 @attr.visa_keying(remap={True: "YES", False: "NO"})
 @attr.adjusted("identity_pattern", default=r"Signal generator model \#1234")
 class SignalGenerator(VISADevice):
-    output_enabled = attr.property.bool(
-        key="OUT:ENABL", help="when True, output an RF tone"
-    )
+    output_enabled = attr.property.bool(key="OUT:ENABL", help="when True, output an RF tone")
     center_frequency = attr.property.float(
         key="SENS:FREQ",
         min=10e6,
@@ -123,6 +119,7 @@ class SignalGenerator(VISADevice):
     def trigger(self):
         """revert to instrument preset state"""
         self.write("TRIG")
+
 
 @attr.register_key_argument(attr.kwarg.int("channel", min=1, max=4, help="input channel"))
 @attr.visa_keying(remap={True: "ON", False: "OFF"})

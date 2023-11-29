@@ -8,9 +8,7 @@ lb.util.force_full_traceback(True)
 
 
 # @lb.key_argument('channel', attr.argument.int(min=1, max=4))
-@store_backend.key_store_adapter(
-    defaults={"str_or_none": None, "str_cached": "cached string"}
-)
+@store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
 class StoreTestDevice(store_backend.TestStoreDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values

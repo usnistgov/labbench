@@ -33,9 +33,7 @@ import numpy as np
 import shutil
 
 
-@store_backend.key_store_adapter(
-    defaults={"SWE:APER": '20e-6'}
-)
+@store_backend.key_store_adapter(defaults={"SWE:APER": "20e-6"})
 class StoreDevice(store_backend.TestStoreDevice):
     """This "instrument" makes mock data and instrument property traits to
     demonstrate we can show the process of value trait
@@ -48,9 +46,7 @@ class StoreDevice(store_backend.TestStoreDevice):
     # properties
     initiate_continuous = attr.property.bool(key="INIT:CONT")
     output_trigger = attr.property.bool(key="OUTP:TRIG")
-    sweep_aperture = attr.property.float(
-        key="SWE:APER", min=20e-6, max=200e-3, help="time (in s)"
-    )
+    sweep_aperture = attr.property.float(key="SWE:APER", min=20e-6, max=200e-3, help="time (in s)")
     frequency = attr.property.float(
         key="SENS:FREQ", min=10e6, max=18e9, help="center frequency (in Hz)"
     )
@@ -75,12 +71,14 @@ class StoreDevice(store_backend.TestStoreDevice):
 
         series.index.name = "Time (s)"
         return series
-    
+
+
 FREQUENCIES = 10e6, 100e6, 1e9, 10e9
 EXTRA_VALUES = dict(power=1.21e9, potato=7)
 
+
 class StoreRack(lb.Rack):
-    """ a device paired with a logger"""
+    """a device paired with a logger"""
 
     inst: StoreDevice = StoreDevice()
     db: lb._data.TabularLoggerBase
@@ -98,7 +96,11 @@ class StoreRack(lb.Rack):
 
     def simple_loop_expected_columns(self):
         return tuple(self.EXTRA_VALUES.keys()) + (
-            'inst_trace_index', 'inst_frequency', 'inst_sweep_aperture','db_host_time', 'db_host_log'
+            "inst_trace_index",
+            "inst_frequency",
+            "inst_sweep_aperture",
+            "db_host_time",
+            "db_host_log",
         )
 
     def delete_data(self):
@@ -110,42 +112,37 @@ class TestDataLogging(unittest.TestCase):
         return f"test db/{np.random.bytes(8).hex()}"
 
     def test_csv_tar(self):
-        db=lb.CSVLogger(
-            path=self.make_db_path(),
-            tar=True
-        )
+        db = lb.CSVLogger(path=self.make_db_path(), tar=True)
 
         with StoreRack(db=db) as rack:
             rack.simple_loop()
 
         self.assertTrue(db.path.exists())
-        self.assertTrue((db.path/db.OUTPUT_FILE_NAME).exists())
-        self.assertTrue((db.path/db.INPUT_FILE_NAME).exists())
-        self.assertTrue((db.path/db.munge.tarname).exists())
+        self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
+        self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+        self.assertTrue((db.path / db.munge.tarname).exists())
 
-        df = lb.read(db.path/'outputs.csv')
+        df = lb.read(db.path / "outputs.csv")
         self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
         rack.delete_data()
 
     def test_csv(self):
-        db=lb.CSVLogger(
-            path=self.make_db_path(),
-            tar=False
-        )
+        db = lb.CSVLogger(path=self.make_db_path(), tar=False)
 
         with StoreRack(db=db) as rack:
             rack.simple_loop()
 
         self.assertTrue(db.path.exists())
-        self.assertTrue((db.path/db.OUTPUT_FILE_NAME).exists())
-        self.assertTrue((db.path/db.INPUT_FILE_NAME).exists())
-        df = lb.read(db.path/'outputs.csv')
+        self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
+        self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+        df = lb.read(db.path / "outputs.csv")
         self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
         rack.delete_data()
+
 
 if __name__ == "__main__":
     lb.util.force_full_traceback(True)

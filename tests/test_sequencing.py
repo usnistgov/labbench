@@ -113,9 +113,7 @@ class TestConcurrency(unittest.TestCase):
         with inst1, inst2:
             self.assertEqual(inst1.isopen, True)
             self.assertEqual(inst2.isopen, True)
-            ret = lb.concurrently(
-                **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
-            )
+            ret = lb.concurrently(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
         self.assertIn(inst1.resource, ret)
         self.assertIn(inst2.resource, ret)
         self.assertEqual(ret[inst1.resource], inst1.fetch_time)
@@ -164,9 +162,7 @@ class TestConcurrency(unittest.TestCase):
         with inst1, inst2:
             self.assertEqual(inst1.isopen, True)
             self.assertEqual(inst2.isopen, True)
-            ret = lb.sequentially(
-                **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
-            )
+            ret = lb.sequentially(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
         self.assertIn(inst1.resource, ret)
         self.assertIn(inst2.resource, ret)
         self.assertEqual(ret[inst1.resource], inst1.fetch_time)

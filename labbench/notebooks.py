@@ -57,9 +57,7 @@ def trait_table(device):
 
     _df = pd.DataFrame([], columns=["value"])
 
-    TABLE_STYLES = [
-        {"selector": ".col_heading, .blank", "props": [("display", "none;")]}
-    ]
+    TABLE_STYLES = [{"selector": ".col_heading, .blank", "props": [("display", "none;")]}]
 
     CAPTION_FMT = "<center><b>{}<b></center>"
 
@@ -116,9 +114,7 @@ class TextareaLogHandler(logging.StreamHandler):
     def __init__(self, level=logging.DEBUG):
         self.stream = StringIO()
         super(TextareaLogHandler, self).__init__(self.stream)
-        self.widget = widgets.Textarea(
-            layout=widgets.Layout(width="100%", height="500px")
-        )
+        self.widget = widgets.Textarea(layout=widgets.Layout(width="100%", height="500px"))
         self.setFormatter(logging.Formatter(self.log_format, self.time_format))
         self.setLevel(level)
         self.last_time = None
@@ -154,19 +150,13 @@ class panel:
 
         if isinstance(source, Rack):
             cls.devices = dict(
-                [
-                    (k, v)
-                    for k, v in source._ownables.items()
-                    if isinstance(v, core.Device)
-                ]
+                [(k, v) for k, v in source._ownables.items() if isinstance(v, core.Device)]
             )
         elif isinstance(source, numbers.Number):
             cls.source = source + 1
             cls.devices = core.list_devices(cls.source)
         else:
-            raise ValueError(
-                f"source must be a Rack instance or int, but got {repr(source)}"
-            )
+            raise ValueError(f"source must be a Rack instance or int, but got {repr(source)}")
 
         children = [
             trait_table(cls.devices[k])

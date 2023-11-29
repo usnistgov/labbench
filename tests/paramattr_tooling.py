@@ -32,9 +32,7 @@ class TestParamAttr(unittest.TestCase):
 
         backend_key = device.backend.get_backend_key(device, attr_def, arguments)
 
-        notifications = [
-            n for n in device.backend.notifications if n["name"] == attr_name
-        ]
+        notifications = [n for n in device.backend.notifications if n["name"] == attr_name]
 
         return {
             "value_in": value_in,
@@ -58,7 +56,7 @@ class TestParamAttr(unittest.TestCase):
                 and attr_def.sets
                 and attr_def.gets
                 and not hasattr(lb.Device, attr_def.name)
-                and not has_steps(attr_def) # steps can make set != get
+                and not has_steps(attr_def)  # steps can make set != get
             )
 
         device = self.DeviceClass()
@@ -76,9 +74,7 @@ class TestParamAttr(unittest.TestCase):
                 if len(attr_def.get_key_arguments(type(device))) > 0:
                     continue
             test_name = f'{attr_def.ROLE} "{attr_name}"'
-            has_reduced_access_count = (
-                attr_def.cache or isinstance(attr_def, attr.value.Value)
-            )
+            has_reduced_access_count = attr_def.cache or isinstance(attr_def, attr.value.Value)
 
             device.backend.clear_counts()
 

@@ -6,9 +6,7 @@ import unittest
 import paramattr_tooling
 
 
-@store_backend.key_store_adapter(
-    defaults={"str_or_none": None, "str_cached": "cached string"}
-)
+@store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
 class StoreTestDevice(store_backend.TestStoreDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
@@ -37,9 +35,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
     str = attr.value.str(default="squirrel")
     any = attr.value.any(default="empty", allow_none=True)
     str_with_only = attr.value.str(default="moose", only=("moose", "squirrel"))
-    str_no_case_with_only = attr.value.str(
-        default="moose", only=("MOOSE", "squirrel"), case=False
-    )
+    str_no_case_with_only = attr.value.str(default="moose", only=("MOOSE", "squirrel"), case=False)
 
 
 @lb.adjusted("bool", default=False)
@@ -99,9 +95,7 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
         # repeat to set->get to ensure proper caching
         self.eval_set_then_get(device, "str_cached")
         result = self.eval_set_then_get(device, "str_cached")
-        self.assertEqual(
-            len(result["notifications"]), 2, "notification count for cached string"
-        )
+        self.assertEqual(len(result["notifications"]), 2, "notification count for cached string")
 
     def test_default_types(self):
         device = self.DeviceClass()
@@ -234,14 +228,14 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
                 and attr_def.sets
                 and not has_steps(attr_def)
             )
-        
+
         device = self.DeviceClass()
         device.open()
 
         for attr_def in device.get_attr_defs().values():
             if not should_test_this_attr(attr_def):
                 continue
-            
+
             test_name = f'{attr_def.ROLE} "{attr_def.name}"'
 
             value_in = self.DeviceClass.LOOP_TEST_VALUES[attr_def._type]
@@ -272,9 +266,7 @@ class TestRequiredArgumentParamAttr(unittest.TestCase):
     DeviceClass = RequiredParametersTestDevice
 
     def test_instantiation(self):
-        with self.assertRaises(
-            TypeError, msg="instantiation without required keyword arguments"
-        ):
+        with self.assertRaises(TypeError, msg="instantiation without required keyword arguments"):
             device = self.DeviceClass()
 
         device = self.DeviceClass(required_str="hi", required_str_allow_none=None)

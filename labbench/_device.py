@@ -152,19 +152,24 @@ def log_trait_activity(msg):
     else:
         owner._logger.debug(f'unknown operation type "{msg["type"]}"')
 
+
 @dataclass_transform(
-    kw_only_default=True, eq_default=False, field_specifiers=attr.value._ALL_TYPES,
+    kw_only_default=True,
+    eq_default=False,
+    field_specifiers=attr.value._ALL_TYPES,
 )
 class DeviceDataClass(HasParamAttrs, util.Ownable):
     @typing.overload
-    def __init__(self, **values): ...
+    def __init__(self, **values):
+        ...
+
     def __init__(self, resource=Undefined, **values):
         """Update default values with these arguments on instantiation."""
 
         if resource is Undefined:
-            values['resource'] = type(self).resource.default
+            values["resource"] = type(self).resource.default
         else:
-            values['resource'] = resource
+            values["resource"] = resource
 
         # validate presence of required arguments
         inspect.signature(self.__init__).bind(**values)
@@ -185,7 +190,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                         self._attr_store.cache[name] = None
                     else:
                         attr_desc = attr.__repr__(owner_inst=self)
-                        raise TypeError(f"unable to determine an initial value for {attr_desc} - define it with allow_none=True or default=<default value>")
+                        raise TypeError(
+                            f"unable to determine an initial value for {attr_desc} - define it with allow_none=True or default=<default value>"
+                        )
 
         util.Ownable.__init__(self)
 
@@ -223,21 +230,25 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
             attr_def = getattr(cls, name)
 
             if not isinstance(attr_def, attr.value.Value):
-                annot_desc = f'{name}: {cls.__annotations__[name].__name__}'
+                annot_desc = f"{name}: {cls.__annotations__[name].__name__}"
                 wrong_type = type(attr_def)
-                raise TypeError(f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {repr(wrong_type)}')
+                raise TypeError(
+                    f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {repr(wrong_type)}'
+                )
 
             elif name == "resource":
                 # defined above for its POSITIONAL_OR_KEYWORD special casing
                 continue
 
             else:
-                params.append(inspect.Parameter(
-                    name,
-                    kind=inspect.Parameter.KEYWORD_ONLY,
-                    default=attr_def.default,
-                    annotation=cls.__annotations__[name],
-                ))
+                params.append(
+                    inspect.Parameter(
+                        name,
+                        kind=inspect.Parameter.KEYWORD_ONLY,
+                        default=attr_def.default,
+                        annotation=cls.__annotations__[name],
+                    )
+                )
                 constructor_attrs.append(attr_def)
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
@@ -245,11 +256,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = "".join([
-            f"    {t.doc()}\n"
-            for t in constructor_attrs
-        ])
+        value_docs = "".join([f"    {t.doc()}\n" for t in constructor_attrs])
         cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
+
 
 class Device(DeviceDataClass):
     r"""base class for labbench device wrappers.
@@ -278,7 +287,9 @@ class Device(DeviceDataClass):
 
     """
 
-    resource: str = attr.value.str(default=None, cache=True, kw_only=False, help="device address or URI")
+    resource: str = attr.value.str(
+        default=None, cache=True, kw_only=False, help="device address or URI"
+    )
 
     concurrency = attr.value.bool(
         default=True, sets=False, help="True if the device backend supports threading"
@@ -301,7 +312,6 @@ class Device(DeviceDataClass):
     """ .. this attribute is some reference to a controller for the device.
         it is to be set in `connect` and `disconnect` by the subclass that implements the backend.
     """
-
 
     # Backend classes may optionally overload these, and do not need to call the parents
     # defined here
@@ -381,9 +391,7 @@ class Device(DeviceDataClass):
             self._logger.debug("closed")
         finally:
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(
-                    f"multiple exceptions while closing {self}"
-                )
+                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
                 ex.thread_exceptions = all_ex
                 raise ex
 

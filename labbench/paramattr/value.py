@@ -29,6 +29,7 @@ from . import _types
 from ._bases import Value
 import typing as _typing
 
+
 class any(Value, _types.Any):
     """defines a value attribute that validates any python object"""
 
@@ -93,4 +94,3 @@ _ALL_TYPES = (
     Path,
     NetworkAddress,
 )
-

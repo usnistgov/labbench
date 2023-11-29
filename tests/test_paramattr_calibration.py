@@ -8,6 +8,7 @@ import time
 
 lb.util.force_full_traceback(True)
 
+
 @store_backend.key_store_adapter(defaults={"attenuation_setting": 0})
 class StoreTestDevice(store_backend.TestStoreDevice):
     frequency: float = attr.value.float(
@@ -34,7 +35,14 @@ class StoreTestDevice(store_backend.TestStoreDevice):
     )
 
     # the only property that requests an attenuation setting in the device
-    attenuation_setting = attr.property.float(key='attenuation_setting', min=0, max=115, step=5, label="dB", help="uncalibrated attenuation")
+    attenuation_setting = attr.property.float(
+        key="attenuation_setting",
+        min=0,
+        max=115,
+        step=5,
+        label="dB",
+        help="uncalibrated attenuation",
+    )
 
     # the remaining traits are calibration corrections for attenuation_setting
     attenuation = attenuation_setting.calibrate_from_table(

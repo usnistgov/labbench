@@ -20,9 +20,7 @@ class LaggyInstrument(EmulatedVISADevice):
     # Connection and driver value traits
     delay = attr.value.float(default=0, min=0, help="connection time (s)")
     fetch_time = attr.value.float(default=0, min=0, help="fetch time (s)")
-    fail_disconnect = attr.value.bool(
-        default=False, help="raise DivideByZero on disconnect?"
-    )
+    fail_disconnect = attr.value.bool(default=False, help="raise DivideByZero on disconnect?")
 
     def open(self):
         self.perf = {}

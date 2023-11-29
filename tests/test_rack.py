@@ -36,7 +36,9 @@ from contextlib import contextmanager
 import labbench as lb
 from labbench import paramattr as attr
 import numpy as np
+
 lb.paramattr
+
 
 class LaggyInstrument(TestStoreDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
@@ -150,9 +152,7 @@ class MyRack(lb.Rack):
         ),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
-        force_relational=[
-            "host_log"
-        ],  # Data in these columns will always be relational
+        force_relational=["host_log"],  # Data in these columns will always be relational
         nonscalar_file_type="csv",  # Default format of numerical data, when possible
         metadata_dirname="metadata",  # metadata will be stored in this subdirectory
         tar=False,  # `True` to embed relational data folders within `data.tar`
@@ -181,6 +181,7 @@ class MyRack(lb.Rack):
 
     def close(self):
         pass
+
 
 with rack:
     pass

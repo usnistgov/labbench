@@ -10,7 +10,8 @@ from collections import defaultdict
 
 __all__ = ["PowerSensor", "Oscilloscope", "SignalGenerator"]
 
-T = typing.TypeVar('T')
+T = typing.TypeVar("T")
+
 
 class key_store_adapter(attr.visa_keying):
     def __init__(
@@ -77,7 +78,6 @@ class key_store_adapter(attr.visa_keying):
         owner.backend.set(backend_key, value)
 
 
-
 class TestStore:
     def __init__(self):
         self.values = {}
@@ -113,7 +113,7 @@ class TestStore:
 
             missing_args = set(required_args) - set(arguments)
             if len(missing_args) > 0:
-                print('***', missing_args, set(required_args), set(arguments), arguments)
+                print("***", missing_args, set(required_args), set(arguments), arguments)
                 raise ValueError(f"missing required argument(s): {missing_args}")
 
         if len(arguments) == 0:
@@ -154,9 +154,7 @@ class PowerSensor(TestStoreDevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = attr.property.bool(
-        key="INIT:CONT", help="trigger continuously if True"
-    )
+    initiate_continuous = attr.property.bool(key="INIT:CONT", help="trigger continuously if True")
     trigger_count = attr.property.int(
         key="TRIG:COUN", min=1, max=200, help="acquisition count", label="samples"
     )
@@ -198,9 +196,7 @@ class SpectrumAnalyzer(TestStoreDevice):
 
 
 class SignalGenerator(TestStoreDevice):
-    output_enabled = attr.property.bool(
-        key="OUT:ENABL", help="when True, output an RF tone"
-    )
+    output_enabled = attr.property.bool(key="OUT:ENABL", help="when True, output an RF tone")
     center_frequency = attr.property.float(
         key="SENS:FREQ",
         min=10e6,
@@ -213,7 +209,7 @@ class SignalGenerator(TestStoreDevice):
 
 
 @key_store_adapter(
-    key_arguments={"channel": attr.kwarg.int(name='channel', min=1, max=4, help="input channel")},
+    key_arguments={"channel": attr.kwarg.int(name="channel", min=1, max=4, help="input channel")},
 )
 class Oscilloscope(TestStoreDevice):
     @attr.method.float(

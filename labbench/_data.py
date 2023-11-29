@@ -347,7 +347,6 @@ class MungeToDirectory(MungerBase):
             shutil.copyfile(old_path, dest)
 
     def _make_path_heirarchy(self, index, row):
-        # relpath = f'{index} {self.relational_name_fmt}'
         # TODO: add back in a timestamp
         relpath = self.relational_name_fmt.format(id=index, **row)
 
@@ -378,7 +377,6 @@ class MungeToDirectory(MungerBase):
             if isinstance(v, dict):
                 v = recursive_dict_fix(v)
 
-            # with io.TextIOWrapper(stream, newline='\n') as buf:
             json.dump(v, stream, indent=True, sort_keys=True)
 
 
@@ -431,8 +429,8 @@ class MungeToTar(MungerBase):
     tarname = "data.tar"
 
     def _open_relational(self, name, index, row, mode):
-        relpath = os.path.join(self.relational_name_fmt.format(id=index, **row), name)
-
+        directory = self.relational_name_fmt.format(id=index, **row)
+        relpath = f'{directory}/{name}'
         return TarFileIO(self.tarfile, relpath, mode=mode)
 
     def _open_metadata(self, name, mode):
@@ -748,10 +746,13 @@ class Aggregator(util.Ownable):
                 self.update_name_map(children, owner_prefix=new_name)
 
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
-            names = list(self.name_map.values())
-            duplicates = set([x for x in names if names.count(x) > 1])
+            duplicates = {}
+            for k, v in self.name_map.items():
+                duplicates.setdefault(v, []).append(k)
 
-            raise Exception(
+            duplicates = {k: v for k,v in duplicates.items() if len(v) > 1}
+
+            raise RuntimeError(
                 f"could not automatically resolve duplicate device name(s) {duplicates}"
             )
 
@@ -1144,8 +1145,6 @@ class TabularLoggerBase(
 
         # configure strings in relational data files that depend on how 'self' is
         # named in introspection
-        time_key = self.aggregator.key(self.aggregator.name_map[self.host], "time")
-        self.munge.relational_name_fmt = f"{{id}} {{{time_key}}}"
         log_key = self.aggregator.key(self.aggregator.name_map[self.host], "log")
         if log_key not in self.munge.force_relational:
             self.munge.force_relational = list(self.munge.force_relational) + [log_key]

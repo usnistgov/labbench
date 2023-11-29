@@ -32,10 +32,6 @@ import unittest
 import time
 from labbench.testing.store_backend import TestStoreDevice
 
-# try:
-#     from .emulate import EmulatedVISADevice
-# except:
-#     from emulate import EmulatedVISADevice
 from contextlib import contextmanager
 import labbench as lb
 from labbench import paramattr as attr

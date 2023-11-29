@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     try:
         with lb.Email(
-            sender="AggregateLTETestTeam@nistgov.onmicrosoft.com",
+            sender="LabbenchTest@nistgov.onmicrosoft.com",
             recipients=["dkuester@nist.gov"],
         ) as email:
             lb.logger.warning("test warning message")

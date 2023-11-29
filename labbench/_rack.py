@@ -25,7 +25,7 @@
 # licenses.
 
 import contextlib
-import copy
+from copy import deepcopy
 import importlib
 import inspect
 import sys
@@ -321,8 +321,6 @@ class RackMethod(util.Ownable):
             notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
 
-    debug = None
-
     @classmethod
     def from_method(self, method):
         """make a new RackMethod instance by copying another"""
@@ -353,13 +351,15 @@ class RackMethod(util.Ownable):
             # set logic to identify Device dependencies
             available = {getattr(self._owner, name) for name in annotations}
 
-            accessed = {
-                getattr(self._owner, name)
-                for name in util.accessed_attributes(self._wrapped)
-                if not name.startswith("_") and hasattr(self._owner, name)
-            }
+            accessed = set()
+            for name in util.accessed_attributes(self._wrapped):
+                if name.startswith("_") or not hasattr(self._owner, name):
+                    continue
+                obj = getattr(self._owner, name)
+                if isinstance(obj, (util.Ownable, )):
+                    accessed.add(obj)
 
-            self.dependencies = available.intersection(accessed)
+            self.dependencies = available & accessed
         else:
             self.dependencies = set()
 
@@ -866,13 +866,13 @@ class Owner:
             # prepare these first, so they are available to owned classes on __owner_subclass__
             if isinstance(obj, core.Device):
                 if need_copy:
-                    obj = copy.deepcopy(obj)
+                    obj = deepcopy(obj)
                 cls._devices[name] = obj
                 setattr(cls, name, obj)
 
             elif isinstance(obj, Owner):
                 if need_copy:
-                    obj = copy.deepcopy(obj)
+                    obj = deepcopy(obj)
                 cls._owners[name] = obj
                 setattr(cls, name, obj)
 
@@ -890,45 +890,19 @@ class Owner:
         # propagate_owned_names(cls, cls.__name__)
 
     def __init__(self, **update_ownables):
-        self._owners = dict(self._owners)
+        # seed the mappings for our instance from the class definition
+        for name, obj in update_ownables.items():
+            if not isinstance(obj, util.Ownable):
+                type_desc = type(name).__qualname__
+                raise TypeError(f"'{name}' must have an ownable object like Device, not <{type_desc}>")
+            if name not in self._ownables.keys():
+                raise TypeError(f"invalid keyword argument '{name}'")
 
-        # are the given objects ownable
-        unownable = {
-            name: obj
-            for name, obj in update_ownables.items()
-            if not isinstance(obj, util.Ownable)
-        }
-        if len(unownable) > 0:
-            raise TypeError(f"keyword argument objects {unownable} are not ownable")
-
-        # update ownables
-        unrecognized = set(update_ownables.keys()).difference(self._ownables.keys())
-        if len(unrecognized) > 0:
-            clsname = type(self).__qualname__
-            unrecognized = tuple(unrecognized)
-            raise TypeError(
-                f"cannot update unrecognized attributes {unrecognized} of {clsname}"
-            )
-
-        self._ownables = dict(self._ownables, **update_ownables)
-
-        # update devices
-        update_devices = {
-            name: obj
-            for name, obj in update_ownables.items()
-            if isinstance(obj, core.Device)
-        }
-        unrecognized = set(update_devices.keys()).difference(self._devices.keys())
-        if len(unrecognized) > 0:
-            clsname = type(self).__qualname__
-            unrecognized = tuple(unrecognized)
-            raise TypeError(
-                f"{clsname} Device attributes {unrecognized} can only be instantiated with Device objects"
-            )
-        self._devices = dict(self._devices, **update_devices)
-
-        super().__init__()
+            self._ownables[name] = obj
+            if isinstance(obj, core.Device):
+                self._devices[name] = obj
         self.__propagate_ownership__()
+        super().__init__()
 
     def __propagate_ownership__(self):
         for obj in self._owners.values():
@@ -940,23 +914,34 @@ class Owner:
             # name
             obj.__owner_init__(self)
 
-    def __setattr__(self, key, obj):
+    def __setattr__(self, name, obj):
         # update naming for any util.Ownable instances
         if isinstance(obj, util.Ownable):
-            self._ownables[key] = obj
+            self._ownables[name] = obj
             if getattr(obj, "__objclass__", None) is not type(self):
-                obj.__set_name__(type(self), key)
+                obj.__set_name__(type(self), name)
                 obj.__owner_init__(self)
                 if isinstance(obj, Owner):
                     obj.__propagate_ownership__()
 
         if isinstance(obj, core.Device):
-            self._devices[key] = obj
+            self._devices[name] = obj
 
         if isinstance(obj, Owner):
-            self._owners[key] = obj
+            self._owners[name] = obj
 
-        object.__setattr__(self, key, obj)
+        super().__setattr__(name, obj)
+
+    def __getattribute__(self, name):
+        if name in ('_ownables', '_devices', '_owners'):
+            # dicts that need to be a fresh mapping, not the class def
+            obj = super().__getattribute__(name)
+            if obj is getattr(type(self), name):
+                obj = dict(obj)
+                setattr(self, name, obj)
+            return obj
+        else:
+            return super().__getattribute__(name)      
 
     def close(self):
         pass
@@ -1385,9 +1370,9 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
     def __deepcopy__(self, memo=None):
         """Called when an owning class is subclassed"""
-        owners = {name: copy.deepcopy(obj) for name, obj in self._owners.items()}
+        owners = {name: deepcopy(obj) for name, obj in self._owners.items()}
 
-        # steps = {name: copy.deepcopy(obj) for name, obj in type(self)._methods.items()}
+        # steps = {name: deepcopy(obj) for name, obj in type(self)._methods.items()}
         namespace = dict(
             __annotations__=type(self).__annotations__,
             __module__=type(self).__module__,

@@ -30,14 +30,13 @@ from labbench.testing import store_backend
 import unittest
 import pandas as pd
 import numpy as np
+import shutil
 
-FREQUENCIES = 10e6, 100e6, 1e9, 10e9
-METADATA = dict(power=1.21e9, potato=7)
 
 @store_backend.key_store_adapter(
     defaults={"SWE:APER": '20e-6'}
 )
-class TestDevice(store_backend.TestStoreDevice):
+class StoreDevice(store_backend.TestStoreDevice):
     """This "instrument" makes mock data and instrument property traits to
     demonstrate we can show the process of value trait
     up a measurement.
@@ -76,47 +75,80 @@ class TestDevice(store_backend.TestStoreDevice):
 
         series.index.name = "Time (s)"
         return series
+    
+FREQUENCIES = 10e6, 100e6, 1e9, 10e9
+EXTRA_VALUES = dict(power=1.21e9, potato=7)
+
+class StoreRack(lb.Rack):
+    """ a device paired with a logger"""
+
+    inst: StoreDevice = StoreDevice()
+    db: lb._data.TabularLoggerBase
+
+    FREQUENCIES = 10e6, 100e6, 1e9, 10e9
+    EXTRA_VALUES = dict(power=1.21e9, potato=7)
+
+    def simple_loop(self):
+        self.db.observe(self.inst, changes=True, always="sweep_aperture")
+
+        for self.inst.frequency in self.FREQUENCIES:
+            self.inst.index = self.inst.frequency
+            self.inst.fetch_trace()
+            self.db.new_row(**self.EXTRA_VALUES)
+
+    def simple_loop_expected_columns(self):
+        return tuple(self.EXTRA_VALUES.keys()) + (
+            'inst_trace_index', 'inst_frequency', 'inst_sweep_aperture','db_host_time', 'db_host_log'
+        )
+
+    def delete_data(self):
+        shutil.rmtree(self.db.path)
 
 
-class TestDB(unittest.TestCase):
-    def test_state_wrapper_type(self):
-        with TestDevice() as m, lb.SQLiteLogger(path) as db:
-            self.assertEqual(m.param, int_start)
-            m.param = int_stop
-            self.assertEqual(m.param, int_stop)
+class TestDataLogging(unittest.TestCase):
+    def make_db_path(self):
+        return f"test db/{np.random.bytes(8).hex()}"
+
+    def test_csv_tar(self):
+        db=lb.CSVLogger(
+            path=self.make_db_path(),
+            tar=True
+        )
+
+        with StoreRack(db=db) as rack:
+            rack.simple_loop()
+
+        self.assertTrue(db.path.exists())
+        self.assertTrue((db.path/db.OUTPUT_FILE_NAME).exists())
+        self.assertTrue((db.path/db.INPUT_FILE_NAME).exists())
+        self.assertTrue((db.path/db.munge.tarname).exists())
+
+        df = lb.read(db.path/'outputs.csv')
+        self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
+        self.assertEqual(len(df.index), len(rack.FREQUENCIES))
+
+        rack.delete_data()
+
+    def test_csv(self):
+        db=lb.CSVLogger(
+            path=self.make_db_path(),
+            tar=False
+        )
+
+        with StoreRack(db=db) as rack:
+            rack.simple_loop()
+
+        self.assertTrue(db.path.exists())
+        self.assertTrue((db.path/db.OUTPUT_FILE_NAME).exists())
+        self.assertTrue((db.path/db.INPUT_FILE_NAME).exists())
+        df = lb.read(db.path/'outputs.csv')
+        self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
+        self.assertEqual(len(df.index), len(rack.FREQUENCIES))
+
+        rack.delete_data()
 
 if __name__ == "__main__":
     lb.util.force_full_traceback(True)
-    lb.show_messages("debug")
+    lb.show_messages("info")
 
-    path = f"test db/{np.random.bytes(8).hex()}"
-
-    # db = lb.SQLiteLogger(path, tar=False)
-
-    with TestDevice() as inst, lb.CSVLogger(path, tar=True) as db:
-        db.observe(inst, changes=True, always="sweep_aperture")
-
-        for inst.frequency in FREQUENCIES:
-            inst.index = inst.frequency
-            inst.fetch_trace()
-            db.new_row(**METADATA)
-
-    # df = lb.read(path + "/master.db")
-    # df.to_csv(path + "/master.csv")
-
-# df = pd.read_csv(path)
-#    print(df.tail(11))
-#
-# class TestWrappers(unittest.TestCase):
-#    def test_state_wrapper_type(self):
-#        with MockStateWrapper() as m:
-#            self.assertEqual(m.param,int_start)
-#            m.param = int_stop
-#            self.assertEqual(m.param,int_stop)
-#
-#
-#    def test_trait_wrapper_type(self):
-#        with MockTraitWrapper() as m:
-#            self.assertEqual(m.param,int_start)
-#            m.param = int_stop
-#            self.assertEqual(m.param,int_stop)
+    unittest.main()

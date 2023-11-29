@@ -24,22 +24,20 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import sys
 import labbench as lb
 from labbench import paramattr as attr
+from labbench.testing import store_backend
 import unittest
 import pandas as pd
 import numpy as np
-from emulate import EmulatedVISADevice
-import hashlib
-
-lb._force_full_traceback(True)
 
 FREQUENCIES = 10e6, 100e6, 1e9, 10e9
 METADATA = dict(power=1.21e9, potato=7)
 
-
-class EmulatedInstrument(EmulatedVISADevice):
+@store_backend.key_store_adapter(
+    defaults={"SWE:APER": '20e-6'}
+)
+class TestDevice(store_backend.TestStoreDevice):
     """This "instrument" makes mock data and instrument property traits to
     demonstrate we can show the process of value trait
     up a measurement.
@@ -66,7 +64,6 @@ class EmulatedInstrument(EmulatedVISADevice):
     def method(self):
         print("method!")
 
-    @attr.datareturn.DataFrame
     def fetch_trace(self, N=101):
         """Generate N points of junk data as a pandas series."""
         self.trace_index = self.trace_index + 1
@@ -83,29 +80,29 @@ class EmulatedInstrument(EmulatedVISADevice):
 
 class TestDB(unittest.TestCase):
     def test_state_wrapper_type(self):
-        with EmulatedInstrument() as m, lb.SQLiteLogger(path) as db:
+        with TestDevice() as m, lb.SQLiteLogger(path) as db:
             self.assertEqual(m.param, int_start)
             m.param = int_stop
             self.assertEqual(m.param, int_stop)
 
-
 if __name__ == "__main__":
+    lb.util.force_full_traceback(True)
     lb.show_messages("debug")
 
     path = f"test db/{np.random.bytes(8).hex()}"
 
-    with EmulatedInstrument() as inst, lb.SQLiteLogger(path, tar=False) as db:
-        db.observe(inst, changes=True, always="sweep_aperture")
+    # db = lb.SQLiteLogger(path, tar=False)
 
-        inst.fetch_trace()
+    with TestDevice() as inst, lb.CSVLogger(path, tar=True) as db:
+        db.observe(inst, changes=True, always="sweep_aperture")
 
         for inst.frequency in FREQUENCIES:
             inst.index = inst.frequency
             inst.fetch_trace()
             db.new_row(**METADATA)
 
-    df = lb.read(path + "/master.db")
-    df.to_csv(path + "/master.csv")
+    # df = lb.read(path + "/master.db")
+    # df.to_csv(path + "/master.csv")
 
 # df = pd.read_csv(path)
 #    print(df.tail(11))
@@ -123,6 +120,3 @@ if __name__ == "__main__":
 #            self.assertEqual(m.param,int_start)
 #            m.param = int_stop
 #            self.assertEqual(m.param,int_stop)
-#
-# if __name__ == '__main__':
-#    unittest.main()

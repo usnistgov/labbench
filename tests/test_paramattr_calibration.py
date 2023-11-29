@@ -51,10 +51,6 @@ class StoreTestDevice(store_backend.TestStoreDevice):
     )
 
 
-device = StoreTestDevice(frequency=5e9)
-device.open()
-device.attenuation = 49
-
 if __name__ == "__main__":
     lb.visa_default_resource_manager(pyvisa_sim_resource)
 
@@ -64,3 +60,5 @@ if __name__ == "__main__":
 
     # unittest.main()
     device = StoreTestDevice(frequency=100e6)
+    device.open()
+    device.attenuation = 49

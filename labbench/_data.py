@@ -1,29 +1,3 @@
-# This software was developed by employees of the National Institute of
-# Standards and Technology (NIST), an agency of the Federal Government.
-# Pursuant to title 17 United States Code Section 105, works of NIST employees
-# are not subject to copyright protection in the United States and are
-# considered to be in the public domain. Permission to freely use, copy,
-# modify, and distribute this software and its documentation without fee is
-# hereby granted, provided that this notice and disclaimer of warranty appears
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
-# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
-# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
-# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
-# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
-# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
-# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
-# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
-# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
-# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
-# PROVIDED HEREUNDER. Distributions of NIST software should also include
-# copyright and licensing statements of any third-party software that are
-# legally bundled with the code in compliance with the conditions of those
-# licenses.
-
 import copy
 import inspect
 import io
@@ -36,7 +10,7 @@ import warnings
 from contextlib import contextmanager, suppress
 from numbers import Number
 from pathlib import Path
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Iterable
 
 from . import _device
 from . import _device as core
@@ -53,7 +27,7 @@ try:
     sqlalchemy = util.lazy_import("sqlalchemy")
     feather = util.lazy_import("pyarrow.feather")
 except RuntimeWarning:
-    # not executed: help coding tools recognize lazy_imports as imports
+    # not executed: help static code analysis recognize lazy_imports
     import h5py
     import numpy as np
     import pandas as pd
@@ -412,8 +386,6 @@ class TarFileIO(io.BytesIO):
     """For appending data into new files in a tarfile"""
 
     def __init__(self, open_tarfile, relname, mode="w", overwrite=False):
-        #        self.tarbase = tarbase
-        #        self.tarname = tarname
         self.tarfile = open_tarfile
         self.overwrite = False
         self.name = relname
@@ -428,17 +400,13 @@ class TarFileIO(io.BytesIO):
 
         super(TarFileIO, self).__del__()
 
-    #    def write(self, data, encoding='ascii'):
-    #        if isinstance(data, str):
-    #            data = bytes(data, encoding=encoding)
-    #        super(TarFileIO,self).write(data)
-    #
+    def write(self, data, encoding='ascii'):
+        if isinstance(data, str):
+            data = bytes(data, encoding=encoding)
+        super(TarFileIO,self).write(data)
 
     def close(self):
         # First: dump the data into the tar file
-        #        tarpath = os.path.join(self.tarbase, self.tarname)
-        #        f = tarfile.open(tarpath, 'a')
-
         try:
             if not self.overwrite and self.name in self.tarfile.getnames():
                 raise IOError(f"{self.name} already exists in {self.tarfile.name}")
@@ -478,7 +446,6 @@ class MungeToTar(MungerBase):
         self.tarfile = tarfile.open(os.path.join(self.resource, self.tarname), "a")
 
     def close(self):
-        util.logger.warning("MungeToTar cleanup()")
         self.tarfile.close()
 
     def _get_key(self, buf):
@@ -526,17 +493,23 @@ class MungeToTar(MungerBase):
                 json.dump(v, buf, indent=True, sort_keys=True)
 
 
+TParamAttrNameMap = Dict[attr.HasParamAttrs, str]
 class Aggregator(util.Ownable):
-    """Passive aggregation of data from Device property trait and value traits traits, and from calls to methods in Rack instances"""
+    """Manages aggregation of parameters of Device attributes defined with paramattr, and data returned by calls to methods in Rack instances"""
+
+    name_map: Dict[attr.HasParamAttrs, str]
+    attr_rules: Dict[str, TParamAttrNameMap]
+    incoming_attr_always: Dict[str, attr.HasParamAttrs]
+    incoming_attr_auto: Dict[str, attr.HasParamAttrs]
 
     def __init__(self):
-        # registry of names to use for trait owners
+        # registry of names to use for HasParamAttr subclasses like Device
         self.name_map = {}
-        self.trait_rules = dict(always={}, never={})
+        self.attr_rules = dict(always={}, never={})
 
         # pending data
-        self.incoming_trait_auto = {}
-        self.incoming_trait_always = {}
+        self.incoming_attr_auto = {}
+        self.incoming_attr_always = {}
         self.incoming_rack_output = {}
         self.incoming_rack_input = {}
 
@@ -586,30 +559,30 @@ class Aggregator(util.Ownable):
 
         for device, device_name in list(self.name_map.items()):
             # Perform gets for each property trait called out in self.trait_rules['always']
-            if device in self.trait_rules["always"].keys():
-                for attr in self.trait_rules["always"][device]:
+            if device in self.attr_rules["always"].keys():
+                for attr in self.attr_rules["always"][device]:
                     key = self.key(device_name, attr)
                     value = getattr(device, attr)
 
                     if self.is_always_trait(device, attr):
-                        self.incoming_trait_always[key] = value
+                        self.incoming_attr_always[key] = value
                     else:
-                        self.incoming_trait_auto[key] = value
+                        self.incoming_attr_auto[key] = value
 
             # Remove keys corresponding with self.trait_rules['never']
-            if device in self.trait_rules["never"].keys():
-                for attr in self.trait_rules["never"][device]:
+            if device in self.attr_rules["never"].keys():
+                for attr in self.attr_rules["never"][device]:
                     key = self.key(device_name, attr)
                     if self.is_always_trait(device, attr):
-                        self.incoming_trait_always.pop(key, None)
+                        self.incoming_attr_always.pop(key, None)
                     else:
-                        self.incoming_trait_auto.pop(key, None)
+                        self.incoming_attr_auto.pop(key, None)
 
         aggregated_output = {}
 
         # start by aggregating the trait data, and checking for conflicts with keys in the Rack data
-        aggregated_output.update(self.incoming_trait_always)
-        aggregated_output.update(self.incoming_trait_auto)
+        aggregated_output.update(self.incoming_attr_always)
+        aggregated_output.update(self.incoming_attr_auto)
 
         # check namespace conflicts and pull in rack outputs
         key_conflicts = set(aggregated_output).intersection(self.incoming_rack_output)
@@ -629,7 +602,7 @@ class Aggregator(util.Ownable):
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
         # value traits traits are locally cached, so it is safe to keep them in the next step
         self.incoming_rack_output = {}
-        self.incoming_trait_auto = {}
+        self.incoming_attr_auto = {}
         # self._pending_rack_input = {}
 
         return aggregated_output, aggregated_input
@@ -727,15 +700,13 @@ class Aggregator(util.Ownable):
         if msg["cache"]:
             self.metadata[self.key(name, attr)] = msg["new"]
         elif self.is_always_trait(msg["owner"], msg["name"]):
-            self.incoming_trait_always[self.key(name, attr)] = msg["new"]
+            self.incoming_attr_always[self.key(name, attr)] = msg["new"]
         elif not name.startswith("_"):
-            self.incoming_trait_auto[self.key(name, attr)] = msg["new"]
+            self.incoming_attr_auto[self.key(name, attr)] = msg["new"]
 
-    def update_name_map(self, ownables, owner_prefix=None):
-        """ "map each Device to a name in devices.values() by introspection"""
-
-        # self.name_map.clear()
-
+    def update_name_map(self, ownables: Dict[Device, str], owner_prefix: Union[str, None]=None, fallback_names={}):
+        """ map each Device to a name in devices.values() by introspection.
+        """
         if owner_prefix is None:
             prefix = ""
         else:
@@ -748,9 +719,6 @@ class Aggregator(util.Ownable):
                 )
 
             if name is not None:
-                # if obj in self.name_map and name != self.name_map[obj]:
-                #     # a rename is an odd case, make a note of it
-                #     self._logger.warning(f"renaming {self.name_map[obj]} to {name}")
                 if obj not in self.name_map:
                     self.name_map[obj] = new_name = prefix + name
                 else:
@@ -760,24 +728,24 @@ class Aggregator(util.Ownable):
                 # naming for device. needs this
                 new_name = prefix + self.name_map[obj]
 
-            # elif obj._owned_name is not None:
-            #     self.name_map[obj] = new_name = obj._owned_name
-
             elif hasattr(obj, "__name__"):
                 # Ownable instances that have owners have this attribute set
                 self.name_map[obj] = new_name = prefix + obj.__name__
 
             else:
-                self.name_map[obj] = new_name = prefix + self.inspect_object_name(obj)
-                self._logger.info(f"{obj} named '{new_name}' by introspection")
+                try:
+                    self.name_map[obj] = new_name = prefix + self.inspect_object_name(obj)
+                    self._logger.info(f"{obj} named '{new_name}' by introspection")
+                except RuntimeError:
+                    if obj in fallback_names:
+                        self.name_map[obj] = new_name = prefix + fallback_names[obj]
+                        self._logger.info(f"{obj} named '{new_name}' based on fallback after introspection failed")
+                    else:
+                        raise
 
             if isinstance(obj, Owner):
                 children = dict(zip(obj._ownables.values(), obj._ownables.keys()))
                 self.update_name_map(children, owner_prefix=new_name)
-
-            # if obj._owned_name is None:
-            #     obj._owned_name = new_name
-            #     obj._logger.extra.update(**util.logger_metadata(obj))
 
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
             names = list(self.name_map.values())
@@ -844,9 +812,9 @@ class Aggregator(util.Ownable):
             else:
                 core.unobserve(device, self._receive_trait_update)
             if always:
-                self.trait_rules["always"][device] = always
+                self.attr_rules["always"][device] = always
             if never:
-                self.trait_rules["never"][device] = never
+                self.attr_rules["never"][device] = never
 
     def inspect_object_name(self, target, max_levels=20):
         """Introspect into the caller to name an object .
@@ -858,14 +826,6 @@ class Aggregator(util.Ownable):
         Returns:
             name of the Device
         """
-
-        #        # If the context is a function, look in its first argument,
-        #        # in case it is a method. Search its class instance.
-        #        if len(ret) == 0 and len(f.frame.f_code.co_varnames)>0:
-        #            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]]
-        #            for k, v in obj.__dict__.items():
-        #                if isinstance(v, Device):
-        #                    ret[k] = v
 
         def find_value(haystack, needle, reject=["self"]):
             for k, v in haystack.items():
@@ -994,15 +954,15 @@ class TabularLoggerBase(
 
     def observe(
         self,
-        devices,
-        changes=True,
-        always: Union[str, List[str]] = [],
-        never: Union[str, List[str]] = ["isopen"],
+        devices: Union[Device, Iterable[Device]],
+        changes: bool =True,
+        always: Union[str, Iterable[str]] = [],
+        never: Union[str, Iterable[str]] = ["isopen"],
     ):
-        """Configure the data to aggregate from value, property, or datareturn traits in the given devices.
+        """Configure aggregation of activity in parameter attributes defined with `labbench.paramattr.value`,
+        `labbench.paramattr.property`, or labbench.paramattr.method`.
 
-        Device may be a single device instance, or an
-        several devices in an iterable (such as a list
+        Device may be a single device instance or an iterable several devices in an iterable (such as a list
         or tuple) to apply to each one.
 
         Subsequent calls to :func:`observe_states` replace
@@ -1010,7 +970,7 @@ class TabularLoggerBase(
         device.
 
         Arguments:
-            devices: Device instance or iterable of Device instances
+            devices: One or more Device instances to observe
             changes: Whether to automatically log each time a property trait is set for the supplied device(s)
             always: name (or iterable of multiple names) of property traits to actively update on each call to get()
             never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
@@ -1164,33 +1124,6 @@ class TabularLoggerBase(
             raise Exception(f"relational file data format {format} not supported")
         self.munge.nonscalar_file_type = format
 
-    # def set_path_format(self, format):
-    #     """ Set the path name convention for relational files that is used when
-    #         a table entry contains non-scalar (multidimensional) information and will
-    #         need to be stored in a separate file. The entry in the aggregate property traits table
-    #         becomes the path to the file.
-
-    #         The format string follows the syntax of python's python's built-in :func:`str.format`.\
-    #         You may use any keys from the table to form the path. For example, consider a\
-    #         scenario where aggregate device property traits includes `inst1_frequency` of `915e6`,\
-    #         and :func:`append` has been called as `append(dut="DUT15")`. If the current\
-    #         aggregate property trait entry includes inst1_frequency=915e6, then the format string\
-    #         '{dut}/{inst1_frequency}' means relative data path 'DUT15/915e6'.
-
-    #         Arguments:
-    #             format: a string compatible with :func:`str.format`, with replacement\
-    #         fields defined from the keys from the current entry of results and aggregated states.\
-
-    #         Returns:
-    #             None
-    #     """
-    #     warnings.warn(
-    #         """set_path_format is deprecated; set when creating
-    #                      the database object instead with the nonscalar_output flag"""
-    #     )
-
-    #     self.munge.relational_name_fmt = format
-
     def open(self):
         """Open the file or database connection.
         This is an abstract base method (to be overridden by inheriting classes)
@@ -1204,7 +1137,7 @@ class TabularLoggerBase(
 
         # introspect self so to hook in self.host and self.munge
         if self not in self.aggregator.name_map:
-            self.aggregator.update_name_map({self: None})
+            self.aggregator.update_name_map({self: None}, fallback_names={self: 'db'})
 
         self.observe(self.munge, never=attr.get_class_attrs(self.munge))
         self.observe(self.host, always=["time", "log"])
@@ -1290,7 +1223,8 @@ class CSVLogger(TabularLoggerBase):
 
         self.tables = {}
 
-        self.path.mkdir(parents=True, exist_ok=self._append)
+        # checking for existing files comes after this
+        self.path.mkdir(parents=True, exist_ok=True)
 
         for file_name in self.OUTPUT_FILE_NAME, self.INPUT_FILE_NAME:
             file_path = self.path / file_name
@@ -1547,6 +1481,7 @@ class HDFLogger(TabularLoggerBase):
         self.df = None
 
     def close(self):
+        self.write()
         self._write_root()
 
     def _write_root(self):
@@ -1666,9 +1601,11 @@ class SQLiteLogger(TabularLoggerBase):
 
     def close(self):
         try:
+            self.write()
             self._write_root()
         finally:
-            self._engine.dispose()
+            if self._engine is not None:
+                self._engine.dispose()
 
     def _write_root(self):
         """Write queued rows of data to the database. This also is called automatically on :func:`close`, or when
@@ -1682,27 +1619,27 @@ class SQLiteLogger(TabularLoggerBase):
 
         # Put together a DataFrame from self.pending that is guaranteed
         # to include the columns defined in self._columns
-        traits = pd.DataFrame(self.pending_output)
-        traits.index = traits.index + self.output_index
+        pending = pd.DataFrame(self.pending_output)
+        pending.index = pending.index + self.output_index
         blank = pd.DataFrame(columns=self._columns)
 
         # Check for new columns, and insert into the database
         if self._columns is None:
             new_columns = []
         else:
-            trait_cols = [c.lower() for c in traits.columns]
+            trait_cols = [c.lower() for c in pending.columns]
             blank_cols = [c.lower() for c in blank.columns]
             new_columns = list(set(trait_cols).difference(blank_cols))
 
         for c in new_columns:
             self._logger.debug(f"inserting new column '{c}'")
-            column_type = self._sql_type_name(traits[c])
+            column_type = self._sql_type_name(pending[c])
             with self._engine.connect() as con:
                 query = f"alter table {self.OUTPUT_TABLE_NAME} add column {c} {column_type} default NULL"
                 con.execute(query)
 
         # Form the new database row
-        df = blank.append(traits, sort=True)
+        df = blank.append(pending, sort=True)
         df.sort_index(inplace=True)
         self._columns = df.columns
 
@@ -1720,8 +1657,8 @@ class SQLiteLogger(TabularLoggerBase):
         except ArgumentError:
             self._logger.error(f"failed to convert index label {self.INDEX_LABEL}")
             raise ArgumentError
-        except BaseException as e:
-            raise e
+        except BaseException:
+            raise
 
         self.output_index += 1
 

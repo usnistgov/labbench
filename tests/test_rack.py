@@ -40,7 +40,7 @@ from contextlib import contextmanager
 import labbench as lb
 from labbench import paramattr as attr
 import numpy as np
-
+lb.paramattr
 
 class LaggyInstrument(TestStoreDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""

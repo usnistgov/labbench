@@ -107,41 +107,35 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
         device = self.DeviceClass()
         device.open()
 
-        attr_defs = {
-            name: attr_def
-            for name, attr_def in device.get_attr_defs().items()
-            if isinstance(attr_def, self.ROLE_TYPE)
-        }
+        for attr_def in device.get_attr_defs().values():
+            if not isinstance(attr_def, self.ROLE_TYPE):
+                continue
 
-        for attr_name, attr in attr_defs.items():
-            value = getattr(device, attr_name)
+            value = getattr(device, attr_def.name)
 
-            if attr.allow_none:
-                allow_types = (type(None), attr._type)
+            if attr_def.allow_none:
+                allow_types = (type(None), attr_def._type)
             else:
-                allow_types = (attr._type,)
+                allow_types = (attr_def._type,)
 
-            if issubclass(attr._type, Number):
+            if issubclass(attr_def._type, Number):
                 allow_types = allow_types + (Number,)
 
             self.assertTrue(
                 issubclass(type(value), allow_types),
-                msg=f"pythonic type of {attr_name}",
+                msg=f"pythonic type of {attr_def.name}",
             )
 
     def test_default_values(self):
         device = self.DeviceClass()
         device.open()
 
-        attr_defs = {
-            name: attr_def
-            for name, attr_def in device.get_attr_defs().items()
-            if isinstance(attr_def, self.ROLE_TYPE)
-        }
+        for attr_def in device.get_attr_defs().values():
+            if not isinstance(attr_def, self.ROLE_TYPE):
+                continue
 
-        for attr_name, attr in attr_defs.items():
-            value = getattr(device, attr_name)
-            self.assertTrue(value == attr.default, msg=f"pythonic type of {attr_name}")
+            value = getattr(device, attr_def.name)
+            self.assertTrue(value == attr_def.default, msg=f"pythonic type of {attr_def.name}")
 
     def test_only(self):
         device = self.DeviceClass()
@@ -240,22 +234,22 @@ class TestValueParamAttr(paramattr_tooling.TestParamAttr):
                 and attr_def.sets
                 and not has_steps(attr_def)
             )
+        
+        device = self.DeviceClass()
+        device.open()
 
-        attr_defs = {
-            name: attr_def
-            for name, attr_def in self.DeviceClass.get_attr_defs().items()
-            if should_test_this_attr(attr_def)
-        }
-
-        for attr_name, attr_def in attr_defs.items():
-            test_name = f'{attr_def.ROLE} "{attr_name}"'
+        for attr_def in device.get_attr_defs().values():
+            if not should_test_this_attr(attr_def):
+                continue
+            
+            test_name = f'{attr_def.ROLE} "{attr_def.name}"'
 
             value_in = self.DeviceClass.LOOP_TEST_VALUES[attr_def._type]
 
-            device = self.DeviceClass(**{attr_name: value_in})
+            device = self.DeviceClass(**{attr_def.name: value_in})
 
             with device:
-                value_out = getattr(device, attr_name)
+                value_out = getattr(device, attr_def.name)
                 self.assertEqual(
                     value_in,
                     value_out,

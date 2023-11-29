@@ -125,7 +125,7 @@ class TestStore:
         self.notifications.append(msg)
 
 
-# @key_store_adapter()
+@key_store_adapter()
 class TestStoreDevice(Device):
     def open(self):
         self.backend = TestStore()

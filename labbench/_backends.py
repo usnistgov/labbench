@@ -1,29 +1,3 @@
-# This software was developed by employees of the National Institute of
-# Standards and Technology (NIST), an agency of the Federal Government.
-# Pursuant to title 17 United States Code Section 105, works of NIST employees
-# are not subject to copyright protection in the United States and are
-# considered to be in the public domain. Permission to freely use, copy,
-# modify, and distribute this software and its documentation without fee is
-# hereby granted, provided that this notice and disclaimer of warranty appears
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
-# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
-# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
-# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
-# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
-# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
-# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
-# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
-# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
-# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
-# PROVIDED HEREUNDER. Distributions of NIST software should also include
-# copyright and licensing statements of any third-party software that are
-# legally bundled with the code in compliance with the conditions of those
-# licenses.
-
 import contextlib
 import importlib
 import inspect
@@ -34,11 +8,11 @@ import select
 import socket
 import subprocess as sp
 import sys
+import typing_extensions as typing
 from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
-from typing import Dict, Any
 
 import psutil
 import pyvisa
@@ -46,7 +20,6 @@ import pyvisa.errors
 
 from . import util
 from ._device import Device
-from .paramattr import observe
 from . import paramattr as attr
 
 try:
@@ -111,7 +84,7 @@ class ShellBackend(Device):
         # Monitor property trait changes
         values = set(attr.list_value_attrs(self)).difference(dir(ShellBackend))
 
-        observe(self, check_state_change, name=tuple(values))
+        attr.observe(self, check_state_change, name=tuple(values))
 
     def run(
         self,
@@ -1043,8 +1016,12 @@ class VISADevice(Device):
             return
 
         try:
-            with contextlib.suppress(pyvisa.errors.VisaIOError):
-                self._release_remote_control()
+            if hasattr(self.backend.visalib, "viGpibControlREN"):            
+                with contextlib.suppress(pyvisa.errors.VisaIOError):
+                    self.backend.visalib.viGpibControlREN(
+                        self.backend.session,
+                        pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
+                    )
             with contextlib.suppress(pyvisa.Error):
                 self.backend.clear()
 
@@ -1057,7 +1034,7 @@ class VISADevice(Device):
         finally:
             self.backend.close()
 
-    def write(self, msg: str, kws: Dict[str, Any] = {}):
+    def write(self, msg: str, kws: dict[str, typing.Any] = {}):
         """sends an SCPI message to the device.
 
         Wraps `self.backend.write`, and handles debug logging and adjustments
@@ -1086,7 +1063,7 @@ class VISADevice(Device):
         self._logger.debug(f"write {msg_out}")
         self.backend.write(msg)
 
-    def query(self, msg: str, timeout=None, remap: bool = False, kws: Dict[str, Any] = {}) -> str:
+    def query(self, msg: str, timeout=None, remap: bool = False, kws: dict[str, typing.Any] = {}) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1207,13 +1184,6 @@ class VISADevice(Device):
 
             return exctype == EXC and excinst.error_code == CODE
 
-    def _release_remote_control(self):
-        # From instrument and pyvisa docs
-        if not self._rm.endswith("@sim"):
-            self.backend.visalib.viGpibControlREN(
-                self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
-            )
-
     def _get_rm(self):
         backend_name = self._rm
 
@@ -1255,7 +1225,7 @@ def visa_default_resource_manager(name=None):
 
 @util.TTLCache(timeout=3)
 @util.single_threaded_call_lock
-def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, str]:
+def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> dict[str, str]:
     def make_test_device(res):
         device = VISADevice(res, open_timeout=0.25, **device_kws)
         device._logger = logging.getLogger()

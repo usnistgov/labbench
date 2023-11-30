@@ -8,7 +8,6 @@ from test_sequencing import LaggyInstrument
 
 lb = importlib.reload(lb)
 
-
 class Rack1(lb.Rack):
     dev1: lb.Device = LaggyInstrument()
     dev2: lb.Device = LaggyInstrument()

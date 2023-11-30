@@ -34,10 +34,9 @@ import builtins
 import inspect
 from copy import copy
 import numbers
-import typing
+import typing_extensions as typing
 from contextlib import contextmanager
-from typing_extensions import dataclass_transform
-from typing import Union, Callable, Type, Optional, Generic, Any
+from typing_extensions import Union, Callable, Type, Any
 from functools import wraps
 
 Undefined = inspect.Parameter.empty
@@ -69,17 +68,17 @@ def get_owner_store(obj: HasParamAttrs) -> HasParamAttrsInstInfo:
     return obj._attr_store
 
 
-def get_owner_defs(obj: typing.Union[HasParamAttrs, Type[HasParamAttrs]]) -> HasParamAttrsClsInfo:
+def get_owner_defs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> HasParamAttrsClsInfo:
     return obj._attr_defs
 
 
-def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.Dict[str, ParamAttr]:
+def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
     return obj._attr_defs.attrs
 
 
 class KeyAdapterBase:
-    key_arguments: typing.Dict[str, ParamAttr]
+    key_arguments: dict[str, ParamAttr]
 
     # @typing.overload
     # def __new__(cls, /, decorated_cls: Type[T], **kws) -> Type[T]:
@@ -110,7 +109,7 @@ class KeyAdapterBase:
     def __init__(
         self,
         *,
-        key_arguments: typing.Dict[str, ParamAttr] = {},
+        key_arguments: dict[str, ParamAttr] = {},
     ):
         self.key_arguments = key_arguments
 
@@ -142,7 +141,7 @@ class KeyAdapterBase:
         """
         raise NotImplementedError(f'key adapter does not implement "set" {repr(type(self))}')
 
-    def get_key_arguments(self, key: Any) -> typing.List[str]:
+    def get_key_arguments(self, key: Any) -> list[str]:
         """returns a list of arguments for the parameter attribute key.
 
         This must be implemented in order to define `labbench.paramattr.method` attributes
@@ -185,7 +184,7 @@ class KeyAdapterBase:
                 "set_value",
                 default=Undefined,
                 kind=inspect.Parameter.POSITIONAL_ONLY,
-                annotation=Optional[paramattr._type],
+                annotation=typing.Optional[paramattr._type],
             ),
         ]
 
@@ -206,7 +205,7 @@ class KeyAdapterBase:
                 return paramattr.set_in_owner(owner, set_value, validated_kws)
 
         method.__signature__ = inspect.Signature(
-            pos_params + kwargs_params, return_annotation=Optional[paramattr._type]
+            pos_params + kwargs_params, return_annotation=typing.Optional[paramattr._type]
         )
         method.__name__ = paramattr.name
         method.__module__ = f"{owner_cls.__module__}"
@@ -217,30 +216,30 @@ class KeyAdapterBase:
 
 
 class HasParamAttrsClsInfo:
-    attrs: typing.Dict[str, ParamAttr]
+    attrs: dict[str, ParamAttr]
     key_adapter: KeyAdapterBase
-    key_arguments: typing.Dict[str, KeywordArgument]
+    key_arguments: dict[str, KeywordArgument]
 
     # unbound methods``
-    methods: typing.Dict[str, Callable]
+    methods: dict[str, Callable]
 
     __slots__ = ["attrs", "key_adapter", "key_arguments", "methods"]
 
     def __init__(
         self,
-        attrs: typing.Dict[str, ParamAttr],
+        attrs: dict[str, ParamAttr],
         key_adapter: KeyAdapterBase,
     ):
         self.attrs = attrs
         self.key_adapter = key_adapter
 
-    def value_names(self) -> typing.List[ParamAttr]:
+    def value_names(self) -> list[ParamAttr]:
         return [k for k, v in self.attrs.items() if isinstance(v, Value)]
 
-    def method_names(self) -> typing.List[ParamAttr]:
+    def method_names(self) -> list[ParamAttr]:
         return [k for k, v in self.attrs.items() if isinstance(v, Method)]
 
-    def property_names(self) -> typing.List[ParamAttr]:
+    def property_names(self) -> list[ParamAttr]:
         return [k for k, v in self.attrs.items() if isinstance(v, Property)]
 
     @classmethod
@@ -285,7 +284,7 @@ def _parameter_maybe_positional(param: inspect.Parameter):
 TCall = typing.TypeVar("TCall")
 
 
-class field(Generic[T]):
+class field(typing.Generic[T]):
     # __slots__ = 'kw_only', 'default'
 
     def __new__(cls, default: T = Undefined, kw_only=True) -> T:
@@ -301,8 +300,8 @@ class field(Generic[T]):
         self.default = default
 
 
-@dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field[T],))
-class ParamAttr(Generic[T]):
+@typing.dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field[T],))
+class ParamAttr(typing.Generic[T]):
     """base class for typed descriptors in Device classes. These
     implement type checking, casting, decorators, and callbacks.
 
@@ -446,7 +445,7 @@ class ParamAttr(Generic[T]):
 
     @util.hide_in_traceback
     def _prepare_set_value(
-        self, owner: HasParamAttrs, value, arguments: typing.Dict[str, Any] = {}
+        self, owner: HasParamAttrs, value, arguments: dict[str, Any] = {}
     ):
         # First, validate the pythonic types
         if not self.sets:
@@ -474,10 +473,10 @@ class ParamAttr(Generic[T]):
 
         return value
 
-    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: dict[str, Any] = {}):
         raise NotImplementedError
 
-    def set_in_owner(self, owner: HasParamAttrs, value, arguments: typing.Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, value, arguments: dict[str, Any] = {}):
         raise NotImplementedError
 
     @util.hide_in_traceback
@@ -691,7 +690,7 @@ class Value(ParamAttr[T]):
         else:
             return self
 
-    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}) -> T:
+    def get_from_owner(self, owner: HasParamAttrs, arguments: dict[str, Any] = {}) -> T:
         if not self.gets:
             # stop now if this is not a gets ParamAttr
             raise AttributeError(
@@ -705,7 +704,7 @@ class Value(ParamAttr[T]):
         return value
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, value: T, arguments: typing.Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, value: T, arguments: dict[str, Any] = {}):
         value = self._prepare_set_value(owner, value, arguments)
         owner._attr_store.cache[self.name] = value
         owner.__notify__(self.name, value, "set", cache=self.cache)
@@ -739,7 +738,7 @@ class KeywordArgument(ParamAttr[T]):
         ...
 
     @typing.overload
-    def __call__(self, unvalidated_method: typing.Callable[_P, R]) -> typing.Callable[_P, R]:
+    def __call__(self, unvalidated_method: Callable[_P, R]) -> Callable[_P, R]:
         ...
 
     def __call__(self, unvalidated_method):
@@ -807,7 +806,7 @@ class KeywordArgument(ParamAttr[T]):
     #     return self
 
 
-class OwnerAccessAttr(ParamAttr[T], Generic[T, TCall]):
+class OwnerAccessAttr(ParamAttr[T], typing.Generic[T, TCall]):
     _setter = None
     _getter = None
     _method = None
@@ -839,7 +838,7 @@ class OwnerAccessAttr(ParamAttr[T], Generic[T, TCall]):
         return self
 
     @util.hide_in_traceback
-    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: dict[str, Any] = {}):
         if not self.gets:
             # stop now if this is not a gets ParamAttr
             raise AttributeError(
@@ -870,7 +869,7 @@ class OwnerAccessAttr(ParamAttr[T], Generic[T, TCall]):
         return value
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, value, arguments: typing.Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, value, arguments: dict[str, Any] = {}):
         value = self._prepare_set_value(owner, value, arguments)
 
         # The remaining roles act as function calls that are implemented through self.key
@@ -904,31 +903,8 @@ _P = typing.ParamSpec("_P")
 TMethod = typing.TypeVar("TMethod", bound="Method")
 Tcall = typing.TypeVar("Tcall")
 
-# _M = Callable[_P,T]
-# class TWrappedMethod(typing.[TMethod,T]):
-#     def __call__(self: TMethod[T], *args: _M.args, **kws: _M.kwargs): ...
 
-# class TKeyedMethod(typing.Protocol[TMethod,T]):
-#     @typing.overload
-#     def __call__(self: TMethod[T], set_value: T, **arguments) -> None:
-#         ...
-
-#     @typing.overload
-#     def __call__(self: TMethod[T], **arguments) -> T:
-#         ...
-
-#     def __call__(
-#         self: TMethod[T], set_value: Optional[T] = Undefined, **arguments
-#     ) -> Union[None, T]:
-#         ...
-
-
-# class TDecoratorMethod(typing.Protocol[TMethod,T]):
-#     def __call__(self: TMethod[T], func: _M) -> TWrappedMethod[TMethod[T], _M]:
-#         ...
-
-
-@dataclass_transform(kw_only_default=True, eq_default=False)
+@typing.dataclass_transform(kw_only_default=True, eq_default=False)
 class _MethodDataClass(OwnerAccessAttr[T]):
     # typing shim to get the callable signature type hints
     @typing.overload
@@ -1073,57 +1049,8 @@ class Method(_MethodDataClass[T]):
         self._decorated_funcs.append(method)
         return self
 
-    # @util.hide_in_traceback
-    # def __get__(
-    #     self, owner: Union[None, HasParamAttrs], owner_cls: Type[HasParamAttrs] = None
-    # ) -> TKeyedMethodCallable[T]:
-    #     """Called by the class instance that owns this attribute to
-    #     retreive its value. This, in turn, decides whether to call a wrapped
-    #     decorator function or the owner's property adapter method to retrieve
-    #     the result.
 
-    #     Returns:
-    #         retreived value
-    #     """
-
-    #     # only continue to get the value if the __get__ was called for an owning
-    #     # instance, and owning class is a match for what we were told in __set_name__.
-    #     # otherwise, someone else is trying to access `self` and we
-    #     # shouldn't get in their way.
-    #     if owner is None:
-    #         # escape an infinite recursion loop before accessing any class members
-    #         return self
-
-    #     cls_getter = owner_cls.__dict__.get(self.name, None)
-    #     objclass_getter = self.__objclass__.__dict__.get(self.name)
-    #     if cls_getter is not objclass_getter:
-    #         return self
-
-    #     else:
-    #         # inject the labbench ParamAttr hooks into the return value
-    #         func = get_owner_defs(owner_cls).methods[self.name]
-    #         method = func.__get__(owner, owner_cls)
-
-    #         # TODO: inject hooks
-
-    #         # @wraps(method)
-    #         # def method(*args, **kws):
-    #         #     value = func.__get__(owner, owner_cls)(*args, **kws)
-    #         #     return self.__cast_get__(owner, value)
-
-    #         return method
-
-    # def __set__(self, owner: HasParamAttrs, value):
-    #     obj = getattr(owner, self.name)
-    #     if hasattr(obj, '__self__'):
-    #         # raise the error if this is already a bound method
-    #         raise AttributeError(f"call {self}(...) to set parameter value, not assignment")
-    #     else:
-    #         # otherwise, allow the set in order to bind the method
-    #         object.__setattr__(owner, self.name, value)
-
-
-class TDecoratedMethod(Method[T], Generic[T, _P]):
+class TDecoratedMethod(Method[T], typing.Generic[T, _P]):
     def __call__(self, *args: _P.args, **arguments: _P.kwargs) -> Union[T, None]:
         ...
 
@@ -1139,7 +1066,7 @@ class TKeyedMethod(Method[T]):
 
 
 class TDecorator(Method[T]):
-    def __call__(self, func: typing.Callable[_P, typing.Union[None, T]]) -> TDecoratedMethod[T, _P]:
+    def __call__(self, func: Callable[_P, Union[None, T]]) -> TDecoratedMethod[T, _P]:
         ...
 
 
@@ -1230,9 +1157,9 @@ def hold_attr_notifications(owner):
 
 
 class HasParamAttrsInstInfo:
-    handlers: typing.Dict[str, Callable]
-    calibrations: typing.Dict[str, Any]
-    cache: typing.Dict[str, Any]
+    handlers: dict[str, Callable]
+    calibrations: dict[str, Any]
+    cache: dict[str, Any]
 
     __slots__ = "handlers", "calibrations", "cache"
 
@@ -1246,17 +1173,17 @@ def get_key_adapter(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> KeyAdapte
     return obj._attr_defs.key_adapter
 
 
-def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.List[str]:
+def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> list[str]:
     """returns a mapping of names of labbench value paramattrs defined in `obj`"""
     return get_owner_defs(obj).value_names()
 
 
-def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.List[str]:
+def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> list[str]:
     """returns a mapping of names of labbench method paramattrs defined in `obj`"""
     return get_owner_defs(obj).method_names()
 
 
-def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> typing.List[str]:
+def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> list[str]:
     """returns a list of names of labbench property paramattrs defined in `obj`"""
     return get_owner_defs(obj).property_names()
 
@@ -1653,7 +1580,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         )
 
     @util.hide_in_traceback
-    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: dict[str, Any] = {}):
         # by_cal, by_uncal = owner._attr_store.calibrations.get(self.name, (None, None))
         self._validate_attr_dependencies(owner, self.allow_none, "get")
 
@@ -1677,7 +1604,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         return ret
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: typing.Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: dict[str, Any] = {}):
         # owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         self._validate_attr_dependencies(owner, False, "set")
 
@@ -1819,12 +1746,12 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         self.set_mapping(cal, owner=owner)
 
     @util.hide_in_traceback
-    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: dict[str, Any] = {}):
         self._touch_table(owner)
         return super().get_from_owner(owner, arguments)
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: typing.Dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, cal_value, arguments: dict[str, Any] = {}):
         self._touch_table(owner)
         super().set_in_owner(owner, cal_value, arguments)
 
@@ -1908,7 +1835,7 @@ class TransformMixIn(DependentParamAttr):
         else:
             return max(lo, hi)
 
-    def get_from_owner(self, owner: HasParamAttrs, arguments: typing.Dict[str, Any] = {}):
+    def get_from_owner(self, owner: HasParamAttrs, arguments: dict[str, Any] = {}):
         base_value = self._paramattr_dependencies["base"].get_from_owner(owner, arguments)
 
         if "other" in self._paramattr_dependencies:

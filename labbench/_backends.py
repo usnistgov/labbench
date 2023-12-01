@@ -1378,7 +1378,7 @@ def visa_probe_devices(
     devices that do not support this command message.
 
     Arguments:
-        target: if not None, return only devices that match the make and model of this device
+        target: if specified, return only devices that match target.make and target.model
         skip_interfaces: do not probe interfaces that begin with these strings (case-insensitive)
         open_timeout: timeout on resource open (in s)
         timeout: timeout on identity query (in s)

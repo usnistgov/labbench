@@ -1374,8 +1374,9 @@ def visa_probe_devices(
     `read_termination`, and `write_termination` that establishes communication, and the
     `make` and `model` reported by the instrument.
 
-    The probe mechanism is a standard identity query ('*IDN?'). Discovery will fail for
-    devices that do not support this command message.
+    The probe mechanism is to open a connection to each available resource, and
+    if successful, query the instrument identity ('*IDN?'). Discovery will fail for
+    devices that do not support this standardized message.
 
     Arguments:
         target: if specified, return only devices that match target.make and target.model

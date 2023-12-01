@@ -346,7 +346,7 @@ def open(config_dir, verbose=False):
     """,
 )
 @click.argument(
-    "resource_manager", type=str#, help="name of the pyvisa resource manager (@ivi, @sim, or @py)", default='@py'
+    "resource_manager", default='@py', type=str#, help="name of the pyvisa resource manager (@ivi, @sim, or @py)", default='@py'
 )
 @click.option(
     "--stubs", default=False, is_flag=True, help="output as class definition stubs instead of a summary table"

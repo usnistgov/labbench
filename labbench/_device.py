@@ -114,14 +114,14 @@ def log_trait_activity(msg):
         value = repr(msg["new"]).rstrip()
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        device._logger.debug(f'{value}{label} → {attr_name}')
+        device._logger.debug(f"{value}{label} → {attr_name}")
     elif msg["type"] == "get":
         if attr.get_class_attrs(device)[attr_name].label:
             label = f" ({attr.get_class_attrs(device)[attr_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        device._logger.debug(f'{attr_name} → {value} {label}'.rstrip())
+        device._logger.debug(f"{attr_name} → {value} {label}".rstrip())
     else:
         device._logger.debug(f'unknown operation type "{msg["type"]}"')
 
@@ -407,7 +407,7 @@ class Device(DeviceDataClass):
             if self.resource != type(self).resource.default:
                 resource_str = repr(self.resource)
             else:
-                resource_str = ''
+                resource_str = ""
             return f"{name}({resource_str})"
         else:
             # In case an exception has occurred before __init__

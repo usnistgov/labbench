@@ -867,13 +867,14 @@ class TelnetDevice(Device):
 
 _pyvisa_rms = {}
 
+
 @attr.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
 class VISADevice(Device):
     r"""A basic VISA device wrapper.
 
     This exposes `pyvisa` instrument automation capabilities in a `labbench`
     object, and includes support for automatic connections based on make and model.
-    
+
     Customized operation for specific instruments can be implemented by subclassing `VISADevice`.
 
     Examples:
@@ -937,18 +938,10 @@ class VISADevice(Device):
     )
 
     make = attr.value.str(
-        default=None,
-        allow_none=True,
-        cache=True,
-        help="device manufacturer name"
+        default=None, allow_none=True, cache=True, help="device manufacturer name"
     )
 
-    model = attr.value.str(
-        default=None,
-        allow_none=True,
-        cache=True,
-        help="device model"
-    )
+    model = attr.value.str(default=None, allow_none=True, cache=True, help="device model")
 
     # Common VISA properties
     identity = attr.property.str(
@@ -999,15 +992,13 @@ class VISADevice(Device):
 
             search_desc = f'make "{self.make}" and model "{self.model}"'
             if len(matches) == 0:
-                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices were discovered matching {search_desc}'
+                msg = f"could not open VISA device {repr(type(self))}: resource not specified, and no devices were discovered matching {search_desc}"
                 raise IOError(msg)
             elif len(matches) == 1:
-                self._logger.debug(
-                    f'probed resource by matching {search_desc}'
-                )
+                self._logger.debug(f"probed resource by matching {search_desc}")
                 self.resource = matches[0].resource
             else:
-                msg = f'resource ambiguity: {len(matches)} VISA resources matched {search_desc}'
+                msg = f"resource ambiguity: {len(matches)} VISA resources matched {search_desc}"
                 raise IOError(msg)
         else:
             raise ValueError(
@@ -1024,7 +1015,9 @@ class VISADevice(Device):
         self.backend = rm.open_resource(self.resource, **kwargs)
 
         if self.timeout is not None:
-            self.backend.set_visa_attribute(pyvisa.constants.ResourceAttribute.timeout_value, int(self.timeout * 1000))
+            self.backend.set_visa_attribute(
+                pyvisa.constants.ResourceAttribute.timeout_value, int(self.timeout * 1000)
+            )
 
     def close(self):
         """closes the instrument.
@@ -1037,11 +1030,10 @@ class VISADevice(Device):
             return
 
         try:
-            if hasattr(self.backend.visalib, "viGpibControlREN"):            
+            if hasattr(self.backend.visalib, "viGpibControlREN"):
                 with contextlib.suppress(pyvisa.errors.VisaIOError):
                     self.backend.visalib.viGpibControlREN(
-                        self.backend.session,
-                        pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
+                        self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
                     )
 
         except BaseException as e:
@@ -1082,7 +1074,9 @@ class VISADevice(Device):
         self._logger.debug(f"write({msg_out})")
         self.backend.write(msg)
 
-    def query(self, msg: str, timeout=None, remap: bool = False, kws: dict[str, typing.Any] = {}) -> str:
+    def query(
+        self, msg: str, timeout=None, remap: bool = False, kws: dict[str, typing.Any] = {}
+    ) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1236,26 +1230,28 @@ def _visa_missing_pyvisapy_support():
 
     # gpib
     try:
-        warnings.filterwarnings('ignore', 'GPIB library not found')        
+        warnings.filterwarnings("ignore", "GPIB library not found")
         import gpib_ctypes
+
         if not gpib_ctypes.gpib._load_lib():
-            missing.append('GPIB')
+            missing.append("GPIB")
     except ModuleNotFoundError:
-        missing.append('GPIB')
+        missing.append("GPIB")
 
     # hislip discovery
     try:
         import zeroconf
     except ModuleNotFoundError:
-        missing.append('TCPIP')
+        missing.append("TCPIP")
 
     # libusb
     try:
         import usb1
+
         with usb1.USBContext() as context:
             pass
     except OSError:
-        missing.append('USB')
+        missing.append("USB")
 
     return missing
 
@@ -1271,34 +1267,38 @@ def visa_list_resources(resourcemanager: str = None):
 
 
 def visa_default_resource_manager(name: str):
-    if name == '@sim':
+    if name == "@sim":
         from . import testing
+
         full_name = testing.pyvisa_sim_resource
     else:
         full_name = name
 
-    if name == '@py':
-        warnings.filterwarnings('ignore', 'VICP resources discovery requires the zeroconf package')
-        warnings.filterwarnings('ignore', 'TCPIP::hislip resource discovery requires the zeroconf package')
-        warnings.filterwarnings('ignore', 'GPIB library not found')
+    if name == "@py":
+        warnings.filterwarnings("ignore", "VICP resources discovery requires the zeroconf package")
+        warnings.filterwarnings(
+            "ignore", "TCPIP::hislip resource discovery requires the zeroconf package"
+        )
+        warnings.filterwarnings("ignore", "GPIB library not found")
 
     if name not in _pyvisa_rms:
         _pyvisa_rms[name] = pyvisa.ResourceManager(full_name)
     VISADevice._rm = name
 
+
 def _visa_probe_message_parameters(device: VISADevice):
     @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False)
     def probe_resource():
-        query = '*IDN?' + device.write_termination
+        query = "*IDN?" + device.write_termination
         device.backend.write_raw(query.encode(device.backend.encoding))
         identity = device.backend.read_raw().decode(device.backend.encoding)
 
-        for read_termination in ('\r\n', '\n', '\r'):
+        for read_termination in ("\r\n", "\n", "\r"):
             if identity.endswith(read_termination):
-                identity = identity[:-len(read_termination)]
+                identity = identity[: -len(read_termination)]
                 break
         else:
-            read_termination = ''
+            read_termination = ""
 
         return identity, read_termination
 
@@ -1307,22 +1307,20 @@ def _visa_probe_message_parameters(device: VISADevice):
     except TimeoutError:
         return None
 
-    for write_term in ('\n', '\r', '\r\n'):
+    for write_term in ("\n", "\r", "\r\n"):
         device.backend.write_termination = device.write_termination = write_term
 
         try:
             identity, read_term = probe_resource()
-            make, model, *_ = identity.split(',', 4)
+            make, model, *_ = identity.split(",", 4)
             ret = VISADevice(
-                resource=device.resource,
-                read_termination=read_term,
-                write_termination=write_term
+                resource=device.resource, read_termination=read_term, write_termination=write_term
             )
             ret.make = make
             ret.model = model
             break
         except pyvisa.errors.VisaIOError as ex:
-            if 'VI_ERROR_TMO' not in str(ex):
+            if "VI_ERROR_TMO" not in str(ex):
                 raise
             # device.backend.close()
             # device.backend.open()
@@ -1334,7 +1332,8 @@ def _visa_probe_message_parameters(device: VISADevice):
 
     return ret
 
-def _visa_match_device(device:VISADevice, target:VISADevice):
+
+def _visa_match_device(device: VISADevice, target: VISADevice):
     device.backend.write_termination = device.write_termination = target.write_termination
     device.backend.read_termination = device.read_termination = target.read_termination
 
@@ -1345,11 +1344,11 @@ def _visa_match_device(device:VISADevice, target:VISADevice):
 
     try:
         identity = device.identity
-        make, model, *_ = identity.split(',', 3)
+        make, model, *_ = identity.split(",", 3)
         if make.lower() != target.make.lower() or target.model.lower() not in model.lower():
             return None
     except pyvisa.errors.VisaIOError as ex:
-        if 'VI_ERROR_TMO' not in str(ex):
+        if "VI_ERROR_TMO" not in str(ex):
             raise
         return None
     except BaseException as ex:
@@ -1360,11 +1359,33 @@ def _visa_match_device(device:VISADevice, target:VISADevice):
 
     return device
 
+
 @util.ttl_cache(timeout=3)
 @util.single_threaded_call_lock
-def visa_probe_devices(target: typing.Union[VISADevice,typing.Type[VISADevice]] = None, skip_interfaces: list[str]=[], open_timeout=0.25, timeout=0.5, **device_kwargs) -> list[VISADevice]:
+def visa_probe_devices(
+    target: VISADevice = None,
+    skip_interfaces: list[str] = [],
+    open_timeout: float=0.5,
+    timeout: float=0.25,
+) -> list[VISADevice]:
+    """discover devices available for communication and their required connection settings.
+
+    Each returned `VISADevice` is and set with a combination of `resource`,
+    `read_termination`, and `write_termination` that establishes communication, and the
+    `make` and `model` reported by the instrument.
+
+    The probe mechanism is a standard identity query ('*IDN?'). Discovery will fail for
+    devices that do not support this command message.
+
+    Arguments:
+        target: if not None, return only devices that match the make and model of this device
+        skip_interfaces: do not probe interfaces that begin with these strings (case-insensitive)
+        open_timeout: timeout on resource open (in s)
+        timeout: timeout on identity query (in s)
+    """
     def make_test_device(res):
-        device = VISADevice(res, open_timeout=open_timeout, timeout=timeout, **device_kwargs)
+        device = VISADevice(res, open_timeout=open_timeout, timeout=timeout)
+        # suppress the normal logging during probing
         device._logger = logging.getLogger()
         return device
 
@@ -1374,11 +1395,7 @@ def visa_probe_devices(target: typing.Union[VISADevice,typing.Type[VISADevice]] 
                 return False
         return True
 
-    devices = {
-        res: make_test_device(res)
-        for res in visa_list_resources()
-        if keep_interface(res)
-    }
+    devices = {res: make_test_device(res) for res in visa_list_resources() if keep_interface(res)}
 
     if len(devices) == 0:
         return {}

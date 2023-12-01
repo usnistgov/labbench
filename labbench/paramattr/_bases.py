@@ -421,9 +421,7 @@ class ParamAttr(typing.Generic[T]):
         pass
 
     @util.hide_in_traceback
-    def _prepare_set_value(
-        self, owner: HasParamAttrs, value, arguments: dict[str, Any] = {}
-    ):
+    def _prepare_set_value(self, owner: HasParamAttrs, value, arguments: dict[str, Any] = {}):
         # First, validate the pythonic types
         if not self.sets:
             raise AttributeError(f"{self.__str__()} cannot be set")

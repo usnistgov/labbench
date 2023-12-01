@@ -382,7 +382,15 @@ def check_hanging_thread():
 
 
 @hide_in_traceback
-def retry(exception_or_exceptions, tries:int=4, *, delay:float=0, backoff:float=0, exception_func=lambda: None, log: bool=True):
+def retry(
+    exception_or_exceptions,
+    tries: int = 4,
+    *,
+    delay: float = 0,
+    backoff: float = 0,
+    exception_func=lambda: None,
+    log: bool = True,
+):
     """Decorate a function to repeat calls, suppressing specified exception(s), until a
     maximum number of retries has been attempted.
 

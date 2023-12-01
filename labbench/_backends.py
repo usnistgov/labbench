@@ -869,18 +869,27 @@ _pyvisa_rms = {}
 
 @attr.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
 class VISADevice(Device):
-    r"""base class for VISA device wrappers with pyvisa.
+    r"""A basic VISA device wrapper.
+
+    This exposes `pyvisa` instrument automation capabilities in a `labbench`
+    object, and includes support for automatic connections based on make and model.
+    
+    Customized operation for specific instruments can be implemented by subclassing `VISADevice`.
 
     Examples:
 
-        Autodetect a list of valid `resource` strings on the host::
-
-            print(visa_list_resources())
-
-        Fetch the instrument identity string::
+        Connect to a VISA device using a known resource string::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
                 print(inst.identity)
+
+        Probe available connections and print valid `VISADevice` constructors::
+
+            print(visa_probe_devices())
+
+        Probe details of available connections and identity strings on the command line::
+
+            labbench visa-probe
 
         Write ':FETCH?' to the instrument, read an expected ASCII CSV response,
         and return it as a pandas DataFrame::
@@ -889,10 +898,14 @@ class VISADevice(Device):
                 print(inst.query_ascii_values(':FETCH?'))
 
     See also:
-       * Installing a proprietary OS service for VISA:
-           https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
-       * Resource strings and basic configuration:
-           https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
+        * Pure python backend installation:
+            https://pyvisa.readthedocs.io/projects/pyvisa-py/en/latest/installation.html
+
+        * Proprietary backend installation:
+            https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
+
+        * Resource strings and basic configuration:
+            https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
 
     Attributes:
         backend (pyvisa.Resource): instance of a pyvisa instrument object (when open)

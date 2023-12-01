@@ -1372,11 +1372,12 @@ def visa_probe_devices(
 
     Each returned `VISADevice` is and set with a combination of `resource`,
     `read_termination`, and `write_termination` that establishes communication, and the
-    `make` and `model` reported by the instrument.
+    `make` and `model` reported by the instrument. The `pyvisa` resource manager is set
+    by the most recent call to `visa_default_resource_manager`.
 
     The probe mechanism is to open a connection to each available resource, and
     if successful, query the instrument identity ('*IDN?'). Discovery will fail for
-    devices that do not support this standardized message.
+    devices that do not support this message.
 
     Arguments:
         target: if specified, return only devices that match target.make and target.model

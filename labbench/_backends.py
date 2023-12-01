@@ -17,6 +17,7 @@ from threading import Event, Thread
 import psutil
 import pyvisa
 import pyvisa.errors
+import warnings
 
 from . import util
 from ._device import Device
@@ -866,15 +867,6 @@ class TelnetDevice(Device):
 
 _pyvisa_rms = {}
 
-def _check_libusb_install():
-    try:
-        import usb1
-        with usb1.USBContext() as context:
-            pass
-    except OSError:
-        raise OSError('libusb is needed to support usb in the pyvisa-py ("@py") backend')
-
-
 @attr.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
@@ -989,25 +981,20 @@ class VISADevice(Device):
 
         if self.resource not in ("", None):
             pass
-        elif self.identity_pattern is not None:
-            pattern = re.compile(self.identity_pattern, flags=re.IGNORECASE)
+        elif self.make is not None and self.model is not None:
+            matches = visa_probe_devices(self)
 
-            identities = {
-                res: idn
-                for res, idn in visa_list_identities().items()
-                if re.match(pattern, idn) is not None
-            }
-
-            if len(identities) == 0:
-                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.identity_pattern}"'
+            search_desc = f'make "{self.make}" and model "{self.model}"'
+            if len(matches) == 0:
+                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices were discovered matching {search_desc}'
                 raise IOError(msg)
-            elif len(identities) == 1:
+            elif len(matches) == 1:
                 self._logger.debug(
-                    f'resource identified with identity pattern match "{list(identities.values())[0]}"'
+                    f'determined resource by probing {search_desc}'
                 )
-                self.resource = list(identities.keys())[0]
+                self.resource = matches[0].resource
             else:
-                msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.identity_pattern}"'
+                msg = f'resource ambiguity: {len(matches)} VISA resources matched {search_desc}'
                 raise IOError(msg)
         else:
             raise ValueError(
@@ -1217,9 +1204,6 @@ class VISADevice(Device):
             is_ivi = False
 
         if len(_pyvisa_rms) == 0:
-            if backend_name == '@py':
-                _check_libusb_install()
-
             visa_default_resource_manager(backend_name)
 
         try:
@@ -1230,9 +1214,37 @@ class VISADevice(Device):
                 msg = f"could not connect to resource manager - see {url}"
                 e.args[0] += msg
             raise e
-        
 
         return rm
+
+
+def _visa_missing_pyvisapy_support():
+    missing = []
+
+    # gpib
+    try:
+        warnings.filterwarnings('ignore', 'GPIB library not found')        
+        import gpib_ctypes
+        if not gpib_ctypes.gpib._load_lib():
+            missing.append('GPIB')
+    except ModuleNotFoundError:
+        missing.append('GPIB')
+
+    # hislip discovery
+    try:
+        import zeroconf
+    except ModuleNotFoundError:
+        missing.append('TCPIP')
+
+    # libusb
+    try:
+        import usb1
+        with usb1.USBContext() as context:
+            pass
+    except OSError:
+        missing.append('USB')
+
+    return missing
 
 
 def visa_list_resources(resourcemanager: str = None):
@@ -1252,12 +1264,16 @@ def visa_default_resource_manager(name: str):
     else:
         full_name = name
 
+    if name == '@py':
+        warnings.filterwarnings('ignore', 'VICP resources discovery requires the zeroconf package')
+        warnings.filterwarnings('ignore', 'TCPIP::hislip resource discovery requires the zeroconf package')
+        warnings.filterwarnings('ignore', 'GPIB library not found')
+
     if name not in _pyvisa_rms:
         _pyvisa_rms[name] = pyvisa.ResourceManager(full_name)
     VISADevice._rm = name
 
-
-def _visa_probe_message_parameters(device:VISADevice):
+def _visa_probe_message_parameters(device: VISADevice):
     @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False)
     def probe_resource():
         query = '*IDN?' + device.write_termination
@@ -1285,7 +1301,6 @@ def _visa_probe_message_parameters(device:VISADevice):
         try:
             identity, read_term = probe_resource()
             make, model, *_ = identity.split(',', 4)
-#            identity_pattern = ','.join(identity.split(',', 4)[:2])
             ret = VISADevice(
                 resource=device.resource,
                 read_termination=read_term,
@@ -1307,9 +1322,35 @@ def _visa_probe_message_parameters(device:VISADevice):
 
     return ret
 
+def _visa_match_device(device:VISADevice, target:VISADevice):
+    device.backend.write_termination = device.write_termination = target.write_termination
+    device.backend.read_termination = device.read_termination = target.read_termination
+
+    try:
+        device.open()
+    except TimeoutError:
+        return None
+
+    try:
+        identity = device.identity
+        make, model, *_ = identity.split(',', 3)
+        if make.lower() != target.make.lower() or target.model.lower() not in model.lower():
+            return None
+    except pyvisa.errors.VisaIOError as ex:
+        if 'VI_ERROR_TMO' not in str(ex):
+            raise
+        return None
+    except BaseException as ex:
+        device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")
+        raise
+    finally:
+        device.close()
+
+    return device
+
 @util.ttl_cache(timeout=3)
 @util.single_threaded_call_lock
-def visa_probe_devices(skip_interfaces: list[str]=['ASRL'], open_timeout=0.25, timeout=0.5, **device_kwargs) -> dict[str, str]:
+def visa_probe_devices(target: typing.Union[VISADevice,typing.Type[VISADevice]] = None, skip_interfaces: list[str]=[], open_timeout=0.25, timeout=0.5, **device_kwargs) -> list[VISADevice]:
     def make_test_device(res):
         device = VISADevice(res, open_timeout=open_timeout, timeout=timeout, **device_kwargs)
         device._logger = logging.getLogger()
@@ -1330,12 +1371,22 @@ def visa_probe_devices(skip_interfaces: list[str]=['ASRL'], open_timeout=0.25, t
     if len(devices) == 0:
         return {}
 
-    calls = [
-        util.Call(_visa_probe_message_parameters, device).rename(res)
-        for res, device in devices.items()
-    ]
+    if target is None:
+        calls = [
+            util.Call(_visa_probe_message_parameters, device).rename(res)
+            for res, device in devices.items()
+        ]
+        rets = util.concurrently(*calls, catch=False, flatten=False)
+    else:
+        if not isinstance(target, Device) and issubclass(target, Device):
+            target = target()
 
-    return util.sequentially(*calls, catch=False, flatten=False)
+        calls = [
+            util.Call(_visa_match_device, device, target).rename(res)
+            for res, device in devices.items()
+        ]
+        rets = util.concurrently(*calls, catch=False)
+    return list(rets.values())
 
 
 @attr.adjusted("concurrency", True)

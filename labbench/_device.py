@@ -104,26 +104,26 @@ def log_trait_activity(msg):
     if msg["name"] == "isopen":
         return
 
-    owner = msg["owner"]
-    trait_name = msg["name"]
+    device = msg["owner"]
+    attr_name = msg["name"]
 
     label = ""
     if msg["type"] == "set":
-        if attr.get_class_attrs(owner)[trait_name].label:
-            label = f"({attr.get_class_attrs(owner)[trait_name].label})"
-        value = repr(msg["new"])
+        if attr.get_class_attrs(device)[attr_name].label:
+            label = f"({attr.get_class_attrs(device)[attr_name].label})".rstrip()
+        value = repr(msg["new"]).rstrip()
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        owner._logger.debug(f'trait set: "{trait_name}" → {value} {label}'.rstrip())
+        device._logger.debug(f'set {value} {label}→ {attr_name}')
     elif msg["type"] == "get":
-        if attr.get_class_attrs(owner)[trait_name].label:
-            label = f"({attr.get_class_attrs(owner)[trait_name].label})"
+        if attr.get_class_attrs(device)[attr_name].label:
+            label = f"({attr.get_class_attrs(device)[attr_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        owner._logger.debug(f'trait get: "{trait_name}" → {value} {label}'.rstrip())
+        device._logger.debug(f'get {attr_name} → {value} {label}'.rstrip())
     else:
-        owner._logger.debug(f'unknown operation type "{msg["type"]}"')
+        device._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
 @typing.dataclass_transform(

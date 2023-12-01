@@ -920,7 +920,6 @@ class VISADevice(Device):
     write_termination: str = attr.value.str(
         default="\n", cache=True, help="end of line string to send after writes"
     )
-    """write docstring here"""
 
     open_timeout: float = attr.value.float(
         default=None,
@@ -938,10 +937,10 @@ class VISADevice(Device):
     )
 
     make = attr.value.str(
-        default=None, allow_none=True, cache=True, help="device manufacturer name"
+        default=None, allow_none=True, cache=True, help="device manufacturer name used to autodetect resource string"
     )
 
-    model = attr.value.str(default=None, allow_none=True, cache=True, help="device model")
+    model = attr.value.str(default=None, allow_none=True, cache=True, help="device model dused to autodetect resource string")
 
     # Common VISA properties
     identity = attr.property.str(
@@ -1225,7 +1224,8 @@ class VISADevice(Device):
         return rm
 
 
-def _visa_missing_pyvisapy_support():
+def _visa_missing_pyvisapy_support() -> list[str]:
+    """a list of names of resources not supported by the current pyvisa-py install"""
     missing = []
 
     # gpib
@@ -1256,8 +1256,8 @@ def _visa_missing_pyvisapy_support():
     return missing
 
 
-def visa_list_resources(resourcemanager: str = None):
-    """autodetects and returns a list of valid resource strings"""
+def visa_list_resources(resourcemanager: str = None) -> list[str]:
+    """autodetects and returns a list of valid VISADevice resource strings"""
     if resourcemanager is None:
         rm = VISADevice()._get_rm()
     else:

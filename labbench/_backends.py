@@ -1267,10 +1267,13 @@ def visa_list_resources(resourcemanager: str = None):
 
 
 def visa_default_resource_manager(name: str):
+    """set the pyvisa resource manager used by labbench.
+    
+    Arguments:
+        name: the name of the resource manager, such as '@py', '@sim', or '@ivi'
+    """
     if name == "@sim":
-        from . import testing
-
-        full_name = testing.pyvisa_sim_resource
+        from .testing import pyvisa_sim_resource as full_name
     else:
         full_name = name
 

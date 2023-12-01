@@ -382,11 +382,12 @@ def check_hanging_thread():
 
 
 @hide_in_traceback
-def retry(exception_or_exceptions, tries=4, delay=0, backoff=0, exception_func=lambda: None):
-    """This decorator causes the function call to repeat, suppressing specified exception(s), until a
+def retry(exception_or_exceptions, tries:int=4, *, delay:float=0, backoff:float=0, exception_func=lambda: None, log: bool=True):
+    """Decorate a function to repeat calls, suppressing specified exception(s), until a
     maximum number of retries has been attempted.
-    - If the function raises the exception the specified number of times, the underlying exception is raised.
-    - Otherwise, return the result of the function call.
+
+    If the function raises the exception the specified number of times, the underlying exception is raised.
+    Otherwise, return the result of the function call.
 
     :example:
     The following retries the telnet connection 5 times on ConnectionRefusedError::
@@ -407,13 +408,10 @@ def retry(exception_or_exceptions, tries=4, delay=0, backoff=0, exception_func=l
     Arguments:
         exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
         tries: number of times to try before giving up
-    :type tries: int
         delay: initial delay between retries in seconds
-    :type delay: float
         backoff: backoff to multiply to the delay for each retry
-    :type backoff: float
         exception_func: function to call on exception before the next retry
-    :type exception_func: callable
+        log: whether to emit a log message on the first retry
     """
 
     def decorator(f):
@@ -426,7 +424,7 @@ def retry(exception_or_exceptions, tries=4, delay=0, backoff=0, exception_func=l
                 try:
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
-                    if not notified:
+                    if not notified and log:
                         etype = type(e).__qualname__
                         msg = (
                             f"caught '{etype}' on first call to '{f.__name__}' - repeating the call "
@@ -1510,7 +1508,7 @@ def lazy_import(name):
     return module
 
 
-class TTLCache:
+class ttl_cache:
     def __init__(self, timeout):
         self.timeout = timeout
         self.call_timestamp = None

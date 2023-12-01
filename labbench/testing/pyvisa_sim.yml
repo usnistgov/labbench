@@ -9,16 +9,16 @@ devices:
         q: "\r\n"
         r: "\n"
       USB INSTR:
-        q: "\n"
+        q: "\r\n"
         r: "\n"
       TCPIP INSTR:
-        q: "\n"
+        q: "\r\n"
         r: "\n"
       TCPIP SOCKET:
-        q: "\n"
+        q: "\r\n"
         r: "\n"
       GPIB INSTR:
-        q: "\n"
+        q: "\r\n"
         r: "\n"
     error:
       # response:
@@ -29,7 +29,7 @@ devices:
           query_error: 4
     dialogues:
       - q: "*IDN?"
-        r: "Power Sensor model #1234, Serial 63472"
+        r: "pyvisa_sim,Power Sensor model #1234, Serial 63472,rev f"
       - q: "SYST:PRES"
       - q: "*RST"
       - q: "TRIG"
@@ -123,7 +123,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "Spectrum analyzer model #1234, Serial #AUJH99"
+        r: "pyvisa_sim, Spectrum analyzer model #1234, Serial #AUJH99, rev k"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'
@@ -186,7 +186,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "Oscilloscope model #1234, Serial #OMGBBQ"
+        r: "pyvisa_sim,Oscilloscope model #1234, Serial #OMGBBQ,rev b"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'
@@ -321,7 +321,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "Spectrum analyzer model #1234, Serial #AUJH99"
+        r: "pyvisa_sim,Spectrum analyzer model #1234, Serial #AUJH99,mk iv"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'
@@ -385,7 +385,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "Signal generator model #1234, serial number 1837518935"
+        r: "pyvisa_sim,Signal generator model #1234,serial number 1837518935,v3"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'

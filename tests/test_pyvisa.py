@@ -1,12 +1,11 @@
 import labbench as lb
-import labbench.testing
-from labbench.testing import pyvisa_sim, pyvisa_sim_resource
+from labbench.testing import pyvisa_sim
 
 
 if __name__ == "__main__":
     # specify the VISA address to use the power sensor
     inst = pyvisa_sim.Oscilloscope()  # (resource='USB::0x1111::0x2233::0x9876::INSTR')
-    lb.visa_default_resource_manager(pyvisa_sim_resource)
+    lb.visa_default_resource_manager('@sim')
 
     # print the low-level actions of the code
     lb.show_messages("debug")

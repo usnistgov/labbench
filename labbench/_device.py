@@ -404,7 +404,11 @@ class Device(DeviceDataClass):
     def __repr__(self):
         name = self.__class__.__qualname__
         if hasattr(self, "resource"):
-            return f"{name}({repr(self.resource)})"
+            if self.resource != type(self).resource.default:
+                resource_str = repr(self.resource)
+            else:
+                resource_str = ''
+            return f"{name}({resource_str})"
         else:
             # In case an exception has occurred before __init__
             return f"{name}()"

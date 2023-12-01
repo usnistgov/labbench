@@ -864,6 +864,17 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
+_pyvisa_rms = {}
+
+def _check_libusb_install():
+    try:
+        import usb1
+        with usb1.USBContext() as context:
+            pass
+    except OSError:
+        raise OSError('libusb is needed to support usb in the pyvisa-py ("@py") backend')
+
+
 @attr.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
 class VISADevice(Device):
     r"""base class for VISA device wrappers with pyvisa.
@@ -920,11 +931,18 @@ class VISADevice(Device):
         label="s",
     )
 
-    identity_pattern = attr.value.str(
+    make = attr.value.str(
         default=None,
         allow_none=True,
         cache=True,
-        help="identity regex pattern to match for automatic connection",
+        help="device manufacturer name"
+    )
+
+    model = attr.value.str(
+        default=None,
+        allow_none=True,
+        cache=True,
+        help="device model"
     )
 
     # Common VISA properties
@@ -1005,6 +1023,9 @@ class VISADevice(Device):
         rm = self._get_rm()
         self.backend = rm.open_resource(self.resource, **kwargs)
 
+        if self.timeout is not None:
+            self.backend.set_visa_attribute(pyvisa.constants.ResourceAttribute.timeout_value, int(self.timeout * 1000))
+
     def close(self):
         """closes the instrument.
 
@@ -1022,8 +1043,6 @@ class VISADevice(Device):
                         self.backend.session,
                         pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
                     )
-            with contextlib.suppress(pyvisa.Error):
-                self.backend.clear()
 
         except BaseException as e:
             e = str(e)
@@ -1197,14 +1216,21 @@ class VISADevice(Device):
         else:
             is_ivi = False
 
+        if len(_pyvisa_rms) == 0:
+            if backend_name == '@py':
+                _check_libusb_install()
+
+            visa_default_resource_manager(backend_name)
+
         try:
-            rm = pyvisa.ResourceManager(backend_name)
+            rm = _pyvisa_rms[backend_name]
         except OSError as e:
             if is_ivi:
                 url = r"https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa"
                 msg = f"could not connect to resource manager - see {url}"
                 e.args[0] += msg
             raise e
+        
 
         return rm
 
@@ -1219,27 +1245,75 @@ def visa_list_resources(resourcemanager: str = None):
     return rm.list_resources()
 
 
-def visa_default_resource_manager(name=None):
+def visa_default_resource_manager(name: str):
+    if name == '@sim':
+        from . import testing
+        full_name = testing.pyvisa_sim_resource
+    else:
+        full_name = name
+
+    if name not in _pyvisa_rms:
+        _pyvisa_rms[name] = pyvisa.ResourceManager(full_name)
     VISADevice._rm = name
 
 
-@util.TTLCache(timeout=3)
-@util.single_threaded_call_lock
-def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> dict[str, str]:
-    def make_test_device(res):
-        device = VISADevice(res, open_timeout=0.25, **device_kws)
-        device._logger = logging.getLogger()
-        return device
+def _visa_probe_message_parameters(device:VISADevice):
+    @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False)
+    def probe_resource():
+        query = '*IDN?' + device.write_termination
 
-    def check_idn(device: VISADevice):
+        device.backend.write_raw(query.encode(device.backend.encoding))
+        identity = device.backend.read_raw().decode(device.backend.encoding)
+
+        for read_termination in ('\r\n', '\n', '\r'):
+            if identity.endswith(read_termination):
+                identity = identity[:-len(read_termination)]
+                break
+        else:
+            read_termination = ''
+
+        return identity, read_termination
+
+    try:
+        device.open()
+    except TimeoutError:
+        return None
+
+    for write_term in ('\n', '\r', '\r\n'):
+        device.backend.write_termination = device.write_termination = write_term
+
         try:
-            ret = device.identity
-            return ret
-        except pyvisa.errors.VisaIOError:
-            return None
+            identity, read_term = probe_resource()
+            make, model, *_ = identity.split(',', 4)
+#            identity_pattern = ','.join(identity.split(',', 4)[:2])
+            ret = VISADevice(
+                resource=device.resource,
+                read_termination=read_term,
+                write_termination=write_term
+            )
+            ret.make = make
+            ret.model = model
+            break
+        except pyvisa.errors.VisaIOError as ex:
+            if 'VI_ERROR_TMO' not in str(ex):
+                raise
+            # device.backend.close()
+            # device.backend.open()
         except BaseException as ex:
             device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")
             raise
+    else:
+        ret = None
+
+    return ret
+
+@util.ttl_cache(timeout=3)
+@util.single_threaded_call_lock
+def visa_probe_devices(skip_interfaces: list[str]=['ASRL'], open_timeout=0.25, timeout=0.5, **device_kwargs) -> dict[str, str]:
+    def make_test_device(res):
+        device = VISADevice(res, open_timeout=open_timeout, timeout=timeout, **device_kwargs)
+        device._logger = logging.getLogger()
+        return device
 
     def keep_interface(name):
         for iface in skip_interfaces:
@@ -1247,18 +1321,21 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> dict[str, st
                 return False
         return True
 
-    devices = {res: make_test_device(res) for res in visa_list_resources() if keep_interface(res)}
+    devices = {
+        res: make_test_device(res)
+        for res in visa_list_resources()
+        if keep_interface(res)
+    }
 
-    with util.concurrently(*list(devices.values()), catch=True):
-        calls = [
-            util.Call(check_idn, device).rename(res)
-            for res, device in devices.items()
-            if device.isopen
-        ]
+    if len(devices) == 0:
+        return {}
 
-        identities = util.concurrently(*calls, catch=True)
+    calls = [
+        util.Call(_visa_probe_message_parameters, device).rename(res)
+        for res, device in devices.items()
+    ]
 
-    return identities
+    return util.sequentially(*calls, catch=False, flatten=False)
 
 
 @attr.adjusted("concurrency", True)

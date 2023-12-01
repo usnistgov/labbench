@@ -10,12 +10,40 @@ try:
     import click
     import inspect
     from pathlib import Path
+    import re
 except KeyboardInterrupt:
     # skip the trace dump on ctrl+c
     sys.exit(1)
 
 EMPTY = inspect.Parameter.empty
 
+def synthesize_device_stubs(devices: list) -> str:
+    def class_name_from_make_model(make, model):
+        make, model = [re.sub('([\W_])+', '', s.title()) for s in (make, model)]
+        return make+model
+
+    ret = "import labbench as lb\n\n"
+    for device in devices:
+        # print(name, device)
+        for attr in ('make', 'model', 'read_termination', 'write_termination'):
+            default = getattr(device, attr)
+            if default == getattr(type(device), attr).default:
+                continue
+            ret += f'@lb.adjusted({repr(attr)}, default={repr(default)})\n'
+
+        cls_name = class_name_from_make_model(device.make, device.model)
+        ret += f'class {cls_name}(lb.VISADevice):\n'
+        ret += '    pass\n\n\n'
+
+    return ret
+
+def summarize_device_probe(device):
+    print(f'{repr(device.resource)}')
+    print(f'\tmake: {repr(device.make)}')
+    print(f'\tmodel: {repr(device.model)}')
+    print(f'\tread_termination: {repr(device.write_termination)}')
+    print(f'\twrite_termination: {repr(device.write_termination)}')
+    print()
 
 def empty_rack(cls):
     """instantiate cls, filling in owned objects that have no default value"""
@@ -307,6 +335,31 @@ def open(config_dir, verbose=False):
         return 1
     else:
         return 0
+
+@cli.command(
+    name="visa-probe",
+    help="""Probe available VISA device connections.
+
+    The pyvisa resource manager will be RESOURCE_MANAGER. This should be one of
+    @ivi, @sim, or @py. If unspecified, the default is @py.
+    """,
+)
+@click.argument(
+    "resource_manager", type=str#, help="name of the pyvisa resource manager (@ivi, @sim, or @py)", default='@py'
+)
+@click.option(
+    "--stubs", default=False, is_flag=True, help="output as class definition stubs instead of a summary table"
+)
+def visa_probe(resource_manager, stubs):
+    import labbench as lb
+    lb.visa_default_resource_manager(resource_manager)
+    devices = lb.visa_probe_devices([])
+
+    if stubs:
+        print(synthesize_device_stubs(devices.values()))
+    else:
+        for device in devices.values():
+            summarize_device_probe(device)
 
 
 if __name__ == "__main__":

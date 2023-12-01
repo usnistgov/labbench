@@ -28,7 +28,7 @@ from ._backends import (
     VISADevice,
     Win32ComDevice,
     visa_default_resource_manager,
-    visa_list_identities,
+    visa_probe_devices,
     visa_list_resources,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational

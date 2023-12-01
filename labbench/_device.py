@@ -107,21 +107,21 @@ def log_trait_activity(msg):
     device = msg["owner"]
     attr_name = msg["name"]
 
-    label = ""
+    label = " "
     if msg["type"] == "set":
         if attr.get_class_attrs(device)[attr_name].label:
-            label = f"({attr.get_class_attrs(device)[attr_name].label})".rstrip()
+            label = f" ({attr.get_class_attrs(device)[attr_name].label})".rstrip()
         value = repr(msg["new"]).rstrip()
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        device._logger.debug(f'set {value} {label}→ {attr_name}')
+        device._logger.debug(f'{value}{label} → {attr_name}')
     elif msg["type"] == "get":
         if attr.get_class_attrs(device)[attr_name].label:
-            label = f"({attr.get_class_attrs(device)[attr_name].label})"
+            label = f" ({attr.get_class_attrs(device)[attr_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        device._logger.debug(f'get {attr_name} → {value} {label}'.rstrip())
+        device._logger.debug(f'{attr_name} → {value} {label}'.rstrip())
     else:
         device._logger.debug(f'unknown operation type "{msg["type"]}"')
 

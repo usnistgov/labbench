@@ -990,7 +990,7 @@ class VISADevice(Device):
                 raise IOError(msg)
             elif len(matches) == 1:
                 self._logger.debug(
-                    f'determined resource by probing {search_desc}'
+                    f'probed resource by matching {search_desc}'
                 )
                 self.resource = matches[0].resource
             else:
@@ -1066,7 +1066,7 @@ class VISADevice(Device):
 
         # outbound message as truncated event log entry
         msg_out = repr(msg) if len(msg) < 1024 else f"({len(msg)} bytes)"
-        self._logger.debug(f"write {msg_out}")
+        self._logger.debug(f"write({msg_out})")
         self.backend.write(msg)
 
     def query(self, msg: str, timeout=None, remap: bool = False, kws: dict[str, typing.Any] = {}) -> str:
@@ -1087,7 +1087,7 @@ class VISADevice(Device):
 
         # outbound message as truncated event log entry
         msg_out = repr(msg) if len(msg) < 80 else f"({len(msg)} bytes)"
-        self._logger.debug(f"query {msg_out}")
+        self._logger.debug(f"query({msg_out}):")
 
         try:
             ret = self.backend.query(msg)
@@ -1112,7 +1112,7 @@ class VISADevice(Device):
             _to, self.backend.timeout = self.backend.timeout, timeout
 
         msg_out = repr(msg) if len(msg) < 80 else f"({len(msg)} bytes)"
-        self._logger.debug(f"query_ascii_values {msg_out}")
+        self._logger.debug(f"query_ascii_values({msg_out}):")
 
         try:
             ret = self.backend.query_ascii_values(msg, type_, separator, container, delay)
@@ -1130,7 +1130,7 @@ class VISADevice(Device):
         else:
             logmsg = f"(iterable sequence of type {type(ret)})"
 
-        self._logger.debug(f"      -> {logmsg}")
+        self._logger.debug(f"    -> {logmsg}")
 
         return ret
 
@@ -1277,7 +1277,6 @@ def _visa_probe_message_parameters(device: VISADevice):
     @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False)
     def probe_resource():
         query = '*IDN?' + device.write_termination
-
         device.backend.write_raw(query.encode(device.backend.encoding))
         identity = device.backend.read_raw().decode(device.backend.encoding)
 

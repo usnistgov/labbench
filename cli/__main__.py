@@ -17,7 +17,8 @@ EMPTY = inspect.Parameter.empty
 
 def synthesize_device_stubs(devices: list) -> str:
     def class_name_from_make_model(make, model):
-        make, model = [re.sub('([\W_])+', '', s.title()) for s in (make, model)]
+        make = make.title()
+        make, model = [re.sub('([\W_])+', '', s) for s in (make, model)]
         return make+model
 
     ret = "import labbench as lb\n\n"
@@ -39,9 +40,9 @@ def synthesize_device_stubs(devices: list) -> str:
 def summarize_device_probe(device):
     device_args = ''
     if device.read_termination != type(device).read_termination.default:
-        device_args += f', {repr(device.read_termination)}'
+        device_args += f', read_termination={repr(device.read_termination)}'
     if device.write_termination != type(device).write_termination.default:
-        device_args += f', {repr(device.write_termination)}'  
+        device_args += f', write_termination={repr(device.write_termination)}'  
     print(f'  • {device.make.title()} {device.model} (serial {repr(device.serial)}, rev. {repr(device._revision)}): ')
     print(f'    lb.VISADevice({repr(device.resource) + device_args})')
     print()

@@ -1366,14 +1366,6 @@ def _visa_match_device(device: VISADevice, target: VISADevice):
     try:
         identity = device._identity
         make, model, serial, _ = identity.split(",", 3)
-        if make.lower() != target.make.lower():
-            return None
-        if not target.model.lower().startswith(model.lower()):
-            return None
-        if target.resource not in (None, "") and ":" not in target.resource:
-            # if resource is set, try to match the serial number
-            if target.resource != serial:
-                return None
     except pyvisa.errors.VisaIOError as ex:
         if "VI_ERROR_TMO" not in str(ex):
             raise
@@ -1383,6 +1375,15 @@ def _visa_match_device(device: VISADevice, target: VISADevice):
         raise
     finally:
         device.close()
+
+    if make.lower() != target.make.lower():
+        return None
+    if not target.model.lower().startswith(model.lower()):
+        return None
+    if target.resource not in (None, "") and ":" not in target.resource:
+        # if resource is set, try to match the serial number
+        if target.resource != serial:
+            return None
 
     return device
 

@@ -942,8 +942,18 @@ class VISADevice(Device):
 
     model = attr.value.str(default=None, allow_none=True, cache=True, help="device model dused to autodetect resource string")
 
+    @attr.property.str(default=None, sets=False, cache=True, help="device serial number")
+    def serial(self):
+        make, model, serial, rev = _visa_parse_identity(self._identity)
+        return serial
+
+    @attr.property.str(default=None, sets=False, cache=True, help="device revision information")
+    def _revision(self):
+        make, model, serial, rev = _visa_parse_identity(self._identity)
+        return rev
+
     # Common VISA properties
-    identity = attr.property.str(
+    _identity = attr.property.str(
         key="*IDN",
         sets=False,
         cache=True,
@@ -1255,6 +1265,8 @@ def _visa_missing_pyvisapy_support() -> list[str]:
 
     return missing
 
+def _visa_parse_identity(identity: str):
+    return identity.split(",", 4)
 
 def visa_list_resources(resourcemanager: str = None) -> list[str]:
     """autodetects and returns a list of valid VISADevice resource strings"""
@@ -1315,12 +1327,15 @@ def _visa_probe_message_parameters(device: VISADevice):
 
         try:
             identity, read_term = probe_resource()
-            make, model, *_ = identity.split(",", 4)
+            make, model, serial, rev = _visa_parse_identity(identity)
             ret = VISADevice(
                 resource=device.resource, read_termination=read_term, write_termination=write_term
             )
             ret.make = make
             ret.model = model
+            ret._attr_store.cache['serial'] = serial
+            ret._attr_store.cache['_revision'] = rev
+
             break
         except pyvisa.errors.VisaIOError as ex:
             if "VI_ERROR_TMO" not in str(ex):
@@ -1346,9 +1361,9 @@ def _visa_match_device(device: VISADevice, target: VISADevice):
         return None
 
     try:
-        identity = device.identity
+        identity = device._identity
         make, model, *_ = identity.split(",", 3)
-        if make.lower() != target.make.lower() or target.model.lower() not in model.lower():
+        if make.lower() != target.make.lower() or not target.model.lower().startswith(model.lower()):
             return None
     except pyvisa.errors.VisaIOError as ex:
         if "VI_ERROR_TMO" not in str(ex):

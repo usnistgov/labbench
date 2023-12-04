@@ -996,7 +996,8 @@ class VISADevice(Device):
             write_termination=self.write_termination,
         )
 
-        if self.resource not in ("", None):
+        if self.resource not in ("", None) and ':' in self.resource:
+            # a VISA URI
             pass
         elif self.make is not None and self.model is not None:
             matches = visa_probe_devices(self)
@@ -1364,9 +1365,15 @@ def _visa_match_device(device: VISADevice, target: VISADevice):
 
     try:
         identity = device._identity
-        make, model, *_ = identity.split(",", 3)
-        if make.lower() != target.make.lower() or not target.model.lower().startswith(model.lower()):
+        make, model, serial, _ = identity.split(",", 3)
+        if make.lower() != target.make.lower():
             return None
+        if not target.model.lower().startswith(model.lower()):
+            return None
+        if target.resource not in (None, "") and ":" not in target.resource:
+            # if resource is set, try to match the serial number
+            if target.resource != serial:
+                return None
     except pyvisa.errors.VisaIOError as ex:
         if "VI_ERROR_TMO" not in str(ex):
             raise

@@ -882,7 +882,7 @@ class VISADevice(Device):
         Connect to a VISA device using a known resource string::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
-                print(inst.identity)
+                print(inst)
 
         Probe available connections and print valid `VISADevice` constructors::
 
@@ -942,13 +942,15 @@ class VISADevice(Device):
 
     model = attr.value.str(default=None, allow_none=True, cache=True, help="device model dused to autodetect resource string")
 
-    @attr.property.str(default=None, sets=False, cache=True, help="device serial number")
+    @attr.property.str(sets=False, cache=True)
     def serial(self):
+        """device-reported serial number"""
         make, model, serial, rev = _visa_parse_identity(self._identity)
         return serial
 
-    @attr.property.str(default=None, sets=False, cache=True, help="device revision information")
+    @attr.property.str(sets=False, cache=True, help="device revision information")
     def _revision(self):
+        """device-reported revision"""
         make, model, serial, rev = _visa_parse_identity(self._identity)
         return rev
 

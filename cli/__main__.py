@@ -37,13 +37,17 @@ def synthesize_device_stubs(devices: list) -> str:
 
     return ret
 
+
 def summarize_device_probe(device):
-    print(f'    {repr(device.resource)}')
-    print(f'        make: {repr(device.make)}')
-    print(f'        model: {repr(device.model)}')
-    print(f'        read_termination: {repr(device.read_termination)}')
-    print(f'        write_termination: {repr(device.write_termination)}')
+    device_args = ''
+    if device.read_termination != type(device).read_termination.default:
+        device_args += f', {repr(device.read_termination)}'
+    if device.write_termination != type(device).write_termination.default:
+        device_args += f', {repr(device.write_termination)}'  
+    print(f'  • {device.make.title()} {device.model} (serial {repr(device.serial)}, rev. {repr(device._revision)}): ')
+    print(f'    lb.VISADevice({repr(device.resource) + device_args})')
     print()
+
 
 def empty_rack(cls):
     """instantiate cls, filling in owned objects that have no default value"""

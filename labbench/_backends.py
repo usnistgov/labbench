@@ -1031,7 +1031,6 @@ class VISADevice(Device):
         if self.open_timeout is not None:
             kwargs["open_timeout"] = int(self.open_timeout * 1000)
 
-        # print(repr(kwargs))
         rm = self._get_rm()
         self.backend = rm.open_resource(self.resource, **kwargs)
 

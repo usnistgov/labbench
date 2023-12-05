@@ -28,7 +28,7 @@ def synthesize_device_stubs(devices: list) -> str:
             default = getattr(device, attr)
             if default == getattr(type(device), attr).default:
                 continue
-            ret += f'@lb.adjusted({repr(attr)}, default={repr(default)})\n'
+            ret += f'@attr.adjust({repr(attr)}, default={repr(default)})\n'
 
         cls_name = class_name_from_make_model(device.make, device.model)
         ret += f'class {cls_name}(lb.VISADevice):\n'

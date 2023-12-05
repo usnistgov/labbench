@@ -25,20 +25,17 @@
 # licenses.
 
 import unittest
-import importlib
-import sys
 import labbench as lb
 from labbench import paramattr as attr
 
 lb.util._force_full_traceback(True)
 
-from test_value import *
-from test_property import *
-
-# from test_db import *
-# from test_concurrently import *
-
-# from test_doc import *
+from test_paramattr_calibration import *
+from test_paramattr_method import *
+from test_paramattr_property import *
+from test_paramattr_value import *
+from test_data_logging import *
+from test_sequencing import *
 
 if __name__ == "__main__":
     lb.show_messages("warning")

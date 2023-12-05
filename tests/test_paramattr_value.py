@@ -38,7 +38,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
     str_no_case_with_only = attr.value.str(default="moose", only=("MOOSE", "squirrel"), case=False)
 
 
-@lb.adjust("bool", default=False)
+@attr.adjust("bool", default=False)
 class AdjustedTestDevice(StoreTestDevice):
     pass
 

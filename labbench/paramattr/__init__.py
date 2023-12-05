@@ -4,7 +4,7 @@ from ._bases import (
     get_class_attrs,
     observe,
     unobserve,
-    adjusted,
+    adjust,
     KeyAdapterBase,
     HasParamAttrs,
     ParamAttr,

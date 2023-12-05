@@ -611,7 +611,7 @@ class LabviewSocketInterface(Device):
                     continue
 
 
-@attr.adjusted("resource", help="platform-dependent serial port address")
+@attr.adjust("resource", help="platform-dependent serial port address")
 class SerialDevice(Device):
     """Base class for wrappers that communicate via pyserial.
 
@@ -996,13 +996,20 @@ class VISADevice(Device):
             write_termination=self.write_termination,
         )
 
-        if self.resource not in ("", None) and ':' in self.resource:
-            # a VISA URI
+        if _visa_valid_resource_name(self.resource):
+            # use the explicit visa resource name, if provided
             pass
-        elif self.make is not None and self.model is not None:
+        elif (self.make, self.model) != (None, None) or self.resource:
+            # match the supplied (make, model) and/or treat self.resource as a serial number to match
+
+            search_desc = ', '.join([
+                f"{name} {repr(getattr(self, name))}"
+                for name in ('make', 'model', 'resource')
+                if getattr(self, name)
+            ]).replace('resource', 'serial number')
+
             matches = visa_probe_devices(self)
 
-            search_desc = f'make "{self.make}" and model "{self.model}"'
             if len(matches) == 0:
                 msg = f"could not open VISA device {repr(type(self))}: resource not specified, and no devices were discovered matching {search_desc}"
                 raise IOError(msg)
@@ -1013,8 +1020,8 @@ class VISADevice(Device):
                 msg = f"resource ambiguity: {len(matches)} VISA resources matched {search_desc}"
                 raise IOError(msg)
         else:
-            raise ValueError(
-                f"specify the resource or identity_pattern attributes to open {repr(self)} connection"
+            raise ConnectionError(
+                f"must specify resource (a VISA name string, or an instrument serial number) or define {repr(type(self))} with default make and model"
             )
 
         if self.timeout is not None:
@@ -1354,6 +1361,21 @@ def _visa_probe_message_parameters(device: VISADevice):
     return ret
 
 
+def _visa_valid_resource_name(resource: str):
+    from pyvisa import rname
+
+    if resource is None:
+        return False
+
+    try:
+        rname.ResourceName.from_string(resource)
+    except rname.InvalidResourceName:
+        return False
+    else:
+        return True
+
+
+
 def _visa_match_device(device: VISADevice, target: VISADevice):
     device.backend.write_termination = device.write_termination = target.write_termination
     device.backend.read_termination = device.read_termination = target.read_termination
@@ -1365,7 +1387,7 @@ def _visa_match_device(device: VISADevice, target: VISADevice):
 
     try:
         identity = device._identity
-        make, model, serial, _ = identity.split(",", 3)
+        make, model, serial, _ = _visa_parse_identity(identity)
     except pyvisa.errors.VisaIOError as ex:
         if "VI_ERROR_TMO" not in str(ex):
             raise
@@ -1376,13 +1398,19 @@ def _visa_match_device(device: VISADevice, target: VISADevice):
     finally:
         device.close()
 
-    if make.lower() != target.make.lower():
-        return None
-    if not target.model.lower().startswith(model.lower()):
-        return None
-    if target.resource not in (None, "") and ":" not in target.resource:
-        # if resource is set, try to match the serial number
-        if target.resource != serial:
+    if target.make is not None:
+        # apply the make filter
+        if make.lower() != target.make.lower():
+            return None
+
+    if target.model is not None:
+        # apply the model filter
+        if not target.model.lower().startswith(model.lower()):
+            return None
+
+    if target.resource is not None and not _visa_valid_resource_name(target.resource):
+        # treat the resource string as a serial number, and filter
+        if target.resource.lower() != serial.lower():
             return None
 
     return device
@@ -1448,7 +1476,7 @@ def visa_probe_devices(
     return list(rets.values())
 
 
-@attr.adjusted("concurrency", True)
+@attr.adjust("concurrency", True)
 class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 

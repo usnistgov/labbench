@@ -29,7 +29,7 @@ devices:
           query_error: 4
     dialogues:
       - q: "*IDN?"
-        r: "pyvisa_sim,Power Sensor model #1234, Serial 63472,rev f"
+        r: "pyvisa_sim,Power Sensor model #1234,63472,rev f"
       - q: "SYST:PRES"
       - q: "*RST"
       - q: "TRIG"
@@ -123,7 +123,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "pyvisa_sim, Spectrum analyzer model #1234, Serial #AUJH99, rev k"
+        r: "pyvisa_sim, Spectrum analyzer model #1234,#AUJH99,v 4.3.1"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'
@@ -186,7 +186,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "pyvisa_sim,Oscilloscope model #1234, Serial #OMGBBQ,rev b"
+        r: "pyvisa_sim,Oscilloscope model #1234,OMGBBQ58,b.4"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'
@@ -321,7 +321,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "pyvisa_sim,Spectrum analyzer model #1234, Serial #AUJH99,mk iv"
+        r: "pyvisa_sim,Spectrum analyzer model #1234,#AUJH99,mk iv"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'
@@ -385,7 +385,7 @@ devices:
 
     dialogues:
       - q: "*IDN?"
-        r: "pyvisa_sim,Signal generator model #1234,serial number 1837518935,v3"
+        r: "pyvisa_sim,Signal generator model #1234,1837518935,v3"
       - q: "TRIG"
       - q: "*RST"
       - q: 'FETC?'

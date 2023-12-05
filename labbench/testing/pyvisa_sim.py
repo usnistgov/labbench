@@ -14,11 +14,9 @@ __all__ = ["PowerSensor", "Oscilloscope", "SignalGenerator"]
     # map python True and False values to these SCPI strings
     remap={True: "ON", False: "OFF"},
 )
-@attr.adjusted(
-    # set the identity_pattern
-    "identity_pattern",
-    default=r"pyvisa_sim,Power Sensor model \#1234",
-)
+# set the automatic connection filters
+@attr.adjust("make", "pyvisa_sim")
+@attr.adjust("model", "Power Sensor model 1234")
 class PowerSensor(VISADevice):
     RATES = "NORM", "DOUB", "FAST"
 
@@ -63,7 +61,8 @@ class PowerSensor(VISADevice):
 
 
 @attr.visa_keying(remap={True: "ON", False: "OFF"})
-@attr.adjusted("identity_pattern", default=r"pyvisa_sim,Spectrum analyzer model \#1234")
+@attr.adjust("make", default="pyvisa_sim")
+@attr.adjust("model", default="Spectrum analyzer model #1234")
 class SpectrumAnalyzer(VISADevice):
     center_frequency = attr.property.float(
         key="SENS:FREQ",
@@ -103,7 +102,8 @@ class SpectrumAnalyzer(VISADevice):
 
 
 @attr.visa_keying(remap={True: "YES", False: "NO"})
-@attr.adjusted("identity_pattern", default=r"pyvisa_sim,Signal generator model \#1234")
+@attr.adjust("make", "pyvisa_sim")
+@attr.adjust("model", "Signal generator model #1234")
 class SignalGenerator(VISADevice):
     output_enabled = attr.property.bool(key="OUT:ENABL", help="when True, output an RF tone")
     center_frequency = attr.property.float(
@@ -123,7 +123,8 @@ class SignalGenerator(VISADevice):
 
 @attr.register_key_argument(attr.kwarg.int("channel", min=1, max=4, help="input channel"))
 @attr.visa_keying(remap={True: "ON", False: "OFF"})
-@attr.adjusted("identity_pattern", default=r"pyvisa_sim,Oscilloscope model #1234")
+@attr.adjust("make", default="pyvisa_sim")
+@attr.adjust("model", default="Oscilloscope model #1234")
 class Oscilloscope(VISADevice):
     @attr.method.float(
         min=10e6,

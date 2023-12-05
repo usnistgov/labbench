@@ -32,6 +32,7 @@ def synthesize_device_stubs(devices: list) -> str:
 
         cls_name = class_name_from_make_model(device.make, device.model)
         ret += f'class {cls_name}(lb.VISADevice):\n'
+        ret += f'   """Probed serial number {repr(device.serial)}"""\n'
         ret += '    pass\n\n\n'
 
     return ret
@@ -376,7 +377,7 @@ def visa_probe(resource_manager, stubs):
     devices = lb.visa_probe_devices()
 
     if len(devices) == 0:
-        print(f'{prefix}did not detect any devices available on resource manager {repr(resource_manager)}', sys.stderr)
+        print(f'{prefix}did not detect any devices available on resource manager {repr(resource_manager)}', file=sys.stderr)
         return
     
     if stubs:

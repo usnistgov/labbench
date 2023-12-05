@@ -1240,8 +1240,8 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
         pass
 
 
-def adjusted(
-    paramattr: Union[ParamAttr, str], default: Any = Undefined, /, **kws
+def adjust(
+    paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws
 ) -> Callable[[Type[T]], Type[T]]:
     """decorates a Device subclass to copy the specified ParamAttr with a specified name.
 
@@ -1267,15 +1267,27 @@ def adjusted(
         name = paramattr
     else:
         raise ValueError("expected ParamAttr or str instance for `paramattr` argument")
-
+    
     def apply_adjusted_paramattr(owner_cls: HasParamAttrs):
         if not issubclass(owner_cls, HasParamAttrs):
-            raise TypeError("adopt must decorate a Device class definition")
-        if name not in owner_cls.__dict__:
-            raise ValueError(f'no ParamAttr "{name}" in {repr(owner_cls)}')
+            raise TypeError("must decorate a Device class definition")
+        if default_or_key is not Undefined:
+            if issubclass(owner_cls, Value):
+                kws['default'] = default_or_key
+            elif issubclass(owner_cls, (Property, Method)):
+                kws['key'] = default_or_key
 
+        if name not in owner_cls.__dict__:
+            raise ValueError(f'the decorated class {repr(owner_cls)} has no paramattr "{name}"')
+
+        parent_attr = super(owner_cls, owner_cls)
         attr = getattr(owner_cls, name)
-        attr.update(**kws)
+        if parent_attr is attr:
+            # don't clobber the parent's paramattr
+            attr = attr.copy(kws)
+            setattr(owner_cls, name, attr)
+        else:
+            attr.update(**kws)
         # owner_cls.__update_signature__()
         return owner_cls
 

@@ -996,12 +996,14 @@ class VISADevice(Device):
             write_termination=self.write_termination,
         )
 
-        if _visa_valid_resource_name(self.resource):
+        is_valid_visa_name = _visa_valid_resource_name(self.resource)
+        if is_valid_visa_name:
             # use the explicit visa resource name, if provided
             pass
         elif (self.make, self.model) != (None, None) or self.resource:
+            if self.resource:
+                self._logger.debug(f"treating resource as a serial number (pyvisa does not recognize it as a VISA name)")
             # match the supplied (make, model) and/or treat self.resource as a serial number to match
-
             search_desc = ', '.join([
                 f"{name} {repr(getattr(self, name))}"
                 for name in ('make', 'model', 'resource')

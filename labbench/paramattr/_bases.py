@@ -1267,7 +1267,7 @@ def adjust(
         name = paramattr
     else:
         raise ValueError("expected ParamAttr or str instance for `paramattr` argument")
-    
+
     def apply_adjusted_paramattr(owner_cls: HasParamAttrs):
         if not issubclass(owner_cls, HasParamAttrs):
             raise TypeError("must decorate a Device class definition")

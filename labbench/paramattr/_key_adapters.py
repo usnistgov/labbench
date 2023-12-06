@@ -4,27 +4,42 @@ from typing import Dict, List, Any
 
 
 class message_keying(KeyAdapterBase):
-    """Device class decorator that implements automatic API that triggers API messages for labbench properties.
-
-    Example usage:
-
-    ```python
-        import labbench as lb
-
-        @lb.message_keying(query_fmt='{key}?', write_fmt='{key} {value}', query_func='get', write_func='set')
-        class MyDevice(lb.Device):
-            def set(self, set_msg: str):
-                # do set
-                pass
-
-            def get(self, get_msg: str):
-                # do get
-                pass
-    ```
+    """Base class for decorators configure wrapper access to a backend API in of :class:labbench.Device` class
+    through string `key` arguments.
 
     Decorated classes connect traits that are defined with the `key` keyword to trigger
     backend API calls based on the key. The implementation of the `set` and `get` methods
-    in subclasses of MessagePropertyAdapter determines how the key is used to generate API calls.
+    determines how the key is used to generate API calls.
+
+    Example:
+
+        A custom implementation::
+
+            import labbench as lb
+            from labbench import paramattr as attr
+
+            class custom_keying(attr.message_keying):
+                def get(self, device: lb.Device, scpi_key: str, trait_name=None):
+                    if " " in scpi_key:
+                        key = scpi_key.replace(" ", "? ", 1)
+                    else:
+                        key = scpi_key + "?"
+                    return device.query(key)
+
+                def set(self, device: lb.Device, scpi_key: str, value, trait_name=None):
+                    if " " in scpi_key:
+                        key = f"{scpi_key},{value}"
+                    else:
+                        key = f"{scpi_key} {value}"
+                    return device.write(key.rstrip())
+
+            @custom_keying(remap={True: "ON", False: "OFF"})
+            class CustomDevice(lb.VISADevice):
+                pass
+    
+    See Also:
+
+        * :meth:`labbench.paramattr.visa_keying`
     """
 
     _formatter = string.Formatter()
@@ -153,21 +168,19 @@ class message_keying(KeyAdapterBase):
 
 
 class visa_keying(message_keying):
-    """Device class decorator that automates SCPI command string interactions for labbench properties.
+    """ Decorates a :class:`labbench.VISADevice` (or subclass) to configure its use of the `key` argument
+    in all :mod:`labbench.paramattr.property` or :mod:`labbench.paramattr.method` descriptors.
 
-    Example usage:
+    Example:
 
-    ```python
-        import labbench as lb
+        Configure `MyDevice` to format SCPI queries as `'{key}?'`, and SCPI writes as f'{key} {value}'::
 
-        @lb.visa_keying(query_fmt='{key}?', write_fmt='{key} {value}')
-        class MyDevice(lb.VISADevice):
-            pass
-    ```
+            import labbench as lb
 
-    This causes access to property traits defined with 'key=' to interact with the
-    VISA instrument. By default, messages in VISADevice objects trigger queries
-    with the `'{key}?'` format, and writes formatted as f'{key} {value}'.
+            @lb.visa_keying(query_fmt='{key}?', write_fmt='{key} {value}')
+            class MyDevice(lb.VISADevice):
+                pass
+    
     """
 
     def __init__(

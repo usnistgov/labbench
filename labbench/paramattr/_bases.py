@@ -55,6 +55,31 @@ def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> dict[str,
 
 
 class KeyAdapterBase:
+    """Decorates a :class:`labbench.Device` subclass to configure its 
+    implementation of the `key` argument passed to :mod:`labbench.paramattr.property` or
+    :mod:`labbench.paramattr.method` descriptors.
+
+    This can be use to to automate 
+
+    Example:
+
+        Send a message string based on `key` (simplified from :func:`labbench.paramattr.visa_keying`)::
+
+            import labbench as lb
+            from labbench import paramattr as attr
+
+            class custom_keying(attr.message_keying):
+                def get(self, device: lb.Device, scpi_key: str, trait_name=None):
+                    return device.query(key + '?')
+
+                def set(self, device: lb.Device, scpi_key: str, value, trait_name=None):
+                    return device.write(f"{scpi_key} {value}")
+
+            @custom_keying
+            class CustomDevice(lb.VISADevice):
+                pass
+    
+    """    
     key_arguments: dict[str, ParamAttr]
 
     # @typing.overload
@@ -290,8 +315,8 @@ class ParamAttr(typing.Generic[T]):
 
     * :mod:`Method <labbench.paramattr.method>`, a parameter of an underlying API (often `Device.backend`) implemented as a method that can support additional keyword arguments
 
-    Each of these are modules that contain more specialized descriptors targeted toward various python types. Further,
-    to help define methods, :mod:`KeywordArgument <labbench.paramattr.kwarg>` ParamAttr types are also available.
+    Each of these are modules that contain more specialized descriptors targeted toward various python types.
+    Method definitions also use :mod:`KeywordArgument <labbench.paramattr.kwarg>`, which are not used as descriptors.
 
     Arguments:
         key: specify automatic implementation with the Device (backend-specific)
@@ -302,7 +327,6 @@ class ParamAttr(typing.Generic[T]):
         cache: if True, interact with the device only once, then return copies (state attribute only)
         only: value allowlist; others raise ValueError
         allow_none: permit None values in addition to the specified type
-
     """
 
     # the python type representation defined by ParamAttr subclasses
@@ -1246,14 +1270,14 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 def adjust(
     paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws
 ) -> Callable[[Type[T]], Type[T]]:
-    """decorates a Device subclass to copy the specified ParamAttr with a specified name.
+    """decorates a Device subclass to adjust the definition of the specified ParamAttr.
 
     This can be applied to inherited classes that need one of its parents attributes
     with an adjusted definition. Multiple decorators can be stacked to the
     same class definition.
 
     Args:
-        paramattr: ParamAttr instance or name of the attribute to adjust in the wrapped class
+        paramattr: the ParamAttr name or instance to adjust
         default: new default value (for value attributes only)
 
     Raises:

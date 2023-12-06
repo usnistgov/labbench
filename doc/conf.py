@@ -174,30 +174,23 @@ class PatchedPythonDomain(PythonDomain):
 
 
 def process_docstring(app, what, name, obj, options, lines):
-    if isinstance(obj, lb._traits.Trait):
+    if isinstance(obj, lb.paramattr.ParamAttr):
         lines.append(obj.doc(as_argument=True, anonymous=True))
 
 
 class AttributeDocumenter(autodoc.AttributeDocumenter):
     """Document lb.value trait class attributes in the style of python class attributes"""
 
-    @staticmethod
-    def _is_lb_value(obj):
-        return (
-            isinstance(obj, lb._traits.Trait)
-            and obj.role == lb._traits.Trait.ROLE_VALUE
-        )
-
     @classmethod
     def can_document_member(cls, member, membername: str, isattr: bool, parent) -> bool:
         if isinstance(parent, autodoc.ClassDocumenter):
-            if cls._is_lb_value(member):
+            if isinstance(member, lb.paramattr.value.Value):
                 return True
 
         return super().can_document_member(member, membername, isattr, parent)
 
     def add_directive_header(self, sig: str) -> None:
-        if not self._is_lb_value(self.object):
+        if not isinstance(self.object, lb.paramattr.value.Value):
             return super().add_directive_header(sig)
 
         super().add_directive_header(sig)
@@ -217,17 +210,10 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
 class PropertyDocumenter(autodoc.PropertyDocumenter):
     """Document lb.property traits in the style of python properties"""
 
-    @staticmethod
-    def _is_lb_property(obj):
-        return (
-            isinstance(obj, lb._traits.Trait)
-            and obj.role == lb._traits.Trait.ROLE_PROPERTY
-        )
-
     @classmethod
     def can_document_member(cls, member, membername: str, isattr: bool, parent) -> bool:
         if isinstance(parent, autodoc.ClassDocumenter):
-            if cls._is_lb_property(member):
+            if isinstance(member, lb.paramattr.property.Property):
                 return True
         return super().can_document_member(member, membername, isattr, parent)
 

@@ -812,7 +812,7 @@ class Aggregator(util.Ownable):
             if changes:
                 observe(device, self._receive_trait_update)
             else:
-                core.unobserve(device, self._receive_trait_update)
+                attr.unobserve(device, self._receive_trait_update)
             if always:
                 self.attr_rules["always"][device] = always
             if never:

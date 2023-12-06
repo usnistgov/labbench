@@ -16,7 +16,7 @@ from . import util, paramattr
 util.force_full_traceback(True)
 
 
-from .paramattr import Undefined, observe, unobserve
+from .paramattr import Undefined
 
 from ._backends import (
     DotNetDevice,

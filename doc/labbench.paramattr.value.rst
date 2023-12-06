@@ -1,7 +1,7 @@
-labbench.datareturn
+labbench.paramattr.value
 ==========================
 
-.. automodule:: labbench.datareturn
+.. automodule:: labbench.paramattr.value
    :members:
    :show-inheritance:
 

@@ -1,7 +1,7 @@
-labbench.value
+labbench.paramattr.kwarg
 ==========================
 
-.. automodule:: labbench.value
+.. automodule:: labbench.paramattr.kwarg
    :members:
    :show-inheritance:
 

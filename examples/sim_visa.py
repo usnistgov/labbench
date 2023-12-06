@@ -71,7 +71,7 @@ if __name__ == "__main__":
     sa = SpectrumAnalyzer(r"GPIB::15::INSTR")
 
     with ps, sa:
-        print(f"Python value: {repr(ps.identity)}")
+        print(f"Python value: {repr(ps._identity)}")
         print(f"Python value: {repr(ps.options)}")
         print(f"Python value: {repr(ps.current)}")
         print(f"Python value: {repr(ps.rail)}")

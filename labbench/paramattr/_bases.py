@@ -279,22 +279,19 @@ class field(typing.Generic[T]):
 
 @typing.dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field[T],))
 class ParamAttr(typing.Generic[T]):
-    """base class for typed descriptors in Device classes. These
-    implement type checking, casting, decorators, and callbacks.
+    """base class for helper descriptors in :class:`labbench.Device`. These
+    are multi-tools for type checking, casting, decorators, API wrapping, and callbacks.
 
-    A Device instance supports two types of ParamAttrs:
+    The basic types of `ParamAttr` descriptors implemented in :mod:`labbench` are
 
-    * A _value attribute_ acts as an attribute variable in instantiated
-      classes
+    * :mod:`Value <labbench.paramattr.value>`, a simple variable stored in the Device object
 
-    * A _property attribute_ applies get and set operations for a
-      parameter that requires API calls in the owning class,
-      exposed in the style of a python `property`
+    * :mod:`Property <labbench.paramattr.property>`, a parameter of an underlying API (often `Device.backend`) implemented in the style of a :func:`property`
 
-    * A _method attribute_ applies get and set operations for a
-      parameter that requires API calls in the owning class,
-      exposed in the style of a python function attribute (method)
-      that can be called with additional arguments
+    * :mod:`Method <labbench.paramattr.method>`, a parameter of an underlying API (often `Device.backend`) implemented as a method that can support additional keyword arguments
+
+    Each of these are modules that contain more specialized descriptors targeted toward various python types. Further,
+    to help define methods, :mod:`KeywordArgument <labbench.paramattr.kwarg>` ParamAttr types are also available.
 
     Arguments:
         key: specify automatic implementation with the Device (backend-specific)
@@ -534,7 +531,13 @@ class ParamAttr(typing.Generic[T]):
             if anonymous:
                 doc = f"{self.help}"
             else:
-                doc = f"{self.name} ({typename}): {self.help}"
+                if isinstance(self, BoundedNumber) and self.label:
+                    label = f' (in {self.label})'
+                elif self.label:
+                    label = f' ({repr(self.label)})'
+                else:
+                    label = ''
+                doc = f"{self.name}{label}: {self.help}"
 
             if len(params) > 0:
                 doc += f" (constraints: {params})"

@@ -201,6 +201,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         constructor_attrs = []
         for name in cls.__annotations__.keys():
             attr_def = getattr(cls, name)
+            constructor_attrs.append(attr_def)            
 
             if not isinstance(attr_def, attr.value.Value):
                 annot_desc = f"{name}: {cls.__annotations__[name].__name__}"
@@ -222,14 +223,13 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                         annotation=cls.__annotations__[name],
                     )
                 )
-                constructor_attrs.append(attr_def)
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
         cls.__init__ = util.copy_func(cls.__init__)
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = "".join([f"    {t.doc()}\n" for t in constructor_attrs])
+        value_docs = "".join([f"    {t.doc(as_argument=True)}\n" for t in constructor_attrs])
         cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
 
 

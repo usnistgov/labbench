@@ -4,8 +4,8 @@ from typing import Dict, List, Any
 
 
 class message_keying(KeyAdapterBase):
-    """Base class for decorators configure wrapper access to a backend API in of :class:labbench.Device` class
-    through string `key` arguments.
+    """Base class for decorators configure wrapper access to a backend API in of a
+    :class:labbench.Device` class through string `key` arguments.
 
     Decorated classes connect traits that are defined with the `key` keyword to trigger
     backend API calls based on the key. The implementation of the `set` and `get` methods

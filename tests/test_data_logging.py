@@ -32,7 +32,7 @@ import pandas as pd
 import numpy as np
 import shutil
 
-
+@attr.register_key_argument(attr.kwarg.int("registered_channel", min=1, max=4))
 @store_backend.key_store_adapter(defaults={"SWE:APER": "20e-6"})
 class StoreDevice(store_backend.TestStoreDevice):
     """This "instrument" makes mock data and instrument property traits to
@@ -51,6 +51,23 @@ class StoreDevice(store_backend.TestStoreDevice):
         key="SENS:FREQ", min=10e6, max=18e9, help="center frequency (in Hz)"
     )
     atten = attr.property.float(key="POW", min=0, max=100, step=0.5)
+    
+    str_keyed_with_arg = attr.method.str(key="str_with_arg_ch_{registered_channel}")
+
+    @attr.kwarg.int(name="decorated_channel", min=1, max=4)
+    @attr.method.str()
+    @attr.kwarg.float(name="bandwidth", min=10e3, max=100e6)
+    def str_decorated_with_arg(self, set_value=lb.Undefined, *, decorated_channel, bandwidth):
+        key = self.backend.get_backend_key(
+            self,
+            type(self).str_decorated_with_arg,
+            {"decorated_channel": decorated_channel, "bandwidth": bandwidth},
+        )
+
+        if set_value is not lb.Undefined:
+            self.backend.set(key, set_value)
+        else:
+            return self.backend.get(key, None)
 
     def trigger(self):
         """This would tell the instrument to start a measurement"""
@@ -137,11 +154,36 @@ class TestDataLogging(unittest.TestCase):
         self.assertTrue(db.path.exists())
         self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
         self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+
         df = lb.read(db.path / "outputs.csv")
         self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
         rack.delete_data()
+
+    def test_csv_keyed_method(self):
+        db = lb.CSVLogger(path=self.make_db_path(), tar=False)
+
+        with StoreRack(db=db) as rack:
+            rack.inst.str_keyed_with_arg('value', registered_channel=1)
+            rack.db.new_row()
+
+        df = lb.read(db.path / "outputs.csv")
+        self.assertIn('inst_str_keyed_with_arg_registered_channel_1', df.columns)
+
+        rack.delete_data()
+
+    def test_csv_decorated_method(self):
+        db = lb.CSVLogger(path=self.make_db_path(), tar=False)
+
+        with StoreRack(db=db) as rack:
+            rack.inst.str_decorated_with_arg('value', decorated_channel=2, bandwidth=100e6)
+            rack.db.new_row()
+
+        # df = lb.read(db.path / "outputs.csv")
+        # self.assertIn('inst_str_keyed_with_arg_registered_channel_1', df.columns)
+
+        # rack.delete_data()
 
 
 if __name__ == "__main__":

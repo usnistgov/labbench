@@ -4,6 +4,7 @@ import io
 import json
 import os
 import pickle
+import re
 import shutil
 import tarfile
 import warnings
@@ -535,7 +536,7 @@ class Aggregator(util.Ownable):
         _rack.notify.unobserve_calls(self._receive_rack_input)
         # _rack.notify.unobserve_call_iteration(self._receive_rack_input)
 
-    def is_always_trait(self, device, attr_name):
+    def always_get_this_attr(self, device, attr_name):
         if not isinstance(device, core.Device):
             return False
 
@@ -562,7 +563,7 @@ class Aggregator(util.Ownable):
                     key = self.key(device_name, attr)
                     value = getattr(device, attr)
 
-                    if self.is_always_trait(device, attr):
+                    if self.always_get_this_attr(device, attr):
                         self.incoming_attr_always[key] = value
                     else:
                         self.incoming_attr_auto[key] = value
@@ -571,7 +572,7 @@ class Aggregator(util.Ownable):
             if device in self.attr_rules["never"].keys():
                 for attr in self.attr_rules["never"][device]:
                     key = self.key(device_name, attr)
-                    if self.is_always_trait(device, attr):
+                    if self.always_get_this_attr(device, attr):
                         self.incoming_attr_always.pop(key, None)
                     else:
                         self.incoming_attr_auto.pop(key, None)
@@ -604,13 +605,17 @@ class Aggregator(util.Ownable):
         # self._pending_rack_input = {}
 
         return aggregated_output, aggregated_input
+    
+    def sanitize_column_name(self, string: str) -> str:
+        return re.sub('\W+|^(?=\d)+','_', string)
 
-    def key(self, device_name, state_name):
+    def key(self, device_name, state_name, kwargs={}):
         """Generate a name for a trait based on the names of
         a device and one of its states or value traits.
         """
         key_name = device_name.replace(" ", "_").replace(".", "_")
-        return f"{key_name}_{state_name}"
+        kwarg_name = ', '.join([f'{k}={repr(v)}' for k,v in kwargs.items()])
+        return f"{key_name}_{state_name}_{self.sanitize_column_name(kwarg_name)}".rstrip('_')
 
     def set_device_labels(self, **mapping: Dict[Device, str]):
         """Manually choose device name for a device instance.
@@ -693,14 +698,16 @@ class Aggregator(util.Ownable):
             return
 
         name = self.name_map[msg["owner"]]
-        attr = msg["name"]
+        attr_def = msg["name"]
+        kwargs = msg.get('kwargs', {})
 
         if msg["cache"]:
-            self.metadata[self.key(name, attr)] = msg["new"]
-        elif self.is_always_trait(msg["owner"], msg["name"]):
-            self.incoming_attr_always[self.key(name, attr)] = msg["new"]
+            self.metadata[self.key(name, attr_def, kwargs)] = msg["new"]
+        elif self.always_get_this_attr(msg["owner"], msg["name"]):
+            # TODO: need to figure out the semantics around "always" attrs that are methods
+            self.incoming_attr_always[self.key(name, attr_def, kwargs)] = msg["new"]
         elif not name.startswith("_"):
-            self.incoming_attr_auto[self.key(name, attr)] = msg["new"]
+            self.incoming_attr_auto[self.key(name, attr_def, kwargs)] = msg["new"]
 
     def update_name_map(
         self, ownables: Dict[Device, str], owner_prefix: Union[str, None] = None, fallback_names={}
@@ -1001,9 +1008,9 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
         * optional positional dict args[0] (each {key: value});
         * optional keyword arguments in `kwargs` (each {key: value})
 
-        Keyword arguments are passed in as ::
+        Keyword arguments are passed in as::
 
-        >>>    db.new_row(dict(name0=value0), name1=value1, name2=value2, nameN=valueN)
+            db.new_row(dict(name0=value0), name1=value1, name2=value2, nameN=valueN)
 
         Simple "scalar" database types like numbers, booleans, and strings
         are added directly to the table. Non-scalar or multidimensional values are stored

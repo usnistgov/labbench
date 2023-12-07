@@ -6,9 +6,6 @@ import paramattr_tooling
 
 lb.util.force_full_traceback(True)
 
-attr.kwarg.int()
-attr.value.int()
-
 
 @attr.register_key_argument(attr.kwarg.int("registered_channel", min=1, max=4))
 @store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
@@ -43,7 +40,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
     str_keyed_with_arg = attr.method.str(key="str_with_arg_ch_{registered_channel}")
 
     @attr.kwarg.int(name="decorated_channel", min=1, max=4)
-    @attr.method.str()
+    @attr.method.str(allow_none=True)
     @attr.kwarg.float(name="bandwidth", min=10e3, max=100e6)
     def str_decorated_with_arg(self, set_value=lb.Undefined, *, decorated_channel, bandwidth):
         key = self.backend.get_backend_key(
@@ -52,11 +49,10 @@ class StoreTestDevice(store_backend.TestStoreDevice):
             {"decorated_channel": decorated_channel, "bandwidth": bandwidth},
         )
 
-        if set_value is not lb.Undefined:
-            self.backend.set(key, set_value)
-        else:
+        if set_value is lb.Undefined:
             return self.backend.get(key, None)
-
+        else:
+            return self.backend.set(key, set_value)
 
 class TestMethod(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice

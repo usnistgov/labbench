@@ -785,12 +785,8 @@ class WrappedOpen:
 
     def __call__(self):
         if self.obj._context is None:
-            print('call explicit ', self)
             self.obj._context = package_owned_contexts(self.obj)
             self.obj._context.__enter__()
-        # else:
-        #     print('call open unwrapped ', self)
-        #     self.unwrapped()
 
 
 class WrappedClose:

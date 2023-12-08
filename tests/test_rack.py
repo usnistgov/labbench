@@ -197,7 +197,7 @@ if __name__ == "__main__":
 
     unittest.main()
 
-    rack = MyRack()
+
     # rack = MyRack()
     # rack.open()
 

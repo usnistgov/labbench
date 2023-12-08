@@ -652,12 +652,12 @@ class SerialDevice(Device):
         keys = "timeout", "parity", "stopbits", "xonxoff", "rtscts", "dsrdtr"
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(self.resource, self.baud_rate, **params)
-        self._logger.debug(f"{repr(self)} connected")
+        self._logger.debug(f"opened")
 
     def close(self):
         """Disconnect the serial instrument"""
         self.backend.close()
-        self._logger.debug(f"{repr(self)} closed")
+        self._logger.debug(f"closed")
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):

@@ -37,8 +37,6 @@ import labbench as lb
 from labbench import paramattr as attr
 import numpy as np
 
-lb.paramattr
-
 
 class LaggyInstrument(TestStoreDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
@@ -91,9 +89,6 @@ class Rack1(lb.Rack):
 
     def open(self):
         time.sleep(0.25)
-
-
-rack = Rack1(dev1=LaggyInstrument(resource="address"))
 
 
 class Rack2(lb.Rack):
@@ -201,6 +196,8 @@ if __name__ == "__main__":
     lb.util.force_full_traceback(True)
 
     unittest.main()
+
+    rack = MyRack()
     # rack = MyRack()
     # rack.open()
 

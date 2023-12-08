@@ -621,7 +621,7 @@ class OwnerContextAdapter:
                 else:
                     opener(self._owner)
             
-            getattr(self._owner, "_logger", util.logger).debug(f"{self._owned_name} opened")
+            getattr(self._owner, "_logger", util.logger).debug(f"opened")
 
         finally:
             notify.allow_owner_notifications(*hold)
@@ -652,7 +652,7 @@ class OwnerContextAdapter:
                     traceback.print_exception(*ex, limit=-(depth - 1))
                     # sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
-            getattr(self._owner, "_logger", util.logger).debug(f"{self._owned_name} closed")
+            getattr(self._owner, "_logger", util.logger).debug(f"closed")
 
         finally:
             notify.allow_owner_notifications(*holds)
@@ -831,10 +831,10 @@ class Owner:
                     raise TypeError(f"entry_order item {e} is not a Device subclass")
             cls._entry_order = entry_order
 
-        cls._propagate_ownership()
+        cls.__propagate_cls_ownership__()
 
     @classmethod
-    def _propagate_ownership(cls, copy=None):
+    def __propagate_cls_ownership__(cls, copy=None):
         cls._ownables = {}
 
         # prepare and register owned attributes
@@ -890,18 +890,20 @@ class Owner:
             self._ownables[name] = obj
             if isinstance(obj, core.Device):
                 self._devices[name] = obj
-        self.__propagate_ownership__()
+        self.__propagate_inst_ownership__()
         self._context = None
 
-    def __propagate_ownership__(self):
+    def __propagate_inst_ownership__(self):
         for obj in self._owners.values():
             obj.__owner_init__(self)
+            util.Ownable.__init__(obj)
 
         for obj in self._ownables.values():
             # repeat this for Rack instances that are also Owners,
             # ensuring that obj._owned_name refers to the topmost
             # name
             obj.__owner_init__(self)
+            util.Ownable.__init__(obj)
 
     def __setattr__(self, name, obj):
         # update naming for any util.Ownable instances
@@ -911,7 +913,7 @@ class Owner:
                 obj.__set_name__(type(self), name)
                 obj.__owner_init__(self)
                 if isinstance(obj, Owner):
-                    obj.__propagate_ownership__()
+                    obj.__propagate_inst_ownership__()
 
         if isinstance(obj, core.Device):
             self._devices[name] = obj

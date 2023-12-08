@@ -191,7 +191,7 @@ class TestRack(unittest.TestCase):
         self.assertFalse(rack.inst2.isopen)
 
 if __name__ == "__main__":
-    lb.show_messages("debug")
+    lb.show_messages("info")
     lb.util.force_full_traceback(True)
 
     unittest.main()

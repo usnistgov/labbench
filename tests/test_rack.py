@@ -185,7 +185,6 @@ class TestRack(unittest.TestCase):
             self.assertTrue(rack.inst1.isopen)
             self.assertTrue(rack.inst2.isopen)
         finally:
-            print('rack.close: ', rack.close)
             rack.close()
 
         self.assertFalse(rack.inst1.isopen)

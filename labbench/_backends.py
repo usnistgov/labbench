@@ -865,7 +865,7 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-_pyvisa_rms = {}
+_pyvisa_resource_managers = {}
 
 
 @attr.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
@@ -892,10 +892,9 @@ class VISADevice(Device):
 
             labbench visa-probe
 
-        Write ':FETCH?' to the instrument, read an expected ASCII CSV response,
-        and return it as a pandas DataFrame::
+        Connect to instrument with serial number 'SG56360004' and query ':FETCH?' CSV::
 
-            with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
+            with VISADevice('SG56360004') as instr:
                 print(inst.query_ascii_values(':FETCH?'))
 
     See also:
@@ -918,7 +917,7 @@ class VISADevice(Device):
     )
 
     write_termination: str = attr.value.str(
-        default="\n", cache=True, help="end of line string to send after writes"
+        default="\n", cache=True, help="end-of-line string to send after writes"
     )
 
     open_timeout: float = attr.value.float(
@@ -1230,11 +1229,11 @@ class VISADevice(Device):
         else:
             is_ivi = False
 
-        if len(_pyvisa_rms) == 0:
+        if len(_pyvisa_resource_managers) == 0:
             visa_default_resource_manager(backend_name)
 
         try:
-            rm = _pyvisa_rms[backend_name]
+            rm = _pyvisa_resource_managers[backend_name]
         except OSError as e:
             if is_ivi:
                 url = r"https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa"
@@ -1307,8 +1306,8 @@ def visa_default_resource_manager(name: str):
         )
         warnings.filterwarnings("ignore", "GPIB library not found")
 
-    if name not in _pyvisa_rms:
-        _pyvisa_rms[name] = pyvisa.ResourceManager(full_name)
+    if name not in _pyvisa_resource_managers:
+        _pyvisa_resource_managers[name] = pyvisa.ResourceManager(full_name)
     VISADevice._rm = name
 
 

@@ -36,6 +36,7 @@ from test_paramattr_property import *
 from test_paramattr_value import *
 from test_data_logging import *
 from test_sequencing import *
+from test_rack import *
 
 if __name__ == "__main__":
     lb.show_messages("warning")

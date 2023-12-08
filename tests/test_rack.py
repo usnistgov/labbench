@@ -113,13 +113,6 @@ class Rack2(lb.Rack):
         time.sleep(0.25)
 
 
-rack = Rack1()
-
-with rack:
-    #
-    pass
-
-
 class Rack3(lb.Rack):
     # this is unset (no =), so it _must_ be passed as an argument to instantiate, i.e.,
     #
@@ -138,14 +131,6 @@ class Rack3(lb.Rack):
 
 
 class MyRack(lb.Rack):
-    # config = lb.Configuration('test-config')
-
-    # db = lb.HDFLogger(
-    #     path=time.strftime(f"%Y-%m-%d_%Hh%Mm%Ss"),  # Path to new directory that will contain containing all files
-    #     append=True,  # `True` --- allow appends to an existing database; `False` --- append
-    #     key_fmt='{id} {host_time}',  # Format string that generates relational data (keyed on data column)
-    # )
-
     db = lb.CSVLogger(
         path=time.strftime(
             f"test db/test-rack %Y-%m-%d_%Hh%Mm%Ss"
@@ -176,25 +161,51 @@ class MyRack(lb.Rack):
         db.new_row,
     )
 
-    def open(self):
-        pass
 
-    def close(self):
-        pass
+class TestRack(unittest.TestCase):
+    def make_db_path(self):
+        return f"test db/{np.random.bytes(8).hex()}"
 
+    def test_context_open(self):
+        rack = MyRack()
 
-with rack:
-    pass
+        self.assertFalse(rack.inst1.isopen)
+        self.assertFalse(rack.inst2.isopen)
 
+        with MyRack():
+            self.assertTrue(rack.inst1.isopen)
+            self.assertTrue(rack.inst2.isopen)
 
-import inspect
+        self.assertFalse(rack.inst1.isopen)
+        self.assertFalse(rack.inst2.isopen)
+
+    def test_call_open(self):
+        rack = MyRack()
+
+        self.assertFalse(rack.inst1.isopen)
+        self.assertFalse(rack.inst2.isopen)
+
+        rack.open()
+        try:
+            self.assertTrue(rack.inst1.isopen)
+            self.assertTrue(rack.inst2.isopen)
+        finally:
+            print('rack.close: ', rack.close)
+            rack.close()
+
+        self.assertFalse(rack.inst1.isopen)
+        self.assertFalse(rack.inst2.isopen)
 
 if __name__ == "__main__":
     lb.show_messages("debug")
     lb.util.force_full_traceback(True)
 
+    unittest.main()
+    # rack = MyRack()
+    # rack.open()
+
     # # Testbed = lb.Rack.take_module('module_as_testbed')
-    Testbed = MyRack
+    # Testbed = MyRack
 
     # lst = CommentedSeq(['a', 'b'])
     # lst.yaml_add_eol_comment("foo", 0, 0)

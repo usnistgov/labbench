@@ -902,7 +902,7 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
 
     def __init__(
         self,
-        path: Path = None,
+        path: Path,
         *,
         append: bool = False,
         text_relational_min: int = 1024,

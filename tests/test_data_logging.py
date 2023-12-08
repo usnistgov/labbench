@@ -94,7 +94,7 @@ FREQUENCIES = 10e6, 100e6, 1e9, 10e9
 EXTRA_VALUES = dict(power=1.21e9, potato=7)
 
 
-class StoreRack(lb.Rack):
+class SimpleRack(lb.Rack):
     """a device paired with a logger"""
 
     inst: StoreDevice = StoreDevice()
@@ -120,18 +120,18 @@ class StoreRack(lb.Rack):
             "db_host_log",
         )
 
-    def delete_data(self):
-        shutil.rmtree(self.db.path)
-
 
 class TestDataLogging(unittest.TestCase):
     def make_db_path(self):
         return f"test db/{np.random.bytes(8).hex()}"
+    
+    def delete_data(self, db):
+        shutil.rmtree(db.path)
 
     def test_csv_tar(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=True)
 
-        with StoreRack(db=db) as rack:
+        with SimpleRack(db=db) as rack:
             rack.simple_loop()
 
         self.assertTrue(db.path.exists())
@@ -143,12 +143,12 @@ class TestDataLogging(unittest.TestCase):
         self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-        rack.delete_data()
+        self.delete_data(rack.db)
 
     def test_csv(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
 
-        with StoreRack(db=db) as rack:
+        with SimpleRack(db=db) as rack:
             rack.simple_loop()
 
         self.assertTrue(db.path.exists())
@@ -159,31 +159,31 @@ class TestDataLogging(unittest.TestCase):
         self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-        rack.delete_data()
+        self.delete_data(rack.db)
 
     def test_csv_keyed_method(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
 
-        with StoreRack(db=db) as rack:
+        with SimpleRack(db=db) as rack:
             rack.inst.str_keyed_with_arg('value', registered_channel=1)
             rack.db.new_row()
 
         df = lb.read(db.path / "outputs.csv")
         self.assertIn('inst_str_keyed_with_arg_registered_channel_1', df.columns)
 
-        rack.delete_data()
+        self.delete_data(rack.db)
 
     def test_csv_decorated_method(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
 
-        with StoreRack(db=db) as rack:
+        with SimpleRack(db=db) as rack:
             rack.inst.str_decorated_with_arg('value', decorated_channel=2, bandwidth=100e6)
             rack.db.new_row()
 
-        # df = lb.read(db.path / "outputs.csv")
-        # self.assertIn('inst_str_keyed_with_arg_registered_channel_1', df.columns)
+        df = lb.read(db.path / "outputs.csv")
+        self.assertIn('inst_str_decorated_with_arg_decorated_channel_2_bandwidth_100000000_0', df.columns)
 
-        # rack.delete_data()
+        self.delete_data(rack.db)
 
 
 if __name__ == "__main__":

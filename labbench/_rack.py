@@ -1,3 +1,4 @@
+from __future__ import annotations
 import contextlib
 from copy import deepcopy
 import importlib
@@ -615,10 +616,12 @@ class OwnerContextAdapter:
             notify.hold_owner_notifications(*hold)
             cls = type(self._owner)
             for opener in core.trace_methods(cls, "open", Owner)[::-1]:
-                opener(self._owner)
-
-            # self._owner.open()
-            getattr(self._owner, "_logger", util.logger).debug("opened")
+                if isinstance(opener, WrappedOpen):
+                    opener.unwrapped(self._owner)
+                else:
+                    opener(self._owner)
+            
+            getattr(self._owner, "_logger", util.logger).debug(f"{self._owned_name} opened")
 
         finally:
             notify.allow_owner_notifications(*hold)
@@ -632,6 +635,9 @@ class OwnerContextAdapter:
 
             all_ex = []
             for closer in methods:
+                if isinstance(closer, WrappedClose):
+                    closer = closer.unwrapped
+
                 try:
                     closer(self._owner)
                 except BaseException:
@@ -646,7 +652,7 @@ class OwnerContextAdapter:
                     traceback.print_exception(*ex, limit=-(depth - 1))
                     # sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
-            getattr(self._owner, "_logger", util.logger).debug("closed")
+            getattr(self._owner, "_logger", util.logger).debug(f"{self._owned_name} closed")
 
         finally:
             notify.allow_owner_notifications(*holds)
@@ -770,6 +776,40 @@ def owner_getattr_chains(owner):
     return ret
 
 
+class WrappedOpen:
+    def __init__(self, obj: Owner):
+        open_func = object.__getattribute__(obj, 'open')
+        self.__call__ = wraps(open_func)(self)
+        self.obj = obj
+        self.unwrapped = open_func
+
+    def __call__(self):
+        if self.obj._context is None:
+            print('call explicit ', self)
+            self.obj._context = package_owned_contexts(self.obj)
+            self.obj._context.__enter__()
+        # else:
+        #     print('call open unwrapped ', self)
+        #     self.unwrapped()
+
+
+class WrappedClose:
+    def __init__(self, obj: Owner):
+        close_func = object.__getattribute__(obj, 'close')
+        self.__call__ = wraps(close_func)(self)
+        self.obj = obj
+        self.unwrapped = close_func
+
+    def __call__(self):
+        if self.obj._context is not None:
+            try:
+                self.obj._context.__exit__(*sys.exc_info())
+            finally:
+                self.obj._context = None
+        else:
+            self.unwrapped()
+
+
 class Owner:
     """own context-managed instances of Device as well as setup and cleanup calls to owned instances of Owner"""
 
@@ -851,7 +891,7 @@ class Owner:
             if isinstance(obj, core.Device):
                 self._devices[name] = obj
         self.__propagate_ownership__()
-        super().__init__()
+        self._context = None
 
     def __propagate_ownership__(self):
         for obj in self._owners.values():
@@ -881,7 +921,7 @@ class Owner:
 
         super().__setattr__(name, obj)
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name):       
         if name in ("_ownables", "_devices", "_owners"):
             # dicts that need to be a fresh mapping, not the class def
             obj = super().__getattribute__(name)
@@ -889,6 +929,10 @@ class Owner:
                 obj = dict(obj)
                 setattr(self, name, obj)
             return obj
+        elif name == 'open':
+            return WrappedOpen(self)
+        elif name == 'close':
+            return WrappedClose(self)
         else:
             return super().__getattribute__(name)
 
@@ -900,11 +944,11 @@ class Owner:
 
     @property
     def __enter__(self):
-        self._context = package_owned_contexts(self)
+        context = self._context = package_owned_contexts(self)
 
         @wraps(type(self).__enter__.fget)
         def __enter__():
-            self._context.__enter__()
+            context.__enter__()
 
             return self
 
@@ -912,8 +956,10 @@ class Owner:
 
     @property
     def __exit__(self):
-        # pass along from self._context
-        return self._context.__exit__
+        # set self._context to None before __exit__ so it can tell
+        # whether it was invoked through context entry
+        context, self._context = self._context, None
+        return context.__exit__
 
 
 def recursive_devices(top: Owner):

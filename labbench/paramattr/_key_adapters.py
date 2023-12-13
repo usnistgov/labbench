@@ -1,6 +1,6 @@
-from ._bases import KeyAdapterBase, HasParamAttrs, ParamAttr
+from ._bases import KeyAdapterBase, HasParamAttrs, ParamAttr, T
 import string
-from typing import Dict, List, Any
+from typing import List, Any, Union
 
 
 class message_keying(KeyAdapterBase):
@@ -52,7 +52,7 @@ class message_keying(KeyAdapterBase):
         write_func=None,
         query_func=None,
         remap={},
-        key_arguments: Dict[Any, ParamAttr] = {},
+        key_arguments: dict[Any, ParamAttr] = {},
     ):
         super().__init__(key_arguments=key_arguments)
 
@@ -103,9 +103,9 @@ class message_keying(KeyAdapterBase):
         self,
         owner: HasParamAttrs,
         scpi_key: str,
-        paramattr: ParamAttr = None,
-        arguments: Dict[str, Any] = {},
-    ):
+        paramattr: Union[ParamAttr[T],None],
+        kwargs: dict[str, Any] = {},
+    ) -> T:
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
         The command message string is formatted as f'{scpi_key}?'.
@@ -125,10 +125,10 @@ class message_keying(KeyAdapterBase):
             raise ValueError("query_func needs to be set for key get operations")
         query_func = getattr(owner, self.query_func)
         try:
-            expanded_scpi_key = scpi_key.format(**arguments)
+            expanded_scpi_key = scpi_key.format(**kwargs)
         except KeyError:
             expected_kws = set(self.get_key_arguments(scpi_key))
-            missing_kws = expected_kws - set(arguments.keys())
+            missing_kws = expected_kws - set(kwargs.keys())
             raise TypeError(
                 f"{paramattr._owned_name(owner)}() missing required positional argument(s) {str(missing_kws)[1:-1]}"
             )
@@ -140,9 +140,9 @@ class message_keying(KeyAdapterBase):
         self,
         owner: HasParamAttrs,
         scpi_key: str,
-        value,
-        attr: ParamAttr = None,
-        arguments: Dict[str, Any] = {},
+        value: T,
+        attr: Union[ParamAttr[T],None],
+        kwargs: dict[str, Any] = {},
     ):
         """writes an SCPI message to set a parameter with a name key
         to `value`.
@@ -162,7 +162,7 @@ class message_keying(KeyAdapterBase):
             raise ValueError("write_func needs to be set for key set operations")
 
         value_msg = self.to_message(value)
-        expanded_scpi_key = scpi_key.format(**arguments)
+        expanded_scpi_key = scpi_key.format(**kwargs)
         write_func = getattr(owner, self.write_func)
         write_func(self.write_fmt.format(key=expanded_scpi_key, value=value_msg))
 
@@ -189,7 +189,7 @@ class visa_keying(message_keying):
         query_fmt="{key}?",
         write_fmt="{key} {value}",
         remap={},
-        key_arguments: Dict[str, ParamAttr] = {},
+        key_arguments: dict[str, ParamAttr] = {},
     ):
         super().__init__(
             query_fmt=query_fmt,

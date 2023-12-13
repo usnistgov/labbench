@@ -24,7 +24,7 @@ class complex(_bases.Method, _types.Complex):
     pass
 
 
-class str(_bases.Method, _types.Unicode):
+class str(_bases.Method[str], _types.Unicode):
     pass
 
 

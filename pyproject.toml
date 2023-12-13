@@ -99,6 +99,7 @@ dev = [
     "mypy-extensions>=1.0.0",
     "mypy>=1.7.0",
     "astor>=0.8.1",
+    "pyright>=1.1.339",
 ]
 
 [tool.black]

@@ -23,7 +23,7 @@ class complex(Value, _types.Complex):
     """defines a value attribute that casts to python complex"""
 
 
-class str(Value[str], _types.Unicode):
+class str(Value, _types.Unicode):
     """defines a value attribute that casts to python builtin str"""
 
 

@@ -51,21 +51,22 @@ class StoreDevice(store_backend.TestStoreDevice):
         key="SENS:FREQ", min=10e6, max=18e9, help="center frequency (in Hz)"
     )
     atten = attr.property.float(key="POW", min=0, max=100, step=0.5)
-    
+
     str_keyed_with_arg = attr.method.str(key="str_with_arg_ch_{registered_channel}")
+    str_keyed_allow_none = attr.method.str(key="str_with_arg_ch_{registered_channel}", allow_none=True)
 
     @attr.kwarg.int(name="decorated_channel", min=1, max=4)
     @attr.method.str()
     @attr.kwarg.float(name="bandwidth", min=10e3, max=100e6)
-    def str_decorated_with_arg(self, set_value=lb.Undefined, *, decorated_channel, bandwidth):
+    def str_decorated_with_arg(self, new_value=lb.Undefined, *, decorated_channel, bandwidth):
         key = self.backend.get_backend_key(
             self,
             type(self).str_decorated_with_arg,
             {"decorated_channel": decorated_channel, "bandwidth": bandwidth},
         )
 
-        if set_value is not lb.Undefined:
-            self.backend.set(key, set_value)
+        if new_value is not lb.Undefined:
+            self.backend.set(key, new_value)
         else:
             return self.backend.get(key, None)
 
@@ -108,6 +109,7 @@ class SimpleRack(lb.Rack):
 
         for self.inst.frequency in self.FREQUENCIES:
             self.inst.index = self.inst.frequency
+            self.inst.str_keyed_with_arg('value', registered_channel=1)
             self.inst.fetch_trace()
             self.db.new_row(**self.EXTRA_VALUES)
 
@@ -122,7 +124,8 @@ class SimpleRack(lb.Rack):
 
 
 class TestDataLogging(unittest.TestCase):
-    def make_db_path(self):
+    @staticmethod
+    def make_db_path():
         return f"test db/{np.random.bytes(8).hex()}"
     
     def delete_data(self, db):
@@ -190,4 +193,10 @@ if __name__ == "__main__":
     lb.util.force_full_traceback(True)
     lb.show_messages("info")
 
-    unittest.main()
+    # unittest.main()
+    db = lb.CSVLogger(path=TestDataLogging.make_db_path(), tar=False)
+
+    with SimpleRack(db=db) as rack:
+        rack.inst.str_keyed_with_arg('value', registered_channel=1)
+        rack.db.new_row()
+

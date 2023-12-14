@@ -18,8 +18,8 @@ from labbench.paramattr._bases import (
     list_method_attrs,
     list_property_attrs,
 )
-from labbench.paramattr._bases import TDecoratedMethod as _TDecoratedMethod
-from labbench.paramattr._bases import TKeyedMethod as _TKeyedMethod
+from labbench.paramattr._bases import _DecoratedMethodType as _TDecoratedMethod
+from labbench.paramattr._bases import _KeyedMethodType as _TKeyedMethod
 import typing
 import astor
 

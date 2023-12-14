@@ -28,7 +28,7 @@ import unittest
 import labbench as lb
 from labbench import paramattr as attr
 
-lb.util._force_full_traceback(True)
+lb.util.force_full_traceback(True)
 
 from test_paramattr_calibration import *
 from test_paramattr_method import *

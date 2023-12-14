@@ -109,7 +109,6 @@ class SimpleRack(lb.Rack):
 
         for self.inst.frequency in self.FREQUENCIES:
             self.inst.index = self.inst.frequency
-            self.inst.str_keyed_with_arg('value', registered_channel=1)
             self.inst.fetch_trace()
             self.db.new_row(**self.EXTRA_VALUES)
 
@@ -193,10 +192,12 @@ if __name__ == "__main__":
     lb.util.force_full_traceback(True)
     lb.show_messages("info")
 
-    # unittest.main()
-    db = lb.CSVLogger(path=TestDataLogging.make_db_path(), tar=False)
+    unittest.main()
 
-    with SimpleRack(db=db) as rack:
-        rack.inst.str_keyed_with_arg('value', registered_channel=1)
-        rack.db.new_row()
+    # # unittest.main()
+    # db = lb.CSVLogger(path=TestDataLogging.make_db_path(), tar=False)
+
+    # with SimpleRack(db=db) as rack:
+    #     rack.inst.str_keyed_with_arg('value', registered_channel=1)
+    #     rack.db.new_row()
 

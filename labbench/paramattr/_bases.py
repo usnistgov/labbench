@@ -615,7 +615,10 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         declaration = f"{type(self).__module__}.{type(self).__qualname__}({self.doc_params(omit)})"
 
         if owner_inst is None:
-            return declaration
+            if declaration:
+                return declaration
+            else:
+                raise TypeError('must specify at least one of `declaration` and `owner_inst`')
         elif declaration:
             return f"<{owner_inst}.{self.name} defined as {declaration}>"
         else:

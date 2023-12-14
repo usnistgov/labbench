@@ -1764,8 +1764,9 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
         if path is None:
             if not self.allow_none:
+                desc = self.__repr__(owner_inst=owner)
                 raise ValueError(
-                    f"{self} defined w.cacith allow_none=False; path_attr must not be None"
+                    f"{desc} defined with allow_none=False; path_attr must not be None"
                 )
             else:
                 return None

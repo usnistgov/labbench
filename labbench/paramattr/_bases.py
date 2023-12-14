@@ -1766,7 +1766,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
         if path is None:
             if not self.allow_none:
-                desc = self.__repr__(owner_inst=owner)
+                desc = self.__repr__(owner_inst=owner, declaration=False)
                 raise ValueError(
                     f"{desc} defined with allow_none=False; path_attr must not be None"
                 )

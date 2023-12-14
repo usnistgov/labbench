@@ -1248,8 +1248,9 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
             obj = getattr(cls, name)
 
             if not isinstance(obj, ParamAttr):
-                if isinstance(attr_def, OwnerAccessAttr) and callable(obj):
-                    # if it's a method, decorate it
+                if isinstance(attr_def, (Method, Property)) and callable(obj):
+                    # if it's a method, decorate it.
+                    # TODO: check if this is really necessary
                     attr_defs[name] = attr_def(obj)
                 else:
                     # if not decorating, clear from the attrs dict, and emit a warning at runtime

@@ -611,13 +611,15 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
         return ",".join(pairs)
 
-    def __repr__(self, omit=["help"], owner_inst=None):
+    def __repr__(self, omit=["help"], owner_inst=None, declaration=True):
         declaration = f"{type(self).__module__}.{type(self).__qualname__}({self.doc_params(omit)})"
 
         if owner_inst is None:
             return declaration
-        else:
+        elif declaration:
             return f"<{owner_inst}.{self.name} defined as {declaration}>"
+        else:
+            return f"{owner_inst}.{self.name}"
 
     __str__ = __repr__
 

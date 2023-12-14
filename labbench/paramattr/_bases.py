@@ -864,83 +864,14 @@ class OwnerAccessAttr(ParamAttr[T]):
         obj._method = self._method
         return obj
 
-@dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
-class _MethodMeta(ParamAttrMeta):
-    @typing.overload
-    def __call__(cls: Type[Method[T_con]], allow_none: bool = True, **kwargs) -> Method[Union[T_con,None]]:
-        ... 
 
-    @typing.overload
-    def __call__(cls: Type[Method[T_con]], allow_none: bool = False, **kwargs) -> Method[T_con]:
-        ... 
-
-    @typing.overload
-    def __call__(cls: Type[Method[T_con]], allow_none: bool, **kwargs) -> Method[T_con]:
-        ... 
-
-    # @typing.overload
-    # def __call__(cls: Type[_MethodShim[T]], key: None, allow_none: True, **kwargs) -> _DecoratorMethodType[Union[T,None]]:
-    #     ... 
-
-    # @typing.overload
-    # def __call__(cls: Type[Method[T]], key: typing.Any, **kwargs) -> _KeyedMethodType[T]:
-    #     ...
-
-    # @typing.overload
-    # def __call__(cls: Type[_MethodShim[T]], key: type, allow_none: True, **kwargs) -> _KeyedMethodType[Union[T,None]]:
-    #     ...
-
-    # @typing.overload
-    # def __call__(cls: Type[_MethodShim[T]], key: Union[str,Type[None]], **kwargs) -> Union[_DecoratorMethodType[T],_KeyedMethodType[T]]:
-    #     ... 
-
-    # def __call__(
-    #         cls,
-    #         key: Union[None,type],
-    #         allow_none: bool, **kwargs) -> Union[_DecoratorMethodType[T],_KeyedMethodType[T],_DecoratorMethodType[Union[T,None]],_KeyedMethodType[Union[T,None]]]:
-    #     return ParamAttrMeta.__call__(cls, key=key, allow_none=allow_none, **kwargs)
-    __call__ = ParamAttrMeta.__call__ # type: ignore
-
-# @dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
-class _MethodShim(OwnerAccessAttr[T]):
-    pass
-    # @typing.overload
-    # def __new__(cls, key: None, **kwargs) -> _DecoratorMethodType[T,...]:
-    #     ... 
-
-    # @typing.overload
-    # def __new__(cls, key: typing.Any, **kwargs) -> _KeyedMethodType[T]:
-    #     ...
-
-
-    # @typing.overload
-    # def __call__(cls: Type[_MethodShim[T]], key: None, allow_none: True, **kwargs) -> _DecoratorMethodType[Union[T,None]]:
-    #     ... 
-
-    # @typing.overload
-    # def __call__(cls: Type[_MethodShim[T]], key: type, allow_none: True, **kwargs) -> _KeyedMethodType[Union[T,None]]:
-    #     ...
-
-    # @typing.overload
-    # def __call__(cls: Type[_MethodShim[T]], key: Union[str,Type[None]], **kwargs) -> Union[_DecoratorMethodType[T],_KeyedMethodType[T]]:
-    #     ... 
-
-    # def __call__(
-    #         cls,
-    #         key: Union[None,type],
-    #         allow_none: bool, **kwargs) -> Union[_DecoratorMethodType[T],_KeyedMethodType[T],_DecoratorMethodType[Union[T,None]],_KeyedMethodType[Union[T,None]]]:
-    #     return ParamAttrMeta.__call__(cls, key=key, allow_none=allow_none, **kwargs)
-    # __new__ = OwnerAccessAttr.__new__ # type: ignore
-
+class Method(OwnerAccessAttr[T]):
+    # this structure seems to trick some type checkers into honoring the @overloads in
+    # _MethodMeta
     key: typing.Any = field(Undefined, kw_only=False)
     ROLE = "method"
 
     _decorated_kwargs = {}
-
-@dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
-class Method(_MethodShim[T]):
-    # this structure seems to trick some type checkers into honoring the @overloads in
-    # _MethodMeta
 
     def get_key_arguments(self, owner_cls: Type[HasParamAttrs], validate: bool=False):
         if self.key is not Undefined:
@@ -1057,29 +988,7 @@ class Method(_MethodShim[T]):
             # validate the key arguments
             self.get_key_arguments(owner_cls, validate=True)
 
-    # @typing.overload
-    # def __call__(self: TDecoratedMethod[T, _P], *args: _P.args, **kwargs: _P.kwargs) -> Union[T, None]:
-    #     ...
-    # @typing.overload
-    # def __call__(self: TKeyedMethod[T], /, new_value: Union[T,None], **kwargs) -> None:
-    #     ...
-    # @typing.overload
-    # def __call__(self: TKeyedMethod[T], **kwargs) -> Union[T,None]:
-    #     ...
-    # @typing.overload
-    # def __call__(self: Method[T], to_decorate: Callable[_P, Union[None, T]]) -> TDecoratedMethod[T, _P]:
-    #     ...
-    # # def __call__(self, *args, **kwargs) -> Union[T, None, TKeyedMethod[T], TDecoratedMethod[T, _P]]:
-
     def __call__(self, to_decorate: _DecoratedMethodCallableType[T,_P]) -> _DecoratorMethodType[T,_P]:
-    # def __call__(self, to_decorate: Union[TDecoratedMethod[T,_P],Callable[_P, Union[None, T]]], **kwargs) -> TDecoratedMethod[T, _P]:
-        # try:
-        #     (to_decorate,) = args
-        #     if len(kwargs) > 0:
-        #         raise ValueError
-        # except ValueError:
-        #     raise TypeError(f"to decorate a function with {self}, decorate a single function")
-
         if isinstance(to_decorate, KeywordArgument):
             func = to_decorate._decorated[0]
         else:
@@ -1126,87 +1035,57 @@ class Method(_MethodShim[T]):
 
         return self # type: ignore
 
-    @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> _KeyedMethodCallableType[T]:
-        ...
-    @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> _DecoratedMethodCallableType[T,...]:
-        ...
-    @typing.overload
-    def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
-        ...
-    def __get__(self, owner: Union[HasParamAttrs,None], owner_cls: Type[HasParamAttrs]) -> Union[typing.Self, _KeyedMethodCallableType[T], _DecoratedMethodCallableType[T,...]]:
-        if owner is None:
-            return self
-        elif self.key is Undefined:
-            unbound_method = self._method
-        else:
-            cls_info = get_owner_defs(owner)
-            unbound_method = cls_info.key_adapter.method_from_key(type(owner), self)
-
-        return unbound_method.__get__(owner, type(owner))
         # setattr(owner, self.name, bound_method) # type: ignore
 
-    # typing shim to get the callable signature type hints
 
-    # def __new__(cls, key: str|None = None) -> TKeyedMethod[T]|TDecorator[T]:
-    #     if key is None:
-    #         obj = object.__new__(TDecorator)
-    #         TDecorator.__init__(obj)
-    #         return obj
-    #     elif isinstance(key, str):
-    #         return 5
+    if typing.TYPE_CHECKING:
+        # call signatures hints for IDEs
+        @typing.overload
+        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> _KeyedMethodCallableType[T]:
+            ...
+        @typing.overload
+        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> _DecoratedMethodCallableType[T,...]:
+            ...
+        @typing.overload
+        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> typing.Callable:
+            ...
+        @typing.overload
+        def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
+            ...
 
 
 class _DecoratedMethodCallableType(typing.Protocol[T_co,_P]):
     """call signature protocol for *decorated* methods of Method descriptors"""
-    @staticmethod
-    def __call__(owner: HasParamAttrs, *args: _P.args, **kwargs: _P.kwargs) -> Union[T_co, None]:
-        ...
+
+    if typing.TYPE_CHECKING:
+        @staticmethod
+        def __call__(owner: HasParamAttrs, *args: _P.args, **kwargs: _P.kwargs) -> Union[T_co, None]:
+            ...
 
 
 class _KeyedMethodCallableType(typing.Protocol[T]):
     """call signature protocol for type hinting _keyed_ Method descriptors"""
-    @typing.overload
-    @staticmethod
-    def __call__(owner: HasParamAttrs, /, new_value: Union[T,None], **kwargs) -> None:
-        """set the parameter in the `Device` to `new_value` according to the scope specified by `kwargs`."""
+    if typing.TYPE_CHECKING:
+        @typing.overload
+        @staticmethod
+        def __call__(new_value: Union[T,None], /, **kwargs) -> None:
+            """set to `new_value` according to the scope defined by `kwargs`"""
 
-    @typing.overload
-    @staticmethod
-    def __call__(owner: HasParamAttrs, /, **kwargs) -> Union[T,None]:
-        """get and return the parameter the `Device` according to the scope specified by `kwargs`."""
+        @typing.overload
+        @staticmethod
+        def __call__(**kwargs) -> Union[T,None]:
+            """get the parameter according to the scope specified by `kwargs`."""
 
 
 class _DecoratorMethodType(Method[T], typing.Generic[T,_P]):
     """typing shim to hint at descriptor behavior"""
-    @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> Callable[_P,T]:
-        ...
-    @typing.overload
-    def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
-        ...
-    __get__ = Method.__get__ # type: ignore
-
-
-class _KeyedMethodType(Method[T]):
-    """typing shim to hint at descriptor behavior"""
-    @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> _KeyedMethodCallableType[T]:
-        ...
-
-    @typing.overload
-    def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
-        ...
-
-    __get__ = Method.__get__ # type: ignore
-
-    # @typing.overload
-    # def __call__(self, to_decorate: Callable[_P,T]) -> None:
-    #     # this will raise an exception, so don't type hint usable type
-    #     ...
-
-    # __call__ = Method.__call__ # type: ignore
+    if typing.TYPE_CHECKING:
+        @typing.overload
+        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> Callable[_P,T]:
+            ...
+        @typing.overload
+        def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
+            ...
 
 
 class Property(OwnerAccessAttr[T]):

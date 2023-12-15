@@ -6,7 +6,7 @@ import unittest
 class TestPyVISA(unittest.TestCase):
     def __init__(self, methodName: str):
         super().__init__(methodName)
-        lb.visa_default_resource_manager('@sim')
+        lb.visa_default_resource_manager("@sim")
         lb.util.force_full_traceback(True)
 
     def test_adjust(self):
@@ -22,30 +22,30 @@ class TestPyVISA(unittest.TestCase):
             inst.open()
 
     def test_visadevice_explicit_resource(self):
-        inst = lb.VISADevice('USB::0x1111::0x2233::0x9876::INSTR')
+        inst = lb.VISADevice("USB::0x1111::0x2233::0x9876::INSTR")
         with inst:
             pass
 
     def test_visadevice_serial_resource(self):
-        inst_explicit = lb.VISADevice('USB::0x1111::0x2233::0x9876::INSTR')
-        inst_auto = lb.VISADevice('OMGBBQ58')
+        inst_explicit = lb.VISADevice("USB::0x1111::0x2233::0x9876::INSTR")
+        inst_auto = lb.VISADevice("OMGBBQ58")
         with inst_auto, inst_explicit:
             self.assertEqual(inst_auto._identity, inst_explicit._identity)
 
     def test_subclass_explicit_resource(self):
-        inst = pyvisa_sim.Oscilloscope('USB::0x1111::0x2233::0x9876::INSTR')
+        inst = pyvisa_sim.Oscilloscope("USB::0x1111::0x2233::0x9876::INSTR")
         with inst:
             pass
 
     def test_subclass_no_resource(self):
-        inst_explicit = lb.VISADevice('USB::0x1111::0x2233::0x9876::INSTR')
+        inst_explicit = lb.VISADevice("USB::0x1111::0x2233::0x9876::INSTR")
         inst_auto = pyvisa_sim.Oscilloscope()
         with inst_auto, inst_explicit:
             self.assertEqual(inst_auto._identity, inst_explicit._identity)
 
     def test_subclass_serial_resource(self):
-        inst_explicit = lb.VISADevice('USB::0x1111::0x2233::0x9876::INSTR')
-        inst_auto = pyvisa_sim.Oscilloscope('OMGBBQ58')
+        inst_explicit = lb.VISADevice("USB::0x1111::0x2233::0x9876::INSTR")
+        inst_auto = pyvisa_sim.Oscilloscope("OMGBBQ58")
         with inst_auto, inst_explicit:
             self.assertEqual(inst_auto._identity, inst_explicit._identity)
 

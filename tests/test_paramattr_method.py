@@ -54,6 +54,7 @@ class StoreTestDevice(store_backend.TestStoreDevice):
         else:
             return self.backend.set(key, set_value)
 
+
 class TestMethod(paramattr_tooling.TestParamAttr):
     DeviceClass = StoreTestDevice
     ROLE_TYPE = attr.method.Method

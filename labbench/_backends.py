@@ -936,10 +936,18 @@ class VISADevice(Device):
     )
 
     make = attr.value.str(
-        default=None, allow_none=True, cache=True, help="device manufacturer name used to autodetect resource string"
+        default=None,
+        allow_none=True,
+        cache=True,
+        help="device manufacturer name used to autodetect resource string",
     )
 
-    model = attr.value.str(default=None, allow_none=True, cache=True, help="device model dused to autodetect resource string")
+    model = attr.value.str(
+        default=None,
+        allow_none=True,
+        cache=True,
+        help="device model dused to autodetect resource string",
+    )
 
     @attr.property.str(sets=False, cache=True)
     def serial(self):
@@ -1001,13 +1009,17 @@ class VISADevice(Device):
             pass
         elif (self.make, self.model) != (None, None) or self.resource:
             if self.resource:
-                self._logger.debug(f"treating resource as a serial number (pyvisa does not recognize it as a VISA name)")
+                self._logger.debug(
+                    f"treating resource as a serial number (pyvisa does not recognize it as a VISA name)"
+                )
             # match the supplied (make, model) and/or treat self.resource as a serial number to match
-            search_desc = ', '.join([
-                f"{name} {repr(getattr(self, name))}"
-                for name in ('make', 'model', 'resource')
-                if getattr(self, name)
-            ]).replace('resource', 'serial number')
+            search_desc = ", ".join(
+                [
+                    f"{name} {repr(getattr(self, name))}"
+                    for name in ("make", "model", "resource")
+                    if getattr(self, name)
+                ]
+            ).replace("resource", "serial number")
 
             matches = visa_probe_devices(self)
 
@@ -1275,8 +1287,10 @@ def _visa_missing_pyvisapy_support() -> list[str]:
 
     return missing
 
+
 def _visa_parse_identity(identity: str):
     return identity.split(",", 4)
+
 
 def visa_list_resources(resourcemanager: str = None) -> list[str]:
     """autodetects and returns a list of valid VISADevice resource strings"""
@@ -1290,7 +1304,7 @@ def visa_list_resources(resourcemanager: str = None) -> list[str]:
 
 def visa_default_resource_manager(name: str):
     """set the pyvisa resource manager used by labbench.
-    
+
     Arguments:
         name: the name of the resource manager, such as '@py', '@sim', or '@ivi'
     """
@@ -1343,8 +1357,8 @@ def _visa_probe_message_parameters(device: VISADevice):
             )
             ret.make = make
             ret.model = model
-            ret._attr_store.cache['serial'] = serial
-            ret._attr_store.cache['_revision'] = rev
+            ret._attr_store.cache["serial"] = serial
+            ret._attr_store.cache["_revision"] = rev
 
             break
         except pyvisa.errors.VisaIOError as ex:
@@ -1373,7 +1387,6 @@ def _visa_valid_resource_name(resource: str):
         return False
     else:
         return True
-
 
 
 def _visa_match_device(device: VISADevice, target: VISADevice):
@@ -1421,8 +1434,8 @@ def _visa_match_device(device: VISADevice, target: VISADevice):
 def visa_probe_devices(
     target: VISADevice = None,
     skip_interfaces: list[str] = [],
-    open_timeout: float=0.5,
-    timeout: float=0.25,
+    open_timeout: float = 0.5,
+    timeout: float = 0.25,
 ) -> list[VISADevice]:
     """discover devices available for communication and their required connection settings.
 
@@ -1441,6 +1454,7 @@ def visa_probe_devices(
         open_timeout: timeout on resource open (in s)
         timeout: timeout on identity query (in s)
     """
+
     def make_test_device(res):
         device = VISADevice(res, open_timeout=open_timeout, timeout=timeout)
         # suppress the normal logging during probing

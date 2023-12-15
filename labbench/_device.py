@@ -201,7 +201,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         constructor_attrs = []
         for name in cls.__annotations__.keys():
             attr_def = getattr(cls, name)
-            constructor_attrs.append(attr_def)            
+            constructor_attrs.append(attr_def)
 
             if not isinstance(attr_def, attr.value.Value):
                 annot_desc = f"{name}: {cls.__annotations__[name].__name__}"

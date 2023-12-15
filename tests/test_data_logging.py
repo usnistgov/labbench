@@ -32,6 +32,7 @@ import pandas as pd
 import numpy as np
 import shutil
 
+
 @attr.register_key_argument(attr.kwarg.int("registered_channel", min=1, max=4))
 @store_backend.key_store_adapter(defaults={"SWE:APER": "20e-6"})
 class StoreDevice(store_backend.TestStoreDevice):
@@ -53,7 +54,9 @@ class StoreDevice(store_backend.TestStoreDevice):
     atten = attr.property.float(key="POW", min=0, max=100, step=0.5)
 
     str_keyed_with_arg = attr.method.str(key="str_with_arg_ch_{registered_channel}")
-    str_keyed_allow_none = attr.method.str(key="str_with_arg_ch_{registered_channel}", allow_none=True)
+    str_keyed_allow_none = attr.method.str(
+        key="str_with_arg_ch_{registered_channel}", allow_none=True
+    )
 
     @attr.kwarg.int(name="decorated_channel", min=1, max=4)
     @attr.method.str()
@@ -124,9 +127,9 @@ class SimpleRack(lb.Rack):
 
 class TestDataLogging(unittest.TestCase):
     @staticmethod
-    def make_db_path():
-        return f"test db/{np.random.bytes(8).hex()}"
-    
+    def make_db_path(suffix=""):
+        return f"test db/{np.random.bytes(8).hex()+suffix}"
+
     def delete_data(self, db):
         shutil.rmtree(db.path)
 
@@ -145,7 +148,7 @@ class TestDataLogging(unittest.TestCase):
         self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-        self.delete_data(rack.db)
+        # self.delete_data(rack.db)
 
     def test_csv(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
@@ -163,15 +166,36 @@ class TestDataLogging(unittest.TestCase):
 
         self.delete_data(rack.db)
 
+    try:
+        import tables
+    except ImportError:
+        pass
+    else:
+        def test_hdf(self):
+            db = lb.HDFLogger(path=self.make_db_path("hdf"))
+
+            with SimpleRack(db=db) as rack:
+                rack.simple_loop()
+
+            # self.assertTrue(db.path.exists())
+            # self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
+            # self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+
+            # df = lb.read(db.path / "outputs.csv")
+            # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
+            # self.assertEqual(len(df.index), len(rack.FREQUENCIES))
+
+            # self.delete_data(rack.db)
+
     def test_csv_keyed_method(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
 
         with SimpleRack(db=db) as rack:
-            rack.inst.str_keyed_with_arg('value', registered_channel=1)
+            rack.inst.str_keyed_with_arg("value", registered_channel=1)
             rack.db.new_row()
 
         df = lb.read(db.path / "outputs.csv")
-        self.assertIn('inst_str_keyed_with_arg_registered_channel_1', df.columns)
+        self.assertIn("inst_str_keyed_with_arg_registered_channel_1", df.columns)
 
         self.delete_data(rack.db)
 
@@ -179,11 +203,13 @@ class TestDataLogging(unittest.TestCase):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
 
         with SimpleRack(db=db) as rack:
-            rack.inst.str_decorated_with_arg('value', decorated_channel=2, bandwidth=100e6)
+            rack.inst.str_decorated_with_arg("value", decorated_channel=2, bandwidth=100e6)
             rack.db.new_row()
 
         df = lb.read(db.path / "outputs.csv")
-        self.assertIn('inst_str_decorated_with_arg_decorated_channel_2_bandwidth_100000000_0', df.columns)
+        self.assertIn(
+            "inst_str_decorated_with_arg_decorated_channel_2_bandwidth_100000000_0", df.columns
+        )
 
         self.delete_data(rack.db)
 
@@ -191,6 +217,12 @@ class TestDataLogging(unittest.TestCase):
 if __name__ == "__main__":
     lb.util.force_full_traceback(True)
     lb.show_messages("info")
+
+    # db = lb.CSVLogger(path=TestDataLogging.make_db_path(), tar=False)
+
+    # with SimpleRack(db=db) as rack:
+    #     rack.inst.str_keyed_with_arg('13 ducks', registered_channel=1)
+    #     rack.simple_loop()
 
     unittest.main()
 
@@ -200,4 +232,3 @@ if __name__ == "__main__":
     # with SimpleRack(db=db) as rack:
     #     rack.inst.str_keyed_with_arg('value', registered_channel=1)
     #     rack.db.new_row()
-

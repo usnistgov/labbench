@@ -620,7 +620,7 @@ class OwnerContextAdapter:
                     opener.unwrapped(self._owner)
                 else:
                     opener(self._owner)
-            
+
             getattr(self._owner, "_logger", util.logger).debug(f"opened")
 
         finally:
@@ -778,7 +778,7 @@ def owner_getattr_chains(owner):
 
 class WrappedOpen:
     def __init__(self, obj: Owner):
-        open_func = object.__getattribute__(obj, 'open')
+        open_func = object.__getattribute__(obj, "open")
         self.__call__ = wraps(open_func)(self)
         self.obj = obj
         self.unwrapped = open_func
@@ -791,7 +791,7 @@ class WrappedOpen:
 
 class WrappedClose:
     def __init__(self, obj: Owner):
-        close_func = object.__getattribute__(obj, 'close')
+        close_func = object.__getattribute__(obj, "close")
         self.__call__ = wraps(close_func)(self)
         self.obj = obj
         self.unwrapped = close_func
@@ -919,7 +919,7 @@ class Owner:
 
         super().__setattr__(name, obj)
 
-    def __getattribute__(self, name):       
+    def __getattribute__(self, name):
         if name in ("_ownables", "_devices", "_owners"):
             # dicts that need to be a fresh mapping, not the class def
             obj = super().__getattribute__(name)
@@ -927,9 +927,9 @@ class Owner:
                 obj = dict(obj)
                 setattr(self, name, obj)
             return obj
-        elif name == 'open':
+        elif name == "open":
             return WrappedOpen(self)
-        elif name == 'close':
+        elif name == "close":
             return WrappedClose(self)
         else:
             return super().__getattribute__(name)

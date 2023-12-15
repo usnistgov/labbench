@@ -11,7 +11,7 @@ import warnings
 from contextlib import contextmanager, suppress
 from numbers import Number
 from pathlib import Path
-from typing import List, Dict, Union, Iterable
+from typing import Union, Iterable, Callable, Any
 
 from . import _device
 from . import _device as core
@@ -74,9 +74,7 @@ class MungerBase(core.Device):
     nonscalar_file_type: str = attr.value.str(
         default="csv", help="file format for non-scalar numerical data"
     )
-    metadata_dirname: str = attr.value.str(
-        default="metadata", help="subdirectory name for metadata"
-    )
+    metadata_dirname = "metadata"
 
     def __call__(self, index, row):
         """
@@ -125,22 +123,21 @@ class MungerBase(core.Device):
     def __repr__(self):
         return f"{type(self).__name__}('{str(self.resource)}')"
 
-    def save_metadata(self, name, key_func, **extra):
+    def save_metadata(
+        self, name, name_func: Callable[[attr.HasParamAttrs, str, dict], str], **metadata
+    ):
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 if len(value) > self.text_relational_min:
                     self._from_text(key_name, value)
                 else:
                     return value
-            elif hasattr(value, "__len__") or hasattr(value, "__iter__"):
-                if not hasattr(value, "__len__") or len(value) > 0:
-                    self._from_ndarraylike(key_name, value)
-                else:
-                    return ""
+            elif isinstance(value, (pd.DataFrame, np.ndarray)):
+                self._from_ndarraylike(key_name, value)
             else:
                 return value
 
-        summary = dict(extra)
+        global_values = {}
         for owner, owner_name in name.items():
             if not isinstance(owner, Device):
                 # other util.Ownable instances e.g. RelationalTableLogger
@@ -148,11 +145,12 @@ class MungerBase(core.Device):
 
             for attr_name, attr_def in attr.get_class_attrs(owner).items():
                 if isinstance(attr_def, attr.value.Value) or attr_def.cache:
-                    summary_key = key_func(owner_name, attr_name)
-                    summary[summary_key] = getattr(owner, attr_name)
-        summary = {k: process_value(v, k) for k, v in summary.items()}
+                    summary_key = name_func(owner, attr_name)
+                    global_values[summary_key] = getattr(owner, attr_name)
+        global_values = {k: process_value(v, k) for k, v in global_values.items()}
 
-        metadata = dict(summary=pd.DataFrame([summary], index=["Value"]).T)
+        # metadata = dict(summary=pd.DataFrame([summary], index=["Value"]).T)
+        metadata["global_values"] = global_values
 
         self._write_metadata(metadata)
 
@@ -283,7 +281,7 @@ class MungerBase(core.Device):
         """
         raise NotImplementedError
 
-    def _open_metadata(self, name):
+    def _open_metadata(self, name, mode, in_root=False):
         """Open a stream / IO buffer for writing metadata, given
         the name of the metadata.
 
@@ -313,11 +311,14 @@ class MungeToDirectory(MungerBase):
 
         return open(os.path.join(relpath, name), mode)
 
-    def _open_metadata(self, name, mode):
-        dirpath = os.path.join(self.resource, self.metadata_dirname)
-        with suppress(FileExistsError):
-            os.makedirs(dirpath)
-        return open(os.path.join(dirpath, name), mode)
+    def _open_metadata(self, name, mode, in_root=False):
+        if in_root:
+            dirpath = self.resource
+        else:
+            dirpath = self.resource/self.metadata_dirname
+            dirpath.mkdir(exist_ok=True)
+
+        return open(Path(dirpath)/name, mode)
 
     def _get_key(self, stream):
         """Key to use for the relative data in the root database?
@@ -345,7 +346,7 @@ class MungeToDirectory(MungerBase):
             )
             shutil.copyfile(old_path, dest)
 
-    def _make_path_heirarchy(self, index, row):
+    def _make_path_heirarchy(self, index: int, row: dict):
         # TODO: add back in a timestamp
         relpath = self.relational_name_fmt.format(id=index, **row)
 
@@ -354,7 +355,7 @@ class MungeToDirectory(MungerBase):
         relpath = os.path.join(self.resource, relpath)
         return relpath
 
-    def _write_metadata(self, metadata):
+    def _write_metadata(self, metadata: dict[str, Any]):
         def recursive_dict_fix(d):
             d = dict(d)
             for name, obj in dict(d).items():
@@ -366,17 +367,20 @@ class MungeToDirectory(MungerBase):
                     d[name] = recursive_dict_fix(obj)
             return d
 
-        for k, v in metadata.items():
-            stream = self._open_metadata(k + ".json", "w")
-            if hasattr(stream, "overwrite"):
-                stream.overwrite = True
+        sanitized = recursive_dict_fix(metadata)
 
-            if isinstance(v, pd.DataFrame):
-                v = v.to_dict()["Value"]
-            if isinstance(v, dict):
-                v = recursive_dict_fix(v)
+        # for k, v in metadata.items():
+        #     stream = self._open_metadata(k + ".json", "w")
+        #     if hasattr(stream, "overwrite"):
+        #         stream.overwrite = True
 
-            json.dump(v, stream, indent=True, sort_keys=True)
+        #     if isinstance(v, pd.DataFrame):
+        #         v = v.to_dict()#["Value"]
+        #     if isinstance(v, dict):
+        #         v = recursive_dict_fix(v)
+
+        stream = self._open_metadata("metadata.json", "w", in_root=True)
+        json.dump(sanitized, stream, indent=True)
 
 
 class TarFileIO(io.BytesIO):
@@ -432,9 +436,17 @@ class MungeToTar(MungerBase):
         relpath = f"{directory}/{name}"
         return TarFileIO(self.tarfile, relpath, mode=mode)
 
-    def _open_metadata(self, name, mode):
-        dirpath = os.path.join(self.metadata_dirname, name)
-        return TarFileIO(self.tarfile, dirpath, mode=mode)
+    def _open_metadata(self, name, mode, in_root=False):
+        if in_root:
+            return MungeToDirectory._open_metadata(self, name, mode, True)
+        if in_root:
+            dirpath = name
+        else:
+            dirpath = os.path.join(self.metadata_dirname, name)
+        stream = TarFileIO(self.tarfile, dirpath, mode=mode)
+        if hasattr(stream, "overwrite"):
+            stream.overwrite = True
+        return stream
 
     def open(self):
         if not os.path.exists(self.resource):
@@ -473,11 +485,9 @@ class MungeToTar(MungerBase):
         except PermissionError:
             self._logger.warning(f"could not remove old file or directory {old_path}")
 
-    def _write_metadata(self, metadata):
+    def _write_metadata(self, metadata: dict):
         for k, v in metadata.items():
             stream = self._open_metadata(k + ".json", "w")
-            if hasattr(stream, "overwrite"):
-                stream.overwrite = True
 
             if isinstance(v, pd.DataFrame):
                 v = v.to_dict()["Value"]
@@ -489,17 +499,44 @@ class MungeToTar(MungerBase):
             with io.TextIOWrapper(stream, newline="\n") as buf:
                 json.dump(v, buf, indent=True, sort_keys=True)
 
+    def _write_metadata(self, metadata: dict[str, Any]):
+        def recursive_dict_fix(d):
+            d = dict(d)
+            for name, obj in dict(d).items():
+                if isinstance(obj, Path):
+                    d[name] = str(obj)
+                elif isinstance(obj, bytes):
+                    d[name] = obj.decode()
+                elif isinstance(obj, dict):
+                    d[name] = recursive_dict_fix(obj)
+            return d
 
-TParamAttrNameMap = Dict[attr.HasParamAttrs, str]
+        sanitized = recursive_dict_fix(metadata)
+
+        # for k, v in metadata.items():
+        #     stream = self._open_metadata(k + ".json", "w")
+        #     if hasattr(stream, "overwrite"):
+        #         stream.overwrite = True
+
+        #     if isinstance(v, pd.DataFrame):
+        #         v = v.to_dict()#["Value"]
+        #     if isinstance(v, dict):
+        #         v = recursive_dict_fix(v)
+
+        stream = self._open_metadata("metadata.json", "w", in_root=True)
+        json.dump(sanitized, stream, indent=True)
 
 
 class Aggregator(util.Ownable):
     """Manages aggregation of parameters of Device attributes defined with paramattr, and data returned by calls to methods in Rack instances"""
 
-    name_map: Dict[attr.HasParamAttrs, str]
-    attr_rules: Dict[str, TParamAttrNameMap]
-    incoming_attr_always: Dict[str, attr.HasParamAttrs]
-    incoming_attr_auto: Dict[str, attr.HasParamAttrs]
+    # note: this is not a dataclass, these annotations are only for type-hinting
+    name_map: dict[attr.HasParamAttrs, str]
+    attr_rules: dict[str, dict[attr.HasParamAttrs, str]]
+
+    # observed value changes from paramattr objects
+    incoming_attr_always: dict[str, attr.HasParamAttrs]
+    incoming_attr_auto: dict[str, attr.HasParamAttrs]
 
     def __init__(self):
         # registry of names to use for HasParamAttr subclasses like Device
@@ -518,7 +555,11 @@ class Aggregator(util.Ownable):
         # self._iter_index_names = {}
 
         # cached data
-        self.metadata = {}
+        self.metadata = {
+            "device_objects": {},
+            "global_values": {},
+            "field_name_sources": {},
+        }
 
         super().__init__()
 
@@ -545,37 +586,36 @@ class Aggregator(util.Ownable):
         return isinstance(attr_def, attr.value.Value) or attr_def.cache
 
     def get(self) -> list([dict, dict]):
-        """return an aggregated dictionary output data (from Device traits and Rack method returns)
+        """return an aggregated dictionary output data (from Device paramattr objects and Rack method returns)
         and an aggregated dictionary of input data (keyword arguments passed to the toplevel Rack method).
         A get is
-        also performed on each Device trait that is configured as "always" with `self.observe`, and any traits
+        also performed on each Device trait that is configured as "always" with `self.observe`, and any paramattr objects
         labeled "never" are removed.
 
         Returns:
-
-            dictionary keyed on :func:`key` (defaults '{device name}_{state name}')
+            dictionary keyed on :func:`key` (defaults '{device name}_{attr name}_{repr of method kwargs}')
         """
 
         for device, device_name in list(self.name_map.items()):
             # Perform gets for each property trait called out in self.trait_rules['always']
             if device in self.attr_rules["always"].keys():
-                for attr in self.attr_rules["always"][device]:
-                    key = self.key(device_name, attr)
-                    value = getattr(device, attr)
+                for attr_name in self.attr_rules["always"][device]:
+                    field_name = self.name_attr_field(device, attr_name)
+                    value = getattr(device, attr_name)
 
-                    if self.always_get_this_attr(device, attr):
-                        self.incoming_attr_always[key] = value
+                    if self.always_get_this_attr(device, attr_name):
+                        self.incoming_attr_always[field_name] = value
                     else:
-                        self.incoming_attr_auto[key] = value
+                        self.incoming_attr_auto[field_name] = value
 
             # Remove keys corresponding with self.trait_rules['never']
             if device in self.attr_rules["never"].keys():
-                for attr in self.attr_rules["never"][device]:
-                    key = self.key(device_name, attr)
-                    if self.always_get_this_attr(device, attr):
-                        self.incoming_attr_always.pop(key, None)
+                for attr_name in self.attr_rules["never"][device]:
+                    field_name = self.name_attr_field(device, attr_name)
+                    if self.always_get_this_attr(device, attr_name):
+                        self.incoming_attr_always.pop(field_name, None)
                     else:
-                        self.incoming_attr_auto.pop(key, None)
+                        self.incoming_attr_auto.pop(field_name, None)
 
         aggregated_output = {}
 
@@ -599,25 +639,37 @@ class Aggregator(util.Ownable):
             aggregated_output["index"] = aggregated_input["index"]
 
         # clear Rack data, as well as property trait data if we don't assume it is consistent.
-        # value traits traits are locally cached, so it is safe to keep them in the next step
+        # value traits are locally cached, so it is safe to keep them in the next step
         self.incoming_rack_output = {}
         self.incoming_attr_auto = {}
         # self._pending_rack_input = {}
 
         return aggregated_output, aggregated_input
-    
+
     def sanitize_column_name(self, string: str) -> str:
-        return re.sub('\W+|^(?=\d)+','_', string)
+        return re.sub("\W+|^(?=\d)+", "_", string)
 
-    def key(self, device_name, state_name, kwargs={}):
+    def name_attr_field(
+        self, device: attr.HasParamAttrs, attr_name: str, kwargs: dict[str, Any] = {}
+    ):
         """Generate a name for a trait based on the names of
-        a device and one of its states or value traits.
+        a device and one of its states or paramattr.
         """
-        key_name = device_name.replace(" ", "_").replace(".", "_")
-        kwarg_name = ', '.join([f'{k}={repr(v)}' for k,v in kwargs.items()])
-        return f"{key_name}_{state_name}_{self.sanitize_column_name(kwarg_name)}".rstrip('_')
+        kwarg_repr = ", ".join([f"{k}={repr(v)}" for k, v in kwargs.items()])
+        attr_def = getattr(type(device), attr_name)
 
-    def set_device_labels(self, **mapping: Dict[Device, str]):
+        bare_name = f"{device._owned_name}_{attr_name}_{kwarg_repr}"
+        sanitized_name = self.sanitize_column_name(bare_name).rstrip("_")
+
+        self.metadata["field_name_sources"][sanitized_name] = {
+            "object": f"{device._owned_name}.{attr_name}",
+            "paramattr": attr_def.__repr__(),
+            "kwargs": kwargs,
+        }
+
+        return sanitized_name
+
+    def set_device_labels(self, **mapping: dict[Device, str]):
         """Manually choose device name for a device instance.
 
         Arguments:
@@ -698,19 +750,20 @@ class Aggregator(util.Ownable):
             return
 
         name = self.name_map[msg["owner"]]
-        attr_def = msg["name"]
-        kwargs = msg.get('kwargs', {})
+        attr_name = msg["name"]
+        kwargs = msg.get("kwargs", {})
+        data_name = self.name_attr_field(msg["owner"], attr_name, kwargs)
 
         if msg["cache"]:
-            self.metadata[self.key(name, attr_def, kwargs)] = msg["new"]
+            self.metadata[data_name] = msg["new"]
         elif self.always_get_this_attr(msg["owner"], msg["name"]):
             # TODO: need to figure out the semantics around "always" attrs that are methods
-            self.incoming_attr_always[self.key(name, attr_def, kwargs)] = msg["new"]
+            self.incoming_attr_always[data_name] = msg["new"]
         elif not name.startswith("_"):
-            self.incoming_attr_auto[self.key(name, attr_def, kwargs)] = msg["new"]
+            self.incoming_attr_auto[data_name] = msg["new"]
 
     def update_name_map(
-        self, ownables: Dict[Device, str], owner_prefix: Union[str, None] = None, fallback_names={}
+        self, ownables: dict[Device, str], owner_prefix: Union[str, None] = None, fallback_names={}
     ):
         """map each Device to a name in devices.values() by introspection."""
         if owner_prefix is None:
@@ -753,6 +806,8 @@ class Aggregator(util.Ownable):
                 children = dict(zip(obj._ownables.values(), obj._ownables.keys()))
                 self.update_name_map(children, owner_prefix=new_name)
 
+            self.metadata["device_objects"][new_name] = repr(obj)
+
         if len(list(self.name_map.values())) != len(set(self.name_map.values())):
             duplicates = {}
             for k, v in self.name_map.items():
@@ -768,8 +823,8 @@ class Aggregator(util.Ownable):
         self,
         devices,
         changes: bool = True,
-        always: Union[str, List[str]] = [],
-        never: Union[str, List[str]] = ["isopen"],
+        always: Union[str, list[str]] = [],
+        never: Union[str, list[str]] = ["isopen"],
     ):
         """Configure the data to aggregate from value, property, or datareturn traits in the given devices.
 
@@ -891,13 +946,13 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
         text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
         force_relational: A list of columns that should always be stored as relational data instead of directly in the database
         nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
-        metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
 
         tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
         git_commit_in: perform a git commit on open() if the current
         directory is inside a git repo with this branch name
     """
 
+    METADATA_FILE_NAME = "metadata.json"
     INDEX_LABEL = "id"
 
     def __init__(
@@ -906,9 +961,8 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
         *,
         append: bool = False,
         text_relational_min: int = 1024,
-        force_relational: List[str] = ["host_log"],
+        force_relational: list[str] = ["host_log"],
         nonscalar_file_type: str = "csv",
-        metadata_dirname: str = "metadata",
         tar: bool = False,
         git_commit_in: str = None,
     ):
@@ -932,7 +986,6 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
             text_relational_min=text_relational_min,
             force_relational=force_relational,
             nonscalar_file_type=nonscalar_file_type,
-            metadata_dirname=metadata_dirname,
             # **metadata
         )
 
@@ -1147,7 +1200,7 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
 
         # configure strings in relational data files that depend on how 'self' is
         # named in introspection
-        log_key = self.aggregator.key(self.aggregator.name_map[self.host], "log")
+        log_key = self.aggregator.name_attr_field(self.host, "log")
         if log_key not in self.munge.force_relational:
             self.munge.force_relational = list(self.munge.force_relational) + [log_key]
 
@@ -1170,7 +1223,7 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
             if self.host.isopen:
                 self.munge.save_metadata(
                     self.aggregator.name_map,
-                    self.aggregator.key,
+                    self.aggregator.name_attr_field,
                     **self.aggregator.metadata,
                 )
             else:
@@ -1178,13 +1231,14 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
 
 
 class CSVLogger(TabularLoggerBase):
-    """Store data, value traits, and property traits to disk into a root database formatted as a comma-separated value (CSV) file.
+    """Manage logging of experimental data and methods into CSV files.
 
-    This extends :class:`Aggregator` to support
+    Explicit save methods are exposed for arbitrary custom data. Automatic logging is performed for
 
-    #. queuing aggregate property trait of devices by lists of dictionaries;
-    #. custom metadata in each queued aggregate property trait entry; and
-    #. custom response to non-scalar data (such as relational databasing).
+    #. Access to parameters of :class:`labbench.Device` objects that are defined with :module:`labbench.paramattr.value`,
+     :module:`labbench.paramattr.property`, and :module:`labbench.paramattr.method`.
+    #. Function calls to methods of :class:`labbench.Rack`
+    #. Metadata
 
     Arguments:
         path: Base path to use for the root database
@@ -1192,7 +1246,6 @@ class CSVLogger(TabularLoggerBase):
         text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
         force_relational: A list of columns that should always be stored as relational data instead of directly in the database
         nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
-        metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
         tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
@@ -1305,6 +1358,7 @@ class MungeToHDF(Device):
         default="{id} {host_time}",
         help="format for linked data in the root database (keyed on column)",
     )
+    force_relational = []
 
     def open(self):
         self.backend = h5py.File(self.resource, "a")
@@ -1342,9 +1396,10 @@ class MungeToHDF(Device):
             elif isinstance(v, (str, bytes, Number)):
                 row[name] = v
 
-            elif hasattr(v, "__len__") or hasattr(v, "__iter__"):
-                # vector, table, matrix, etc.
-                row[name] = self._from_nonscalar(name, v, index, row)
+            # elif hasattr(v, "__len__") or hasattr(v, "__iter__"):
+            #     # vector, table, matrix, etc.
+            #     print('***', name)
+            #     row[name] = self._from_nonscalar(name, v, index, row)
 
             else:
                 self._logger.warning(
@@ -1354,26 +1409,30 @@ class MungeToHDF(Device):
 
         return row
 
-    def save_metadata(self, name, key_func, **extra):
+    def save_metadata(self, name, key_func, **metadata):
         def process_value(value, key_name):
+            return value
+            # TODO: abandon relational metadata saves?
             if isinstance(value, (str, bytes)):
                 return value
             elif hasattr(value, "__len__") or hasattr(value, "__iter__"):
-                if not hasattr(value, "__len__") or len(value) > 0:
-                    self._from_nonscalar(key_name, value)
-                else:
-                    return ""
+                return value
+                # if not hasattr(value, "__len__") or len(value) > self.text_relational_min:
+                #     self._from_nonscalar(key_name, value)
+                # else:
+                #     return value
             else:
                 return value
 
-        summary = dict(extra)
+        global_values = {}
         for owner, owner_name in name.items():
             if owner_name.endswith("_values"):
                 for trait in owner:
-                    summary[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
-        summary = {k: process_value(v, k) for k, v in summary.items()}
+                    global_values[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
+        global_values = {k: process_value(v, k) for k, v in global_values.items()}
+        metadata["global_values"] = global_values
 
-        metadata = pd.DataFrame([summary], index=["Value"]).T
+        metadata = pd.DataFrame([global_values], index=["Value"]).T
         metadata.astype(str).to_hdf(self.resource, key="metadata", append=True)
 
     def _from_nonscalar(self, name, value, index=0, row=None):
@@ -1524,7 +1583,6 @@ class SQLiteLogger(TabularLoggerBase):
         text_relational_min: Text with at least this many characters is stored as a relational text file instead of directly in the database
         force_relational: A list of columns that should always be stored as relational data instead of directly in the database
         nonscalar_file_type: The data type to use in non-scalar (tabular, vector, etc.) relational data
-        metadata_dirname: The name of the subdirectory that should be used to store metadata (device connection parameters, etc.)
         tar: Whether to store the relational data within directories in a tar file, instead of subdirectories
     """
 
@@ -1759,7 +1817,7 @@ def read_sqlite(
 
 def read(
     path_or_buf: str,
-    columns: List[str] = None,
+    columns: list[str] = None,
     nrows: int = None,
     format: str = "auto",
     **kws,
@@ -1871,8 +1929,8 @@ class MungeReader:
 def read_relational(
     path: Union[str, Path],
     expand_col: str,
-    root_cols: Union[List[str], None] = None,
-    target_cols: Union[List[str], None] = None,
+    root_cols: Union[list[str], None] = None,
+    target_cols: Union[list[str], None] = None,
     root_nrows: Union[int, None] = None,
     root_format: str = "auto",
     prepend_column_name: bool = True,

@@ -36,7 +36,7 @@ class message_keying(KeyAdapterBase):
             @custom_keying(remap={True: "ON", False: "OFF"})
             class CustomDevice(lb.VISADevice):
                 pass
-    
+
     See Also:
 
         * :meth:`labbench.paramattr.visa_keying`
@@ -103,7 +103,7 @@ class message_keying(KeyAdapterBase):
         self,
         owner: HasParamAttrs,
         scpi_key: str,
-        paramattr: Union[ParamAttr[T],None],
+        paramattr: Union[ParamAttr[T], None],
         kwargs: dict[str, Any] = {},
     ) -> T:
         """queries a parameter named `scpi_key` by sending an SCPI message string.
@@ -141,7 +141,7 @@ class message_keying(KeyAdapterBase):
         owner: HasParamAttrs,
         scpi_key: str,
         value: T,
-        attr: Union[ParamAttr[T],None],
+        attr: Union[ParamAttr[T], None],
         kwargs: dict[str, Any] = {},
     ):
         """writes an SCPI message to set a parameter with a name key
@@ -168,7 +168,7 @@ class message_keying(KeyAdapterBase):
 
 
 class visa_keying(message_keying):
-    """ Decorates a :class:`labbench.VISADevice` (or subclass) to configure its use of the `key` argument
+    """Decorates a :class:`labbench.VISADevice` (or subclass) to configure its use of the `key` argument
     in all :mod:`labbench.paramattr.property` or :mod:`labbench.paramattr.method` descriptors.
 
     Example:
@@ -180,7 +180,7 @@ class visa_keying(message_keying):
             @lb.visa_keying(query_fmt='{key}?', write_fmt='{key} {value}')
             class MyDevice(lb.VISADevice):
                 pass
-    
+
     """
 
     def __init__(

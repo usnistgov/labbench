@@ -210,10 +210,12 @@ class MungerBase(core.Device):
             # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
             try:
                 write(stream, ext, value)
+                ret = self._get_key(stream)
             except TypeError:
                 with io.TextIOWrapper(stream, newline="\n") as buf:
                     write(buf, ext, value)
-            return self._get_key(stream)
+            finally:
+                stream.close()
 
     def _from_external_file(self, name, old_path, index=0, row=None, ntries=10):
         basename = os.path.basename(old_path)
@@ -379,8 +381,8 @@ class MungeToDirectory(MungerBase):
         #     if isinstance(v, dict):
         #         v = recursive_dict_fix(v)
 
-        stream = self._open_metadata("metadata.json", "w", in_root=True)
-        json.dump(sanitized, stream, indent=True)
+        with self._open_metadata("metadata.json", "w", in_root=True) as stream:
+            json.dump(sanitized, stream, indent=True)
 
 
 class TarFileIO(io.BytesIO):
@@ -487,8 +489,6 @@ class MungeToTar(MungerBase):
 
     def _write_metadata(self, metadata: dict):
         for k, v in metadata.items():
-            stream = self._open_metadata(k + ".json", "w")
-
             if isinstance(v, pd.DataFrame):
                 v = v.to_dict()["Value"]
             if isinstance(v, dict):
@@ -496,7 +496,8 @@ class MungeToTar(MungerBase):
                     if isinstance(obj, Path):
                         v[name] = str(obj)
 
-            with io.TextIOWrapper(stream, newline="\n") as buf:
+            with self._open_metadata(k + ".json", "w") as stream, \
+                io.TextIOWrapper(stream, newline="\n") as buf:
                 json.dump(v, buf, indent=True, sort_keys=True)
 
     def _write_metadata(self, metadata: dict[str, Any]):
@@ -523,8 +524,8 @@ class MungeToTar(MungerBase):
         #     if isinstance(v, dict):
         #         v = recursive_dict_fix(v)
 
-        stream = self._open_metadata("metadata.json", "w", in_root=True)
-        json.dump(sanitized, stream, indent=True)
+        with self._open_metadata("metadata.json", "w", in_root=True) as stream:
+            json.dump(sanitized, stream, indent=True)
 
 
 class Aggregator(util.Ownable):
@@ -1897,6 +1898,9 @@ class MungeTarReader:
                 break
         else:
             raise ex
+        
+    def __del__(self):
+        self.tarfile.close()
 
 
 class MungeDirectoryReader:

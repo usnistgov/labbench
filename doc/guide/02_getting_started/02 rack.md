@@ -72,7 +72,7 @@ class Sweep(lb.Rack):
         self.generator.preset()
         self.generator.mode = "tone"
 
-    def single(self, center_frequency, duration):
+    def single_frequency(self, center_frequency, duration):
         self.generator.center_frequency = center_frequency
 
         self.measurement.setup(center_frequency=center_frequency)
@@ -85,7 +85,7 @@ class Sweep(lb.Rack):
         ret = []
 
         for freq in frequencies:
-            ret.append(self.single(freq, duration))
+            ret.append(self.single_frequency(freq, duration))
 
         return ret
 ```
@@ -101,13 +101,11 @@ meas = Measurement(power_sensor=sensor)
 sweep = Sweep(measurement=meas)
 
 with sweep:
-    data = sweep.run((2.4e9, 2.44e9, 2.48e9), duration=1.0)
-
-data[0]['spectrum']
+    data = sweep.single_frequency(2.4e9, duration=0.25)
 ```
 
 They open and close connections with all child devices by use of the `with` block (the python context manager). On entry into this block, connections to all devices (recursively) in `Sweep` open together. Similarly, after the last line in the block, or if an exception is raised, all of the devices are closed together.
 
 ```{code-cell} ipython3
-
+data[0]['spectrum']
 ```

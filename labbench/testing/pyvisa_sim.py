@@ -97,6 +97,7 @@ class SpectrumAnalyzer(VISADevice):
         return series
 
     def trigger(self):
+        util.sleep(0.1) # simulate slow response
         return self.write("TRIG")
 
 

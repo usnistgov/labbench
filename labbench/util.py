@@ -388,7 +388,7 @@ def retry(
     *,
     delay: float = 0,
     backoff: float = 0,
-    exception_func=lambda: None,
+    exception_func=lambda *args, **kws: None,
     log: bool = True,
 ):
     """Decorate a function to repeat calls, suppressing specified exception(s), until a
@@ -443,7 +443,7 @@ def retry(
 
                         notified = True
                     ex = e
-                    exception_func()
+                    exception_func(*args, **kwargs)
                     sleep(active_delay)
                     active_delay = active_delay * backoff
                 else:
@@ -1469,22 +1469,17 @@ class single_threaded_call_lock:
         obj = super().__new__(cls)
         obj.func = func
         obj.lock = RLock()
-        obj.retval = None
         obj = wraps(func)(obj)
         return obj
 
     @hide_in_traceback
     def __call__(self, *args, **kws):
-        if self.lock.acquire(False):
-            # no other threads are running self.func; invoke it in this one
-            try:
-                ret = self.retval = self.func(*args, **kws)
-            finally:
-                self.lock.release()
-        else:
-            # another thread is running self.func; return its result
-            self.lock.acquire(True)
-            ret = self.retval
+        self.lock.acquire()
+
+        # no other threads are running self.func; invoke it in this one
+        try:
+            ret = self.func(*args, **kws)
+        finally:
             self.lock.release()
 
         return ret
@@ -1520,18 +1515,20 @@ class ttl_cache:
     def __init__(self, timeout):
         self.timeout = timeout
         self.call_timestamp = None
-        self.last_value = None
+        self.last_value = {}
 
     def __call__(self, func):
         @wraps(func)
         @hide_in_traceback
         def wrapper_decorator(*args, **kws):
             time_elapsed = time.perf_counter() - (self.call_timestamp or 0)
-            if self.call_timestamp is None or time_elapsed > self.timeout:
-                ret = self.last_value = func(*args, **kws)
+            key = tuple(args), tuple(kws.keys()), tuple(kws.values())
+
+            if self.call_timestamp is None or time_elapsed > self.timeout or key not in self.last_value:
+                ret = self.last_value[key] = func(*args, **kws)
                 self.call_timestamp = time.perf_counter()
             else:
-                ret = self.last_value
+                ret = self.last_value[key]
 
             return ret
 

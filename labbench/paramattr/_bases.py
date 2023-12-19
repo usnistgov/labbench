@@ -1401,23 +1401,23 @@ def adjust(
     def apply_adjusted_paramattr(owner_cls: HasParamAttrs):
         if not issubclass(owner_cls, HasParamAttrs):
             raise TypeError("must decorate a Device class definition")
+        attr_def = getattr(owner_cls, name)        
         if default_or_key is not Undefined:
-            if issubclass(owner_cls, Value):
+            if isinstance(attr_def, Value):
                 kws["default"] = default_or_key
-            elif issubclass(owner_cls, (Property, Method)):
+            elif isinstance(attr_def, (Property, Method)):
                 kws["key"] = default_or_key
 
         if name not in owner_cls.__dict__:
             raise ValueError(f'the decorated class {repr(owner_cls)} has no paramattr "{name}"')
 
         parent_attr = super(owner_cls, owner_cls)
-        attr = getattr(owner_cls, name)
-        if parent_attr is attr:
+        if parent_attr is attr_def:
             # don't clobber the parent's paramattr
-            attr = attr.copy(kws)
-            setattr(owner_cls, name, attr)
+            attr_def = attr_def.copy(kws)
+            setattr(owner_cls, name, attr_def)
         else:
-            attr.update(**kws)
+            attr_def.update(**kws)
         # owner_cls.__update_signature__()
         return owner_cls
 

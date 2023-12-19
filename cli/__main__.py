@@ -44,8 +44,10 @@ def summarize_device_probe(device):
         device_args += f', read_termination={repr(device.read_termination)}'
     if device.write_termination != type(device).write_termination.default:
         device_args += f', write_termination={repr(device.write_termination)}'  
-    print(f'  • {device.make.title()} {device.model} (serial {repr(device.serial)}, rev. {repr(device._revision)}): ')
-    print(f'    lb.VISADevice({repr(device.resource) + device_args})')
+    print(f'  • Make: "{device.make.title()}"')
+    print(f'    Model: "{device.model}"')
+    print(f'    Serial: "{device.serial}"')
+    print(f'    Device: lb.VISADevice({repr(device.resource) + device_args})')
     print()
 
 
@@ -357,6 +359,7 @@ def open(config_dir, verbose=False):
 )
 def visa_probe(resource_manager, stubs):
     import labbench as lb
+    lb.util.force_full_traceback(False)
 
     if stubs:
         prefix = '# '

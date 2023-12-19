@@ -953,7 +953,6 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
         directory is inside a git repo with this branch name
     """
 
-    METADATA_FILE_NAME = "metadata.json"
     INDEX_LABEL = "id"
 
     def __init__(

@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import importlib
 import inspect
 import logging
@@ -1024,17 +1025,23 @@ class VISADevice(Device):
             matches = visa_probe_devices(self)
 
             if len(matches) == 0:
-                msg = f"could not open VISA device {repr(type(self))}: resource not specified, and no devices were discovered matching {search_desc}"
+                msg = (
+                    f"could not open VISA device {repr(type(self))}: resource not specified, "
+                    f"and no devices were discovered matching {search_desc}"
+                )
                 raise IOError(msg)
             elif len(matches) == 1:
                 self._logger.debug(f"probed resource by matching {search_desc}")
                 self.resource = matches[0].resource
             else:
-                msg = f"resource ambiguity: {len(matches)} VISA resources matched {search_desc}"
+                msg = (
+                    f"resource ambiguity: {len(matches)} VISA resources matched {search_desc}, "
+                    f"disconnect {len(matches)-1} or specify explicit resource names"
+                )
                 raise IOError(msg)
         else:
             raise ConnectionError(
-                f"must specify resource (a VISA name string, or an instrument serial number) or define {repr(type(self))} with default make and model"
+                f"must specify a pyvisa resource name, an instrument serial number, or define {repr(type(self))} with default make and model"
             )
 
         if self.timeout is not None:
@@ -1325,12 +1332,20 @@ def visa_default_resource_manager(name: str):
     VISADevice._rm = name
 
 
-def _visa_probe_message_parameters(device: VISADevice):
-    @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False)
-    def probe_resource():
+@util.ttl_cache(10) # a cache of recent resource parameters
+def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: 'ascii') -> VISADevice:
+    device = VISADevice(resource, open_timeout=open_timeout, timeout=timeout)
+    device._logger = logging.getLogger() # suppress the normal logger for probing
+
+    def reopen():
+        device.close()
+        device.open()
+
+    @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False, exception_func=reopen)
+    def probe_read_termination():
         query = "*IDN?" + device.write_termination
-        device.backend.write_raw(query.encode(device.backend.encoding))
-        identity = device.backend.read_raw().decode(device.backend.encoding)
+        device.backend.write_raw(query.encode(encoding))
+        identity = device.backend.read_raw().decode(encoding)
 
         for read_termination in ("\r\n", "\n", "\r"):
             if identity.endswith(read_termination):
@@ -1350,29 +1365,30 @@ def _visa_probe_message_parameters(device: VISADevice):
         device.backend.write_termination = device.write_termination = write_term
 
         try:
-            identity, read_term = probe_resource()
+            identity, read_termination = probe_read_termination()
             make, model, serial, rev = _visa_parse_identity(identity)
-            ret = VISADevice(
-                resource=device.resource, read_termination=read_term, write_termination=write_term
+
+            device.read_termination = read_termination
+            device.make = make
+            device.model = model
+            device._attr_store.cache.update(
+                serial=serial,
+                _revision=rev
             )
-            ret.make = make
-            ret.model = model
-            ret._attr_store.cache["serial"] = serial
-            ret._attr_store.cache["_revision"] = rev
 
             break
         except pyvisa.errors.VisaIOError as ex:
             if "VI_ERROR_TMO" not in str(ex):
                 raise
-            # device.backend.close()
-            # device.backend.open()
         except BaseException as ex:
             device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")
             raise
     else:
-        ret = None
+        device = None
 
-    return ret
+    device.close()
+
+    return device
 
 
 def _visa_valid_resource_name(resource: str):
@@ -1389,48 +1405,6 @@ def _visa_valid_resource_name(resource: str):
         return True
 
 
-def _visa_match_device(device: VISADevice, target: VISADevice):
-    device.backend.write_termination = device.write_termination = target.write_termination
-    device.backend.read_termination = device.read_termination = target.read_termination
-
-    try:
-        device.open()
-    except TimeoutError:
-        return None
-
-    try:
-        identity = device._identity
-        make, model, serial, _ = _visa_parse_identity(identity)
-    except pyvisa.errors.VisaIOError as ex:
-        if "VI_ERROR_TMO" not in str(ex):
-            raise
-        return None
-    except BaseException as ex:
-        device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")
-        raise
-    finally:
-        device.close()
-
-    if target.make is not None:
-        # apply the make filter
-        if make.lower() != target.make.lower():
-            return None
-
-    if target.model is not None:
-        # apply the model filter
-        if not target.model.lower().startswith(model.lower()):
-            return None
-
-    if target.resource is not None and not _visa_valid_resource_name(target.resource):
-        # treat the resource string as a serial number, and filter
-        if target.resource.lower() != serial.lower():
-            return None
-
-    return device
-
-
-@util.ttl_cache(timeout=3)
-@util.single_threaded_call_lock
 def visa_probe_devices(
     target: VISADevice = None,
     skip_interfaces: list[str] = [],
@@ -1455,39 +1429,55 @@ def visa_probe_devices(
         timeout: timeout on identity query (in s)
     """
 
-    def make_test_device(res):
-        device = VISADevice(res, open_timeout=open_timeout, timeout=timeout)
-        # suppress the normal logging during probing
-        device._logger = logging.getLogger()
-        return device
-
     def keep_interface(name):
         for iface in skip_interfaces:
             if name.lower().startswith(iface.lower()):
                 return False
         return True
 
-    devices = {res: make_test_device(res) for res in visa_list_resources() if keep_interface(res)}
+    def match_target(device):
+        if target is None:
+            return True
+
+        if target.make is not None:
+            # apply the make filter
+            if device.make.lower() != target.make.lower():
+                return False
+
+        if target.model is not None:
+            # apply the model filter
+            if not target.model.lower().startswith(device.model.lower()):
+                return False
+
+        if target.resource is not None and not _visa_valid_resource_name(target.resource):
+            # treat the resource string as a serial number, and filter
+            if target.resource.lower() != serial.lower():
+                return False
+
+        return True
+
+    calls = {
+        res: util.Call(_visa_probe_resource, res, open_timeout, timeout, 'ascii')
+        for res in visa_list_resources()
+        if keep_interface(res)
+    }
+
+    devices = util.concurrently(**calls, catch=False, flatten=False)
 
     if len(devices) == 0:
-        return {}
+        return []
 
-    if target is None:
-        calls = [
-            util.Call(_visa_probe_message_parameters, device).rename(res)
-            for res, device in devices.items()
-        ]
-        rets = util.concurrently(*calls, catch=False, flatten=False)
-    else:
+    if target is not None:
         if not isinstance(target, Device) and issubclass(target, Device):
             target = target()
 
-        calls = [
-            util.Call(_visa_match_device, device, target).rename(res)
-            for res, device in devices.items()
-        ]
-        rets = util.concurrently(*calls, catch=False)
-    return list(rets.values())
+        devices = {
+            resource: device
+            for resource, device in devices.items()
+            if match_target(device)
+        }
+
+    return list(devices.values())
 
 
 @attr.adjust("concurrency", True)

@@ -394,7 +394,7 @@ class Device(DeviceDataClass):
     def __del__(self):
         try:
             isopen = self.isopen
-        except AttributeError:
+        except (AttributeError, KeyError):
             # the object failed to instantiate properly
             isopen = False
 

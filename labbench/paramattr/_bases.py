@@ -13,7 +13,7 @@ from copy import copy
 import numbers
 import typing_extensions as typing
 from contextlib import contextmanager
-from typing_extensions import Union, Callable, Type, Any
+from typing_extensions import Union, Callable, Type, Any, dataclass_transform
 from functools import wraps
 
 Undefined = inspect.Parameter.empty
@@ -21,13 +21,6 @@ Undefined = inspect.Parameter.empty
 T = typing.TypeVar("T")
 T_co = typing.TypeVar("T_co", covariant=True)
 T_con = typing.TypeVar("T_con", contravariant=True)
-
-
-from typing import dataclass_transform
-
-
-def dataclass(eq, kw_only):
-    return dataclass_transform(eq_default=eq, kw_only_default=kw_only, field_specifiers=(field,))
 
 
 class field(typing.Generic[T]):
@@ -335,7 +328,6 @@ class ParamAttrMeta(type):
     pass
 
 
-# @dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
 class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     """base class for helper descriptors in :class:`labbench.Device`. These
     are multi-tools for type checking, casting, decorators, API wrapping, and callbacks.
@@ -417,7 +409,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         return obj
 
     @classmethod
-    def __init_subclass__(cls, type: __builtins__.type = Undefined):
+    def __init_subclass__(cls, type: builtins.type = Undefined):
         """python triggers this call immediately after a ParamAttr subclass
             is defined, allowing us to automatically customize its implementation.
 
@@ -616,7 +608,8 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     def doc_params(self, omit=["help"]):
         pairs = []
 
-        for name in typing.get_type_hints(type(self)).keys():
+        type_hints = typing.get_type_hints(type(self))
+        for name in type_hints.keys():
             default = getattr(type(self), name)
             v = getattr(self, name)
 

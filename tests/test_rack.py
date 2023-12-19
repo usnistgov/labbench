@@ -134,7 +134,6 @@ class MyRack(lb.Rack):
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
         force_relational=["host_log"],  # Data in these columns will always be relational
         nonscalar_file_type="csv",  # Default format of numerical data, when possible
-        metadata_dirname="metadata",  # metadata will be stored in this subdirectory
         tar=False,  # `True` to embed relational data folders within `data.tar`
     )
 

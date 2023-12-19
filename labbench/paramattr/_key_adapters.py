@@ -1,6 +1,7 @@
 from ._bases import KeyAdapterBase, HasParamAttrs, ParamAttr, T
 import string
 from typing import List, Any, Union
+import builtins
 
 
 class message_keying(KeyAdapterBase):
@@ -67,13 +68,13 @@ class message_keying(KeyAdapterBase):
             return
 
         # ensure str type for messages; keys can be arbitrary python type
-        if not all(isinstance(v, __builtins__["str"]) for v in remap.values()):
+        if not all(isinstance(v, builtins.str) for v in remap.values()):
             raise TypeError("all values in remap dict must have type str")
 
         self.value_map = remap
 
         # create the reverse mapping
-        self.message_map = __builtins__["dict"](zip(remap.values(), remap.keys()))
+        self.message_map = builtins.dict(zip(remap.values(), remap.keys()))
 
         # and ensure all values are unique
         if len(self.message_map) != len(self.value_map):

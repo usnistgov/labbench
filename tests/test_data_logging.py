@@ -108,7 +108,7 @@ class SimpleRack(lb.Rack):
     EXTRA_VALUES = dict(power=1.21e9, potato=7)
 
     def simple_loop(self):
-        self.db.observe(self.inst, changes=True, always="sweep_aperture")
+        self.db.observe_paramattr(self.inst, changes=True, always="sweep_aperture")
 
         for self.inst.frequency in self.FREQUENCIES:
             self.inst.index = self.inst.frequency
@@ -130,7 +130,7 @@ class TestDataLogging(unittest.TestCase):
     def make_db_path(suffix=""):
         return f"test db/{np.random.bytes(8).hex()+suffix}"
 
-    def delete_data(self, db):
+    def delete_data(self, db: lb._data.TabularLoggerBase):
         shutil.rmtree(db.path)
 
     def test_csv_tar(self):
@@ -148,7 +148,7 @@ class TestDataLogging(unittest.TestCase):
         self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-        # self.delete_data(rack.db)
+        self.delete_data(rack.db)
 
     def test_csv(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
@@ -185,7 +185,7 @@ class TestDataLogging(unittest.TestCase):
             # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
             # self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-            # self.delete_data(rack.db)
+            self.delete_data(rack.db)
 
     def test_csv_keyed_method(self):
         db = lb.CSVLogger(path=self.make_db_path(), tar=False)
@@ -212,6 +212,21 @@ class TestDataLogging(unittest.TestCase):
         )
 
         self.delete_data(rack.db)
+
+    def test_sqlite(self):
+        db = lb.SQLiteLogger(path=self.make_db_path())
+
+        with SimpleRack(db=db) as rack:
+            rack.simple_loop()
+
+        self.assertTrue(db.path.exists())
+        # self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
+        # self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+        # self.assertTrue((db.path / db.munge.tarname).exists())
+
+        # df = lb.read(db.path / "outputs.csv")
+        # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
+        # self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
 
 if __name__ == "__main__":

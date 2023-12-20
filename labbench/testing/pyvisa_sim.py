@@ -88,7 +88,7 @@ class SpectrumAnalyzer(VISADevice):
         """acquire measurements as configured"""
         response = self.query("FETC?")
 
-        series = pd.Series([float(s) for s in response.split(",")], name="spectrum")
+        series = pd.Series([float(s) for s in response.split(",")], name="power_spectral_density")
         series.index = pd.Index(
             self.center_frequency + np.linspace(-5e6, 5e6, len(series)),
             name="frequency",

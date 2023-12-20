@@ -18,7 +18,6 @@ from threading import Event, RLock, Thread, ThreadError
 from typing_extensions import TypeVar, ParamSpec, Callable
 from warnings import simplefilter
 
-import coloredlogs
 import psutil
 
 
@@ -118,15 +117,10 @@ def show_messages(minimum_level, colors=True):
     # - %(pathname)s:%(lineno)d'
 
     if colors:
-        log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
-        styles = dict(
-            coloredlogs.DEFAULT_FIELD_STYLES,
-            label=dict(color="blue"),
-        )
-        formatter = coloredlogs.ColoredFormatter(log_fmt, style="{", field_styles=styles)
+        log_fmt = "\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}.{msecs:03.0f}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}"
     else:
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
-        formatter = logging.Formatter(log_fmt, style="{")
+    formatter = logging.Formatter(log_fmt, style="{")
 
     logger._screen_handler.setFormatter(formatter)
     logger.logger.addHandler(logger._screen_handler)

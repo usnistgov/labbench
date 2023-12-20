@@ -21,10 +21,11 @@ This is a significant API change.
     class Device(lb.Device):
         frequency: attr.PassIn = attr.value.float(default=5e9, min=10e6, max=6e9)
   ```
-- Two new types of paramattr descriptors are now available: `method` and `argument`. Methods
+- Two new types of `paramattr`` descriptors are now available: `method` and `kwarg`. Methods
   correspond with callable methods in the owning class. Like `labbench.paramattr.property`
-  descriptors, these support keyed auto-generation using the `key` argument.
+  descriptors, `method` descriptors support keyed auto-generation using the `key` argument.
 - Fix an exception handling bug in `lb.sequentially`
+- Dependency on `coloredlogs` has been removed
 
 ## [0.32 - 2023-10-11]
 ### Changed

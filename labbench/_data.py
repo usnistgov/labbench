@@ -216,6 +216,7 @@ class MungerBase(core.Device):
                     write(buf, ext, value)
             finally:
                 stream.close()
+        return self._get_key(stream)
 
     def _from_external_file(self, name, old_path, index=0, row=None, ntries=10):
         basename = os.path.basename(old_path)
@@ -659,14 +660,26 @@ class Aggregator(util.Ownable):
         kwarg_repr = ", ".join([f"{k}={repr(v)}" for k, v in kwargs.items()])
         attr_def = getattr(type(device), attr_name)
 
-        bare_name = f"{device._owned_name}_{attr_name}_{kwarg_repr}"
+        bare_name = f"{self.name_map[device]}_{attr_name}_{kwarg_repr}"
         sanitized_name = self.sanitize_column_name(bare_name).rstrip("_")
 
-        self.metadata["field_name_sources"][sanitized_name] = {
-            "object": f"{device._owned_name}.{attr_name}",
+        if attr_def._type.__module__ != 'builtins':
+            typename = f'{attr_def._type.__module__}.{attr_def._type.__qualname__}'
+        else:
+            typename = attr_def._type.__qualname__
+
+        attr_metadata = {
+            "object": f"{self.name_map[device]}.{attr_name}",
             "paramattr": attr_def.__repr__(),
-            "kwargs": kwargs,
+            "type": typename,
+            "help": attr_def.help,
+            "label": attr_def.label
         }
+
+        if isinstance(attr_def, attr.method.Method):
+            attr_metadata['kwargs'] = kwargs           
+
+        self.metadata["field_name_sources"][sanitized_name] = attr_metadata
 
         return sanitized_name
 
@@ -785,6 +798,9 @@ class Aggregator(util.Ownable):
             elif obj in self.name_map:
                 # naming for device. needs this
                 new_name = prefix + self.name_map[obj]
+
+            elif getattr(obj, '_owned_name', None) is not None:
+                self.name_map[obj] = new_name = obj._owned_name
 
             elif hasattr(obj, "__name__"):
                 # Ownable instances that have owners have this attribute set
@@ -1001,7 +1017,7 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
         """observe children of each Rack or other Owner"""
         super().__owner_init__(owner)
         devices, _ = _rack.recursive_devices(owner)
-        self.observe({v: k for k, v in devices.items()})
+        self.observe_paramattr({v: k for k, v in devices.items()})
 
     def __repr__(self):
         if hasattr(self, "path"):
@@ -1010,7 +1026,7 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
             path = "<unset path>"
         return f"{self.__class__.__qualname__}({path})"
 
-    def observe(
+    def observe_paramattr(
         self,
         devices: Union[Device, Iterable[Device]],
         changes: bool = True,
@@ -1195,8 +1211,8 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
         if self not in self.aggregator.name_map:
             self.aggregator.update_name_map({self: None}, fallback_names={self: "db"})
 
-        self.observe(self.munge, never=attr.get_class_attrs(self.munge))
-        self.observe(self.host, always=["time", "log"])
+        self.observe_paramattr(self.munge, never=attr.get_class_attrs(self.munge))
+        self.observe_paramattr(self.host, always=["time", "log"])
 
         # configure strings in relational data files that depend on how 'self' is
         # named in introspection
@@ -1692,7 +1708,7 @@ class SQLiteLogger(TabularLoggerBase):
                 con.execute(query)
 
         # Form the new database row
-        df = blank.append(pending, sort=True)
+        df = pd.concat([blank, pending], sort=True)
         df.sort_index(inplace=True)
         self._columns = df.columns
 

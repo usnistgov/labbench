@@ -12,64 +12,51 @@ kernelspec:
 ---
 
 # Data Logging
-Several objects are included in `labbench` for logging test conditions and resulting measurement results.
-* Automatic logging of interactions with `Device` attributes that are defined with {py:mod}`labbench.property`, {py:mod}`labbench.value`, and {py:mod}`labbench.datareturn`
+Labbench provides several data logging capabilities oriented toward experiments that involve complex sweeps or test conditions. Their general idea is to automatically log small details (device parameters, test conditions, git commit hashes, etc.) so that automation code is focused on the test procedure. The resulting logging system makes many implicit decisions but attempts describe the resulting structure clearly:
+* Automatic logging of simple scalar parameters of {py:class}`labbench.Device` objects that are defined with {py:mod}`labbench.paramattr`
 * Manual logging through simple dictionary mapping
-The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types ({py:class}`pandas.DataFrame`, {py:func}`numpy.array`, long strings, files generated outside the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.
-
-Logging is provided for specific root data formats through {py:class}`labbench.CSVLogger`, {py:class}`labbench.HDFLogger`, and {py:class}`labbench.SQLiteLogger`.
+* Consistent and automatic mapping from non-scalar types ({py:class}`pandas.DataFrame`, {py:func}`numpy.array`, long strings, files generated outside the data tree, etc.)
+* Support for several output data types: {py:class}`labbench.CSVLogger`, {py:class}`labbench.HDFLogger`, and {py:class}`labbench.SQLiteLogger`
 
 ## Example: Logging with `Device` objects in scripts
 The use of logging objects requires some light configuration, and one call to add data per test row.
 
 ```{code-cell} ipython3
 import labbench as lb
-from labbench.testing import SpectrumAnalyzer, PowerSensor, pyvisa_sim_resource
+from labbench.testing.pyvisa_sim import SpectrumAnalyzer, PowerSensor
 import numpy as np
 import shutil, time
 
-FREQ_COUNT = 3
-DUT_NAME = "DUT 63"
-DATA_PATH = './data'
-
 # the labbench.testing devices support simulated pyvisa operations
-lb.visa_default_resource_manager(pyvisa_sim_resource)
+lb.visa_default_resource_manager('@sim')
 lb.show_messages('debug')
 
 sensor = PowerSensor()
 analyzer = SpectrumAnalyzer()
-shutil.rmtree(DATA_PATH, True)
+
 db = lb.CSVLogger(path=f"./data")
 
-# automatic logging from `analyzer` in 'output.csv' in each call to db.new_row:
-# (1) each attr.property or lb.value that has been get or set in the device since the last call
-db.observe(analyzer)
+METADATA = 
+# # log all changes to analyzer parameters defined with labbench.paramattr
+# db.observe(analyzer)
 
-# automatic logging from `sensor` in 'output.csv' in each call to db.new_row:
-# (1) each attr.property or lb.value that has been get or set in the device since the last call
-# (2) explicitly get `sensor.sweep_aperture` (as column "sensor_sweep_aperture")
-db.observe(sensor, always=['sweep_aperture'])
+# # add the current value of `sensor.sweep_aperture` in every row
+# db.observe(sensor, always=['sweep_aperture'])
 
 with sensor, analyzer, db:
-    for freq in np.linspace(5.8e9, 5.9e9, FREQ_COUNT):
-        # Assignment to these property attributes:
-        # (1) sets the frequency on each instrument *and*
-        # (2) triggers logging of these values in the next database row in
-        #     the columns 'analyzer_center_frequency' and 'sensor_frequency'
+    for freq in (5.8e9, 5.85e9, 5.9e9):
         analyzer.center_frequency = freq
         sensor.frequency = freq
 
         sensor.trigger()
         analyzer.trigger()
 
-        # Logs the measurements and test conditions as a new row. Each key
-        # is a column in the database in addition to the automatic parameters
-        db.new_row(
-            comments='trying for 1.21 GW to time travel',
-            dut = DUT_NAME,
-            analyzer_trace=analyzer.fetch(),
-            sensor_reading=sensor.fetch()[0]
-        )
+        data = {
+            'analyzer_trace': analyzer.fetch(),
+            'sensor_reading': sensor.fetch()[0]
+        }
+
+        db.new_row(**data)
 ```
 
 ### Reading and exploring the data

@@ -318,10 +318,10 @@ class MungeToDirectory(MungerBase):
         if in_root:
             dirpath = self.resource
         else:
-            dirpath = self.resource/self.metadata_dirname
+            dirpath = self.resource / self.metadata_dirname
             dirpath.mkdir(exist_ok=True)
 
-        return open(Path(dirpath)/name, mode)
+        return open(Path(dirpath) / name, mode)
 
     def _get_key(self, stream):
         """Key to use for the relative data in the root database?
@@ -497,8 +497,9 @@ class MungeToTar(MungerBase):
                     if isinstance(obj, Path):
                         v[name] = str(obj)
 
-            with self._open_metadata(k + ".json", "w") as stream, \
-                io.TextIOWrapper(stream, newline="\n") as buf:
+            with self._open_metadata(k + ".json", "w") as stream, io.TextIOWrapper(
+                stream, newline="\n"
+            ) as buf:
                 json.dump(v, buf, indent=True, sort_keys=True)
 
     def _write_metadata(self, metadata: dict[str, Any]):
@@ -663,8 +664,8 @@ class Aggregator(util.Ownable):
         bare_name = f"{self.name_map[device]}_{attr_name}_{kwarg_repr}"
         sanitized_name = self.sanitize_column_name(bare_name).rstrip("_")
 
-        if attr_def._type.__module__ != 'builtins':
-            typename = f'{attr_def._type.__module__}.{attr_def._type.__qualname__}'
+        if attr_def._type.__module__ != "builtins":
+            typename = f"{attr_def._type.__module__}.{attr_def._type.__qualname__}"
         else:
             typename = attr_def._type.__qualname__
 
@@ -673,11 +674,11 @@ class Aggregator(util.Ownable):
             "paramattr": attr_def.__repr__(),
             "type": typename,
             "help": attr_def.help,
-            "label": attr_def.label
+            "label": attr_def.label,
         }
 
         if isinstance(attr_def, attr.method.Method):
-            attr_metadata['kwargs'] = kwargs           
+            attr_metadata["kwargs"] = kwargs
 
         self.metadata["field_name_sources"][sanitized_name] = attr_metadata
 
@@ -799,7 +800,7 @@ class Aggregator(util.Ownable):
                 # naming for device. needs this
                 new_name = prefix + self.name_map[obj]
 
-            elif getattr(obj, '_owned_name', None) is not None:
+            elif getattr(obj, "_owned_name", None) is not None:
                 self.name_map[obj] = new_name = obj._owned_name
 
             elif hasattr(obj, "__name__"):
@@ -1251,8 +1252,8 @@ class CSVLogger(TabularLoggerBase):
 
     Explicit save methods are exposed for arbitrary custom data. Automatic logging is performed for
 
-    #. Access to parameters of :class:`labbench.Device` objects that are defined with :module:`labbench.paramattr.value`,
-     :module:`labbench.paramattr.property`, and :module:`labbench.paramattr.method`.
+    #. Access to parameters of :class:`labbench.Device` objects that are defined with :mod:`labbench.paramattr.value`,
+     :mod:`labbench.paramattr.property`, and :mod:`labbench.paramattr.method`.
     #. Function calls to methods of :class:`labbench.Rack`
     #. Metadata
 
@@ -1913,7 +1914,7 @@ class MungeTarReader:
                 break
         else:
             raise ex
-        
+
     def __del__(self):
         self.tarfile.close()
 

@@ -16,28 +16,8 @@ from . import paramattr as attr
 from .paramattr._bases import (
     HasParamAttrs,
     Undefined,
-    BoundedNumber,
     hold_attr_notifications,
 )
-
-
-def trace_methods(cls, name, until_cls=None):
-    """Look for a method called `name` in cls and all of its parent classes."""
-    methods = []
-    last_method = None
-
-    for cls in cls.__mro__:
-        try:
-            this_method = getattr(cls, name)
-        except AttributeError:
-            continue
-        if this_method != last_method:
-            methods.append(this_method)
-            last_method = this_method
-        if cls is until_cls:
-            break
-
-    return methods
 
 
 def find_device_instances(depth=1):
@@ -215,12 +195,20 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 continue
 
             else:
+                if attr_def.only:
+                    annotation = typing.Union[*attr_def.only,*list()]
+                else:
+                    annotation = attr_def._type
+
+                if attr_def.allow_none:
+                    annotation = typing.Union[annotation, None]
+
                 params.append(
                     inspect.Parameter(
                         name,
                         kind=inspect.Parameter.KEYWORD_ONLY,
                         default=attr_def.default,
-                        annotation=cls.__annotations__[name],
+                        annotation=annotation,
                     )
                 )
 
@@ -229,7 +217,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = "".join([f"    {t.doc(as_argument=True)}\n" for t in constructor_attrs])
+        value_docs = "".join([f"    {t.name}: {t.doc(as_argument=True)}\n" for t in constructor_attrs])
         cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
 
 
@@ -261,11 +249,7 @@ class Device(DeviceDataClass):
     """
 
     resource: str = attr.value.str(
-        default=None, cache=True, kw_only=False, help="device address or URI"
-    )
-
-    concurrency = attr.value.bool(
-        default=True, sets=False, help="True if the device backend supports threading"
+        default=None, allow_none=True, cache=True, kw_only=False, help="device address or URI"
     )
 
     """ Container for property trait traits in a Device. Getting or setting property trait traits
@@ -316,7 +300,7 @@ class Device(DeviceDataClass):
         self.backend = None
 
         try:
-            for opener in trace_methods(self.__class__, "open", Device)[::-1]:
+            for opener in util.find_methods_in_mro(self.__class__, "open", Device)[::-1]:
                 opener(self)
         except BaseException:
             self.backend = DisconnectedBackend(self)
@@ -340,7 +324,7 @@ class Device(DeviceDataClass):
         if not self.isopen:
             return
 
-        methods = trace_methods(self.__class__, "close", Device)
+        methods = util.find_methods_in_mro(self.__class__, "close", Device)
 
         all_ex = []
         for closer in methods:

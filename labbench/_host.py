@@ -76,23 +76,25 @@ class Email(core.Device):
     subject line. Stderr is also sent.
     """
 
-    resource: str = attr.value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use")
-    port: int = attr.value.int(default=25, min=1, help="TCP/IP port")
-    sender: str = attr.value.str(default="myemail@nist.gov", help="email address of the sender")
+    resource: str = attr.value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use", cache=True)
+    port: int = attr.value.int(default=25, min=1, help="TCP/IP port", cache=True)
+    sender: str = attr.value.str(default="myemail@nist.gov", help="email address of the sender", cache=True)
     recipients: list = attr.value.list(
-        default=["myemail@nist.gov"], help="list of email addresses of recipients"
+        default=["myemail@nist.gov"], help="list of email addresses of recipients", cache=True
     )
 
     success_message: str = attr.value.str(
         default="Test finished normally",
         allow_none=True,
         help="subject line for test success emails (None to suppress the emails)",
+        cache=True
     )
 
     failure_message: str = attr.value.str(
         default="Exception ended test early",
         allow_none=True,
         help="subject line for test failure emails (None to suppress the emails)",
+        cache=True
     )
 
     def _send(self, subject, body):
@@ -271,9 +273,7 @@ class Host(core.Device):
 
     def metadata(self):
         """Generate the metadata associated with the host and python distribution"""
-        ret = super().metadata()
-        ret["python_modules"] = self.__python_module_versions()
-        return ret
+        return dict(python_modules=self.__python_module_versions())
 
     def __python_module_versions(self):
         """Enumerate the versions of installed python modules"""

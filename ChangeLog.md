@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.33 - unreleased]
 This is a significant API change.
 
-### 
+### Added
+- `labbench.Win32ComDevice.concurrency` (bool value), which controls whether to allow multi-threaded access to the COM library
 
 ### Changed
 - The various types of descriptors supported by Device objects are now known as parameter attributes.
@@ -26,6 +27,10 @@ This is a significant API change.
   descriptors, `method` descriptors support keyed auto-generation using the `key` argument.
 - Fix an exception handling bug in `lb.sequentially`
 - Dependency on `coloredlogs` has been removed
+- Documentation text and layout improvements
+
+### Removed
+- `labbench.Device.concurrency`, which was only used by `labbench.Win32ComDevice` (and where it has been added)
 
 ## [0.32 - 2023-10-11]
 ### Changed

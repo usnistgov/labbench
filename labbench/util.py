@@ -15,7 +15,7 @@ from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
-from typing_extensions import TypeVar, ParamSpec, Callable
+from typing_extensions import Union, TypeVar, ParamSpec, Callable
 from warnings import simplefilter
 
 import psutil
@@ -28,6 +28,7 @@ __all__ = [  # "misc"
     "logger",
     "LabbenchDeprecationWarning",
     "import_t0",
+    "find_methods_in_mro",
     # concurrency and sequencing
     "concurrently",
     "sequentially",
@@ -154,6 +155,38 @@ def callable_logger(func):
         return func.__self__._logger
     else:
         return logger
+
+
+def find_methods_in_mro(
+    cls: type[object], name: str, until_cls: Union[type[object], None] = None
+) -> list[callable]:
+    """list all methods named `name` in `cls` and its parent classes.
+
+    Args:
+        cls: the class to introspect
+        name: the method to introspect in each subclass
+        until_cls: stop introspection after checking this base class
+
+    Returns:
+        All unique methods named `name` starting from `cls` and working toward the base classes
+    """
+    methods = []
+    last_method = None
+
+    if until_cls is not None and not issubclass(cls, until_cls):
+        raise TypeError(f"class {until_cls.__qualname__} is not a base class of {cls.__qualname__}")
+
+    for cls in cls.__mro__:
+        try:
+            this_method = getattr(cls, name)
+        except AttributeError:
+            continue
+        if this_method not in methods:
+            methods.append(this_method)
+        if cls is until_cls:
+            break
+
+    return methods
 
 
 class Ownable:
@@ -998,17 +1031,6 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 tb = tb.tb_next
         return exc_tuple[:2] + (tb,)
 
-    def check_thread_support(func_in):
-        """Setup threading (concurrent execution only), including
-        checks for whether a Device instance indicates it supports
-        concurrent execution or not.
-        """
-        func = func_in.func if isinstance(func_in, Call) else func_in
-        if hasattr(func, "__self__") and not getattr(func.__self__, "concurrency", True):
-            # is this a Device that does not support concurrency?
-            raise ConcurrentException(f"{func.__self__} does not support concurrency")
-        return func_in
-
     stop_request_event.clear()
 
     results = {}
@@ -1168,12 +1190,7 @@ def concurrently(*objs, **kws):
 
     - Because the calls are in different threads, not different processes,
       this should be used for IO-bound functions (not CPU-intensive functions).
-    - Be careful about thread safety.
-
-    When the callable object is a Device method, :func concurrency: checks
-    the Device object state.concurrency for compatibility
-    before execution. If this check returns `False`, this method
-    raises a ConcurrentException.
+    - Be careful about thread-safety.
 
     """
 
@@ -1251,10 +1268,6 @@ def sequentially(*objs, **kws):
     - Unlike `concurrently`, an exception in a context manager's __enter__
       means that any remaining context managers will not be entered.
 
-    When the callable object is a Device method, :func concurrency: checks
-    the Device object state.concurrency for compatibility
-    before execution. If this check returns `False`, this method
-    raises a ConcurrentException.
     """
 
     if kws.get("catch", False):
@@ -1518,7 +1531,11 @@ class ttl_cache:
             time_elapsed = time.perf_counter() - (self.call_timestamp or 0)
             key = tuple(args), tuple(kws.keys()), tuple(kws.values())
 
-            if self.call_timestamp is None or time_elapsed > self.timeout or key not in self.last_value:
+            if (
+                self.call_timestamp is None
+                or time_elapsed > self.timeout
+                or key not in self.last_value
+            ):
                 ret = self.last_value[key] = func(*args, **kws)
                 self.call_timestamp = time.perf_counter()
             else:

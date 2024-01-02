@@ -549,10 +549,10 @@ class LabviewSocketInterface(Device):
     tx_port: int = attr.value.int(default=61551, help="TX port to send to the LabView VI")
     rx_port: int = attr.value.int(default=61552, help="TX port to send to the LabView VI")
     delay: float = attr.value.float(
-        default=1, help="time to wait after each property trait write or query"
+        default=1, min=0, help="time to wait after each property trait write or query"
     )
     timeout: float = attr.value.float(
-        default=2, help="maximum wait replies before raising TimeoutError"
+        default=2, min=0, help="maximum wait replies before raising TimeoutError"
     )
     rx_buffer_size: int = attr.value.int(default=1024, min=1)
 
@@ -1332,10 +1332,10 @@ def visa_default_resource_manager(name: str):
     VISADevice._rm = name
 
 
-@util.ttl_cache(10) # a cache of recent resource parameters
-def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: 'ascii') -> VISADevice:
+@util.ttl_cache(10)  # a cache of recent resource parameters
+def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: "ascii") -> VISADevice:
     device = VISADevice(resource, open_timeout=open_timeout, timeout=timeout)
-    device._logger = logging.getLogger() # suppress the normal logger for probing
+    device._logger = logging.getLogger()  # suppress the normal logger for probing
 
     def reopen():
         device.close()
@@ -1371,10 +1371,7 @@ def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: 'ascii'
             device.read_termination = read_termination
             device.make = make
             device.model = model
-            device._attr_store.cache.update(
-                serial=serial,
-                _revision=rev
-            )
+            device._attr_store.cache.update(serial=serial, _revision=rev)
 
             break
         except pyvisa.errors.VisaIOError as ex:
@@ -1457,7 +1454,7 @@ def visa_probe_devices(
         return True
 
     calls = {
-        res: util.Call(_visa_probe_resource, res, open_timeout, timeout, 'ascii')
+        res: util.Call(_visa_probe_resource, res, open_timeout, timeout, "ascii")
         for res in visa_list_resources()
         if keep_interface(res)
     }
@@ -1471,22 +1468,21 @@ def visa_probe_devices(
         if not isinstance(target, Device) and issubclass(target, Device):
             target = target()
 
-        devices = {
-            resource: device
-            for resource, device in devices.items()
-            if match_target(device)
-        }
+        devices = {resource: device for resource, device in devices.items() if match_target(device)}
 
     return list(devices.values())
 
 
-@attr.adjust("concurrency", True)
 class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 
     a dedicated background thread. Set concurrency=True to decide whether
     this thread support wrapper is applied to the dispatched Win32Com object.
     """
+
+    concurrency = attr.value.bool(
+        default=True, sets=False, help="if False, enforces locking for single-threaded access"
+    )
 
     # The python wrappers for COM drivers still basically require that
     # threading is performed using the windows COM API. Compatibility with

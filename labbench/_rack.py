@@ -615,7 +615,7 @@ class OwnerContextAdapter:
             hold = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
             notify.hold_owner_notifications(*hold)
             cls = type(self._owner)
-            for opener in core.trace_methods(cls, "open", Owner)[::-1]:
+            for opener in util.find_methods_in_mro(cls, "open", Owner)[::-1]:
                 if isinstance(opener, WrappedOpen):
                     opener.unwrapped(self._owner)
                 else:
@@ -631,7 +631,7 @@ class OwnerContextAdapter:
             holds = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
             notify.hold_owner_notifications(*holds)
             cls = type(self._owner)
-            methods = core.trace_methods(cls, "close", Owner)
+            methods = util.find_methods_in_mro(cls, "close", Owner)
 
             all_ex = []
             for closer in methods:

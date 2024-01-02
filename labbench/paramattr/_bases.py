@@ -434,9 +434,11 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
         # Help to reduce memory use by __slots__ definition (instead of __dict__)
         cls.__slots__ = [n for n in dir(cls) if not callable(getattr(cls, n))] + [
-            "metadata",
-            "kind",
+            "ROLE",
             "name",
+            "_defaults",
+            "_keywords",
+            "_positional"
         ]
 
     # Descriptor methods (called automatically by the owning class or instance)
@@ -572,64 +574,79 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         return value in iterable
 
     # introspection
-    def doc(self, as_argument=False, anonymous=False):
-        typename = "Any" if self._type is object else self._type.__qualname__
+    def doc(self, as_argument=False):
+        doc_param_funcs = util.find_methods_in_mro(type(self), "doc_params", ParamAttr)
+        doc_kws = {
+            'as_argument': as_argument,
+            'skip': ["help", "default", "label", "cache", "allow_none"]
+        }
+        doc_params = [f(self, **doc_kws) for f in doc_param_funcs]
+        doc_params = [s for s in doc_params if s]
 
+        doc = f"{self.help}"
         if self.label:
-            typename += f" ({self.label})"
+            doc += f" ({self.label})"
 
-        params = self.doc_params(omit=["help", "default", "label"])
+        # params = self.doc_params(skip=["help", "default", "label"])
         if as_argument:
-            if anonymous:
-                doc = f"{self.help}"
-            else:
-                if isinstance(self, BoundedNumber) and self.label:
-                    label = f" (in {self.label})"
-                elif self.label:
-                    label = f" ({repr(self.label)})"
-                else:
-                    label = ""
-                doc = f"{self.name}{label}: {self.help}"
-
-            if len(params) > 0:
-                doc += f" (constraints: {params})"
+            # document for Device.__init__
+            param_str = ', '.join(doc_params)
+            if len(param_str) > 0:
+                doc += f" ({param_str})"
 
         else:
-            # as property
-            if anonymous:
-                doc = str(self.help)
-            else:
-                doc = f"{typename}: {self.help}"
-
-            if len(params) > 0:
-                doc += f"\n\nConstraints:\n    {params}"
+            # document as an attribute
+            if len(doc_params) > 0:
+                doc += f"\n\n" + '\n'.join(doc_params)
         return doc
 
-    def doc_params(self, omit=["help"]):
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
         pairs = []
 
-        type_hints = typing.get_type_hints(type(self))
-        for name in type_hints.keys():
-            default = getattr(type(self), name)
-            v = getattr(self, name)
+        if as_argument:
+            # simple comma-separated list for Device.__init__
+            type_hints = typing.get_type_hints(type(self))
+            for name in type_hints.keys():
+                default = getattr(type(self), name)
+                v = getattr(self, name)
 
-            # skip uninformative debug info
-            if name.startswith("_") or name in omit:
-                continue
+                # skip uninformative debug info
+                if name.startswith("_") or name in skip:
+                    continue
 
-            # only show non-defaults
-            v = getattr(self, name)
-            if v is Undefined:
-                continue
-            elif name not in self._positional and v == default:
-                continue
+                # only show non-defaults
+                v = getattr(self, name)
+                if v is Undefined:
+                    continue
+                elif name not in self._positional and v == default:
+                    continue
 
-            pairs.append(f"{name}={repr(v)}")
+                pairs.append(f"{name}={repr(v)}")
 
-        return ",".join(pairs)
+            return ", ".join(pairs)
+        
+        else:
+            # for text docs: allow subclasses to document their own params
+            docs = []
+            access_limits = []
+            if not self.sets:
+                access_limits.append("set")
+            if not self.gets:
+                access_limits.append("get")
+            if access_limits:
+                docs.append(f"- Cannot be {' or '.join(access_limits)} after device creation")
 
-    def __repr__(self, omit=["help"], owner_inst=None, declaration=True):
-        declaration = f"{type(self).__module__}.{type(self).__qualname__}({self.doc_params(omit)})"
+            if self.cache:
+                docs.append("- Logging event only on first access, and recorded in metadata log")
+            else:
+                docs.append("- Logging event on each access, and recorded as key/column in a root log")
+
+            return '\n'.join(docs) + '\n'
+
+
+    def __repr__(self, skip_params=["help", "label"], owner_inst=None, declaration=True):
+        param_doc = self.doc_params(skip=skip_params, as_argument=True)
+        declaration = f"{type(self).__module__}.{type(self).__qualname__}({param_doc})"
 
         if owner_inst is None:
             if declaration:
@@ -1394,7 +1411,7 @@ def adjust(
     def apply_adjusted_paramattr(owner_cls: HasParamAttrs):
         if not issubclass(owner_cls, HasParamAttrs):
             raise TypeError("must decorate a Device class definition")
-        attr_def = getattr(owner_cls, name)        
+        attr_def = getattr(owner_cls, name)
         if default_or_key is not Undefined:
             if isinstance(attr_def, Value):
                 kws["default"] = default_or_key
@@ -1567,7 +1584,7 @@ class DependentParamAttr(ParamAttr):
             )
 
     @classmethod
-    def derive(mixin_cls, template_attr: ParamAttr, dependent_attrs={}, *init_args, **init_kws):
+    def derive(mixin_cls: type[ParamAttr], template_attr: ParamAttr, dependent_attrs={}, *init_args, **init_kws) -> type[ParamAttr]:
         name = template_attr.__class__.__name__
         name = ("" if name.startswith("dependent_") else "dependent_") + name
 
@@ -1867,6 +1884,12 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         self._touch_table(owner)
         super().set_in_owner(owner, cal_value, kwargs)
 
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+        if as_argument:
+            return None
+        else:
+            depends = repr(self.path_attr.name), repr(self.index_lookup_attr.name), repr(self.table_index_column.name)
+            return f"- Calibration corrections are applied with parameters {', '.join(depends)}\n"
 
 class TransformMixIn(DependentParamAttr):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber"""
@@ -2034,6 +2057,20 @@ class BoundedNumber(ParamAttr[T]):
 
     table_index_column = None
 
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+        if as_argument:
+            return None
+
+        else:
+            # for text docs: allow subclasses to document their own params
+            docs = []
+            if self.min is not None:
+                docs.append(f"- Minimum: {self.min}")
+            if self.max is not None:
+                docs.append(f"- Maximum: {self.max}")
+
+            return '\n'.join(docs) + '\n'
+
     def calibrate_from_table(
         self,
         path_attr: ParamAttr,
@@ -2127,8 +2164,8 @@ class BoundedNumber(ParamAttr[T]):
         other_attr: ParamAttr,
         forward: callable,
         reverse: callable,
-        help="",
-        allow_none=False,
+        help:str="",
+        allow_none:bool=False,
     ):
         """generate a new attribute subclass that adjusts values in other attributes.
 

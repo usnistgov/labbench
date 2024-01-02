@@ -5,4 +5,4 @@ labbench
    :members:
    :imported-members:
    :show-inheritance:
-
+   :undoc-members:

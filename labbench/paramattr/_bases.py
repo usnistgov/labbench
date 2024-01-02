@@ -1888,7 +1888,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         if as_argument:
             return None
         else:
-            depends = repr(self.path_attr.name), repr(self.index_lookup_attr.name), repr(self.table_index_column.name)
+            depends = repr(self.path_attr.name), repr(self.index_lookup_attr.name), repr(self.table_index_column)
             return f"- Calibration corrections are applied with parameters {', '.join(depends)}\n"
 
 class TransformMixIn(DependentParamAttr):

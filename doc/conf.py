@@ -59,7 +59,7 @@ exclude_patterns = [
     f"{project}/_version.py",
     "**.ipynb_checkpoints",
     "setup*",
-    # "guide" # Uncomment for faster doc debug
+    "guide" # Uncomment for faster doc debug
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -126,7 +126,6 @@ mathjax_config = {
 
 
 # -- Dynamic processing to get the library introspection right ----
-# -- Dynamic processing to get the library introspection right ----
 class PatchedPythonDomain(PythonDomain):
     """avoid clobbering references to builtins"""
 
@@ -141,13 +140,6 @@ class PatchedPythonDomain(PythonDomain):
         return super(PatchedPythonDomain, self).resolve_xref(
             env, fromdocname, builder, typ, target, node, contnode
         )
-
-
-def process_docstring(app, what, name, obj, options, lines):
-    pass
-    # if isinstance(obj, lb.paramattr.ParamAttr):
-    #     print(name, obj, lines)
-    #     lines.append(obj.doc(as_argument=False))
 
 
 class AttributeDocumenter(autodoc.AttributeDocumenter):
@@ -258,9 +250,8 @@ class ClassDocumenter(autodoc.ClassDocumenter):
         return super().get_object_members(True)
 
 
-
 def setup(app):
     app.add_domain(PatchedPythonDomain, override=True)
     app.add_autodocumenter(PropertyDocumenter, override=True)
-    app.add_autodocumenter(AttributeDocumenter)
-    # app.connect("autodoc-process-docstring", process_docstring)
+    app.add_autodocumenter(AttributeDocumenter, override=True)
+    app.add_autodocumenter(ClassDocumenter, override=True)

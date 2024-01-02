@@ -1636,12 +1636,6 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         else:
             return by_uncal.max()
 
-    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
-        if as_argument:
-            return None
-        else:
-            return f"* Bounds depend on calibration data at run-time"
-
     def __init_owner_instance__(self, owner: HasParamAttrs):
         self.set_mapping(self.mapping, owner=owner)
         observe(

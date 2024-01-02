@@ -642,7 +642,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             if self.cache:
                 docs.append("* Logging event stored in metadata log after first access")
             else:
-                docs.append("* Logging event is triggers storage as a key/column on each access")
+                docs.append("* Logging events are triggered on each access, and are stored as a key or column")
 
             return '\n'.join(docs)
 

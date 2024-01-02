@@ -575,7 +575,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
     # introspection
     def doc(self, as_argument=False):
-        doc_param_funcs = util.find_methods_in_mro(type(self), "doc_params", ParamAttr)
+        doc_param_funcs = util.find_methods_in_mro(type(self), "doc_params", ParamAttr)[::-1]
         doc_kws = {
             'as_argument': as_argument,
             'skip': ["help", "default", "label", "cache", "allow_none"]
@@ -624,7 +624,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
                 pairs.append(f"{name}={repr(v)}")
 
             return ", ".join(pairs)
-        
+
         else:
             # for text docs: allow subclasses to document their own params
             docs = []
@@ -634,14 +634,17 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             if not self.gets:
                 access_limits.append("get")
             if access_limits:
-                docs.append(f"- Cannot be {' or '.join(access_limits)} after device creation")
+                docs.append(f"* Cannot be {' or '.join(access_limits)} after device creation")
+            if self.only:
+                only = set(list(self.only) + ([None] if self.allow_none else []))
+                docs.append(f"\n\n* Allowed values are {repr(only)}")
 
             if self.cache:
-                docs.append("- Logging event only on first access, and recorded in metadata log")
+                docs.append("* Logging event stored in metadata log after first access")
             else:
-                docs.append("- Logging event on each access, and recorded as key/column in a root log")
+                docs.append("* Logging event is triggers storage as a key/column on each access")
 
-            return '\n'.join(docs) + '\n'
+            return '\n'.join(docs)
 
 
     def __repr__(self, skip_params=["help", "label"], owner_inst=None, declaration=True):
@@ -1606,6 +1609,12 @@ class DependentParamAttr(ParamAttr):
         return obj
 
 
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+        if as_argument:
+            return None
+        else:
+            return f"* Bounds depend on calibration data at run-time"
+
 class RemappingCorrectionMixIn(DependentParamAttr):
     """act as another BoundedNumber ParamAttr, calibrated with a mapping"""
 
@@ -1626,6 +1635,12 @@ class RemappingCorrectionMixIn(DependentParamAttr):
             return None
         else:
             return by_uncal.max()
+
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+        if as_argument:
+            return None
+        else:
+            return f"* Bounds depend on calibration data at run-time"
 
     def __init_owner_instance__(self, owner: HasParamAttrs):
         self.set_mapping(self.mapping, owner=owner)
@@ -1888,8 +1903,10 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
         if as_argument:
             return None
         else:
-            depends = repr(self.path_attr.name), repr(self.index_lookup_attr.name), repr(self.table_index_column)
-            return f"- Calibration corrections are applied with parameters {', '.join(depends)}\n"
+            return (
+                f"* Returns None unless both {repr(self.index_lookup_attr.name)} "
+                f" and {repr(self.path_attr.name)} are set"
+            )
 
 class TransformMixIn(DependentParamAttr):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber"""
@@ -2065,9 +2082,9 @@ class BoundedNumber(ParamAttr[T]):
             # for text docs: allow subclasses to document their own params
             docs = []
             if self.min is not None:
-                docs.append(f"- Minimum: {self.min}")
+                docs.append(f"* Minimum: {self.min} {self.label}")
             if self.max is not None:
-                docs.append(f"- Maximum: {self.max}")
+                docs.append(f"* Maximum: {self.max} {self.label}")
 
             return '\n'.join(docs) + '\n'
 

@@ -22,15 +22,9 @@ class Int(_bases.BoundedNumber[int], type=int):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
 
 
-#    min: typing.Union[int, None] = None
-#    max: typing.Union[int, None] = None
-
-
 class Float(_bases.BoundedNumber[float], type=float):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
 
-    #    min: typing.Union[float, None] = None
-    #    max: typing.Union[float, None] = None
     step: typing.Union[float, None] = None
 
     @util.hide_in_traceback
@@ -44,6 +38,17 @@ class Float(_bases.BoundedNumber[float], type=float):
                 return value - (mod - self.step)
         return value
 
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+        if as_argument:
+            return None
+
+        else:
+            # for text docs: allow subclasses to document their own params
+            docs = []
+            if self.step is not None:
+                docs.append(f"* Step size: {self.step} {self.label}")
+
+            return '\n'.join(docs) + '\n'
 
 class Complex(_bases.ParamAttr[complex], type=complex):
     """accepts numerical or str values, following normal python casting procedures (with bounds checking)"""
@@ -85,6 +90,16 @@ class String(_bases.ParamAttr):
             value = value.lower()
         return value in iterable
 
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+        if as_argument:
+            return None
+
+        else:
+            # for text docs: allow subclasses to document their own params
+            if self.case:
+                return f"* Case sensitive"
+            else:
+                return f"* Case insensitive"
 
 class Unicode(String[str], type=str):
     """accepts strings or numeric values only; convert others explicitly before assignment"""
@@ -135,9 +150,18 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
         path = self._type(value)
 
         if self.must_exist and not path.exists():
-            raise IOError()
+            raise IOError('no file at path {value}')
 
         return path
+    
+    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+        if as_argument:
+            return None
+
+        else:
+            # for text docs: allow subclasses to document their own params
+            if self.must_exist:
+                return f"* Path name must exist on the host"
 
 
 class NetworkAddress(Unicode):

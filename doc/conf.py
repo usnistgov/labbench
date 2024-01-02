@@ -5,8 +5,10 @@ import toml
 from sphinx.domains.python import PythonDomain
 from sphinx.ext import autodoc
 from pathlib import Path
-from typing import Union
 import labbench as lb
+from typing_extensions import Union, Literal
+
+lb.util.force_full_traceback(False)
 
 # load and validate the project definition from pyproject.toml
 project_info = toml.load("../pyproject.toml")
@@ -59,7 +61,6 @@ exclude_patterns = [
     f"{project}/_version.py",
     "**.ipynb_checkpoints",
     "setup*",
-    "guide" # Uncomment for faster doc debug
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -95,10 +96,10 @@ html_title = f"{project}"
 html_static_path = ["_static"]
 html_use_index = False
 html_show_sphinx = False
-htmlhelp_basename = project + "doc"
 html_theme_options = {
-    'sidebarwidth': '22em'
+    'sidebarwidth': '28em'
 }
+htmlhelp_basename = project + "doc"
 
 # ------ LaTeX output ---------------------------------------------
 latex_elements = {
@@ -154,10 +155,10 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
 
     def add_directive_header(self, sig: str) -> None:
         if isinstance(self.object, lb.paramattr.value.Value):
-            if self.object.only:
-                type_ = Union[*self.object.only, *list()]
-            else:
-                type_ = self.object._type
+            # if self.object.only:
+            #     type_ = Union[*self.object.only, *list()]
+            # else:
+            type_ = self.object._type
             if self.object.allow_none:
                 type_ = Union[type_, None]
 
@@ -181,12 +182,6 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
             self.config.autodoc_inherit_docstrings = False
             tab_width = self.directive.state.document.settings.tab_width
             docstring = self.object.doc() + '\n'
-            print('^^^')
-            print(self.object.name)
-            print(docstring)
-            print('----')
-            print(autodoc.prepare_docstring(docstring, tab_width))
-            print('$$$')
             return [autodoc.prepare_docstring(docstring, tab_width)]
         else:
             return super().get_doc()
@@ -212,11 +207,9 @@ class PropertyDocumenter(autodoc.PropertyDocumenter):
             return super().import_object(raiseerror)
 
     def add_directive_header(self, sig: str) -> None:
+        start_directives = set(self.directive.result)
         if isinstance(self.object, lb.paramattr.property.Property):
-            if self.object.only:
-                type_ = Union[*self.object.only, *list()]
-            else:
-                type_ = self.object._type
+            type_ = self.object._type
             if self.object.allow_none:
                 type_ = Union[type_, None]
             self.parent.__annotations__[self.object.name] = type_
@@ -224,6 +217,20 @@ class PropertyDocumenter(autodoc.PropertyDocumenter):
             sig = ''
 
         super().add_directive_header(sig)
+
+        sourcename = self.get_sourcename()
+
+        # if signature.return_annotation is not Parameter.empty:
+        new_directives = set(self.directive.result) - start_directives
+        if not any(':type:' in line for line in new_directives):
+            # if signature.return_annotation is not Parameter.empty:
+            if self.config.autodoc_typehints_format == "short":
+                typerepr = autodoc.stringify_annotation(self.object._type, "smart")
+            else:
+                typerepr = autodoc.stringify_annotation(
+                    self.object._type, "fully-qualified-except-typing"
+                )
+            self.add_line("   :type: " + typerepr, sourcename)
 
     def format_args(self, **kwargs) -> str:
         if isinstance(self.object, lb.paramattr.property.Property):

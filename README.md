@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/license-NIST-brightgreen)](https://github.com/usnistgov/labbench/blob/master/LICENSE.md)
 [![Downloads](https://static.pepy.tech/badge/labbench)](https://pepy.tech/project/labbench)
 [![Last commit](https://img.shields.io/github/last-commit/usnistgov/labbench)](https://pypi.org/project/labbench/)
+[![Test coverage](./doc/reports/coverage.svg)](https://github.com/usnistgov/labbench/)
 
 The `labbench` module provides API tools to support python scripting for laboratory automation.
 The goal is to simplify the process of developing an experimental procedure into clear, concise, explainable, and reusable code.

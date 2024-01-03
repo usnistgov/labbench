@@ -1,8 +1,5 @@
-import sys
-
-sys.path.insert(0, ".")
-
 import importlib
+import sys
 from pathlib import Path
 
 from labbench import Device, Rack, util
@@ -18,8 +15,8 @@ from labbench.paramattr._bases import (
     list_method_attrs,
     list_property_attrs,
 )
-from labbench.paramattr._bases import _DecoratedMethodType as _TDecoratedMethod
-from labbench.paramattr._bases import _KeyedMethodType as _TKeyedMethod
+from labbench.paramattr._bases import _DecoratedMethodCallableType as _TDecoratedMethod
+from labbench.paramattr._bases import _KeyedMethodCallableType as _TKeyedMethod
 import typing
 import astor
 
@@ -63,7 +60,7 @@ def parse_literal(s: str):
 def ast_name(name):
     return ast.Name(id=name, kind=None)
 
-def ast_arg(name, annotation=None):
+def ast_arg(name, annotation=lb.Undefined):
     annotation = ast_name(annotation) if annotation is not None else None
     return ast.arg(arg=name, annotation=annotation, type_comment=None)
 
@@ -82,7 +79,7 @@ def ast_signature(args, defaults, annotations):
         args=[ast_arg(a, annotations.get(a, None)) for a in args],
         vararg=None,
         kwarg=None,  # ast.arg(arg='values', annotation=ast.Name(id='Any', ctx=ast.Load())),
-        defaults=[ast_name(repr(d)) for d in defaults],
+        defaults=[ast_name(repr(d)) for d in defaults if d is not lb.Undefined],
     )
 
 def ast_function_stub(name, args, defaults, annotations, decorator_list = []):

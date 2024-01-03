@@ -53,27 +53,6 @@ dependencies = [
 dotnet = ["pythonnet"]
 jupyter = ["notebook", "jupyter", "ipywidgets", "ipython"]
 pyvisa-py-extras = ["zeroconf"]
-
-[project.urls]
-homepage = "https://github.com/usnistgov/labbench"
-repository = "https://github.com/usnistgov/labbench"
-documentation = "https://pages.nist.gov/labbench"
-changelog = "https://github.com/usnistgov/labbench/blob/master/ChangeLog.md"
-
-[project.scripts]
-labbench = "cli.__main__:do_cli"
-
-[build-system]
-requires = ["pdm-pep517>=1.0"]
-build-backend = "pdm.pep517.api"
-
-[tool]
-[tool.pdm.version]
-source = "scm"
-write_to = "labbench/_version.py"
-write_template = "__version__ = '{}'"
-
-[tool.pdm.dev-dependencies]
 dev = [
     # python kernel bells and whistles
     "ipykernel",
@@ -99,6 +78,25 @@ dev = [
     "mypy>=1.7.0",
     "astor>=0.8.1",
 ]
+
+[project.urls]
+homepage = "https://github.com/usnistgov/labbench"
+repository = "https://github.com/usnistgov/labbench"
+documentation = "https://pages.nist.gov/labbench"
+changelog = "https://github.com/usnistgov/labbench/blob/master/ChangeLog.md"
+
+[project.scripts]
+labbench = "cli.__main__:do_cli"
+
+[build-system]
+requires = ["pdm-pep517>=1.0"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm.version]
+source = "scm"
+write_to = "labbench/_version.py"
+write_template = "__version__ = '{}'"
 
 [tool.black]
 line-length = 100

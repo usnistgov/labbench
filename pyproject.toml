@@ -66,6 +66,8 @@ dev = [
     # testing
     "pytest",
     "pytest-cov",
+    "genbadge",
+    "defusedxml",
     # documentation
     "sphinx>=7",
     "twine",
@@ -107,4 +109,6 @@ doc-html = {cmd = "sphinx-build -b html doc doc/html"}
 doc-latex = {cmd = "sphinx-build -b latex doc doc/latex"}
 doc-pdf = {cmd = "pdflatex doc/latex/labbench-api.tex --output-directory=doc", env = {"TEXINPUTS" = "doc/latex"}}
 doc-rst = {cmd = "sphinx-apidoc -F . -o doc"}
-tests = {cmd = "pdm run pytest --cov-report xml:doc/reports/coverage.xml --cov-report term --cov=labbench tests"}
+_pytest = {cmd = "pytest --cov-report xml:doc/reports/coverage.xml --cov-report term --cov=labbench tests"}
+_coverage = {cmd = "genbadge coverage -i doc/reports/coverage.xml -o doc/reports/coverage.svg -l"}
+tests = {composite = ["_pytest", "_coverage"]}

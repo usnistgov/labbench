@@ -650,7 +650,7 @@ class Aggregator(util.Ownable):
         return aggregated_output, aggregated_input
 
     def sanitize_column_name(self, string: str) -> str:
-        return re.sub("\W+|^(?=\d)+", "_", string)
+        return re.sub(r"\W+|^(?=\d)+", "_", string)
 
     def name_attr_field(
         self, device: attr.HasParamAttrs, attr_name: str, kwargs: dict[str, Any] = {}

@@ -33,6 +33,7 @@ This is a significant API change.
 - `labbench.VISADevice` now supports shortcut connection specifications in addition to standard VISA resource names:
   1. Serial number strings
   2. Empty resource strings for subclasses that specify `make` and `model`
+- python 3.12 installation is now enabled
 
 ### Removed
 - `labbench.Device.concurrency`, which was only used by `labbench.Win32ComDevice` (and where it has been added)

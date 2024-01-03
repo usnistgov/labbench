@@ -29,7 +29,7 @@ This is a significant API change.
 - Dependency on `coloredlogs` has been removed
 - Documentation text and layout improvements
 - Tests are now implemented with `pytest` instead of `unittest`, and include coverage analysis.
-  A runner is available through `pdm test`.
+  A runner is available through `pdm tests`.
 
 ### Removed
 - `labbench.Device.concurrency`, which was only used by `labbench.Win32ComDevice` (and where it has been added)

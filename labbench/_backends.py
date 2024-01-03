@@ -947,7 +947,7 @@ class VISADevice(Device):
         default=None,
         allow_none=True,
         cache=True,
-        help="device model dused to autodetect resource string",
+        help="device model used to autodetect resource string",
     )
 
     @attr.property.str(sets=False, cache=True)

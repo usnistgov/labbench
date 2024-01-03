@@ -29,7 +29,10 @@ This is a significant API change.
 - Dependency on `coloredlogs` has been removed
 - Documentation text and layout improvements
 - Tests are now implemented with `pytest` instead of `unittest`, and include coverage analysis.
-  A runner is available through `pdm tests`.
+  A runner is available through `pdm tests`, and a badge is linked to in `README.md`.
+- `labbench.VISADevice` now supports shortcut connection specifications in addition to standard VISA resource names:
+  1. Serial number strings
+  2. Empty resource strings for subclasses that specify `make` and `model`
 
 ### Removed
 - `labbench.Device.concurrency`, which was only used by `labbench.Win32ComDevice` (and where it has been added)

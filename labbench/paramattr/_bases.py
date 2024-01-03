@@ -1394,12 +1394,16 @@ def adjust(
 
     Args:
         paramattr: the ParamAttr name or instance to adjust
-        default: new default value (for value attributes only)
+        default_or_key: new default or key argument (these can also be passed in **kws) 
 
     Raises:
         ValueError: invalid type of ParamAttr argument, or when d
         TypeError: _description_
         ValueError: _description_
+
+    Note:
+        Changes to value defaults are not captured in type hints. Therefore,
+        the defaults in their owning classes will not change in IDEs.
 
     Returns:
         HasParamAttrs or Device with adjusted attributes value

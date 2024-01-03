@@ -126,7 +126,7 @@ class TestStore:
 
 
 @key_store_adapter()
-class TestStoreDevice(Device):
+class StoreTestDevice(Device):
     def open(self):
         self.backend = TestStore()
         attr.observe(self, self.backend.notification_handler)
@@ -149,7 +149,7 @@ class TestStoreDevice(Device):
         return set(cls._attr_defs.method_names()) - set(dir(Device))
 
 
-class PowerSensor(TestStoreDevice):
+class PowerSensor(StoreTestDevice):
     RATES = "NORM", "DOUB", "FAST"
 
     # SCPI string keys and bounds on the parameter values,
@@ -176,7 +176,7 @@ class PowerSensor(TestStoreDevice):
     )
 
 
-class SpectrumAnalyzer(TestStoreDevice):
+class SpectrumAnalyzer(StoreTestDevice):
     center_frequency = attr.property.float(
         key="SENS:FREQ",
         min=10e6,
@@ -195,7 +195,7 @@ class SpectrumAnalyzer(TestStoreDevice):
     )
 
 
-class SignalGenerator(TestStoreDevice):
+class SignalGenerator(StoreTestDevice):
     output_enabled = attr.property.bool(key="OUT:ENABL", help="when True, output an RF tone")
     center_frequency = attr.property.float(
         key="SENS:FREQ",
@@ -211,7 +211,7 @@ class SignalGenerator(TestStoreDevice):
 @key_store_adapter(
     key_arguments={"channel": attr.kwarg.int(name="channel", min=1, max=4, help="input channel")},
 )
-class Oscilloscope(TestStoreDevice):
+class Oscilloscope(StoreTestDevice):
     @attr.method.float(
         min=10e6,
         max=18e9,

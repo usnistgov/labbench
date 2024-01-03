@@ -26,19 +26,16 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-from labbench.util import sequentially
-import sys
-import unittest
 import time
-from labbench.testing.store_backend import TestStoreDevice
+from labbench.testing.store_backend import StoreTestDevice
 
-from contextlib import contextmanager
 import labbench as lb
 from labbench import paramattr as attr
 import numpy as np
+import pytest
 
 
-class LaggyInstrument(TestStoreDevice):
+class LaggyInstrument(StoreTestDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
 
     delay: float = attr.value.float(default=0, min=0, help="connection time")
@@ -156,106 +153,103 @@ class MyRack(lb.Rack):
     )
 
 
-class TestRack(unittest.TestCase):
-    def make_db_path(self):
-        return f"test db/{np.random.bytes(8).hex()}"
-
-    def test_context_open(self):
-        rack = MyRack()
-
-        self.assertFalse(rack.inst1.isopen)
-        self.assertFalse(rack.inst2.isopen)
-
-        with MyRack():
-            self.assertTrue(rack.inst1.isopen)
-            self.assertTrue(rack.inst2.isopen)
-
-        self.assertFalse(rack.inst1.isopen)
-        self.assertFalse(rack.inst2.isopen)
-
-    def test_call_open(self):
-        rack = MyRack()
-
-        self.assertFalse(rack.inst1.isopen)
-        self.assertFalse(rack.inst2.isopen)
-
-        rack.open()
-        try:
-            self.assertTrue(rack.inst1.isopen)
-            self.assertTrue(rack.inst2.isopen)
-        finally:
-            rack.close()
-
-        self.assertFalse(rack.inst1.isopen)
-        self.assertFalse(rack.inst2.isopen)
+@pytest.fixture
+def db_path():
+    yield f"test db/{np.random.bytes(8).hex()}"
 
 
-if __name__ == "__main__":
-    lb.show_messages("info")
-    lb.util.force_full_traceback(True)
+def test_context_open():
+    rack = MyRack()
 
-    unittest.main()
+    assert not rack.inst1.isopen
+    assert not rack.inst2.isopen
 
-    # rack = MyRack()
-    # rack.open()
+    with MyRack():
+        assert rack.inst1.isopen
+        assert rack.inst2.isopen
 
-    # # Testbed = lb.Rack.take_module('module_as_testbed')
-    # Testbed = MyRack
+    assert not rack.inst1.isopen
+    assert not rack.inst2.isopen
 
-    # lst = CommentedSeq(['a', 'b'])
-    # lst.yaml_add_eol_comment("foo", 0, 0)
-    # lst.yaml_add_eol_comment("bar\n\n", 1)
-    # data["list_of_elements_side_comment"] = lst
-    # data.yaml_set_comment_before_after_key("list_of_elements_side_comment", "\n")
 
-    # lst = CS(['a', 'b'])
-    # lst.yaml_set_comment_before_after_key(0, "comment 1", 2)
-    # lst.yaml_set_comment_before_after_key(1, "comment 2", 2)
-    # data["list_of_elements_top_comment"] = lst
+def test_call_open():
+    rack = MyRack()
 
-    # Testbed.config.make_templates()
+    assert not rack.inst1.isopen
+    assert not rack.inst2.isopen
 
-    # # Testbed.config._rack_defaults(Testbed)
+    rack.open()
+    try:
+        assert rack.inst1.isopen
+        assert rack.inst2.isopen
+    finally:
+        rack.close()
 
-    # with lb.stopwatch('test connection'):
-    #     with Testbed() as testbed:
-    #         # with MyRack() as testbed:
-    #         testbed.inst2.delay = 0.07
-    #         testbed.inst1.delay = 0.12
+    assert not rack.inst1.isopen
+    assert not rack.inst2.isopen
 
-    #         testbed.run.iterate_from_csv('setup/MyRack.run.csv')
 
-    #         # for i in range(3):
-    #         #     # Run the experiment
-    #         #     ret = testbed.run(rack1_param1=1, rack2_param1=2, rack3_param2=3,
-    #         #                       rack3_param3=4, rack2_param2=5, rack3_param4=6)
-    #         #
-    #         #     testbed.db()
+# if __name__ == "__main__":
+# rack = MyRack()
+# rack.open()
 
-    # df = lb.read(testbed.db.path/'master.db')
-    # df.to_csv(testbed.db.path/'master.csv')
+# # Testbed = lb.Rack.take_module('module_as_testbed')
+# Testbed = MyRack
 
-    # config_root = Path('test-config')
-    # config_root.mkdir(parents=True, exist_ok=True)
+# lst = CommentedSeq(['a', 'b'])
+# lst.yaml_add_eol_comment("foo", 0, 0)
+# lst.yaml_add_eol_comment("bar\n\n", 1)
+# data["list_of_elements_side_comment"] = lst
+# data.yaml_set_comment_before_after_key("list_of_elements_side_comment", "\n")
 
-    # # default devices
-    # defaults = {
-    #     dev_name: {k:getattr(dev, k) for k in dev._value_attrs}
-    #     for dev_name, dev in MyRack._devices.items()
-    # }
-    # with open(config_root/'devices.yaml', 'w') as f:
-    #     yaml.dump(defaults, f)
+# lst = CS(['a', 'b'])
+# lst.yaml_set_comment_before_after_key(0, "comment 1", 2)
+# lst.yaml_set_comment_before_after_key(1, "comment 2", 2)
+# data["list_of_elements_top_comment"] = lst
 
-    # defaults, annots, methods, names = MyRack.config.parameters(MyRack)
+# Testbed.config.make_templates()
 
-    # with open(config_root/'rack arguments.yaml', 'w') as f:
-    #     f.write('## Comment or remove lines to add as columns in sequence tables\n\n')
-    #     for k, default in defaults.items():
-    #         if default is lb._rack.EMPTY:
-    #             s = f'# {k}: \n'
-    #             f.write(s)
-    #         else:
-    #             s = yaml.dump({k: default}, f)
-    #         if annots[k] is not lb._rack.EMPTY:
-    #             before, *after = s.split(b'\n', 1)
-    #             s = b'\n'.join([before+f" # {annots[k].__qualname__}"] + after)
+# # Testbed.config._rack_defaults(Testbed)
+
+# with lb.stopwatch('test connection'):
+#     with Testbed() as testbed:
+#         # with MyRack() as testbed:
+#         testbed.inst2.delay = 0.07
+#         testbed.inst1.delay = 0.12
+
+#         testbed.run.iterate_from_csv('setup/MyRack.run.csv')
+
+#         # for i in range(3):
+#         #     # Run the experiment
+#         #     ret = testbed.run(rack1_param1=1, rack2_param1=2, rack3_param2=3,
+#         #                       rack3_param3=4, rack2_param2=5, rack3_param4=6)
+#         #
+#         #     testbed.db()
+
+# df = lb.read(testbed.db.path/'master.db')
+# df.to_csv(testbed.db.path/'master.csv')
+
+# config_root = Path('test-config')
+# config_root.mkdir(parents=True, exist_ok=True)
+
+# # default devices
+# defaults = {
+#     dev_name: {k:getattr(dev, k) for k in dev._value_attrs}
+#     for dev_name, dev in MyRack._devices.items()
+# }
+# with open(config_root/'devices.yaml', 'w') as f:
+#     yaml.dump(defaults, f)
+
+# defaults, annots, methods, names = MyRack.config.parameters(MyRack)
+
+# with open(config_root/'rack arguments.yaml', 'w') as f:
+#     f.write('## Comment or remove lines to add as columns in sequence tables\n\n')
+#     for k, default in defaults.items():
+#         if default is lb._rack.EMPTY:
+#             s = f'# {k}: \n'
+#             f.write(s)
+#         else:
+#             s = yaml.dump({k: default}, f)
+#         if annots[k] is not lb._rack.EMPTY:
+#             before, *after = s.split(b'\n', 1)
+#             s = b'\n'.join([before+f" # {annots[k].__qualname__}"] + after)

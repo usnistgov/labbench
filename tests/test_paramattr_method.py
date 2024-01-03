@@ -1,15 +1,13 @@
-from labbench.testing import store_backend
 import labbench as lb
+from labbench.testing import store_backend
 from labbench import paramattr as attr
-import unittest
-import paramattr_tooling
-
-lb.util.force_full_traceback(True)
+import pytest
+from paramattr_tooling import eval_set_then_get, loop_closed_loop_set_gets, has_steps
 
 
 @attr.register_key_argument(attr.kwarg.int("registered_channel", min=1, max=4))
 @store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
-class StoreTestDevice(store_backend.TestStoreDevice):
+class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
         int: 5,
@@ -55,88 +53,102 @@ class StoreTestDevice(store_backend.TestStoreDevice):
             return self.backend.set(key, set_value)
 
 
-class TestMethod(paramattr_tooling.TestParamAttr):
-    DeviceClass = StoreTestDevice
-    ROLE_TYPE = attr.method.Method
-
-    def set_param(self, device, attr_name, value, arguments={}):
-        param_method = getattr(device, attr_name)
-        param_method(value, **arguments)
-
-    def get_param(self, device, attr_name, arguments={}):
-        param_method = getattr(device, attr_name)
-        return param_method(**arguments)
-
-    def test_cache(self):
-        device = self.DeviceClass()
-        device.open()
-
-        # repeat to set->get to ensure proper caching
-        self.eval_set_then_get(device, "str_cached")
-        result = self.eval_set_then_get(device, "str_cached")
-
-        self.assertEqual(
-            result["get_count"],
-            0,
-            msg=f'cache test - second "get" operation count',
-        )
-        self.assertEqual(
-            result["set_count"],
-            2,
-            msg=f'cache test - second "get" operation count',
-        )
-
-    def test_keyed_argument_bounds(self):
-        device = self.DeviceClass()
-        device.open()
-
-        TEST_VALUE = "text"
-
-        with self.assertRaises(ValueError):
-            device.str_keyed_with_arg(TEST_VALUE, registered_channel=0)
-
-        device.str_keyed_with_arg(TEST_VALUE, registered_channel=1)
-        expected_key = (
-            "str_with_arg_ch_{registered_channel}",
-            frozenset({("registered_channel", 1)}),
-        )
-        self.assertEqual(device.backend.values[expected_key], TEST_VALUE)
-
-    def test_decorated_argument_bounds(self):
-        device = self.DeviceClass()
-        device.open()
-
-        TEST_VALUE = "text"
-        with self.assertRaises(ValueError):
-            # channel too small
-            device.str_decorated_with_arg(TEST_VALUE, decorated_channel=0, bandwidth=50e6)
-
-        with self.assertRaises(ValueError):
-            # bandwidth too small
-            device.str_decorated_with_arg(TEST_VALUE, decorated_channel=1, bandwidth=0)
-
-        # valid channel and bandwidth
-        test_kws = dict(decorated_channel=1, bandwidth=51e6)
-        expected_key = ("str_decorated_with_arg", frozenset(test_kws.items()))
-
-        device.str_decorated_with_arg(TEST_VALUE, **test_kws)
-        self.assertEqual(device.backend.values[expected_key], TEST_VALUE)
-
-    def test_decorated_argument_with_default(self):
-        with self.assertRaises(TypeError):
-            # the 'default' argument is only allowed on registering key arguments,
-            # not for decorators
-            class TestDevice(store_backend.TestStoreDevice):
-                @attr.kwarg.float(name="bandwidth", default=10e3)
-                def str_decorated_with_arg(self, set_value=lb.Undefined, *, bandwidth):
-                    pass
+def set_param(device, attr_name, value, arguments={}):
+    param_method = getattr(device, attr_name)
+    param_method(value, **arguments)
 
 
-if __name__ == "__main__":
-    # lb.visa_default_resource_manager(pyvisa_sim_resource)
+def get_param(device, attr_name, arguments={}):
+    param_method = getattr(device, attr_name)
+    return param_method(**arguments)
 
-    # print the low-level actions of the code
+
+def set_then_get(device, attr_name, value_in, arguments={}):
+    set_param(device, attr_name, value_in, arguments)
+    return get_param(device, attr_name, arguments)
+
+
+#
+# Fixtures convert to arguments in test functions
+#
+@pytest.fixture(autouse=True, scope="module")
+def labbench_fixture():
+    lb.visa_default_resource_manager("@sim")
     lb.show_messages("info")
     lb.util.force_full_traceback(True)
 
-    unittest.main()
+
+@pytest.fixture()
+def role_type():
+    return lb.paramattr.method.Method
+
+
+@pytest.fixture()
+def opened_device():
+    device = StoreTestDevice()
+    device.open()
+    yield device
+    device.close()
+
+
+@pytest.fixture()
+def instantiated_device():
+    device = StoreTestDevice()
+    device.open()
+    yield device
+    device.close()
+
+
+def test_cache(opened_device):
+    # repeat to set->get to ensure proper caching
+    eval_set_then_get(opened_device, "str_cached", set_then_get)
+    result = eval_set_then_get(opened_device, "str_cached", set_then_get)
+
+    assert result["get_count"] == 0, f'cache test - second "get" operation count'
+    assert result["set_count"] == 2, f'cache test - second "get" operation count'
+
+
+def test_keyed_argument_bounds(opened_device):
+    TEST_VALUE = "text"
+
+    with pytest.raises(ValueError):
+        opened_device.str_keyed_with_arg(TEST_VALUE, registered_channel=0)
+
+    opened_device.str_keyed_with_arg(TEST_VALUE, registered_channel=1)
+    expected_key = (
+        "str_with_arg_ch_{registered_channel}",
+        frozenset({("registered_channel", 1)}),
+    )
+    assert opened_device.backend.values[expected_key] == TEST_VALUE
+
+
+def test_decorated_argument_bounds(opened_device):
+    TEST_VALUE = "text"
+    with pytest.raises(ValueError):
+        # channel too small
+        opened_device.str_decorated_with_arg(TEST_VALUE, decorated_channel=0, bandwidth=50e6)
+
+    with pytest.raises(ValueError):
+        # bandwidth too small
+        opened_device.str_decorated_with_arg(TEST_VALUE, decorated_channel=1, bandwidth=0)
+
+    # valid channel and bandwidth
+    test_kws = dict(decorated_channel=1, bandwidth=51e6)
+    expected_key = ("str_decorated_with_arg", frozenset(test_kws.items()))
+
+    opened_device.str_decorated_with_arg(TEST_VALUE, **test_kws)
+    assert opened_device.backend.values[expected_key] == TEST_VALUE
+
+
+def test_decorated_argument_with_default():
+    with pytest.raises(TypeError):
+        # the 'default' argument is only allowed on registering key arguments,
+        # not for decorators
+        class TestDevice(store_backend.StoreTestDevice):
+            @attr.kwarg.float(name="bandwidth", default=10e3)
+            def str_decorated_with_arg(self, set_value=lb.Undefined, *, bandwidth):
+                pass
+
+
+def test_all_get_sets(opened_device, role_type):
+    loop_closed_loop_set_gets(opened_device, role_type, set_then_get)

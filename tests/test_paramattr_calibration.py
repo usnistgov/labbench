@@ -10,7 +10,7 @@ lb.util.force_full_traceback(True)
 
 
 @store_backend.key_store_adapter(defaults={"attenuation_setting": 0})
-class StoreTestDevice(store_backend.TestStoreDevice):
+class StoreTestDevice(store_backend.StoreTestDevice):
     frequency: float = attr.value.float(
         allow_none=True,
         min=10e6,
@@ -59,14 +59,4 @@ class StoreTestDevice(store_backend.TestStoreDevice):
     )
 
 
-if __name__ == "__main__":
-    lb.visa_default_resource_manager(pyvisa_sim_resource)
-
-    # print the low-level actions of the code
-    lb.show_messages("info")
-    lb.util.force_full_traceback(True)
-
-    # unittest.main()
-    device = StoreTestDevice(frequency=100e6)
-    device.open()
-    device.attenuation = 49
+# TODO: use the tooling here to build the tests

@@ -58,7 +58,6 @@ dev = [
     "ipykernel",
     "pip",
     "ipython",
-    "ipywidgets",
     # linting
     "black[jupyter]",
     "flake8",
@@ -88,6 +87,11 @@ changelog = "https://github.com/usnistgov/labbench/blob/master/ChangeLog.md"
 [project.scripts]
 labbench = "cli.__main__:do_cli"
 
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311"]
+include = '\.pyi?$'
+
 [build-system]
 requires = ["pdm-pep517>=1.0"]
 build-backend = "pdm.pep517.api"
@@ -98,13 +102,9 @@ source = "scm"
 write_to = "labbench/_version.py"
 write_template = "__version__ = '{}'"
 
-[tool.black]
-line-length = 100
-target-version = ["py38", "py39", "py310", "py311"]
-include = '\.pyi?$'
-
 [tool.pdm.scripts]
 doc-html = {cmd = "sphinx-build -b html doc doc/html"}
 doc-latex = {cmd = "sphinx-build -b latex doc doc/latex"}
 doc-pdf = {cmd = "pdflatex doc/latex/labbench-api.tex --output-directory=doc", env = {"TEXINPUTS" = "doc/latex"}}
 doc-rst = {cmd = "sphinx-apidoc -F . -o doc"}
+test = {cmd = "pdm run pytest --cov=labbench tests"}

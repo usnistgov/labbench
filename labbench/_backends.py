@@ -1448,7 +1448,7 @@ def visa_probe_devices(
 
         if target.resource is not None and not _visa_valid_resource_name(target.resource):
             # treat the resource string as a serial number, and filter
-            if target.resource.lower() != serial.lower():
+            if target.resource.lower() != device.serial.lower():
                 return False
 
         return True
@@ -1468,7 +1468,11 @@ def visa_probe_devices(
         if not isinstance(target, Device) and issubclass(target, Device):
             target = target()
 
-        devices = {resource: device for resource, device in devices.items() if match_target(device)}
+        devices = {
+            resource: device
+            for resource, device in devices.items()
+            if match_target(device)
+        }
 
     return list(devices.values())
 

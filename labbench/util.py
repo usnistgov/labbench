@@ -171,7 +171,6 @@ def find_methods_in_mro(
         All unique methods named `name` starting from `cls` and working toward the base classes
     """
     methods = []
-    last_method = None
 
     if until_cls is not None and not issubclass(cls, until_cls):
         raise TypeError(f"class {until_cls.__qualname__} is not a base class of {cls.__qualname__}")

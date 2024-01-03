@@ -1,15 +1,12 @@
-from labbench.testing import pyvisa_sim, store_backend, pyvisa_sim_resource
 import labbench as lb
+from labbench.testing import store_backend
 from labbench import paramattr as attr
-import unittest
-import paramattr_tooling
-
-lb.util.force_full_traceback(True)
+import pytest
+from paramattr_tooling import eval_set_then_get, loop_closed_loop_set_gets, has_steps
 
 
-# @lb.key_argument('channel', attr.argument.int(min=1, max=4))
 @store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
-class StoreTestDevice(store_backend.TestStoreDevice):
+class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
         int: 5,
@@ -36,66 +33,75 @@ class StoreTestDevice(store_backend.TestStoreDevice):
     any = attr.property.any(key="any", allow_none=True)
 
 
-class TestPropertyParamAttr(paramattr_tooling.TestParamAttr):
-    DeviceClass = StoreTestDevice
-    ROLE_TYPE = attr.property.Property
-
-    def set_param(self, device, attr_name, value, arguments={}):
-        if len(arguments) > 0:
-            raise ValueError("properties do not accept arguments")
-        setattr(device, attr_name, value)
-
-    def get_param(self, device, attr_name, arguments={}):
-        if len(arguments) > 0:
-            raise ValueError("properties do not accept arguments")
-        return getattr(device, attr_name)
-
-    def test_basic_get(self):
-        device = self.DeviceClass()
-        device.open()
-
-        self.get_param(device, "any")
-
-    def test_basic_set(self):
-        device = self.DeviceClass()
-        device.open()
-
-        self.set_param(device, "any", 5)
-        self.assertEqual(self.get_param(device, "any"), 5)
-
-    def test_cache(self):
-        device = self.DeviceClass()
-        device.open()
-
-        # repeat to set->get to ensure proper caching
-        self.eval_set_then_get(device, "str_cached")
-        result = self.eval_set_then_get(device, "str_cached")
-
-        self.assertEqual(
-            result["get_count"],
-            0,
-            msg=f'cache test - second "get" operation count',
-        )
-        self.assertEqual(
-            result["set_count"],
-            2,
-            msg=f'cache test - second "get" operation count',
-        )
+def set_param(device, attr_name, value, arguments={}):
+    if len(arguments) > 0:
+        raise ValueError("properties do not accept arguments")
+    setattr(device, attr_name, value)
 
 
-if __name__ == "__main__":
-    lb.visa_default_resource_manager(pyvisa_sim_resource)
+def get_param(device, attr_name, arguments={}):
+    if len(arguments) > 0:
+        raise ValueError("properties do not accept arguments")
+    return getattr(device, attr_name)
 
-    # print the low-level actions of the code
+
+def set_then_get(device, attr_name, value_in, arguments={}):
+    set_param(device, attr_name, value_in, arguments)
+    return get_param(device, attr_name, arguments)
+
+
+#
+# Fixtures that convert to arguments in test functions
+#
+@pytest.fixture(autouse=True, scope="module")
+def labbench_fixture():
+    lb.visa_default_resource_manager("@sim")
     lb.show_messages("info")
     lb.util.force_full_traceback(True)
 
-    # # specify the VISA address to use the power sensor
-    # inst = pyvisa_sim.Oscilloscope()  # (resource='USB::0x1111::0x2233::0x9876::INSTR')
-    # print(inst._attr_defs.attrs.keys())
 
-    # with inst:
-    #     inst.resolution_bandwidth(10e3, channel=2)
-    #     print(repr(inst.resolution_bandwidth(channel=1)))
+@pytest.fixture()
+def role_type():
+    return lb.paramattr.property.Property
 
-    unittest.main()
+
+@pytest.fixture()
+def opened_device():
+    device = StoreTestDevice()
+    device.open()
+    yield device
+    device.close()
+
+
+@pytest.fixture()
+def instantiated_device():
+    device = StoreTestDevice()
+    device.open()
+    yield device
+    device.close()
+
+
+#
+# The tests
+#
+def test_basic_get(opened_device):
+    _ = opened_device.any
+
+
+def test_basic_set(opened_device):
+    opened_device.any = 5
+    assert opened_device.any == 5
+
+
+def test_cache(opened_device):
+    # repeat to set->get to ensure proper caching
+    eval_set_then_get(opened_device, "str_cached", set_then_get)
+    result = eval_set_then_get(opened_device, "str_cached", set_then_get)
+
+    assert result["get_count"] == 0, f'cache test - second "get" operation count'
+
+    assert result["set_count"] == 2, f'cache test - second "get" operation count'
+
+
+def test_all_get_sets(opened_device, role_type):
+    loop_closed_loop_set_gets(opened_device, role_type, set_then_get)

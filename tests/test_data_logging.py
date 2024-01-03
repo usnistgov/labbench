@@ -1,41 +1,15 @@
-# This software was developed by employees of the National Institute of
-# Standards and Technology (NIST), an agency of the Federal Government.
-# Pursuant to title 17 United States Code Section 105, works of NIST employees
-# are not subject to copyright protection in the United States and are
-# considered to be in the public domain. Permission to freely use, copy,
-# modify, and distribute this software and its documentation without fee is
-# hereby granted, provided that this notice and disclaimer of warranty appears
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
-# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
-# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
-# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
-# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
-# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
-# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
-# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
-# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
-# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
-# PROVIDED HEREUNDER. Distributions of NIST software should also include
-# copyright and licensing statements of any third-party software that are
-# legally bundled with the code in compliance with the conditions of those
-# licenses.
-
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
-import unittest
 import pandas as pd
 import numpy as np
 import shutil
+import pytest
 
 
 @attr.register_key_argument(attr.kwarg.int("registered_channel", min=1, max=4))
 @store_backend.key_store_adapter(defaults={"SWE:APER": "20e-6"})
-class StoreDevice(store_backend.TestStoreDevice):
+class StoreDevice(store_backend.StoreTestDevice):
     """This "instrument" makes mock data and instrument property traits to
     demonstrate we can show the process of value trait
     up a measurement.
@@ -125,125 +99,118 @@ class SimpleRack(lb.Rack):
         )
 
 
-class TestDataLogging(unittest.TestCase):
-    @staticmethod
-    def make_db_path(suffix=""):
-        return f"test db/{np.random.bytes(8).hex()+suffix}"
+#
+# Fixturing
+#
+@pytest.fixture
+def csv_path():
+    path = f"test db/{np.random.bytes(8).hex()}.csv"
+    yield path
+    shutil.rmtree(path)
 
-    def delete_data(self, db: lb._data.TabularLoggerBase):
-        shutil.rmtree(db.path)
 
-    def test_csv_tar(self):
-        db = lb.CSVLogger(path=self.make_db_path(), tar=True)
+@pytest.fixture
+def hdf_path():
+    path = f"test db/{np.random.bytes(8).hex()}.hdf"
+    yield path
+    shutil.rmtree(path)
 
-        with SimpleRack(db=db) as rack:
-            rack.simple_loop()
 
-        self.assertTrue(db.path.exists())
-        self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
-        self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
-        self.assertTrue((db.path / db.munge.tarname).exists())
+@pytest.fixture
+def sqlite_path():
+    path = f"test db/{np.random.bytes(8).hex()}.sqlite"
+    yield path
+    shutil.rmtree(path)
 
-        df = lb.read(db.path / "outputs.csv")
-        self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
-        self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-        self.delete_data(rack.db)
+#
+# The tests
+#
+def test_csv_tar(csv_path):
+    db = lb.CSVLogger(csv_path, tar=True)
 
-    def test_csv(self):
-        db = lb.CSVLogger(path=self.make_db_path(), tar=False)
+    with SimpleRack(db=db) as rack:
+        rack.simple_loop()
 
-        with SimpleRack(db=db) as rack:
-            rack.simple_loop()
+    assert db.path.exists()
+    assert (db.path / db.OUTPUT_FILE_NAME).exists()
+    assert (db.path / db.INPUT_FILE_NAME).exists()
+    assert (db.path / db.munge.tarname).exists()
 
-        self.assertTrue(db.path.exists())
-        self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
-        self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+    df = lb.read(db.path / "outputs.csv")
+    assert set(rack.simple_loop_expected_columns()) == set(df.columns)
+    assert len(df.index) == len(rack.FREQUENCIES)
 
-        df = lb.read(db.path / "outputs.csv")
-        self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
-        self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-        self.delete_data(rack.db)
+def test_csv(csv_path):
+    db = lb.CSVLogger(csv_path, tar=False)
 
-    try:
-        import tables
-    except ImportError:
-        pass
-    else:
-        def test_hdf(self):
-            db = lb.HDFLogger(path=self.make_db_path("hdf"))
+    with SimpleRack(db=db) as rack:
+        rack.simple_loop()
 
-            with SimpleRack(db=db) as rack:
-                rack.simple_loop()
+    assert db.path.exists()
+    assert (db.path / db.OUTPUT_FILE_NAME).exists()
+    assert (db.path / db.INPUT_FILE_NAME).exists()
 
-            # self.assertTrue(db.path.exists())
-            # self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
-            # self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+    df = lb.read(db.path / "outputs.csv")
+    assert set(rack.simple_loop_expected_columns()) == set(df.columns)
+    assert len(df.index) == len(rack.FREQUENCIES)
 
-            # df = lb.read(db.path / "outputs.csv")
-            # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
-            # self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
-            self.delete_data(rack.db)
+try:
+    import tables
+except ImportError:
+    pass
+else:
 
-    def test_csv_keyed_method(self):
-        db = lb.CSVLogger(path=self.make_db_path(), tar=False)
-
-        with SimpleRack(db=db) as rack:
-            rack.inst.str_keyed_with_arg("value", registered_channel=1)
-            rack.db.new_row()
-
-        df = lb.read(db.path / "outputs.csv")
-        self.assertIn("inst_str_keyed_with_arg_registered_channel_1", df.columns)
-
-        self.delete_data(rack.db)
-
-    def test_csv_decorated_method(self):
-        db = lb.CSVLogger(path=self.make_db_path(), tar=False)
-
-        with SimpleRack(db=db) as rack:
-            rack.inst.str_decorated_with_arg("value", decorated_channel=2, bandwidth=100e6)
-            rack.db.new_row()
-
-        df = lb.read(db.path / "outputs.csv")
-        self.assertIn(
-            "inst_str_decorated_with_arg_decorated_channel_2_bandwidth_100000000_0", df.columns
-        )
-
-        self.delete_data(rack.db)
-
-    def test_sqlite(self):
-        db = lb.SQLiteLogger(path=self.make_db_path())
+    def test_hdf(hdf_path):
+        db = lb.HDFLogger(path=hdf_path)
 
         with SimpleRack(db=db) as rack:
             rack.simple_loop()
 
-        self.assertTrue(db.path.exists())
+        # self.assertTrue(db.path.exists())
         # self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
         # self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
-        # self.assertTrue((db.path / db.munge.tarname).exists())
 
         # df = lb.read(db.path / "outputs.csv")
         # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
         # self.assertEqual(len(df.index), len(rack.FREQUENCIES))
 
 
-if __name__ == "__main__":
-    lb.util.force_full_traceback(True)
-    lb.show_messages("info")
+def test_csv_keyed_method(csv_path):
+    db = lb.CSVLogger(csv_path, tar=False)
 
-    # db = lb.CSVLogger(path=TestDataLogging.make_db_path(), tar=False)
+    with SimpleRack(db=db) as rack:
+        rack.inst.str_keyed_with_arg("value", registered_channel=1)
+        rack.db.new_row()
 
-    # with SimpleRack(db=db) as rack:
-    #     rack.inst.str_keyed_with_arg('13 ducks', registered_channel=1)
-    #     rack.simple_loop()
+    df = lb.read(db.path / "outputs.csv")
+    assert "inst_str_keyed_with_arg_registered_channel_1" in df.columns
 
-    unittest.main()
 
-    # # unittest.main()
-    # db = lb.CSVLogger(path=TestDataLogging.make_db_path(), tar=False)
+def test_csv_decorated_method(csv_path):
+    db = lb.CSVLogger(path=csv_path, tar=False)
 
-    # with SimpleRack(db=db) as rack:
-    #     rack.inst.str_keyed_with_arg('value', registered_channel=1)
-    #     rack.db.new_row()
+    with SimpleRack(db=db) as rack:
+        rack.inst.str_decorated_with_arg("value", decorated_channel=2, bandwidth=100e6)
+        rack.db.new_row()
+
+    df = lb.read(db.path / "outputs.csv")
+    assert "inst_str_decorated_with_arg_decorated_channel_2_bandwidth_100000000_0" in df.columns
+
+
+def test_sqlite(sqlite_path):
+    db = lb.SQLiteLogger(path=sqlite_path)
+
+    with SimpleRack(db=db) as rack:
+        rack.simple_loop()
+
+    assert db.path.exists()
+    # self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
+    # self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
+    # self.assertTrue((db.path / db.munge.tarname).exists())
+
+    # df = lb.read(db.path / "outputs.csv")
+    # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
+    # self.assertEqual(len(df.index), len(rack.FREQUENCIES))

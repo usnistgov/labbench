@@ -39,6 +39,7 @@ This is a significant API change.
 - python 3.12 installation is now enabled
 - `paramattr.method` and `paramattr.property` now support a new keyword argument, `get_on_set`, which triggers
   a get operation in the owner device immediately after each set
+- `paramattr` descriptors now support a new keyword argument, `notify`, which allows notifications to be disabled
 
 ### Removed
 - `labbench.Device.concurrency`, which was only used by `labbench.Win32ComDevice` (and where it has been added)

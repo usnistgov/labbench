@@ -361,6 +361,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         cache: if True, interact with the device only once, then return copies (state attribute only)
         only: value allowlist; others raise ValueError
         allow_none: permit None values in addition to the specified type
+        notify: whether to emit logging/UI notifications when the value changes
     """
 
     # the python type representation defined by ParamAttr subclasses
@@ -377,6 +378,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     cache: bool = False
     only: tuple = tuple()
     allow_none: bool = False
+    notify: bool = True
 
     _keywords = {}
     _defaults = {}
@@ -769,7 +771,7 @@ class Value(ParamAttr[T]):
                 f"{self.__repr__(owner_inst=owner)} does not support gets"
             )
 
-        need_notify = self.name not in owner._attr_store.cache
+        need_notify = self.notify and self.name not in owner._attr_store.cache
         value = owner._attr_store.cache.setdefault(self.name, self.default)
         if need_notify:
             owner.__notify__(self.name, value, "get", cache=self.cache)
@@ -779,7 +781,8 @@ class Value(ParamAttr[T]):
     def set_in_owner(self, owner: HasParamAttrs, value: T, kwargs: dict[str, Any] = {}):
         value = self._prepare_set_value(owner, value, kwargs)
         owner._attr_store.cache[self.name] = value
-        owner.__notify__(self.name, value, "set", cache=self.cache)
+        if self.notify:
+            owner.__notify__(self.name, value, "set", cache=self.cache)
 
     def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
         pass
@@ -891,7 +894,8 @@ class OwnerAccessAttr(ParamAttr[T]):
             value = get_owner_defs(owner).key_adapter.get(owner, self.key, self, kwargs)
 
         value = self._finalize_get_value(owner, value, strict=False)
-        owner.__notify__(self.name, value, "get", cache=self.cache, kwargs=kwargs)
+        if self.notify:
+            owner.__notify__(self.name, value, "get", cache=self.cache, kwargs=kwargs)
         return value
 
     @util.hide_in_traceback
@@ -915,7 +919,8 @@ class OwnerAccessAttr(ParamAttr[T]):
                 f"setter and no key argument"
             )
 
-        owner.__notify__(self.name, value, "set", cache=self.cache, kwargs=kwargs)
+        if self.notify:
+            owner.__notify__(self.name, value, "set", cache=self.cache, kwargs=kwargs)
 
     def copy(self, new_type=None, **update_kws):
         obj = super().copy(new_type=new_type, **update_kws)
@@ -1082,7 +1087,8 @@ class Method(OwnerAccessAttr[T]):
             if new_value is not Undefined:
                 new_value = self._prepare_set_value(owner, new_value, kwargs)
                 func(owner, new_value, **kwargs)  # type: ignore
-                owner.__notify__(self.name, new_value, "set", cache=self.cache, kwargs=kwargs)
+                if self.notify:
+                    owner.__notify__(self.name, new_value, "set", cache=self.cache, kwargs=kwargs)
                 value = None
                 if self.get_on_set:
                     meth(owner, Undefined, **kwargs)
@@ -1094,7 +1100,8 @@ class Method(OwnerAccessAttr[T]):
                     )
                 unvalidated_value = func(owner, **kwargs)  # type: ignore
                 value = self._finalize_get_value(owner, unvalidated_value)
-                owner.__notify__(self.name, value, "get", cache=self.cache, kwargs=kwargs)
+                if self.notify:
+                    owner.__notify__(self.name, value, "get", cache=self.cache, kwargs=kwargs)
 
             return value
 
@@ -1672,12 +1679,13 @@ class RemappingCorrectionMixIn(DependentParamAttr):
 
     def _on_base_paramattr_change(self, msg):
         owner = msg["owner"]
-        owner.__notify__(
-            self.name,
-            self.lookup_cal(msg["new"], owner),
-            msg["type"],
-            cache=msg["cache"],
-        )
+        if self.notify:
+            owner.__notify__(
+                self.name,
+                self.lookup_cal(msg["new"], owner),
+                msg["type"],
+                cache=msg["cache"],
+            )
 
     def lookup_cal(self, uncal, owner):
         """look up and return the calibrated value, given the uncalibrated value"""
@@ -1756,7 +1764,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         else:
             ret = cal
 
-        if hasattr(self, "name"):
+        if hasattr(self, "name") and self.notify:
             owner.__notify__(
                 self.name,
                 ret,
@@ -1790,7 +1798,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
             # execute the set
             self._paramattr_dependencies["base"].set_in_owner(owner, uncal_value, kwargs)
 
-        if hasattr(self, "name"):
+        if hasattr(self, "name") and self.notify:
             owner.__notify__(
                 self.name,
                 cal_value,
@@ -1953,7 +1961,8 @@ class TransformMixIn(DependentParamAttr):
             return
 
         owner = msg["owner"]
-        owner.__notify__(self.name, msg["new"], msg["type"], cache=msg["cache"])
+        if self.notify:
+            owner.__notify__(self.name, msg["new"], msg["type"], cache=msg["cache"])
 
     def _transformed_extrema(self, owner):
         base_attr = self._paramattr_dependencies["base"]
@@ -2016,7 +2025,7 @@ class TransformMixIn(DependentParamAttr):
         else:
             ret = self._forward(base_value)
 
-        if hasattr(self, "name"):
+        if hasattr(self, "name") and self.notify:
             owner.__notify__(
                 self.name,
                 ret,
@@ -2043,7 +2052,7 @@ class TransformMixIn(DependentParamAttr):
         # set the value of the base attr with the reverse-transformed value
         base_attr.__set__(owner, base_value)
 
-        if hasattr(self, "name"):
+        if hasattr(self, "name") and self.notify:
             owner.__notify__(
                 self.name,
                 value,

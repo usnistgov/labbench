@@ -9,6 +9,7 @@ from ._bases import (
     HasParamAttrs,
     ParamAttr,
     register_key_argument,
+    hold_attr_notifications
 )
 from ._key_adapters import message_keying, visa_keying
 

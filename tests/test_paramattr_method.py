@@ -2,7 +2,7 @@ import labbench as lb
 from labbench.testing import store_backend
 from labbench import paramattr as attr
 import pytest
-from paramattr_tooling import eval_set_then_get, loop_closed_loop_set_gets, has_steps
+from paramattr_tooling import eval_set_then_get, loop_closed_loop_set_gets, eval_access
 
 
 @attr.register_key_argument(attr.kwarg.int("registered_channel", min=1, max=4))
@@ -25,15 +25,29 @@ class StoreTestDevice(store_backend.StoreTestDevice):
 
     @attr.method.int(min=0, sets=False)
     def int_decorated_low_bound_getonly(self):
-        return self.backend.setdefault("int_decorated_low_bound_getonly", 0)
+        ret = self.backend.get("int_decorated_low_bound_getonly", 0)
+        print(f'return value is {repr(ret)}')
+        return ret
 
     @attr.method.int(min=10, gets=False)
-    def int_decorated_low_bound_setonly(self, set_value=lb.Undefined, *, channel=1):
-        self.backend["int_decorated_high_bound_setonly"] = set_value
+    def int_decorated_low_bound_setonly(self, new_value=lb.Undefined, *, channel=1):
+        self.backend.set("int_decorated_high_bound_setonly", new_value)
+
+    # test "get_on_set" keyword
+    int_keyed_get_on_set = attr.method.int(key="int_keyed_unbounded", get_on_set=True)
+
+    @attr.method.int(get_on_set=True)
+    def int_decorated_get_on_set(self, new_value=lb.Undefined):
+        if new_value is lb.Undefined:
+            return self.backend.get("int_decorated_get_on_set", 0)
+        else:
+            # pretend the instrument is changing the stored value, unknown to us
+            self.backend.set("int_decorated_get_on_set", int(new_value))
 
     str_or_none = attr.method.str(key="str_or_none", allow_none=True)
     str_cached = attr.method.str(key="str_cached", cache=True)
     any = attr.method.any(key="any", allow_none=True)
+    
 
     str_keyed_with_arg = attr.method.str(key="str_with_arg_ch_{registered_channel}")
 
@@ -99,7 +113,10 @@ def instantiated_device():
     device.close()
 
 
-def test_cache(opened_device):
+#
+# The tests
+#
+def test_cache(opened_device: StoreTestDevice):
     # repeat to set->get to ensure proper caching
     eval_set_then_get(opened_device, "str_cached", set_then_get)
     result = eval_set_then_get(opened_device, "str_cached", set_then_get)
@@ -108,7 +125,38 @@ def test_cache(opened_device):
     assert result["set_count"] == 2, f'cache test - second "get" operation count'
 
 
-def test_keyed_argument_bounds(opened_device):
+def test_get_on_set_keyed(opened_device: StoreTestDevice):
+    attr_name = 'int_keyed_get_on_set'
+    arguments = {'registered_channel': 1}
+    bound_method = getattr(opened_device, attr_name)
+    bound_method(5, **arguments)
+    access = eval_access(opened_device, attr_name, arguments)
+
+    assert access['get_count'] == 1, 'verify 1 get operation triggered by set'
+    assert access['set_count'] == 1, 'verify 1 set operation'
+
+def test_get_on_set_decorated(opened_device: StoreTestDevice):
+    attr_name = 'int_decorated_get_on_set'
+    bound_method = getattr(opened_device, attr_name)
+    bound_method(5)
+
+    # assert bound_method() == 5.5, 'verify get operation retrieves the expected value'
+    
+    access = eval_access(opened_device, attr_name)
+    assert access['get_count'] == 1, 'verify 1 get operation triggered by set'
+    assert access['set_count'] == 1, 'verify 1 set operation'
+
+def test_disabled_get(opened_device: StoreTestDevice):
+    opened_device.int_decorated_low_bound_setonly(10)
+
+    with pytest.raises(AttributeError):
+        opened_device.int_decorated_low_bound_setonly()
+
+def test_disabled_get(opened_device: StoreTestDevice):
+    # the decorated function does not include a new_value, so we don't test it
+    opened_device.int_decorated_low_bound_getonly()
+
+def test_keyed_argument_bounds(opened_device: StoreTestDevice):
     TEST_VALUE = "text"
 
     with pytest.raises(ValueError):
@@ -122,7 +170,7 @@ def test_keyed_argument_bounds(opened_device):
     assert opened_device.backend.values[expected_key] == TEST_VALUE
 
 
-def test_decorated_argument_bounds(opened_device):
+def test_decorated_argument_bounds(opened_device: StoreTestDevice):
     TEST_VALUE = "text"
     with pytest.raises(ValueError):
         # channel too small

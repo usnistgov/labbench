@@ -5,6 +5,16 @@ from labbench import paramattr as attr
 def has_steps(attr: attr.ParamAttr):
     return getattr(attr, "step", None) is not None
 
+def eval_access(device: lb.Device, attr_name, arguments: dict = {}) -> dict:
+    attr_def = getattr(type(device), attr_name)
+    backend_key = device.backend.get_backend_key(device, attr_def, arguments)
+    notifications = [n for n in device.backend.notifications if n["name"] == attr_name]
+
+    return {
+        "get_count": device.backend.get_count[backend_key],
+        "set_count": device.backend.set_count[backend_key],
+        "notifications": notifications,
+    }
 
 def eval_set_then_get(
     device, attr_name, single_set_get: callable, value_in=lb.Undefined, arguments={}
@@ -15,18 +25,13 @@ def eval_set_then_get(
         value_in = device.LOOP_TEST_VALUES[attr_def._type]
 
     value_out = single_set_get(device, attr_name, value_in, arguments)
+    access = eval_access(device, attr_name, arguments)
 
-    backend_key = device.backend.get_backend_key(device, attr_def, arguments)
-
-    notifications = [n for n in device.backend.notifications if n["name"] == attr_name]
-
-    return {
-        "value_in": value_in,
-        "value_out": value_out,
-        "get_count": device.backend.get_count[backend_key],
-        "set_count": device.backend.set_count[backend_key],
-        "notifications": notifications,
-    }
+    return dict(
+        value_in=value_in,
+        value_out=value_out,
+        **access
+    )
 
 
 def loop_closed_loop_set_gets(

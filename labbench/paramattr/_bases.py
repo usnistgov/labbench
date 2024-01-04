@@ -239,9 +239,18 @@ class KeyAdapterBase:
             }
 
             if new_value is Undefined:
+                if not paramattr.gets:
+                    # stop now if this is not a gets ParamAttr
+                    raise AttributeError(
+                        f"{self.__repr__(owner_inst=owner)} does not support gets"
+                    )
+
                 return paramattr.get_from_owner(owner, validated_kws)
             else:
-                return paramattr.set_in_owner(owner, new_value, validated_kws)
+                paramattr.set_in_owner(owner, new_value, validated_kws)
+
+                if paramattr.get_on_set:
+                    method(owner, Undefined, **kwargs)
 
         method.__signature__ = inspect.Signature(  # type: ignore
             pos_params + kwargs_params, return_annotation=typing.Optional[paramattr._type]
@@ -490,7 +499,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         try:
             value = self.from_pythonic(value)
         except BaseException as e:
-            name = owner.__class__.__qualname__ + "." + str(self.name)
+            name = type(owner).__qualname__ + "." + str(self.name)
             e.args = (e.args[0] + f" in attempt to set '{name}'",) + e.args[1:]
             raise e
 
@@ -519,7 +528,6 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             value = self.to_pythonic(value)
             self.validate(value, owner)
         except BaseException as e:
-            # name = owner.__class__.__qualname__ + '.' + self.name
             e.args = (
                 e.args[0] + f" in attempt to get '{self.__repr__(owner_inst=owner)}'",
             ) + e.args[1:]
@@ -758,7 +766,7 @@ class Value(ParamAttr[T]):
         if not self.gets:
             # stop now if this is not a gets ParamAttr
             raise AttributeError(
-                f"{self.__repr__(owner_inst=owner)} does not support get operations"
+                f"{self.__repr__(owner_inst=owner)} does not support gets"
             )
 
         need_notify = self.name not in owner._attr_store.cache
@@ -875,7 +883,7 @@ class OwnerAccessAttr(ParamAttr[T]):
             # otherwise, use the key owner's key adapter, if available
             if self.key is None:
                 # otherwise, 'get'
-                objname = owner.__class__.__qualname__
+                objname = type(owner).__qualname__
                 # ownername = self.__repr__(owner_inst=owner)
                 raise AttributeError(
                     f"to set the property {self.name}, decorate a method in {objname} or use the function key argument"
@@ -887,7 +895,7 @@ class OwnerAccessAttr(ParamAttr[T]):
         return value
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}):
+    def set_in_owner(self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}) -> None:
         value = self._prepare_set_value(owner, value, kwargs)
 
         # The remaining roles act as function calls that are implemented through self.key
@@ -901,7 +909,7 @@ class OwnerAccessAttr(ParamAttr[T]):
             get_owner_defs(owner).key_adapter.set(owner, self.key, value, self, kwargs)
 
         else:
-            objname = str(owner.__class__.__qualname__) + "." + (self.name)
+            objname = str(type(owner).__qualname__) + "." + (self.name)
             raise AttributeError(
                 f"cannot set {objname}: no @{self.__repr__(owner_inst=owner)}."
                 f"setter and no key argument"
@@ -921,6 +929,11 @@ class Method(OwnerAccessAttr[T]):
     # this structure seems to trick some type checkers into honoring the @overloads in
     # _MethodMeta
     key: typing.Any = field(Undefined, kw_only=False)
+    """when set, this defines the method implementation based on a key adapter in the owner"""
+
+    get_on_set: bool = False
+    """if True, a property get follows immediately to log the "accepted" property value"""
+
     ROLE = "method"
 
     _decorated_kwargs = {}
@@ -1068,13 +1081,18 @@ class Method(OwnerAccessAttr[T]):
 
             if new_value is not Undefined:
                 new_value = self._prepare_set_value(owner, new_value, kwargs)
-
-            unvalidated_value = func(owner, new_value, **kwargs)  # type: ignore
-
-            if new_value is Undefined:
+                func(owner, new_value, **kwargs)  # type: ignore
                 owner.__notify__(self.name, new_value, "set", cache=self.cache, kwargs=kwargs)
                 value = None
+                if self.get_on_set:
+                    meth(owner, Undefined, **kwargs)
             else:
+                if not self.gets:
+                    # stop now if this is not a gets ParamAttr
+                    raise AttributeError(
+                        f"{self.__repr__(owner_inst=owner)} does not support gets"
+                    )
+                unvalidated_value = func(owner, **kwargs)  # type: ignore
                 value = self._finalize_get_value(owner, unvalidated_value)
                 owner.__notify__(self.name, value, "get", cache=self.cache, kwargs=kwargs)
 
@@ -1130,7 +1148,6 @@ class _KeyedMethodCallableType(typing.Protocol[T]):
     """call signature protocol for type hinting _keyed_ Method descriptors"""
 
     if typing.TYPE_CHECKING:
-
         @typing.overload
         @staticmethod
         def __call__(new_value: Union[T, None], /, **kwargs) -> None:
@@ -1146,7 +1163,6 @@ class _DecoratorMethodType(Method[T], typing.Generic[T, _P]):
     """typing shim to hint at descriptor behavior"""
 
     if typing.TYPE_CHECKING:
-
         @typing.overload
         def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> Callable[_P, T]:
             ...
@@ -1157,7 +1173,11 @@ class _DecoratorMethodType(Method[T], typing.Generic[T, _P]):
 
 
 class Property(OwnerAccessAttr[T]):
-    key: Any = Undefined
+    key: typing.Any = field(Undefined, kw_only=False)
+    """when set, this defines the property implementation based on a key adapter in the owner"""
+
+    get_on_set: bool = False
+    """if True, a property get follows in order to log the "accepted" property value"""
 
     # for descriptive purposes
     ROLE = "property"
@@ -1234,7 +1254,10 @@ class Property(OwnerAccessAttr[T]):
 
     @util.hide_in_traceback
     def __set__(self, owner: HasParamAttrs, value: Union[T, None]):
-        return self.set_in_owner(owner, value)
+        self.set_in_owner(owner, value)
+
+        if self.get_on_set:
+            self.__get__(owner, type(owner))
 
     @util.hide_in_traceback
     def __call__(self, to_decorate, **kwargs) -> Union[T, None, Type[Undefined], ParamAttr]:
@@ -1242,9 +1265,8 @@ class Property(OwnerAccessAttr[T]):
 
         # only decorate functions.
         if not callable(to_decorate):
-            raise Exception(
-                f"object of type '{to_decorate.__class__.__qualname__}' must be callable"
-            )
+            target_name = type(to_decorate).__qualname__
+            raise Exception(f"object of type '{target_name}' must be callable")
 
         self._decorated.append(to_decorate)
 
@@ -1592,7 +1614,7 @@ class DependentParamAttr(ParamAttr):
 
     @classmethod
     def derive(mixin_cls: type[ParamAttr], template_attr: ParamAttr, dependent_attrs={}, *init_args, **init_kws) -> type[ParamAttr]:
-        name = template_attr.__class__.__name__
+        name = type(template_attr).__name__
         name = ("" if name.startswith("dependent_") else "dependent_") + name
 
         dependent_attrs["base"] = template_attr

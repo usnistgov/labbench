@@ -19,10 +19,13 @@ This is a significant API change.
     import labbench as lb
     from labbench import paramattr as attr
 
-    class Device(lb.Device):
-        frequency: attr.PassIn = attr.value.float(default=5e9, min=10e6, max=6e9)
+    class MyDevice(lb.Device):
+        frequency: float = attr.value.float(5e9, min=10e6, max=6e9)
   ```
-- Two new types of `paramattr`` descriptors are now available: `method` and `kwarg`. Methods
+
+  Note that the annotation is now required in order to set the parameter on instantiation
+
+- Two new types of `paramattr` descriptors are now available: `method` and `kwarg`. Methods
   correspond with callable methods in the owning class. Like `labbench.paramattr.property`
   descriptors, `method` descriptors support keyed auto-generation using the `key` argument.
 - Fix an exception handling bug in `lb.sequentially`
@@ -34,6 +37,8 @@ This is a significant API change.
   1. Serial number strings
   2. Empty resource strings for subclasses that specify `make` and `model`
 - python 3.12 installation is now enabled
+- `paramattr.method` and `paramattr.property` now support a new keyword argument, `get_on_set`, which triggers
+  a get operation in the owner device immediately after each set
 
 ### Removed
 - `labbench.Device.concurrency`, which was only used by `labbench.Win32ComDevice` (and where it has been added)

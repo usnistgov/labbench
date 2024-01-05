@@ -35,7 +35,7 @@ else:
 copyright = (
     "United States government work, not subject to copyright in the United States"
 )
-version = release = project_info["project"]["version"]
+version = release = lb.__version__
 language = "en"
 
 # ------------- base sphinx setup -------------------------------

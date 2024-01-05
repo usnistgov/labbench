@@ -195,8 +195,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 continue
 
             else:
-                if attr_def.only:
-                    annotation = typing.Union[*attr_def.only,*list()]
+                if attr_def.only and sys.version_info > (3,10):
+                    # Union[*attr_def.only] is sooo close
+                    annotation = typing.Union.__getitem__(tuple(attr_def.only))
                 else:
                     annotation = attr_def._type
 

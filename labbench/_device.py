@@ -1,29 +1,3 @@
-# This software was developed by employees of the National Institute of
-# Standards and Technology (NIST), an agency of the Federal Government.
-# Pursuant to title 17 United States Code Section 105, works of NIST employees
-# are not subject to copyright protection in the United States and are
-# considered to be in the public domain. Permission to freely use, copy,
-# modify, and distribute this software and its documentation without fee is
-# hereby granted, provided that this notice and disclaimer of warranty appears
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
-# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
-# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
-# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
-# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
-# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
-# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
-# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
-# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
-# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
-# PROVIDED HEREUNDER. Distributions of NIST software should also include
-# copyright and licensing statements of any third-party software that are
-# legally bundled with the code in compliance with the conditions of those
-# licenses.
-
 """
 This implementation is deeply intertwined with obscure details of the python object
 model. Consider starting with a close read of the documentation and exploring
@@ -34,47 +8,21 @@ from functools import wraps
 import inspect
 import sys
 import traceback
-from warnings import warn
-from typing import Union
+import typing_extensions as typing
 
 from . import util
-from . import property as property_
-from . import value
+from . import paramattr as attr
 
-from ._traits import (
-    HasTraits,
+from .paramattr._bases import (
+    HasParamAttrs,
     Undefined,
-    BoundedNumber,
-    observe,
-    unobserve,
-    hold_trait_notifications,
+    hold_attr_notifications,
 )
 
-__all__ = ["Device", "list_devices", "property", "value", "trait_info"]
 
-
-def trace_methods(cls, name, until_cls=None):
-    """Look for a method called `name` in cls and all of its parent classes."""
-    methods = []
-    last_method = None
-
-    for cls in cls.__mro__:
-        try:
-            this_method = getattr(cls, name)
-        except AttributeError:
-            continue
-        if this_method != last_method:
-            methods.append(this_method)
-            last_method = this_method
-        if cls is until_cls:
-            break
-
-    return methods
-
-
-def list_devices(depth=1):
+def find_device_instances(depth=1):
     """Look for Device instances, and their names, in the calling
-    code context (depth == 1) or its callers (if depth in (2,3,...)).
+    code context (depth == 1), its caller (depth == 2), and so on.
     Checks locals() in that context first.
     If no Device instances are found there, search the first
     argument of the first function argument, in case this is
@@ -136,29 +84,144 @@ def log_trait_activity(msg):
     if msg["name"] == "isopen":
         return
 
-    owner = msg["owner"]
-    trait_name = msg["name"]
+    device = msg["owner"]
+    attr_name = msg["name"]
 
-    label = ""
+    label = " "
     if msg["type"] == "set":
-        if owner._traits[trait_name].label:
-            label = f"({owner._traits[trait_name].label})"
-        value = repr(msg["new"])
+        if attr.get_class_attrs(device)[attr_name].label:
+            label = f" ({attr.get_class_attrs(device)[attr_name].label})".rstrip()
+        value = repr(msg["new"]).rstrip()
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        owner._logger.debug(f'trait set: "{trait_name}" → {value} {label}'.rstrip())
+        device._logger.debug(f"{value}{label} → {attr_name}")
     elif msg["type"] == "get":
-        if owner._traits[trait_name].label:
-            label = f"({owner._traits[trait_name].label})"
+        if attr.get_class_attrs(device)[attr_name].label:
+            label = f" ({attr.get_class_attrs(device)[attr_name].label})"
         value = repr(msg["new"])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        owner._logger.debug(f'trait get: "{trait_name}" → {value} {label}'.rstrip())
+        device._logger.debug(f"{attr_name} → {value} {label}".rstrip())
     else:
-        owner._logger.debug(f'unknown operation type "{msg["type"]}"')
+        device._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
-class Device(HasTraits, util.Ownable):
+@typing.dataclass_transform(
+    kw_only_default=True,
+    eq_default=False,
+    field_specifiers=attr.value._ALL_TYPES,
+)
+class DeviceDataClass(HasParamAttrs, util.Ownable):
+    @typing.overload
+    def __init__(self, **values):
+        ...
+
+    def __init__(self, resource=Undefined, **values):
+        """Update default values with these arguments on instantiation."""
+
+        if resource is Undefined:
+            values["resource"] = type(self).resource.default
+        else:
+            values["resource"] = resource
+
+        # validate presence of required arguments
+        inspect.signature(self.__init__).bind(**values)
+
+        super().__init__()
+
+        with hold_attr_notifications(self):
+            for name, init_value in values.items():
+                setattr(self, name, init_value)
+
+            other_names = set(self._attr_defs.value_names()) - set(values.keys())
+            for name in other_names:
+                attr_def = getattr(type(self), name)
+                if isinstance(attr_def, attr.value.Value):
+                    if attr_def.default is not Undefined:
+                        self._attr_store.cache[name] = attr_def.default
+                    elif attr_def.allow_none:
+                        self._attr_store.cache[name] = None
+                    else:
+                        attr_desc = attr.__repr__(owner_inst=self)
+                        raise TypeError(
+                            f"unable to determine an initial value for {attr_desc} - define it with allow_none=True or default=<default value>"
+                        )
+
+        util.Ownable.__init__(self)
+
+        self.backend = DisconnectedBackend(self)
+
+        # Instantiate property trait now. It needed to wait until this point, after values are fully
+        # instantiated, in case property trait implementation depends on values
+        setattr(self, "open", self.__open_wrapper__)
+        setattr(self, "close", self.__close_wrapper__)
+
+    @classmethod
+    @util.hide_in_traceback
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        cls.__annotations__ = typing.get_type_hints(cls)
+        cls.__update_signature__()
+
+    @classmethod
+    @util.hide_in_traceback
+    def __update_signature__(cls):
+        # Generate a signature for documentation and code autocomplete
+        params = [
+            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            inspect.Parameter(
+                "resource",
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                default=cls.resource.default,
+                annotation=cls.resource._type,
+            ),
+        ]
+
+        # generate and apply the sequence of call signature parameters
+        constructor_attrs = []
+        for name in cls.__annotations__.keys():
+            attr_def = getattr(cls, name)
+            constructor_attrs.append(attr_def)
+
+            if not isinstance(attr_def, attr.value.Value):
+                annot_desc = f"{name}: {cls.__annotations__[name].__name__}"
+                wrong_type = type(attr_def)
+                raise TypeError(
+                    f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {repr(wrong_type)}'
+                )
+
+            elif name == "resource":
+                # defined above for its POSITIONAL_OR_KEYWORD special casing
+                continue
+
+            else:
+                if attr_def.only:
+                    annotation = typing.Union[*attr_def.only,*list()]
+                else:
+                    annotation = attr_def._type
+
+                if attr_def.allow_none:
+                    annotation = typing.Union[annotation, None]
+
+                params.append(
+                    inspect.Parameter(
+                        name,
+                        kind=inspect.Parameter.KEYWORD_ONLY,
+                        default=attr_def.default,
+                        annotation=annotation,
+                    )
+                )
+
+        # we need a wrapper so that __init__ can be modified separately for each subclass
+        cls.__init__ = util.copy_func(cls.__init__)
+        cls.__init__.__signature__ = inspect.Signature(params)
+
+        # generate the __init__ docstring
+        value_docs = "".join([f"    {t.name}: {t.doc(as_argument=True)}\n" for t in constructor_attrs])
+        cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
+
+
+class Device(DeviceDataClass):
     r"""base class for labbench device wrappers.
 
     Drivers that subclass `Device` share
@@ -185,10 +248,10 @@ class Device(HasTraits, util.Ownable):
 
     """
 
-    resource = value.str(allow_none=True, cache=True, help="device address or URI")
-    concurrency = value.bool(
-        True, sets=False, help="True if the device supports threading"
+    resource: str = attr.value.str(
+        default=None, allow_none=True, cache=True, kw_only=False, help="device address or URI"
     )
+
     """ Container for property trait traits in a Device. Getting or setting property trait traits
         triggers live updates: communication with the device to get or set the
         value on the Device. Therefore, getting or setting property trait traits
@@ -213,7 +276,7 @@ class Device(HasTraits, util.Ownable):
         """Backend implementations overload this to open a backend
         connection to the resource.
         """
-        observe(self, log_trait_activity)
+        attr.observe(self, log_trait_activity)
 
     def close(self):
         """Backend implementations must overload this to disconnect an
@@ -221,87 +284,7 @@ class Device(HasTraits, util.Ownable):
         """
         self.backend = DisconnectedBackend(self)
         self.isopen
-        unobserve(self, log_trait_activity)
-
-    __children__ = {}
-
-    @util.hide_in_traceback
-    def __init__(self, resource=Undefined, **values):
-        """Update default values with these arguments on instantiation."""
-
-        if hasattr(self, "__imports__"):
-            warn(
-                "the use of __imports__ has been deprecated. switch to importing each backend-specific module in each method that uses it."
-            )
-            self.__imports__()
-
-        # validate presence of required arguments
-        inspect.signature(self.__init__).bind(resource, **values)
-
-        if resource is not Undefined:
-            values["resource"] = resource
-
-        super().__init__()
-
-        with hold_trait_notifications(self):
-            for name, init_value in values.items():
-                if init_value != self._traits[name].default:
-                    setattr(self, name, init_value)
-
-        util.Ownable.__init__(self)
-
-        self.backend = DisconnectedBackend(self)
-
-        # Instantiate property trait now. It needed to wait until this point, after values are fully
-        # instantiated, in case property trait implementation depends on values
-        setattr(self, "open", self.__open_wrapper__)
-        setattr(self, "close", self.__close_wrapper__)
-
-    @classmethod
-    @util.hide_in_traceback
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        cls.__update_signature__()
-
-    @classmethod
-    @util.hide_in_traceback
-    def __update_signature__(cls):
-        # Generate a signature for documentation and code autocomplete
-        params = [
-            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
-            inspect.Parameter(
-                "resource",
-                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                default=cls.resource.default,
-                annotation=cls.resource.type,
-            ),
-        ]
-
-        settable_values = {
-            name: cls._traits[name]
-            for name in cls._value_attrs
-            if cls._traits[name].sets
-        }
-
-        # generate and apply the sequence of call signature parameters
-        params += [
-            inspect.Parameter(
-                name,
-                kind=inspect.Parameter.KEYWORD_ONLY,
-                default=trait.default,
-                annotation=trait.type,
-            )
-            for name, trait in settable_values.items()
-            if name != "resource"
-        ]
-
-        # we need a wrapper so that __init__ can be modified separately for each subclass
-        cls.__init__ = util.copy_func(cls.__init__)
-        cls.__init__.__signature__ = inspect.Signature(params)
-
-        # generate the __init__ docstring
-        value_docs = "".join((f"    {t.doc()}\n" for t in settable_values.values()))
-        cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
+        attr.unobserve(self, log_trait_activity)
 
     @util.hide_in_traceback
     @wraps(open)
@@ -317,7 +300,7 @@ class Device(HasTraits, util.Ownable):
         self.backend = None
 
         try:
-            for opener in trace_methods(self.__class__, "open", Device)[::-1]:
+            for opener in util.find_methods_in_mro(self.__class__, "open", Device)[::-1]:
                 opener(self)
         except BaseException:
             self.backend = DisconnectedBackend(self)
@@ -341,7 +324,7 @@ class Device(HasTraits, util.Ownable):
         if not self.isopen:
             return
 
-        methods = trace_methods(self.__class__, "close", Device)
+        methods = util.find_methods_in_mro(self.__class__, "close", Device)
 
         all_ex = []
         for closer in methods:
@@ -365,9 +348,7 @@ class Device(HasTraits, util.Ownable):
             self._logger.debug("closed")
         finally:
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(
-                    f"multiple exceptions while closing {self}"
-                )
+                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
                 ex.thread_exceptions = all_ex
                 raise ex
 
@@ -397,7 +378,7 @@ class Device(HasTraits, util.Ownable):
     def __del__(self):
         try:
             isopen = self.isopen
-        except AttributeError:
+        except (AttributeError, KeyError):
             # the object failed to instantiate properly
             isopen = False
 
@@ -407,12 +388,16 @@ class Device(HasTraits, util.Ownable):
     def __repr__(self):
         name = self.__class__.__qualname__
         if hasattr(self, "resource"):
-            return f"{name}({repr(self.resource)})"
+            if self.resource != type(self).resource.default:
+                resource_str = repr(self.resource)
+            else:
+                resource_str = ""
+            return f"{name}({resource_str})"
         else:
             # In case an exception has occurred before __init__
             return f"{name}()"
 
-    @property_.bool()
+    @attr.property.bool()
     def isopen(self):
         """`True` if the backend is ready for use"""
         try:
@@ -424,19 +409,3 @@ class Device(HasTraits, util.Ownable):
 
 
 Device.__init_subclass__()
-
-
-def trait_info(device: Device, name: str) -> dict:
-    """returns the keywords used to define the trait attribute named `name` in `device`"""
-
-    trait = device._traits[name]
-    info = dict(trait.kws)
-
-    if isinstance(trait, BoundedNumber):
-        info.update(
-            min=trait._min(device),
-            max=trait._max(device),
-            step=trait.step,
-        )
-
-    return info

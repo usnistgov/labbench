@@ -2,5 +2,5 @@
 ignore = E501, E722, W503, E402, E203, F401 #E231, E241
 per-file-ignores =
    **/__init__.py:F401, F403
-max-line-length = 88
+max-line-length = 100
 count = true

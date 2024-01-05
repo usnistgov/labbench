@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/license-NIST-brightgreen)](https://github.com/usnistgov/labbench/blob/master/LICENSE.md)
 [![Downloads](https://static.pepy.tech/badge/labbench)](https://pepy.tech/project/labbench)
 [![Last commit](https://img.shields.io/github/last-commit/usnistgov/labbench)](https://pypi.org/project/labbench/)
+[![Test coverage](./doc/reports/coverage.svg)](https://github.com/usnistgov/labbench/)
 
 The `labbench` module provides API tools to support python scripting for laboratory automation.
 The goal is to simplify the process of developing an experimental procedure into clear, concise, explainable, and reusable code.
@@ -10,9 +11,10 @@ These characteristics are necessary to scale up the complexity of large testbeds
 
 Features include:
 * Expedited development of python device wrappers, including specialized backends for [pythonnet](https://github.com/pythonnet/pythonnet/wiki), [pyvisa](https://pyvisa.readthedocs.io/), [pyserial](https://pyserial.readthedocs.io/en/latest/), [subprocess](https://docs.python.org/3/library/subprocess.html), [telnetlib](https://docs.python.org/3/library/telnetlib.html)
-* Automated test logging into CSV, HDF, or sqlite based on introspection of wrapper objects
-* Simplified multi-threaded concurrency for lab testing use cases
-* Composable and nestable container objects for snippets of test procedures
+* Descriptor-driven development: minimize the distance between programming manuals and python wrappers and apply calibrations transparently
+* Automated tracking of simple device parameters into CSV, HDF, or sqlite based on introspection
+* Simplified multi-threaded concurrency tools for lab applications
+* Container objects for nesting device wrappers and snippets of test procedures
 * Support for running experiments based on tables of test conditions
 
 The source code was developed at NIST to support complex measurement efforts. Examples of these projects include:
@@ -30,8 +32,8 @@ The project is under ongoing development
 * Parts of the documentation are in need of updates, and others have not yet been written
 
 ## Installation
-1. Manual prerequisites:
-    * python (supported versions are 3.8–3.11)
+1. Ensure prerequisites are installed:
+    * python (3.9-3.12)
     * [`pip`](https://pypi.org/project/pip/) for package management
 2. Recommended module installation:
     * For python distributions based on anaconda:
@@ -42,8 +44,8 @@ The project is under ongoing development
       ```sh
       pip install labbench
       ```
-## Resources
 
+## Resources
 * [Source code](http://github.com/usnistgov/labbench)
 * [Documentation](http://pages.nist.gov/labbench)
 * [PyPI](https://pypi.org/project/labbench/) module page

@@ -1,29 +1,3 @@
-# This software was developed by employees of the National Institute of
-# Standards and Technology (NIST), an agency of the Federal Government.
-# Pursuant to title 17 United States Code Section 105, works of NIST employees
-# are not subject to copyright protection in the United States and are
-# considered to be in the public domain. Permission to freely use, copy,
-# modify, and distribute this software and its documentation without fee is
-# hereby granted, provided that this notice and disclaimer of warranty appears
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
-# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
-# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
-# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
-# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
-# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
-# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
-# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
-# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
-# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
-# PROVIDED HEREUNDER. Distributions of NIST software should also include
-# copyright and licensing statements of any third-party software that are
-# legally bundled with the code in compliance with the conditions of those
-# licenses.
-
 import datetime
 import io
 import json
@@ -35,8 +9,8 @@ import email.mime.text
 from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
-from . import property as property_
-from . import util, value
+from . import paramattr as attr
+from . import util
 
 try:
     git = util.lazy_import("git")
@@ -102,26 +76,25 @@ class Email(core.Device):
     subject line. Stderr is also sent.
     """
 
-    resource = value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use")
-
-    port = value.int(default=25, min=1, help="TCP/IP port")
-
-    sender = value.str(default="myemail@nist.gov", help="email address of the sender")
-
-    recipients = value.list(
-        default=["myemail@nist.gov"], help="list of email addresses of recipients"
+    resource: str = attr.value.NetworkAddress(default="smtp.nist.gov", help="smtp server to use", cache=True)
+    port: int = attr.value.int(default=25, min=1, help="TCP/IP port", cache=True)
+    sender: str = attr.value.str(default="myemail@nist.gov", help="email address of the sender", cache=True)
+    recipients: list = attr.value.list(
+        default=["myemail@nist.gov"], help="list of email addresses of recipients", cache=True
     )
 
-    success_message = value.str(
+    success_message: str = attr.value.str(
         default="Test finished normally",
         allow_none=True,
         help="subject line for test success emails (None to suppress the emails)",
+        cache=True
     )
 
-    failure_message = value.str(
+    failure_message: str = attr.value.str(
         default="Exception ended test early",
         allow_none=True,
         help="subject line for test failure emails (None to suppress the emails)",
+        cache=True
     )
 
     def _send(self, subject, body):
@@ -239,7 +212,7 @@ class JSONFormatter(logging.Formatter):
 
 class Host(core.Device):
     # Settings
-    git_commit_in = value.str(
+    git_commit_in: str = attr.value.str(
         default=None,
         allow_none=True,
         help="git commit on open() if run inside a git repo with this branch name",
@@ -268,10 +241,7 @@ class Host(core.Device):
         try:
             repo = git.Repo(".", search_parent_directories=True)
             self._logger.debug("running in git repository")
-            if (
-                self.git_commit_in is not None
-                and repo.active_branch == self.git_commit_in
-            ):
+            if self.git_commit_in is not None and repo.active_branch == self.git_commit_in:
                 repo.index.commit("start of measurement")
                 self._logger.debug("git commit finished")
         except git.NoSuchPathError:
@@ -287,7 +257,7 @@ class Host(core.Device):
         }
 
         # Preload the git repo parameters
-        for name in self._traits:
+        for name in attr.get_class_attrs(self).keys():
             if name.startswith("git"):
                 getattr(self, name)
 
@@ -303,30 +273,24 @@ class Host(core.Device):
 
     def metadata(self):
         """Generate the metadata associated with the host and python distribution"""
-        ret = super().metadata()
-        ret["python_modules"] = self.__python_module_versions()
-        return ret
+        return dict(python_modules=self.__python_module_versions())
 
     def __python_module_versions(self):
         """Enumerate the versions of installed python modules"""
 
-        versions = dict(
-            [str(d).lower().split(" ") for d in pip.get_installed_distributions()]
-        )
+        versions = dict([str(d).lower().split(" ") for d in pip.get_installed_distributions()])
         running = dict(
-            sorted(
-                [(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions]
-            )
+            sorted([(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions])
         )
         return pd.Series(running).sort_index()
 
-    @property_.str()
+    @attr.property.str()
     def time(self):
         """Get a timestamp of the current time"""
         now = datetime.datetime.now()
         return f"{now.strftime(self.time_format)}.{now.microsecond}"
 
-    @property_.list()
+    @attr.property.list()
     def log(self):
         """Get the current host log contents."""
         self.backend["log_handler"].flush()
@@ -341,7 +305,7 @@ class Host(core.Device):
         else:
             return {}
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_commit_id(self):
         """Try to determine the current commit hash of the current git repo"""
 
@@ -351,7 +315,7 @@ class Host(core.Device):
         except git.NoSuchPathError:
             return ""
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_remote_url(self):
         """Try to identify the remote URL of the repository of the current git repo"""
         try:
@@ -359,17 +323,17 @@ class Host(core.Device):
         except BaseException:
             return ""
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def hostname(self):
         """Get the name of the current host"""
         return socket.gethostname()
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_browse_url(self):
         """URL for browsing the current git repository"""
         return f"{self.git_remote_url}/tree/{self.git_commit_id}"
 
-    @property_.str(cache=True)
+    @attr.property.str(cache=True)
     def git_pending_changes(self):
         if self.backend["repo"] is not None:
             diffs = self.backend["repo"].index.diff(None)

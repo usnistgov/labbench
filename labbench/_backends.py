@@ -1,30 +1,5 @@
-# This software was developed by employees of the National Institute of
-# Standards and Technology (NIST), an agency of the Federal Government.
-# Pursuant to title 17 United States Code Section 105, works of NIST employees
-# are not subject to copyright protection in the United States and are
-# considered to be in the public domain. Permission to freely use, copy,
-# modify, and distribute this software and its documentation without fee is
-# hereby granted, provided that this notice and disclaimer of warranty appears
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
-# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
-# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
-# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
-# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
-# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
-# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
-# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
-# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
-# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
-# PROVIDED HEREUNDER. Distributions of NIST software should also include
-# copyright and licensing statements of any third-party software that are
-# legally bundled with the code in compliance with the conditions of those
-# licenses.
-
 import contextlib
+import functools
 import importlib
 import inspect
 import logging
@@ -34,20 +9,20 @@ import select
 import socket
 import subprocess as sp
 import sys
+import typing_extensions as typing
 from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
-from typing import Dict
 
 import psutil
 import pyvisa
 import pyvisa.errors
+import warnings
 
-from . import property as property_
-from . import util, value
+from . import util
 from ._device import Device
-from ._traits import observe
+from . import paramattr as attr
 
 try:
     serial = util.lazy_import("serial")
@@ -74,11 +49,11 @@ class ShellBackend(Device):
     queued stdout.
     """
 
-    binary_path = value.Path(
+    binary_path: Path = attr.value.Path(
         default=None, allow_none=True, help="path to the file to run", cache=True
     )
 
-    timeout = value.float(
+    timeout: float = attr.value.float(
         default=1,
         min=0,
         help="wait time after close before killing background processes",
@@ -100,9 +75,7 @@ class ShellBackend(Device):
                 )
 
         if not os.path.exists(self.binary_path):
-            raise OSError(
-                f'executable does not exist at resource=r"{self.binary_path}"'
-            )
+            raise OSError(f'executable does not exist at resource=r"{self.binary_path}"')
 
         # a Queue for stdout
         self.backend = None
@@ -111,9 +84,9 @@ class ShellBackend(Device):
         self._stderr = Queue()
 
         # Monitor property trait changes
-        properties = set(self._value_attrs).difference(dir(ShellBackend))
+        values = set(attr.list_value_attrs(self)).difference(dir(ShellBackend))
 
-        observe(self, check_state_change, name=tuple(properties))
+        attr.observe(self, check_state_change, name=tuple(values))
 
     def run(
         self,
@@ -202,9 +175,7 @@ class ShellBackend(Device):
             pass
 
         self._logger.debug(f"shell execute '{repr(' '.join(cmdl))}'")
-        cp = sp.run(
-            cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return
-        )
+        cp = sp.run(cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return)
         ret = cp.stdout
 
         err = cp.stderr.strip().rstrip().decode()
@@ -332,15 +303,13 @@ class ShellBackend(Device):
 
     def _flags_to_argv(self, flags):
         # find keys in flags that do not exist as value traits
-        unsupported = set(flags.keys()).difference(self._value_attrs)
+        unsupported = set(flags.keys()).difference(attr.list_value_attrs(self))
         if len(unsupported) > 1:
-            raise KeyError(
-                f"flags point to value traits {unsupported} that do not exist in {self}"
-            )
+            raise KeyError(f"flags point to value traits {unsupported} that do not exist in {self}")
 
         argv = []
         for name, flag_str in flags.items():
-            trait = self._traits[name]
+            trait = self._attr_defs.attrs[name]
             trait_value = getattr(self, name)
 
             if not isinstance(flag_str, str) and flag_str is not None:
@@ -381,9 +350,7 @@ class ShellBackend(Device):
                 argv += [flag_str, str(trait_value)]
 
             else:
-                raise ValueError(
-                    "unexpected error condition (this should not be possible)"
-                )
+                raise ValueError("unexpected error condition (this should not be possible)")
 
         return argv
 
@@ -425,9 +392,7 @@ class ShellBackend(Device):
         result = ""
 
         if not self.isopen:
-            raise ConnectionError(
-                "open the device to read stdout from the background process"
-            )
+            raise ConnectionError("open the device to read stdout from the background process")
 
         try:
             n = 0
@@ -524,8 +489,8 @@ class DotNetDevice(Device):
     """
 
     # these can only be set as arguments to a subclass definition
-    library = value.any(None, allow_none=True, sets=False)  # Must be a module
-    dll_name = value.str(None, allow_none=True, sets=False)
+    library = attr.value.any(default=None, allow_none=True, sets=False)  # Must be a module
+    dll_name = attr.value.str(default=None, allow_none=True, sets=False)
 
     _dlls = {}
 
@@ -550,17 +515,13 @@ class DotNetDevice(Device):
         from System.Reflection import Assembly
 
         try:
-            contents = importlib.util.find_spec(library.__package__).loader.get_data(
-                str(dll_path)
-            )
+            contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))
         except BaseException:
             with open(dll_path, "rb") as f:
                 contents = f.read()
 
         # binary file contents
-        contents = importlib.util.find_spec(library.__package__).loader.get_data(
-            str(dll_path)
-        )
+        contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))
 
         # dump that into dotnet
         Assembly.Load(System.Array[System.Byte](contents))
@@ -569,11 +530,11 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
-@property_.message_keying(write_fmt="{key} {value}", write_func="write")
+@attr.message_keying(write_fmt="{key} {value}", write_func="write")
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
-    Keyed get/set with lb.property are implemented by simple ' command value'.
+    Keyed get/set with attr.property are implemented by simple ' command value'.
     Subclasses can therefore implement support for commands in
     specific labview VI similar to VISA commands by
     assigning the commands implemented in the corresponding labview VI.
@@ -582,14 +543,18 @@ class LabviewSocketInterface(Device):
         - backend: connection object mapping {'rx': rxsock, 'tx': txsock}
     """
 
-    resource = value.NetworkAddress(
-        "127.0.0.1", accept_port=False, help="LabView VI host address"
+    resource: str = attr.value.NetworkAddress(
+        default="127.0.0.1", accept_port=False, help="LabView VI host address"
     )
-    tx_port = value.int(61551, help="TX port to send to the LabView VI")
-    rx_port = value.int(61552, help="TX port to send to the LabView VI")
-    delay = value.float(1, help="time to wait after each property trait write or query")
-    timeout = value.float(2, help="maximum wait replies before raising TimeoutError")
-    rx_buffer_size = value.int(1024, min=1)
+    tx_port: int = attr.value.int(default=61551, help="TX port to send to the LabView VI")
+    rx_port: int = attr.value.int(default=61552, help="TX port to send to the LabView VI")
+    delay: float = attr.value.float(
+        default=1, min=0, help="time to wait after each property trait write or query"
+    )
+    timeout: float = attr.value.float(
+        default=2, min=0, help="maximum wait replies before raising TimeoutError"
+    )
+    rx_buffer_size: int = attr.value.int(default=1024, min=1)
 
     def open(self):
         self.backend = dict(
@@ -647,6 +612,7 @@ class LabviewSocketInterface(Device):
                     continue
 
 
+@attr.adjust("resource", help="platform-dependent serial port address")
 class SerialDevice(Device):
     """Base class for wrappers that communicate via pyserial.
 
@@ -658,23 +624,26 @@ class SerialDevice(Device):
     """
 
     # Connection value traits
-    resource = value.str(help="platform-dependent serial port address")
-    timeout = value.float(
-        2, min=0, help="Max time to wait for a connection before raising TimeoutError."
+    timeout: float = attr.value.float(
+        default=2,
+        min=0,
+        help="Max time to wait for a connection before raising TimeoutError.",
     )
-    write_termination = value.bytes(
-        b"\n", help="Termination character to send after a write."
+    write_termination: bytes = attr.value.bytes(
+        default=b"\n", help="Termination character to send after a write."
     )
-    baud_rate: int = value.int(
-        9600, min=1, help="Data rate of the physical serial connection."
+    baud_rate: int = attr.value.int(
+        default=9600, min=1, help="Data rate of the physical serial connection."
     )
-    parity = value.bytes(b"N", help="Parity in the physical serial connection.")
-    stopbits = value.float(
-        1, min=1, max=2, step=0.5, help="Number of stop bits, one of `[1, 1.5, or 2.]`."
+    parity: bytes = attr.value.bytes(default=b"N", help="Parity in the physical serial connection.")
+    stopbits: float = attr.value.float(default=1, only=[1, 1.5, 2], help="number of stop bits")
+    xonxoff: bool = attr.value.bool(default=False, help="`True` to enable software flow control.")
+    rtscts: bool = attr.value.bool(
+        default=False, help="`True` to enable hardware (RTS/CTS) flow control."
     )
-    xonxoff = value.bool(False, help="`True` to enable software flow control.")
-    rtscts = value.bool(False, help="`True` to enable hardware (RTS/CTS) flow control.")
-    dsrdtr = value.bool(False, help="`True` to enable hardware (DSR/DTR) flow control.")
+    dsrdtr: bool = attr.value.bool(
+        default=False, help="`True` to enable hardware (DSR/DTR) flow control."
+    )
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):
@@ -684,12 +653,12 @@ class SerialDevice(Device):
         keys = "timeout", "parity", "stopbits", "xonxoff", "rtscts", "dsrdtr"
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(self.resource, self.baud_rate, **params)
-        self._logger.debug(f"{repr(self)} connected")
+        self._logger.debug(f"opened")
 
     def close(self):
         """Disconnect the serial instrument"""
         self.backend.close()
-        self._logger.debug(f"{repr(self)} closed")
+        self._logger.debug(f"closed")
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):
@@ -721,9 +690,7 @@ class SerialDevice(Device):
         ports = OrderedDict(ports)
 
         if hwid is not None:
-            ports = [
-                (port, meta) for port, meta in list(ports.items()) if meta["id"] == hwid
-            ]
+            ports = [(port, meta) for port, meta in list(ports.items()) if meta["id"] == hwid]
 
         return dict(ports)
 
@@ -761,15 +728,15 @@ class SerialLoggingDevice(SerialDevice):
     from the serial port.
     """
 
-    poll_rate = value.float(
-        0.1, min=0, help="Data retreival rate from the device (in seconds)"
+    poll_rate: float = attr.value.float(
+        default=0.1, min=0, help="Data retreival rate from the device (in seconds)"
     )
-    data_format = value.bytes(b"", help="Data format metadata")
-    stop_timeout = value.float(
-        0.5, min=0, help="delay after `stop` before terminating run thread"
+    data_format: bytes = attr.value.bytes(default=b"", help="Data format metadata")
+    stop_timeout: float = attr.value.float(
+        default=0.5, min=0, help="delay after `stop` before terminating run thread"
     )
-    max_queue_size = value.int(
-        100000, min=1, help="bytes to allocate in the data retreival buffer"
+    max_queue_size: int = attr.value.int(
+        default=100000, min=1, help="bytes to allocate in the data retreival buffer"
     )
 
     def configure(self):
@@ -779,9 +746,7 @@ class SerialLoggingDevice(SerialDevice):
         This is a stub that does nothing --- it should be implemented by a
         subclass for a specific serial logger device.
         """
-        self._logger.debug(
-            f"{repr(self)}: no device-specific configuration implemented"
-        )
+        self._logger.debug(f"{repr(self)}: no device-specific configuration implemented")
 
     def start(self):
         """Start a background thread that acquires log data into a queue.
@@ -880,8 +845,8 @@ class TelnetDevice(Device):
     """
 
     # Connection value traits
-    resource = value.NetworkAddress("127.0.0.1:23", help="server host address")
-    timeout = value.float(2, min=0, label="s", help="connection timeout")
+    resource: str = attr.value.NetworkAddress(default="127.0.0.1:23", help="server host address")
+    timeout: float = attr.value.float(default=2, min=0, label="s", help="connection timeout")
 
     def open(self):
         """Open a telnet connection to the host defined
@@ -901,77 +866,111 @@ class TelnetDevice(Device):
         self.backend.close()
 
 
-@property_.visa_keying(
-    query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"}
-)
+_pyvisa_resource_managers = {}
+
+
+@attr.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
 class VISADevice(Device):
-    r"""base class for VISA device wrappers with pyvisa.
+    r"""A basic VISA device wrapper.
+
+    This exposes `pyvisa` instrument automation capabilities in a `labbench`
+    object, and includes support for automatic connections based on make and model.
+
+    Customized operation for specific instruments can be implemented by subclassing `VISADevice`.
 
     Examples:
 
-        Autodetect a list of valid `resource` strings on the host::
-
-            print(visa_list_resources())
-
-        Fetch the instrument identity string::
+        Connect to a VISA device using a known resource string::
 
             with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
-                print(inst.identity)
+                print(inst)
 
-        Write ':FETCH?' to the instrument, read an expected ASCII CSV response,
-        and return it as a pandas DataFrame::
+        Probe available connections and print valid `VISADevice` constructors::
 
-            with VISADevice('USB0::0x2A8D::0x1E01::SG56360004::INSTR') as instr:
+            print(visa_probe_devices())
+
+        Probe details of available connections and identity strings on the command line::
+
+            labbench visa-probe
+
+        Connect to instrument with serial number 'SG56360004' and query ':FETCH?' CSV::
+
+            with VISADevice('SG56360004') as instr:
                 print(inst.query_ascii_values(':FETCH?'))
 
     See also:
-    .. _installing a proprietary OS service for VISA:
-        https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
-    .. _resource strings and basic configuration:
-        https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
+        * Pure python backend installation:
+            https://pyvisa.readthedocs.io/projects/pyvisa-py/en/latest/installation.html
+
+        * Proprietary backend installation:
+            https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa
+
+        * Resource strings and basic configuration:
+            https://pyvisa.readthedocs.io/en/latest/introduction/communication.html#getting-the-instrument-configuration-right
 
     Attributes:
         backend (pyvisa.Resource): instance of a pyvisa instrument object (when open)
-
     """
 
     # Settings
-    read_termination = value.str(
-        "\n", cache=True, help="end of line string to expect in query replies"
+    read_termination: str = attr.value.str(
+        default="\n", cache=True, help="end of line string to expect in query replies"
     )
 
-    write_termination = value.str(
-        "\n", cache=True, help="end of line string to send after writes"
+    write_termination: str = attr.value.str(
+        default="\n", cache=True, help="end-of-line string to send after writes"
     )
 
-    open_timeout = value.float(
-        None,
-        cache=True,
+    open_timeout: float = attr.value.float(
+        default=None,
         allow_none=True,
         help="timeout for opening a connection to the instrument",
         label="s",
     )
 
-    identity_pattern = value.str(
-        None,
+    timeout: float = attr.value.float(
+        default=None,
+        cache=True,
+        allow_none=True,
+        help="message response timeout",
+        label="s",
+    )
+
+    make = attr.value.str(
+        default=None,
         allow_none=True,
         cache=True,
-        help="identity regex pattern to match for automatic connection",
+        help="device manufacturer name used to autodetect resource string",
     )
 
-    timeout = value.float(
-        None, cache=True, allow_none=True, help="message response timeout", label="s"
+    model = attr.value.str(
+        default=None,
+        allow_none=True,
+        cache=True,
+        help="device model used to autodetect resource string",
     )
+
+    @attr.property.str(sets=False, cache=True)
+    def serial(self):
+        """device-reported serial number"""
+        make, model, serial, rev = _visa_parse_identity(self._identity)
+        return serial
+
+    @attr.property.str(sets=False, cache=True, help="device revision information")
+    def _revision(self):
+        """device-reported revision"""
+        make, model, serial, rev = _visa_parse_identity(self._identity)
+        return rev
 
     # Common VISA properties
-    identity = property_.str(
+    _identity = attr.property.str(
         key="*IDN",
         sets=False,
         cache=True,
         help="identity string reported by the instrument",
     )
 
-    @property_.dict(sets=False)
+    @attr.property.dict(sets=False)
     def status_byte(self):
         """instrument status decoded from '*STB?'"""
         code = int(self.query("*STB?"))
@@ -997,7 +996,6 @@ class VISADevice(Device):
         this is called automatically and does not need
         to be invoked.
         """
-        from pyvisa import constants
 
         self._opc = False
 
@@ -1006,31 +1004,44 @@ class VISADevice(Device):
             write_termination=self.write_termination,
         )
 
-        if self.resource not in ("", None):
+        is_valid_visa_name = _visa_valid_resource_name(self.resource)
+        if is_valid_visa_name:
+            # use the explicit visa resource name, if provided
             pass
-        elif self.identity_pattern is not None:
-            pattern = re.compile(self.identity_pattern, flags=re.IGNORECASE)
-
-            identities = {
-                res: idn
-                for res, idn in visa_list_identities().items()
-                if re.match(pattern, idn) is not None
-            }
-
-            if len(identities) == 0:
-                msg = f'could not open VISA device {repr(type(self))}: resource not specified, and no devices matched the pattern "{self.identity_pattern}"'
-                raise IOError(msg)
-            elif len(identities) == 1:
+        elif (self.make, self.model) != (None, None) or self.resource:
+            if self.resource:
                 self._logger.debug(
-                    f'resource identified with identity pattern match "{list(identities.values())[0]}"'
+                    f"treating resource as a serial number (pyvisa does not recognize it as a VISA name)"
                 )
-                self.resource = list(identities.keys())[0]
+            # match the supplied (make, model) and/or treat self.resource as a serial number to match
+            search_desc = ", ".join(
+                [
+                    f"{name} {repr(getattr(self, name))}"
+                    for name in ("make", "model", "resource")
+                    if getattr(self, name)
+                ]
+            ).replace("resource", "serial number")
+
+            matches = visa_probe_devices(self)
+
+            if len(matches) == 0:
+                msg = (
+                    f"could not open VISA device {repr(type(self))}: resource not specified, "
+                    f"and no devices were discovered matching {search_desc}"
+                )
+                raise IOError(msg)
+            elif len(matches) == 1:
+                self._logger.debug(f"probed resource by matching {search_desc}")
+                self.resource = matches[0].resource
             else:
-                msg = f'resource ambiguity: {len(identities)} VISA resources matched the pattern "{self.identity_pattern}"'
+                msg = (
+                    f"resource ambiguity: {len(matches)} VISA resources matched {search_desc}, "
+                    f"disconnect {len(matches)-1} or specify explicit resource names"
+                )
                 raise IOError(msg)
         else:
-            raise ValueError(
-                f"specify the resource or identity_pattern attributes to open {repr(self)} connection"
+            raise ConnectionError(
+                f"must specify a pyvisa resource name, an instrument serial number, or define {repr(type(self))} with default make and model"
             )
 
         if self.timeout is not None:
@@ -1038,9 +1049,13 @@ class VISADevice(Device):
         if self.open_timeout is not None:
             kwargs["open_timeout"] = int(self.open_timeout * 1000)
 
-        # print(repr(kwargs))
         rm = self._get_rm()
         self.backend = rm.open_resource(self.resource, **kwargs)
+
+        if self.timeout is not None:
+            self.backend.set_visa_attribute(
+                pyvisa.constants.ResourceAttribute.timeout_value, int(self.timeout * 1000)
+            )
 
     def close(self):
         """closes the instrument.
@@ -1053,10 +1068,11 @@ class VISADevice(Device):
             return
 
         try:
-            with contextlib.suppress(pyvisa.errors.VisaIOError):
-                self._release_remote_control()
-            with contextlib.suppress(pyvisa.Error):
-                self.backend.clear()
+            if hasattr(self.backend.visalib, "viGpibControlREN"):
+                with contextlib.suppress(pyvisa.errors.VisaIOError):
+                    self.backend.visalib.viGpibControlREN(
+                        self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
+                    )
 
         except BaseException as e:
             e = str(e)
@@ -1067,7 +1083,7 @@ class VISADevice(Device):
         finally:
             self.backend.close()
 
-    def write(self, msg: str):
+    def write(self, msg: str, kws: dict[str, typing.Any] = {}):
         """sends an SCPI message to the device.
 
         Wraps `self.backend.write`, and handles debug logging and adjustments
@@ -1080,13 +1096,25 @@ class VISADevice(Device):
         Returns:
             None
         """
+
+        # append the *OPC if we're in an overlap and add context
+        # TODO: this implementation doesn't generalize, since not all instruments
+        # support *OPC in this context
         if self._opc:
             msg = msg + ";*OPC"
+
+        # substitute message based on remap() in self._keying
+        kws = {k: self._keying.to_message(v) for k, v in kws.items()}
+        msg = msg.format(**kws)
+
+        # outbound message as truncated event log entry
         msg_out = repr(msg) if len(msg) < 1024 else f"({len(msg)} bytes)"
-        self._logger.debug(f"write {msg_out}")
+        self._logger.debug(f"write({msg_out})")
         self.backend.write(msg)
 
-    def query(self, msg: str, timeout=None, remap: bool = False) -> str:
+    def query(
+        self, msg: str, timeout=None, remap: bool = False, kws: dict[str, typing.Any] = {}
+    ) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1098,8 +1126,13 @@ class VISADevice(Device):
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
 
+        # substitute message based on remap() in self._keying
+        kws = {k: self._keying.to_message(v) for k, v in kws.items()}
+        msg = msg.format(**kws)
+
+        # outbound message as truncated event log entry
         msg_out = repr(msg) if len(msg) < 80 else f"({len(msg)} bytes)"
-        self._logger.debug(f"query {msg_out}")
+        self._logger.debug(f"query({msg_out}):")
 
         try:
             ret = self.backend.query(msg)
@@ -1107,11 +1140,12 @@ class VISADevice(Device):
             if timeout is not None:
                 self.backend.timeout = _to
 
+        # inbound response as truncated event log entry
         msg_out = repr(ret) if len(ret) < 80 else f"({len(ret)} bytes)"
         self._logger.debug(f"    → {msg_out}")
 
         if remap:
-            return self._property_keying.message_map[ret]
+            return self._keying.from_message(ret)
         else:
             return ret
 
@@ -1123,12 +1157,10 @@ class VISADevice(Device):
             _to, self.backend.timeout = self.backend.timeout, timeout
 
         msg_out = repr(msg) if len(msg) < 80 else f"({len(msg)} bytes)"
-        self._logger.debug(f"query_ascii_values {msg_out}")
+        self._logger.debug(f"query_ascii_values({msg_out}):")
 
         try:
-            ret = self.backend.query_ascii_values(
-                msg, type_, separator, container, delay
-            )
+            ret = self.backend.query_ascii_values(msg, type_, separator, container, delay)
         finally:
             if timeout is not None:
                 self.backend.timeout = _to
@@ -1143,7 +1175,7 @@ class VISADevice(Device):
         else:
             logmsg = f"(iterable sequence of type {type(ret)})"
 
-        self._logger.debug(f"      -> {logmsg}")
+        self._logger.debug(f"    -> {logmsg}")
 
         return ret
 
@@ -1203,13 +1235,6 @@ class VISADevice(Device):
 
             return exctype == EXC and excinst.error_code == CODE
 
-    def _release_remote_control(self):
-        # From instrument and pyvisa docs
-        if not self._rm.endswith("@sim"):
-            self.backend.visalib.viGpibControlREN(
-                self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
-            )
-
     def _get_rm(self):
         backend_name = self._rm
 
@@ -1223,8 +1248,11 @@ class VISADevice(Device):
         else:
             is_ivi = False
 
+        if len(_pyvisa_resource_managers) == 0:
+            visa_default_resource_manager(backend_name)
+
         try:
-            rm = pyvisa.ResourceManager(backend_name)
+            rm = _pyvisa_resource_managers[backend_name]
         except OSError as e:
             if is_ivi:
                 url = r"https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa"
@@ -1235,8 +1263,44 @@ class VISADevice(Device):
         return rm
 
 
-def visa_list_resources(resourcemanager: str = None):
-    """autodetects and returns a list of valid resource strings"""
+def _visa_missing_pyvisapy_support() -> list[str]:
+    """a list of names of resources not supported by the current pyvisa-py install"""
+    missing = []
+
+    # gpib
+    try:
+        warnings.filterwarnings("ignore", "GPIB library not found")
+        import gpib_ctypes
+
+        if not gpib_ctypes.gpib._load_lib():
+            missing.append("GPIB")
+    except ModuleNotFoundError:
+        missing.append("GPIB")
+
+    # hislip discovery
+    try:
+        import zeroconf
+    except ModuleNotFoundError:
+        missing.append("TCPIP")
+
+    # libusb
+    try:
+        import usb1
+
+        with usb1.USBContext() as context:
+            pass
+    except OSError:
+        missing.append("USB")
+
+    return missing
+
+
+def _visa_parse_identity(identity: str):
+    return identity.split(",", 4)
+
+
+def visa_list_resources(resourcemanager: str = None) -> list[str]:
+    """autodetects and returns a list of valid VISADevice resource strings"""
     if resourcemanager is None:
         rm = VISADevice()._get_rm()
     else:
@@ -1245,23 +1309,122 @@ def visa_list_resources(resourcemanager: str = None):
     return rm.list_resources()
 
 
-def visa_default_resource_manager(name=None):
+def visa_default_resource_manager(name: str):
+    """set the pyvisa resource manager used by labbench.
+
+    Arguments:
+        name: the name of the resource manager, such as '@py', '@sim', or '@ivi'
+    """
+    if name == "@sim":
+        from .testing import pyvisa_sim_resource as full_name
+    else:
+        full_name = name
+
+    if name == "@py":
+        warnings.filterwarnings("ignore", "VICP resources discovery requires the zeroconf package")
+        warnings.filterwarnings(
+            "ignore", "TCPIP::hislip resource discovery requires the zeroconf package"
+        )
+        warnings.filterwarnings("ignore", "GPIB library not found")
+
+    if name not in _pyvisa_resource_managers:
+        _pyvisa_resource_managers[name] = pyvisa.ResourceManager(full_name)
     VISADevice._rm = name
 
 
-@util.TTLCache(timeout=3)
-@util.single_threaded_call_lock
-def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, str]:
-    def make_test_device(res):
-        device = VISADevice(res, open_timeout=0.25, **device_kws)
-        device._logger = logging.getLogger()
-        return device
+@util.ttl_cache(10)  # a cache of recent resource parameters
+def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: "ascii") -> VISADevice:
+    device = VISADevice(resource, open_timeout=open_timeout, timeout=timeout)
+    device._logger = logging.getLogger()  # suppress the normal logger for probing
 
-    def check_idn(device: VISADevice):
+    def reopen():
+        device.close()
+        device.open()
+
+    @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False, exception_func=reopen)
+    def probe_read_termination():
+        query = "*IDN?" + device.write_termination
+        device.backend.write_raw(query.encode(encoding))
+        identity = device.backend.read_raw().decode(encoding)
+
+        for read_termination in ("\r\n", "\n", "\r"):
+            if identity.endswith(read_termination):
+                identity = identity[: -len(read_termination)]
+                break
+        else:
+            read_termination = ""
+
+        return identity, read_termination
+
+    try:
+        device.open()
+    except TimeoutError:
+        return None
+
+    for write_term in ("\n", "\r", "\r\n"):
+        device.backend.write_termination = device.write_termination = write_term
+
         try:
-            return device.identity
-        except pyvisa.errors.VisaIOError:
-            return None
+            identity, read_termination = probe_read_termination()
+            make, model, serial, rev = _visa_parse_identity(identity)
+
+            device.read_termination = read_termination
+            device.make = make
+            device.model = model
+            device._attr_store.cache.update(serial=serial, _revision=rev)
+
+            break
+        except pyvisa.errors.VisaIOError as ex:
+            if "VI_ERROR_TMO" not in str(ex):
+                raise
+        except BaseException as ex:
+            device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")
+            raise
+    else:
+        device = None
+
+    device.close()
+
+    return device
+
+
+def _visa_valid_resource_name(resource: str):
+    from pyvisa import rname
+
+    if resource is None:
+        return False
+
+    try:
+        rname.ResourceName.from_string(resource)
+    except rname.InvalidResourceName:
+        return False
+    else:
+        return True
+
+
+def visa_probe_devices(
+    target: VISADevice = None,
+    skip_interfaces: list[str] = [],
+    open_timeout: float = 0.5,
+    timeout: float = 0.25,
+) -> list[VISADevice]:
+    """discover devices available for communication and their required connection settings.
+
+    Each returned `VISADevice` is and set with a combination of `resource`,
+    `read_termination`, and `write_termination` that establishes communication, and the
+    `make` and `model` reported by the instrument. The `pyvisa` resource manager is set
+    by the most recent call to `visa_default_resource_manager`.
+
+    The probe mechanism is to open a connection to each available resource, and
+    if successful, query the instrument identity ('*IDN?'). Discovery will fail for
+    devices that do not support this message.
+
+    Arguments:
+        target: if specified, return only devices that match target.make and target.model
+        skip_interfaces: do not probe interfaces that begin with these strings (case-insensitive)
+        open_timeout: timeout on resource open (in s)
+        timeout: timeout on identity query (in s)
+    """
 
     def keep_interface(name):
         for iface in skip_interfaces:
@@ -1269,31 +1432,61 @@ def visa_list_identities(skip_interfaces=["ASRL"], **device_kws) -> Dict[str, st
                 return False
         return True
 
-    devices = {
-        res: make_test_device(res)
+    def match_target(device):
+        if target is None:
+            return True
+
+        if target.make is not None:
+            # apply the make filter
+            if device.make.lower() != target.make.lower():
+                return False
+
+        if target.model is not None:
+            # apply the model filter
+            if not target.model.lower().startswith(device.model.lower()):
+                return False
+
+        if target.resource is not None and not _visa_valid_resource_name(target.resource):
+            # treat the resource string as a serial number, and filter
+            if target.resource.lower() != device.serial.lower():
+                return False
+
+        return True
+
+    calls = {
+        res: util.Call(_visa_probe_resource, res, open_timeout, timeout, "ascii")
         for res in visa_list_resources()
         if keep_interface(res)
     }
 
-    with util.sequentially(*list(devices.values()), catch=True):
-        calls = [
-            util.Call(check_idn, device).rename(res)
-            for res, device in devices.items()
-            if device.isopen
-        ]
+    devices = util.concurrently(**calls, catch=False, flatten=False)
 
-        identities = util.sequentially(*calls, catch=True)
+    if len(devices) == 0:
+        return []
 
-    return identities
+    if target is not None:
+        if not isinstance(target, Device) and issubclass(target, Device):
+            target = target()
+
+        devices = {
+            resource: device
+            for resource, device in devices.items()
+            if match_target(device)
+        }
+
+    return list(devices.values())
 
 
-@Device.concurrency.adopt(True)
 class Win32ComDevice(Device):
     """Basic support for calling win32 COM APIs.
 
     a dedicated background thread. Set concurrency=True to decide whether
     this thread support wrapper is applied to the dispatched Win32Com object.
     """
+
+    concurrency = attr.value.bool(
+        default=True, sets=False, help="if False, enforces locking for single-threaded access"
+    )
 
     # The python wrappers for COM drivers still basically require that
     # threading is performed using the windows COM API. Compatibility with
@@ -1302,7 +1495,7 @@ class Win32ComDevice(Device):
     # to the dispatched COM object block until the previous calls are completed
     # from within.
 
-    com_object = value.str(
+    com_object = attr.value.str(
         default="", sets=False, help="the win32com object string"
     )  # Must be a module
 

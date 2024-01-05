@@ -4,7 +4,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.15.1
+    jupytext_version: 1.16.0
 kernelspec:
   display_name: Python 3
   language: python
@@ -12,81 +12,76 @@ kernelspec:
 ---
 
 # Data Logging
-Several objects are included in `labbench` for logging test conditions and resulting measurement results.
-* Automatic logging of interactions with `Device` attributes that are defined with {py:mod}`labbench.property`, {py:mod}`labbench.value`, and {py:mod}`labbench.datareturn`
+Labbench provides several data logging capabilities oriented toward experiments that involve complex sweeps or test conditions. Their general idea is to automatically log small details (device parameters, test conditions, git commit hashes, etc.) so that automation code is focused on the test procedure. The resulting logging system makes many implicit decisions but attempts describe the resulting structure clearly:
+* Automatic logging of simple scalar parameters of {py:class}`labbench.Device` objects that are defined with {py:mod}`labbench.paramattr`
 * Manual logging through simple dictionary mapping
-The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types ({py:class}`pandas.DataFrame`, {py:func}`numpy.array`, long strings, files generated outside the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.
+* Consistent and automatic mapping from non-scalar types ({py:class}`pandas.DataFrame`, {py:func}`numpy.array`, long strings, files generated outside the data tree, etc.)
+* Support for several output data types: {py:class}`labbench.CSVLogger`, {py:class}`labbench.HDFLogger`, and {py:class}`labbench.SQLiteLogger`
 
-Logging is provided for specific root data formats through {py:class}`labbench.CSVLogger`, {py:class}`labbench.HDFLogger`, and {py:class}`labbench.SQLiteLogger`.
-
-## Example: Logging with `Device` objects in scripts
-The use of logging objects requires some light configuration, and one call to add data per test row.
+## Example: Logging `Device` objects
+To get started, consider a simple loop:
 
 ```{code-cell} ipython3
-import labbench as lb
-from labbench.testing import SpectrumAnalyzer, PowerSensor, pyvisa_sim_resource
 import numpy as np
-import shutil, time
+import labbench as lb
+from labbench.testing.pyvisa_sim import SpectrumAnalyzer, PowerSensor
 
-FREQ_COUNT = 3
-DUT_NAME = "DUT 63"
-DATA_PATH = './data'
-
-# the labbench.testing devices support simulated pyvisa operations
-lb.visa_default_resource_manager(pyvisa_sim_resource)
-lb.show_messages('debug')
+lb.visa_default_resource_manager('@sim')
+lb.show_messages('info')
 
 sensor = PowerSensor()
 analyzer = SpectrumAnalyzer()
-shutil.rmtree(DATA_PATH, True)
-db = lb.CSVLogger(path=f"./data")
 
-# automatic logging from `analyzer` in 'output.csv' in each call to db.new_row:
-# (1) each lb.property or lb.value that has been get or set in the device since the last call
-db.observe(analyzer)
-
-# automatic logging from `sensor` in 'output.csv' in each call to db.new_row:
-# (1) each lb.property or lb.value that has been get or set in the device since the last call
-# (2) explicitly get `sensor.sweep_aperture` (as column "sensor_sweep_aperture")
-db.observe(sensor, always=['sweep_aperture'])
+db = lb.CSVLogger(path=f"./{np.random.bytes(8).hex()}")
+db.observe_paramattr([sensor, analyzer])
 
 with sensor, analyzer, db:
-    for freq in np.linspace(5.8e9, 5.9e9, FREQ_COUNT):
-        # Assignment to these property attributes:
-        # (1) sets the frequency on each instrument *and*
-        # (2) triggers logging of these values in the next database row in
-        #     the columns 'analyzer_center_frequency' and 'sensor_frequency'
+    for freq in (5.8e9, 5.85e9, 5.9e9):
         analyzer.center_frequency = freq
         sensor.frequency = freq
 
         sensor.trigger()
         analyzer.trigger()
 
-        # Logs the measurements and test conditions as a new row. Each key
-        # is a column in the database in addition to the automatic parameters
-        db.new_row(
-            comments='trying for 1.21 GW to time travel',
-            dut = DUT_NAME,
-            analyzer_trace=analyzer.fetch(),
-            sensor_reading=sensor.fetch()[0]
-        )
+        data = {
+            'analyzer_trace': analyzer.fetch(),
+            'sensor_reading': sensor.fetch()[0],
+        }
+
+        db.new_row(data)
+
+    import copy
+    pending = copy.deepcopy(db.pending_output)
 ```
 
-### Reading and exploring the data
-The master database is now populated with the test results and subdirectories are populated with trace data. The function {py:class}`labbench.read` loads a the table of measurement results into a [pandas](http://pandas.pydata.org/pandas-docs/stable/) data frame:
+### Output data structure
+Experimental results are populated as follows in a directory at the given path:
+
+![image](csvlogger_folder_structure.png)
+
+The root table in `outputs.csv` gives the high level test conditions and results:
 
 ```{code-cell} ipython3
-root = lb.read(f'{db.path}/outputs.csv')
+import pandas as pd
+
+root = pd.read_csv(f'{db.path}/outputs.csv')
 root
 ```
 
-This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column `'analyzer_trace.csv'`), and the host log JSON file ('host_log).
-
-To analyze the experimental data, one approach is to access these files directly at these files
+This points us at scalar test conditions and results, and paths to paths to files containing for non-scalar data (arrays, tables, etc.) and long text strings. Examples here include the measurement trace from the spectrum analyzer (column `'analyzer_trace.csv'`), and the host log JSON file (`'host_log'`). For example:
 
 ```{code-cell} ipython3
-rel_path = root['analyzer_trace'].values[0]
-lb.read(f"{db.path}/{rel_path}").head()
+pd.read_csv(f"{db.path}/{root['analyzer_trace'][0]}")
+```
+
+```{code-cell} ipython3
+import json
+
+with open(f"{db.path}/metadata.json", 'r') as stream:
+    metadata = json.load(stream)
+
+# metadata['device_objects']
+metadata['field_name_sources']
 ```
 
 For a more systematic analysis to analyzing the data, we may want to expand the root table based on the relational data files in one of these columns. A shortcut for this is provided by {py:func}`labbench.read_relational`:
@@ -100,7 +95,7 @@ lb.read_relational(
     'analyzer_trace',
 
     # copy fixed values of these column across as columns in each relational data table
-    ['sensor_frequency', 'sensor_sweep_aperture']
+    ['sensor_frequency', 'sensor_reading']
 )
 ```
 
@@ -127,8 +122,8 @@ class Testbed(lb.Rack):
 
     def open(self):
         # remove prior data before we start
-        self.db.observe(self.analyzer)
-        self.db.observe(self.sensor, always=['sweep_aperture'])
+        self.db.observe_paramattr(self.analyzer)
+        self.db.observe_paramattr(self.sensor, always=['sweep_aperture'])
 
     def single(self, frequency: float):
         self.analyzer.center_frequency = frequency

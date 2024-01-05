@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.33 - unreleased]
+This is a significant API change.
+
+### Added
+- `labbench.Win32ComDevice.concurrency` (bool value), which controls whether to allow multi-threaded access to the COM library
+
+### Changed
+- The various types of descriptors supported by Device objects are now known as parameter attributes.
+  Before, they were called traits. They are encapsulated within the `labbench.paramattr` module.
+  The definition syntax for existing is otherwise similar:
+
+  ```python
+    import labbench as lb
+    from labbench import paramattr as attr
+
+    class MyDevice(lb.Device):
+        frequency: float = attr.value.float(5e9, min=10e6, max=6e9)
+  ```
+
+  Note that the annotation is now required in order to set the parameter on instantiation
+
+- Two new types of `paramattr` descriptors are now available: `method` and `kwarg`. Methods
+  correspond with callable methods in the owning class. Like `labbench.paramattr.property`
+  descriptors, `method` descriptors support keyed auto-generation using the `key` argument.
+- Fix an exception handling bug in `lb.sequentially`
+- Dependency on `coloredlogs` has been removed
+- Documentation text and layout improvements
+- Tests are now implemented with `pytest` instead of `unittest`, and include coverage analysis.
+  A runner is available through `pdm tests`, and a badge is linked to in `README.md`.
+- `labbench.VISADevice` now supports shortcut connection specifications in addition to standard VISA resource names:
+  1. Serial number strings
+  2. Empty resource strings for subclasses that specify `make` and `model`
+- python 3.12 installation is now enabled
+- `paramattr.method` and `paramattr.property` now support a new keyword argument, `get_on_set`, which triggers
+  a get operation in the owner device immediately after each set
+- `paramattr` descriptors now support a new keyword argument, `notify`, which allows notifications to be disabled
+
+### Removed
+- `labbench.Device.concurrency`, which was only used by `labbench.Win32ComDevice` (and where it has been added)
+
 ## [0.32 - 2023-10-11]
 ### Changed
 - Device properties ("private properties") with leading underscore names are no longer automatically

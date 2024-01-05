@@ -7,6 +7,7 @@ from pathlib import Path
 
 from . import util
 from ._rack import Rack, import_as_rack, update_parameter_dict
+from . import paramattr as attr
 
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
 # using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
@@ -92,9 +93,7 @@ def _search_method_parameters(rack_cls_or_obj):
 
         update_parameter_dict(parameters, p)
 
-        short_names = list(method.__call__.__signature__.parameters.keys())[
-            1:
-        ]  # skip 'self'
+        short_names = list(method.__call__.__signature__.parameters.keys())[1:]  # skip 'self'
         long_names = list(p.keys())  # extended_signature() does not include 'self'
         for short_name, long_name in zip(short_names, long_names):
             methods.setdefault(long_name, {})[short_name] = method
@@ -120,9 +119,7 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
         annot = params[name].annotation
         if name not in methods:
             clsname = rack_cls.__qualname__
-            raise KeyError(
-                f"'{name}' is not a keyword argument of any method of '{clsname}'"
-            )
+            raise KeyError(f"'{name}' is not a keyword argument of any method of '{clsname}'")
 
         elif annot is not EMPTY and not isinstance(default, annot):
             if isinstance(default, Number) and issubclass(annot, Number):
@@ -167,17 +164,12 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
     # pick out the desired column names based on with_defaults
     params = sig.parameters
     columns = [
-        name
-        for name, param in list(params.items())[1:]
-        if with_defaults or param.default is EMPTY
+        name for name, param in list(params.items())[1:] if with_defaults or param.default is EMPTY
     ]
 
     if with_defaults:
         defaults = [
-            [
-                None if params[name].default is EMPTY else params[name].default
-                for name in columns
-            ]
+            [None if params[name].default is EMPTY else params[name].default for name in columns]
         ]
     else:
         defaults = []
@@ -191,10 +183,7 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
 def _map_method_defaults(rack_cls):
     params, _ = _search_method_parameters(rack_cls)
     cm = CommentedMap(
-        {
-            k: (None if param.default is EMPTY else param.default)
-            for k, param in params.items()
-        }
+        {k: (None if param.default is EMPTY else param.default) for k, param in params.items()}
     )
 
     for i, k in enumerate(list(cm.keys())[::-1]):
@@ -220,8 +209,8 @@ def _map_devices(cls):
             before="\n",
         )
 
-        for value_name in dev._value_attrs:
-            if not dev._traits[value_name].sets:
+        for value_name in param.list_value_attrs(dev):
+            if not param.get_class_attrs(dev)[value_name].sets:
                 # only show settable traits
                 continue
 
@@ -233,9 +222,7 @@ def _map_devices(cls):
             else:
                 comment = "\n(define this value with help to autogenerate this comment)"
 
-            cm[dev_name].yaml_set_comment_before_after_key(
-                value_name, before=comment, indent=8
-            )
+            cm[dev_name].yaml_set_comment_before_after_key(value_name, before=comment, indent=8)
 
             if trait.type is not None:
                 comment = trait.type.__name__
@@ -309,9 +296,7 @@ def dump_rack(
             if table_path is not None:
                 # write_csv_template(obj, output_path/table_path)
                 # obj.to_template(output_path / f"{obj.__name__}.csv")
-                write_table_stub(
-                    rack, name, output_path / table_path, with_defaults=with_defaults
-                )
+                write_table_stub(rack, name, output_path / table_path, with_defaults=with_defaults)
 
 
 def read_yaml_config(config_path: str):

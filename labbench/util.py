@@ -1,28 +1,25 @@
-# This software was developed by employees of the National Institute of
-# Standards and Technology (NIST), an agency of the Federal Government.
-# Pursuant to title 17 United States Code Section 105, works of NIST employees
-# are not subject to copyright protection in the United States and are
-# considered to be in the public domain. Permission to freely use, copy,
-# modify, and distribute this software and its documentation without fee is
-# hereby granted, provided that this notice and disclaimer of warranty appears
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT ANY WARRANTY OF ANY KIND, EITHER
-# EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY
-# THAT THE SOFTWARE WILL CONFORM TO SPECIFICATIONS, ANY IMPLIED WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND FREEDOM FROM
-# INFRINGEMENT, AND ANY WARRANTY THAT THE DOCUMENTATION WILL CONFORM TO THE
-# SOFTWARE, OR ANY WARRANTY THAT THE SOFTWARE WILL BE ERROR FREE. IN NO EVENT
-# SHALL NIST BE LIABLE FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT,
-# INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES, ARISING OUT OF, RESULTING FROM,
-# OR IN ANY WAY CONNECTED WITH THIS SOFTWARE, WHETHER OR NOT BASED UPON
-# WARRANTY, CONTRACT, TORT, OR OTHERWISE, WHETHER OR NOT INJURY WAS SUSTAINED
-# BY PERSONS OR PROPERTY OR OTHERWISE, AND WHETHER OR NOT LOSS WAS SUSTAINED
-# FROM, OR AROSE OUT OF THE RESULTS OF, OR USE OF, THE SOFTWARE OR SERVICES
-# PROVIDED HEREUNDER. Distributions of NIST software should also include
-# copyright and licensing statements of any third-party software that are
-# legally bundled with the code in compliance with the conditions of those
-# licenses.
+from __future__ import annotations
+import ast
+import hashlib
+import importlib.util
+import inspect
+import logging
+import pickle
+import re
+import sys
+import textwrap
+import time
+import traceback
+import types
+from contextlib import _GeneratorContextManager, contextmanager
+from functools import wraps
+from queue import Empty, Queue
+from threading import Event, RLock, Thread, ThreadError
+from typing_extensions import Union, TypeVar, ParamSpec, Callable
+from warnings import simplefilter
+
+import psutil
+
 
 __all__ = [  # "misc"
     "hash_caller",
@@ -31,6 +28,7 @@ __all__ = [  # "misc"
     "logger",
     "LabbenchDeprecationWarning",
     "import_t0",
+    "find_methods_in_mro",
     # concurrency and sequencing
     "concurrently",
     "sequentially",
@@ -52,40 +50,16 @@ __all__ = [  # "misc"
     # traceback scrubbing
     "hide_in_traceback",
     "_force_full_traceback",
+    "force_full_traceback",
     # helper objects
     "Ownable",
 ]
-
-import ast
-import hashlib
-import importlib.util
-import inspect
-import logging
-import pickle
-import re
-import sys
-import textwrap
-import time
-import traceback
-import types
-from contextlib import _GeneratorContextManager, contextmanager
-from functools import wraps
-from queue import Empty, Queue
-from threading import Event, RLock, Thread, ThreadError
-from typing import Callable
-from warnings import simplefilter
-
-import coloredlogs
-import psutil
-
 
 import_t0 = time.perf_counter()
 
 logger = logging.LoggerAdapter(
     logging.getLogger("labbench"),
-    dict(
-        label="labbench"
-    ),  # description of origin within labbench (for screen logs only)
+    dict(label="labbench"),  # description of origin within labbench (for screen logs only)
 )
 
 _LOG_LEVEL_NAMES = {
@@ -128,11 +102,7 @@ def show_messages(minimum_level, colors=True):
             f"message level must be a flag {tuple(err_map)} or an integer, not {repr(minimum_level)}"
         )
 
-    level = (
-        err_map[minimum_level.lower()]
-        if isinstance(minimum_level, str)
-        else minimum_level
-    )
+    level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
 
     logger.setLevel(level)
 
@@ -148,17 +118,10 @@ def show_messages(minimum_level, colors=True):
     # - %(pathname)s:%(lineno)d'
 
     if colors:
-        log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
-        styles = dict(
-            coloredlogs.DEFAULT_FIELD_STYLES,
-            label=dict(color="blue"),
-        )
-        formatter = coloredlogs.ColoredFormatter(
-            log_fmt, style="{", field_styles=styles
-        )
+        log_fmt = "\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}.{msecs:03.0f}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}"
     else:
         log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
-        formatter = logging.Formatter(log_fmt, style="{")
+    formatter = logging.Formatter(log_fmt, style="{")
 
     logger._screen_handler.setFormatter(formatter)
     logger.logger.addHandler(logger._screen_handler)
@@ -192,6 +155,37 @@ def callable_logger(func):
         return func.__self__._logger
     else:
         return logger
+
+
+def find_methods_in_mro(
+    cls: type[object], name: str, until_cls: Union[type[object], None] = None
+) -> list[callable]:
+    """list all methods named `name` in `cls` and its parent classes.
+
+    Args:
+        cls: the class to introspect
+        name: the method to introspect in each subclass
+        until_cls: stop introspection after checking this base class
+
+    Returns:
+        All unique methods named `name` starting from `cls` and working toward the base classes
+    """
+    methods = []
+
+    if until_cls is not None and not issubclass(cls, until_cls):
+        raise TypeError(f"class {until_cls.__qualname__} is not a base class of {cls.__qualname__}")
+
+    for cls in cls.__mro__:
+        try:
+            this_method = getattr(cls, name)
+        except AttributeError:
+            continue
+        if this_method not in methods:
+            methods.append(this_method)
+        if cls is until_cls:
+            break
+
+    return methods
 
 
 class Ownable:
@@ -270,32 +264,27 @@ sys._debug_tb = False
 
 TRACEBACK_HIDE_TAG = "🦙 hide from traceback 🦙"
 
+T = TypeVar("T")
+P = ParamSpec("P")
 
-def hide_in_traceback(func):
-    def adjust(f):
-        code = f.__code__
 
-        if tuple(sys.version_info)[:2] >= (3, 8):
-            f.__code__ = code.replace(co_consts=code.co_consts + (TRACEBACK_HIDE_TAG,))
-        else:
-            # python < 3.8
-            f.__code__ = types.CodeType(
-                code.co_argcount,
-                code.co_kwonlyargcount,
-                code.co_nlocals,
-                code.co_stacksize,
-                code.co_flags,
-                code.co_code,
-                code.co_consts + (TRACEBACK_HIDE_TAG,),
-                code.co_names,
-                code.co_varnames,
-                code.co_filename,
-                code.co_name,
-                code.co_firstlineno,
-                code.co_lnotab,
-                code.co_freevars,
-                code.co_cellvars,
-            )
+def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
+    """decorates a method or function to hide it from tracebacks.
+
+    The intent is to remove clutter in the middle of deep stacks in object call stacks.
+
+    To disable this behavior in all methods, call `force_full_traceback(True)`.
+
+    Args:
+        func: The function to skip in
+
+    Returns:
+        Callable[P, T]: _description_
+    """
+
+    def adjust(f: Callable[P, T]) -> None:
+        code_obj = f.__code__
+        f.__code__ = f.__code__.replace(co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,))
 
     if not callable(func):
         raise TypeError(f"{func} is not callable")
@@ -308,8 +297,17 @@ def hide_in_traceback(func):
     return func
 
 
-def _force_full_traceback(force: bool):
+def force_full_traceback(force: bool) -> None:
+    """configure whether to disable traceback hiding for internal API calls inside labbench"""
     sys._debug_tb = force
+
+
+def _force_full_traceback(force: bool) -> None:
+    """configure whether to disable traceback hiding for internal API calls inside labbench"""
+    logger.warning(
+        "labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead"
+    )
+    force_full_traceback(force)
 
 
 class _filtered_exc_info:
@@ -411,12 +409,19 @@ def check_hanging_thread():
 
 @hide_in_traceback
 def retry(
-    exception_or_exceptions, tries=4, delay=0, backoff=0, exception_func=lambda: None
+    exception_or_exceptions,
+    tries: int = 4,
+    *,
+    delay: float = 0,
+    backoff: float = 0,
+    exception_func=lambda *args, **kws: None,
+    log: bool = True,
 ):
-    """This decorator causes the function call to repeat, suppressing specified exception(s), until a
+    """Decorate a function to repeat calls, suppressing specified exception(s), until a
     maximum number of retries has been attempted.
-    - If the function raises the exception the specified number of times, the underlying exception is raised.
-    - Otherwise, return the result of the function call.
+
+    If the function raises the exception the specified number of times, the underlying exception is raised.
+    Otherwise, return the result of the function call.
 
     :example:
     The following retries the telnet connection 5 times on ConnectionRefusedError::
@@ -437,13 +442,10 @@ def retry(
     Arguments:
         exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
         tries: number of times to try before giving up
-    :type tries: int
         delay: initial delay between retries in seconds
-    :type delay: float
         backoff: backoff to multiply to the delay for each retry
-    :type backoff: float
         exception_func: function to call on exception before the next retry
-    :type exception_func: callable
+        log: whether to emit a log message on the first retry
     """
 
     def decorator(f):
@@ -456,7 +458,7 @@ def retry(
                 try:
                     ret = f(*args, **kwargs)
                 except exception_or_exceptions as e:
-                    if not notified:
+                    if not notified and log:
                         etype = type(e).__qualname__
                         msg = (
                             f"caught '{etype}' on first call to '{f.__name__}' - repeating the call "
@@ -467,7 +469,7 @@ def retry(
 
                         notified = True
                     ex = e
-                    exception_func()
+                    exception_func(*args, **kwargs)
                     sleep(active_delay)
                     active_delay = active_delay * backoff
                 else:
@@ -661,9 +663,7 @@ def stopwatch(desc: str = "", threshold: float = 0, logger_level="info"):
             try:
                 level = _LOG_LEVEL_NAMES[logger_level]
             except KeyError:
-                raise ValueError(
-                    f"logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}"
-                )
+                raise ValueError(f"logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}")
 
             logger.log(level, msg.lstrip())
 
@@ -690,8 +690,7 @@ class Call(object):
 
     def __repr__(self):
         args = ",".join(
-            [repr(v) for v in self.args]
-            + [(k + "=" + repr(v)) for k, v in self.kws.items()]
+            [repr(v) for v in self.args] + [(k + "=" + repr(v)) for k, v in self.kws.items()]
         )
         qualname = self.func.__module__ + "." + self.func.__qualname__
         return f"Call({qualname},{args})"
@@ -716,7 +715,7 @@ class Call(object):
         self.queue = queue
 
     @classmethod
-    def wrap_list_to_dict(cls, name_func_pairs):
+    def wrap_list_to_dict(cls, name_func_pairs) -> dict[str, Call]:
         """adjusts naming and wraps callables with Call"""
         ret = {}
         # First, generate the list of callables
@@ -765,9 +764,7 @@ class MultipleContexts:
     __enter__ was called.
     """
 
-    def __init__(
-        self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list
-    ):
+    def __init__(self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list):
         """
             call_handler: one of `sequentially_call` or `concurrently_call`
             params: a dictionary of operating parameters (see `concurrently`)
@@ -833,9 +830,7 @@ class MultipleContexts:
 
     @hide_in_traceback
     def __exit__(self, *exc):
-        with stopwatch(
-            f"{self.params['name']} - context exit", 0.5, logger_level="debug"
-        ):
+        with stopwatch(f"{self.params['name']} - context exit", 0.5, logger_level="debug"):
             for name in tuple(self._entered.keys())[::-1]:
                 context = self._entered[name]
 
@@ -911,14 +906,10 @@ def enter_or_call(flexible_caller, objs, kws):
 
     # Treat keyword arguments passed as callables should be left as callables;
     # otherwise, override the parameter
-    params = dict(
-        catch=False, nones=False, traceback_delay=False, flatten=True, name=None
-    )
+    params = dict(catch=False, nones=False, traceback_delay=False, flatten=True, name=None)
 
     def merge_inputs(dicts: list, candidates: list):
-        """Merge nested returns and check for return data key conflicts in
-        the callable
-        """
+        """merges nested returns and check for data key conflicts"""
         ret = {}
         for name, d in dicts:
             common = set(ret.keys()).difference(d.keys())
@@ -976,9 +967,7 @@ def enter_or_call(flexible_caller, objs, kws):
             continue
 
         thisone = RUNNERS[
-            (
-                callable(obj) and not isinstance(obj, _GeneratorContextManager)
-            ),  # Is it callable?
+            (callable(obj) and not isinstance(obj, _GeneratorContextManager)),  # Is it callable?
             (
                 hasattr(obj, "__enter__") or isinstance(obj, _GeneratorContextManager)
             ),  # Is it a context manager?
@@ -1040,19 +1029,6 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             if tb is not None and tb.tb_next is not None:
                 tb = tb.tb_next
         return exc_tuple[:2] + (tb,)
-
-    def check_thread_support(func_in):
-        """Setup threading (concurrent execution only), including
-        checks for whether a Device instance indicates it supports
-        concurrent execution or not.
-        """
-        func = func_in.func if isinstance(func_in, Call) else func_in
-        if hasattr(func, "__self__") and not getattr(
-            func.__self__, "concurrency", True
-        ):
-            # is this a Device that does not support concurrency?
-            raise ConcurrentException(f"{func.__self__} does not support concurrency")
-        return func_in
 
     stop_request_event.clear()
 
@@ -1117,9 +1093,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 try:
                     traceback.print_exception(*tb)
                 except BaseException as e:
-                    sys.stderr.write(
-                        "\nthread exception, but failed to print exception"
-                    )
+                    sys.stderr.write("\nthread exception, but failed to print exception")
                     sys.stderr.write(str(e))
                     sys.stderr.write("\n")
         else:
@@ -1215,12 +1189,7 @@ def concurrently(*objs, **kws):
 
     - Because the calls are in different threads, not different processes,
       this should be used for IO-bound functions (not CPU-intensive functions).
-    - Be careful about thread safety.
-
-    When the callable object is a Device method, :func concurrency: checks
-    the Device object state.concurrency for compatibility
-    before execution. If this check returns `False`, this method
-    raises a ConcurrentException.
+    - Be careful about thread-safety.
 
     """
 
@@ -1240,6 +1209,8 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
     # Run each callable
     for name, wrapper in wrappers.items():
         ret = wrapper()
+        if wrapper.traceback is not None:
+            raise wrapper.traceback[1]
         if ret is not None or params["nones"]:
             results[name] = ret
 
@@ -1296,11 +1267,10 @@ def sequentially(*objs, **kws):
     - Unlike `concurrently`, an exception in a context manager's __enter__
       means that any remaining context managers will not be entered.
 
-    When the callable object is a Device method, :func concurrency: checks
-    the Device object state.concurrency for compatibility
-    before execution. If this check returns `False`, this method
-    raises a ConcurrentException.
     """
+
+    if kws.get("catch", False):
+        raise ValueError("catch=True is not supported by sequentially")
 
     return enter_or_call(sequentially_call, objs, kws)
 
@@ -1383,9 +1353,7 @@ class ThreadSandbox(object):
         # Start the thread and block until it's ready
         self._requestq = Queue(1)
         ready = Queue(1)
-        self.__thread = Thread(
-            target=self.__worker, args=(factory, ready, should_sandbox_func)
-        )
+        self.__thread = Thread(target=self.__worker, args=(factory, ready, should_sandbox_func))
         self.__thread.start()
         exc = ready.get(True)
         if exc is not None:
@@ -1507,22 +1475,17 @@ class single_threaded_call_lock:
         obj = super().__new__(cls)
         obj.func = func
         obj.lock = RLock()
-        obj.retval = None
         obj = wraps(func)(obj)
         return obj
 
     @hide_in_traceback
     def __call__(self, *args, **kws):
-        if self.lock.acquire(False):
-            # no other threads are running self.func; invoke it in this one
-            try:
-                ret = self.retval = self.func(*args, **kws)
-            finally:
-                self.lock.release()
-        else:
-            # another thread is running self.func; return its result
-            self.lock.acquire(True)
-            ret = self.retval
+        self.lock.acquire()
+
+        # no other threads are running self.func; invoke it in this one
+        try:
+            ret = self.func(*args, **kws)
+        finally:
             self.lock.release()
 
         return ret
@@ -1544,38 +1507,38 @@ def lazy_import(name):
     except KeyError:
         pass
 
-    try:
-        spec = importlib.util.find_spec(name)
-        if spec is None:
-            raise ImportError(f'no module found named "{name}"')
-        spec.loader = importlib.util.LazyLoader(spec.loader)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        module.__getattribute__ = single_threaded_call_lock(module.__getattribute__)
-        return module
-    except ValueError as ex:
-        if "substituted" in str(ex):
-            return sys.modules[name]
-        else:
-            raise
+    spec = importlib.util.find_spec(name)
+    if spec is None:
+        raise ImportError(f'no module found named "{name}"')
+    spec.loader = importlib.util.LazyLoader(spec.loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
-class TTLCache:
+class ttl_cache:
     def __init__(self, timeout):
         self.timeout = timeout
         self.call_timestamp = None
-        self.last_value = None
+        self.last_value = {}
 
     def __call__(self, func):
         @wraps(func)
         @hide_in_traceback
         def wrapper_decorator(*args, **kws):
             time_elapsed = time.perf_counter() - (self.call_timestamp or 0)
-            if self.call_timestamp is None or time_elapsed > self.timeout:
-                ret = self.last_value = func(*args, **kws)
+            key = tuple(args), tuple(kws.keys()), tuple(kws.values())
+
+            if (
+                self.call_timestamp is None
+                or time_elapsed > self.timeout
+                or key not in self.last_value
+            ):
+                ret = self.last_value[key] = func(*args, **kws)
                 self.call_timestamp = time.perf_counter()
             else:
-                ret = self.last_value
+                ret = self.last_value[key]
 
             return ret
 
@@ -1615,9 +1578,6 @@ def accessed_attributes(method):
     self_name = func.args.args[0].arg
 
     def isselfattr(node):
-        return (
-            isinstance(node, ast.Attribute)
-            and getattr(node.value, "id", None) == self_name
-        )
+        return isinstance(node, ast.Attribute) and getattr(node.value, "id", None) == self_name
 
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})

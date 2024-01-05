@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Data Logging &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=7bb76a1a"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../../_static/documentation_options.js?v=3595839c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Simplified Concurrency" href="04%20concurrency.html" />
-    <link rel="prev" title="Procedural Snippets" href="02%20rack.html" />
+    <link rel="prev" title="Testbed Organization" href="02%20rack.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <!--[if lte IE 6]>
@@ -67,7 +67,7 @@
           <a href="04%20concurrency.html" title="Simplified Concurrency"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="02%20rack.html" title="Procedural Snippets"
+          <a href="02%20rack.html" title="Testbed Organization"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../02_getting_started.html" accesskey="U">Getting Started</a> &#187;</li>
@@ -81,242 +81,446 @@
           <div class="body" role="main">
             
   <section id="data-logging">
-<h1>Data Logging<a class="headerlink" href="#data-logging" title="Permalink to this heading">¶</a></h1>
-<p>Several objects are included in <code class="docutils literal notranslate"><span class="pre">labbench</span></code> for logging test conditions and resulting measurement results.</p>
+<h1>Data Logging<a class="headerlink" href="#data-logging" title="Link to this heading">¶</a></h1>
+<p>Labbench provides several data logging capabilities oriented toward experiments that involve complex sweeps or test conditions. Their general idea is to automatically log small details (device parameters, test conditions, git commit hashes, etc.) so that automation code is focused on the test procedure. The resulting logging system makes many implicit decisions but attempts describe the resulting structure clearly:</p>
 <ul class="simple">
-<li><p>Automatic logging of interactions with <code class="docutils literal notranslate"><span class="pre">Device</span></code> attributes that are defined with <a class="reference internal" href="../../labbench.property.html#module-labbench.property" title="labbench.property"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.property</span></code></a>, <a class="reference internal" href="../../labbench.value.html#module-labbench.value" title="labbench.value"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.value</span></code></a>, and <a class="reference internal" href="../../labbench.datareturn.html#module-labbench.datareturn" title="labbench.datareturn"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.datareturn</span></code></a></p></li>
-<li><p>Manual logging through simple dictionary mapping
-The data model is driven by a root table of test conditions and measurement results, with relational tables when necessary. In the root table, each row represents a test condition. Common non-scalar data types (<code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">numpy.array()</span></code>, long strings, files generated outside the data tree, etc.) are automatically stored in folders, which are referred to by relative file paths in the database.</p></li>
+<li><p>Automatic logging of simple scalar parameters of <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> objects that are defined with <a class="reference internal" href="../../labbench.paramattr.html#module-labbench.paramattr" title="labbench.paramattr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.paramattr</span></code></a></p></li>
+<li><p>Manual logging through simple dictionary mapping</p></li>
+<li><p>Consistent and automatic mapping from non-scalar types (<code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">numpy.array()</span></code>, long strings, files generated outside the data tree, etc.)</p></li>
+<li><p>Support for several output data types: <a class="reference internal" href="../../labbench.html#labbench.CSVLogger" title="labbench.CSVLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.CSVLogger</span></code></a>, <a class="reference internal" href="../../labbench.html#labbench.HDFLogger" title="labbench.HDFLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.HDFLogger</span></code></a>, and <a class="reference internal" href="../../labbench.html#labbench.SQLiteLogger" title="labbench.SQLiteLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.SQLiteLogger</span></code></a></p></li>
 </ul>
-<p>Logging is provided for specific root data formats through <a class="reference internal" href="../../labbench.html#labbench.CSVLogger" title="labbench.CSVLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.CSVLogger</span></code></a>, <a class="reference internal" href="../../labbench.html#labbench.HDFLogger" title="labbench.HDFLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.HDFLogger</span></code></a>, and <a class="reference internal" href="../../labbench.html#labbench.SQLiteLogger" title="labbench.SQLiteLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.SQLiteLogger</span></code></a>.</p>
-<section id="example-logging-with-device-objects-in-scripts">
-<h2>Example: Logging with <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects in scripts<a class="headerlink" href="#example-logging-with-device-objects-in-scripts" title="Permalink to this heading">¶</a></h2>
-<p>The use of logging objects requires some light configuration, and one call to add data per test row.</p>
+<section id="example-logging-device-objects">
+<h2>Example: Logging <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects<a class="headerlink" href="#example-logging-device-objects" title="Link to this heading">¶</a></h2>
+<p>To get started, consider a simple loop:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
-<span class="kn">from</span> <span class="nn">labbench.testing</span> <span class="kn">import</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">pyvisa_sim_resource</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">shutil</span><span class="o">,</span> <span class="nn">time</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="kn">from</span> <span class="nn">labbench.testing.pyvisa_sim</span> <span class="kn">import</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">PowerSensor</span>
 
-<span class="n">FREQ_COUNT</span> <span class="o">=</span> <span class="mi">3</span>
-<span class="n">DUT_NAME</span> <span class="o">=</span> <span class="s2">&quot;DUT 63&quot;</span>
-<span class="n">DATA_PATH</span> <span class="o">=</span> <span class="s1">&#39;./data&#39;</span>
-
-<span class="c1"># the labbench.testing devices support simulated pyvisa operations</span>
-<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="n">pyvisa_sim_resource</span><span class="p">)</span>
-<span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;debug&#39;</span><span class="p">)</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim&#39;</span><span class="p">)</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;info&#39;</span><span class="p">)</span>
 
 <span class="n">sensor</span> <span class="o">=</span> <span class="n">PowerSensor</span><span class="p">()</span>
 <span class="n">analyzer</span> <span class="o">=</span> <span class="n">SpectrumAnalyzer</span><span class="p">()</span>
-<span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">DATA_PATH</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-<span class="n">db</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">CSVLogger</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;./data&quot;</span><span class="p">)</span>
 
-<span class="c1"># automatic logging from `analyzer` in &#39;output.csv&#39; in each call to db.new_row:</span>
-<span class="c1"># (1) each lb.property or lb.value that has been get or set in the device since the last call</span>
-<span class="n">db</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">analyzer</span><span class="p">)</span>
-
-<span class="c1"># automatic logging from `sensor` in &#39;output.csv&#39; in each call to db.new_row:</span>
-<span class="c1"># (1) each lb.property or lb.value that has been get or set in the device since the last call</span>
-<span class="c1"># (2) explicitly get `sensor.sweep_aperture` (as column &quot;sensor_sweep_aperture&quot;)</span>
-<span class="n">db</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sweep_aperture&#39;</span><span class="p">])</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">CSVLogger</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;./</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">bytes</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">observe_paramattr</span><span class="p">([</span><span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">])</span>
 
 <span class="k">with</span> <span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">5.8e9</span><span class="p">,</span> <span class="mf">5.9e9</span><span class="p">,</span> <span class="n">FREQ_COUNT</span><span class="p">):</span>
-        <span class="c1"># Assignment to these property attributes:</span>
-        <span class="c1"># (1) sets the frequency on each instrument *and*</span>
-        <span class="c1"># (2) triggers logging of these values in the next database row in</span>
-        <span class="c1">#     the columns &#39;analyzer_center_frequency&#39; and &#39;sensor_frequency&#39;</span>
+    <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">5.8e9</span><span class="p">,</span> <span class="mf">5.85e9</span><span class="p">,</span> <span class="mf">5.9e9</span><span class="p">):</span>
         <span class="n">analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">freq</span>
         <span class="n">sensor</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">freq</span>
 
         <span class="n">sensor</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
         <span class="n">analyzer</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
 
-        <span class="c1"># Logs the measurements and test conditions as a new row. Each key</span>
-        <span class="c1"># is a column in the database in addition to the automatic parameters</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">new_row</span><span class="p">(</span>
-            <span class="n">comments</span><span class="o">=</span><span class="s1">&#39;trying for 1.21 GW to time travel&#39;</span><span class="p">,</span>
-            <span class="n">dut</span> <span class="o">=</span> <span class="n">DUT_NAME</span><span class="p">,</span>
-            <span class="n">analyzer_trace</span><span class="o">=</span><span class="n">analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">(),</span>
-            <span class="n">sensor_reading</span><span class="o">=</span><span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;analyzer_trace&#39;</span><span class="p">:</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">(),</span>
+            <span class="s1">&#39;sensor_reading&#39;</span><span class="p">:</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="n">db</span><span class="o">.</span><span class="n">new_row</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="kn">import</span> <span class="nn">copy</span>
+    <span class="n">pending</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">pending_output</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.720</span> • <span class=" -Color -Color-Blue">Aggregator():</span> SpectrumAnalyzer(&#39;&#39;) named &#39;analyzer&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.723</span> • <span class=" -Color -Color-Blue">Aggregator():</span> PowerSensor(&#39;&#39;) named &#39;sensor&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.770</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Power Sensor model #1234, Serial 63472&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.771</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.772</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.773</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Spectrum analyzer model #1234, Serial #AUJH99&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.773</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.774</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.774</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">entry_order before other devices: Email -&gt; MungerBase -&gt; Host</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.775</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">context order: munge-&gt;host-&gt;()-&gt;(CSVLogger(&#39;data&#39;))</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.777</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.777</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.778</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5800000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.778</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.779</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.779</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.780</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.782</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.783</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.783</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5800000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.784</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5800000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.784</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.786</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.787</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.788</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.789</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.790</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.790</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.791</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.791</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 8 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.792</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.792</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.793</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5850000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.793</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.794</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.794</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.795</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.797</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.798</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.799</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5850000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.799</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5850000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.800</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.802</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.802</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.803</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.803</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.804</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.805</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.805</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.806</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 8 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.806</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.807</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.808</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 5900000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.808</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.809</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.809</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.810</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.812</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.813</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SENS:FREQ?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.814</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;5900000000.000000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.814</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;center_frequency&quot; → 5900000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.815</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.817</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.817</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.818</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.818</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.819</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;SWE:APER?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.820</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;0.020000&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.821</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;sweep_aperture&quot; → 0.02 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.822</span> • <span class=" -Color -Color-Blue">CSVLogger(&#39;data&#39;):</span> <span class=" -Color -Color-Green">new data row has 8 columns</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.822</span> • <span class=" -Color -Color-Blue">SpectrumAnalyzer(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:20.823</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-</pre></div>
-</div>
-<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">ValueError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">28</span>
-<span class="g g-Whitespace">     </span><span class="mi">23</span> <span class="c1"># automatic logging from `sensor` in &#39;output.csv&#39; in each call to db.new_row:</span>
-<span class="g g-Whitespace">     </span><span class="mi">24</span> <span class="c1"># (1) each lb.property or lb.value that has been get or set in the device since the last call</span>
-<span class="g g-Whitespace">     </span><span class="mi">25</span> <span class="c1"># (2) explicitly get `sensor.sweep_aperture` (as column &quot;sensor_sweep_aperture&quot;)</span>
-<span class="g g-Whitespace">     </span><span class="mi">26</span> <span class="n">db</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sweep_aperture&#39;</span><span class="p">])</span>
-<span class="ne">---&gt; </span><span class="mi">28</span> <span class="k">with</span> <span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span>
-<span class="g g-Whitespace">     </span><span class="mi">29</span>     <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">5.8e9</span><span class="p">,</span> <span class="mf">5.9e9</span><span class="p">,</span> <span class="n">FREQ_COUNT</span><span class="p">):</span>
-<span class="g g-Whitespace">     </span><span class="mi">30</span>         <span class="c1"># Assignment to these property attributes:</span>
-<span class="g g-Whitespace">     </span><span class="mi">31</span>         <span class="c1"># (1) sets the frequency on each instrument *and*</span>
-<span class="g g-Whitespace">     </span><span class="mi">32</span>         <span class="c1"># (2) triggers logging of these values in the next database row in</span>
-<span class="g g-Whitespace">     </span><span class="mi">33</span>         <span class="c1">#     the columns &#39;analyzer_center_frequency&#39; and &#39;sensor_frequency&#39;</span>
-<span class="g g-Whitespace">     </span><span class="mi">34</span>         <span class="n">analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">freq</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\util.py:872,</span> in <span class="ni">MultipleContexts.__exit__</span><span class="nt">(self, *exc)</span>
-<span class="g g-Whitespace">    </span><span class="mi">870</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">871</span>     <span class="n">exc_info</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
-<span class="ne">--&gt; </span><span class="mi">872</span>     <span class="k">raise</span> <span class="n">exc_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-<span class="g g-Whitespace">    </span><span class="mi">873</span> <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">874</span>     <span class="n">ex</span> <span class="o">=</span> <span class="n">ConcurrentException</span><span class="p">(</span>
-<span class="g g-Whitespace">    </span><span class="mi">875</span>         <span class="sa">f</span><span class="s2">&quot;exceptions raised in </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exc</span><span class="p">)</span><span class="si">}</span><span class="s2"> contexts are printed inline&quot;</span>
-<span class="g g-Whitespace">    </span><span class="mi">876</span>     <span class="p">)</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\util.py:702,</span> in <span class="ni">Call.__call__</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">    </span><span class="mi">699</span> <span class="nd">@hide_in_traceback</span>
-<span class="g g-Whitespace">    </span><span class="mi">700</span> <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="g g-Whitespace">    </span><span class="mi">701</span>     <span class="k">try</span><span class="p">:</span>
-<span class="ne">--&gt; </span><span class="mi">702</span>         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kws</span><span class="p">)</span>
-<span class="g g-Whitespace">    </span><span class="mi">703</span>     <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">704</span>         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\util.py:809,</span> in <span class="ni">MultipleContexts.enter</span><span class="nt">(self, name, context)</span>
-<span class="g g-Whitespace">    </span><span class="mi">806</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">abort</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">807</span>     <span class="c1"># proceed only if there have been no exceptions</span>
-<span class="g g-Whitespace">    </span><span class="mi">808</span>     <span class="k">try</span><span class="p">:</span>
-<span class="ne">--&gt; </span><span class="mi">809</span>         <span class="n">context</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>  <span class="c1"># start of a context entry thread</span>
-<span class="g g-Whitespace">    </span><span class="mi">810</span>     <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">811</span>         <span class="bp">self</span><span class="o">.</span><span class="n">abort</span> <span class="o">=</span> <span class="kc">True</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\_device.py:384,</span> in <span class="ni">Device.__enter__</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">    </span><span class="mi">382</span>     <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-<span class="g g-Whitespace">    </span><span class="mi">383</span>     <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-<span class="ne">--&gt; </span><span class="mi">384</span> <span class="k">raise</span> <span class="n">e</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\_device.py:377,</span> in <span class="ni">Device.__enter__</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">    </span><span class="mi">374</span> <span class="nd">@util</span><span class="o">.</span><span class="n">hide_in_traceback</span>
-<span class="g g-Whitespace">    </span><span class="mi">375</span> <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="g g-Whitespace">    </span><span class="mi">376</span>     <span class="k">try</span><span class="p">:</span>
-<span class="ne">--&gt; </span><span class="mi">377</span>         <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-<span class="g g-Whitespace">    </span><span class="mi">378</span>         <span class="k">return</span> <span class="bp">self</span>
-<span class="g g-Whitespace">    </span><span class="mi">379</span>     <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\_device.py:321,</span> in <span class="ni">Device.__open_wrapper__</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">    </span><span class="mi">319</span> <span class="k">try</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">320</span>     <span class="k">for</span> <span class="n">opener</span> <span class="ow">in</span> <span class="n">trace_methods</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="n">Device</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-<span class="ne">--&gt; </span><span class="mi">321</span>         <span class="n">opener</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<span class="g g-Whitespace">    </span><span class="mi">322</span> <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">323</span>     <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">DisconnectedBackend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\_data.py:325,</span> in <span class="ni">MungerBase.open</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">    </span><span class="mi">323</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="g g-Whitespace">    </span><span class="mi">324</span>     <span class="c1"># touch these modules to ensure they have imported</span>
-<span class="ne">--&gt; </span><span class="mi">325</span>     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
-<span class="g g-Whitespace">    </span><span class="mi">326</span>     <span class="n">np</span><span class="o">.</span><span class="n">array</span>
-
-<span class="nn">File C:\Python310\lib\importlib\util.py:252,</span> in <span class="ni">_LazyModule.__getattribute__</span><span class="nt">(self, attr)</span>
-<span class="g g-Whitespace">    </span><span class="mi">250</span> <span class="k">if</span> <span class="n">original_name</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">251</span>     <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">id</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">original_name</span><span class="p">]):</span>
-<span class="ne">--&gt; </span><span class="mi">252</span>         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;module object for </span><span class="si">{</span><span class="n">original_name</span><span class="si">!r}</span><span class="s2"> &quot;</span>
-<span class="g g-Whitespace">    </span><span class="mi">253</span>                           <span class="s2">&quot;substituted in sys.modules during a lazy &quot;</span>
-<span class="g g-Whitespace">    </span><span class="mi">254</span>                           <span class="s2">&quot;load&quot;</span><span class="p">)</span>
-<span class="g g-Whitespace">    </span><span class="mi">255</span> <span class="c1"># Update after loading since that&#39;s what would happen in an eager</span>
-<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="c1"># loading situation.</span>
-<span class="g g-Whitespace">    </span><span class="mi">257</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">attrs_updated</span><span class="p">)</span>
-
-<span class="ne">ValueError</span>: MungeToDirectory(&#39;data&#39;): module object for &#39;pandas&#39; substituted in sys.modules during a lazy load
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:50,799.799</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:50,800.800</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:52,699.699</span> • <span class=" -Color -Color-Blue">aggregator:</span> CSVLogger(&#39;5c8443f875c75d0f&#39;) named &#39;db&#39; by introspection
 </pre></div>
 </div>
 </div>
 </div>
-<section id="reading-and-exploring-the-data">
-<h3>Reading and exploring the data<a class="headerlink" href="#reading-and-exploring-the-data" title="Permalink to this heading">¶</a></h3>
-<p>The master database is now populated with the test results and subdirectories are populated with trace data. The function <a class="reference internal" href="../../labbench.html#labbench.read" title="labbench.read"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.read</span></code></a> loads a the table of measurement results into a <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/">pandas</a> data frame:</p>
+<section id="output-data-structure">
+<h3>Output data structure<a class="headerlink" href="#output-data-structure" title="Link to this heading">¶</a></h3>
+<p>Experimental results are populated as follows in a directory at the given path:</p>
+<p><img alt="image" src="../../_images/csvlogger_folder_structure.png" /></p>
+<p>The root table in <code class="docutils literal notranslate"><span class="pre">outputs.csv</span></code> gives the high level test conditions and results:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">root</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">db</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s1">/outputs.csv&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">db</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s1">/outputs.csv&#39;</span><span class="p">)</span>
 <span class="n">root</span>
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>analyzer_trace</th>
+      <th>sensor_reading</th>
+      <th>analyzer_center_frequency</th>
+      <th>sensor_frequency</th>
+      <th>sensor_trigger_count</th>
+      <th>db_host_time</th>
+      <th>db_host_log</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0/analyzer_trace.csv</td>
+      <td>-52.617</td>
+      <td>5.800000e+09</td>
+      <td>5.800000e+09</td>
+      <td>200</td>
+      <td>2024-01-05 09:56:52.810229</td>
+      <td>0/db_host_log.json</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1/analyzer_trace.csv</td>
+      <td>-52.617</td>
+      <td>5.850000e+09</td>
+      <td>5.850000e+09</td>
+      <td>200</td>
+      <td>2024-01-05 09:56:52.924856</td>
+      <td>1/db_host_log.json</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2/analyzer_trace.csv</td>
+      <td>-52.617</td>
+      <td>5.900000e+09</td>
+      <td>5.900000e+09</td>
+      <td>200</td>
+      <td>2024-01-05 09:56:53.33574</td>
+      <td>2/db_host_log.json</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
 </div>
-<p>This is a relational data table: non-scalar data (arrays, tables, etc.) and long text strings are replaced with relative paths to files where data is stored. Examples here include the measurement trace from the spectrum analyzer (column <code class="docutils literal notranslate"><span class="pre">'analyzer_trace.csv'</span></code>), and the host log JSON file (‘host_log).</p>
-<p>To analyze the experimental data, one approach is to access these files directly at these files</p>
+<p>This points us at scalar test conditions and results, and paths to paths to files containing for non-scalar data (arrays, tables, etc.) and long text strings. Examples here include the measurement trace from the spectrum analyzer (column <code class="docutils literal notranslate"><span class="pre">'analyzer_trace.csv'</span></code>), and the host log JSON file (<code class="docutils literal notranslate"><span class="pre">'host_log'</span></code>). For example:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rel_path</span> <span class="o">=</span> <span class="n">root</span><span class="p">[</span><span class="s1">&#39;analyzer_trace&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">lb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">db</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">rel_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">db</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">root</span><span class="p">[</span><span class="s1">&#39;analyzer_trace&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>frequency</th>
+      <th>power_spectral_density</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>5.795000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>5.795050e+09</td>
+      <td>-52.373</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>5.795101e+09</td>
+      <td>-52.724</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>5.795151e+09</td>
+      <td>-51.893</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5.795201e+09</td>
+      <td>-52.270</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>195</th>
+      <td>5.804799e+09</td>
+      <td>-51.752</td>
+    </tr>
+    <tr>
+      <th>196</th>
+      <td>5.804849e+09</td>
+      <td>-53.065</td>
+    </tr>
+    <tr>
+      <th>197</th>
+      <td>5.804899e+09</td>
+      <td>-52.585</td>
+    </tr>
+    <tr>
+      <th>198</th>
+      <td>5.804950e+09</td>
+      <td>-51.861</td>
+    </tr>
+    <tr>
+      <th>199</th>
+      <td>5.805000e+09</td>
+      <td>-51.596</td>
+    </tr>
+  </tbody>
+</table>
+<p>200 rows × 2 columns</p>
+</div></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">db</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/metadata.json&quot;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+
+<span class="c1"># metadata[&#39;device_objects&#39;]</span>
+<span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;field_name_sources&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;sensor_isopen&#39;: {&#39;object&#39;: &#39;sensor.isopen&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
+  &#39;type&#39;: &#39;bool&#39;,
+  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor_resource&#39;: {&#39;object&#39;: &#39;sensor.resource&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device address or URI&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_isopen&#39;: {&#39;object&#39;: &#39;analyzer.isopen&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
+  &#39;type&#39;: &#39;bool&#39;,
+  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_resource&#39;: {&#39;object&#39;: &#39;analyzer.resource&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device address or URI&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_log&#39;: {&#39;object&#39;: &#39;db.host.log&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.list()&#39;,
+  &#39;type&#39;: &#39;list&#39;,
+  &#39;help&#39;: &#39;Get the current host log contents.&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_munge_force_relational&#39;: {&#39;object&#39;: &#39;db.munge.force_relational&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.list(allow_none=False, default=[])&#39;,
+  &#39;type&#39;: &#39;list&#39;,
+  &#39;help&#39;: &#39;list of column names to always save as relational data&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_center_frequency&#39;: {&#39;object&#39;: &#39;analyzer.center_frequency&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.float(None)&#39;,
+  &#39;type&#39;: &#39;float&#39;,
+  &#39;help&#39;: &#39;input signal center frequency&#39;,
+  &#39;label&#39;: &#39;Hz&#39;},
+ &#39;sensor_frequency&#39;: {&#39;object&#39;: &#39;sensor.frequency&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.float(None)&#39;,
+  &#39;type&#39;: &#39;float&#39;,
+  &#39;help&#39;: &#39;calibration frequency&#39;,
+  &#39;label&#39;: &#39;Hz&#39;},
+ &#39;sensor_trigger_count&#39;: {&#39;object&#39;: &#39;sensor.trigger_count&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.int(None)&#39;,
+  &#39;type&#39;: &#39;int&#39;,
+  &#39;help&#39;: &#39;acquisition count&#39;,
+  &#39;label&#39;: &#39;samples&#39;},
+ &#39;db_host_time&#39;: {&#39;object&#39;: &#39;db.host.time&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;Get a timestamp of the current time&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_isopen&#39;: {&#39;object&#39;: &#39;db.host.isopen&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
+  &#39;type&#39;: &#39;bool&#39;,
+  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_munge_isopen&#39;: {&#39;object&#39;: &#39;db.munge.isopen&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
+  &#39;type&#39;: &#39;bool&#39;,
+  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_munge_resource&#39;: {&#39;object&#39;: &#39;db.munge.resource&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.Path(None)&#39;,
+  &#39;type&#39;: &#39;pathlib.Path&#39;,
+  &#39;help&#39;: &#39;base directory for all data&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_munge_text_relational_min&#39;: {&#39;object&#39;: &#39;db.munge.text_relational_min&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.int(None)&#39;,
+  &#39;type&#39;: &#39;int&#39;,
+  &#39;help&#39;: &#39;minimum size threshold that triggers storing text in a relational file&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_munge_relational_name_fmt&#39;: {&#39;object&#39;: &#39;db.munge.relational_name_fmt&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;directory name format for data in each row keyed on column&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_munge_nonscalar_file_type&#39;: {&#39;object&#39;: &#39;db.munge.nonscalar_file_type&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;file format for non-scalar numerical data&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor_serial&#39;: {&#39;object&#39;: &#39;sensor.serial&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device-reported serial number&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor__revision&#39;: {&#39;object&#39;: &#39;sensor._revision&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device-reported revision&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor_read_termination&#39;: {&#39;object&#39;: &#39;sensor.read_termination&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;end of line string to expect in query replies&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor_write_termination&#39;: {&#39;object&#39;: &#39;sensor.write_termination&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;end-of-line string to send after writes&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor_open_timeout&#39;: {&#39;object&#39;: &#39;sensor.open_timeout&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;type&#39;: &#39;float&#39;,
+  &#39;help&#39;: &#39;timeout for opening a connection to the instrument&#39;,
+  &#39;label&#39;: &#39;s&#39;},
+ &#39;sensor_timeout&#39;: {&#39;object&#39;: &#39;sensor.timeout&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;type&#39;: &#39;float&#39;,
+  &#39;help&#39;: &#39;message response timeout&#39;,
+  &#39;label&#39;: &#39;s&#39;},
+ &#39;sensor_make&#39;: {&#39;object&#39;: &#39;sensor.make&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device manufacturer name used to autodetect resource string&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor_model&#39;: {&#39;object&#39;: &#39;sensor.model&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device model used to autodetect resource string&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor__identity&#39;: {&#39;object&#39;: &#39;sensor._identity&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;identity string reported by the instrument&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_serial&#39;: {&#39;object&#39;: &#39;analyzer.serial&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device-reported serial number&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer__revision&#39;: {&#39;object&#39;: &#39;analyzer._revision&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device-reported revision&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_read_termination&#39;: {&#39;object&#39;: &#39;analyzer.read_termination&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;end of line string to expect in query replies&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_write_termination&#39;: {&#39;object&#39;: &#39;analyzer.write_termination&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;end-of-line string to send after writes&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_open_timeout&#39;: {&#39;object&#39;: &#39;analyzer.open_timeout&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;type&#39;: &#39;float&#39;,
+  &#39;help&#39;: &#39;timeout for opening a connection to the instrument&#39;,
+  &#39;label&#39;: &#39;s&#39;},
+ &#39;analyzer_timeout&#39;: {&#39;object&#39;: &#39;analyzer.timeout&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;type&#39;: &#39;float&#39;,
+  &#39;help&#39;: &#39;message response timeout&#39;,
+  &#39;label&#39;: &#39;s&#39;},
+ &#39;analyzer_make&#39;: {&#39;object&#39;: &#39;analyzer.make&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device manufacturer name used to autodetect resource string&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_model&#39;: {&#39;object&#39;: &#39;analyzer.model&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device model used to autodetect resource string&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer__identity&#39;: {&#39;object&#39;: &#39;analyzer._identity&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;identity string reported by the instrument&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_resource&#39;: {&#39;object&#39;: &#39;db.host.resource&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device address or URI&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_commit_id&#39;: {&#39;object&#39;: &#39;db.host.git_commit_id&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;Try to determine the current commit hash of the current git repo&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_remote_url&#39;: {&#39;object&#39;: &#39;db.host.git_remote_url&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;Try to identify the remote URL of the repository of the current git repo&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_hostname&#39;: {&#39;object&#39;: &#39;db.host.hostname&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;Get the name of the current host&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_browse_url&#39;: {&#39;object&#39;: &#39;db.host.git_browse_url&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;URL for browsing the current git repository&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_pending_changes&#39;: {&#39;object&#39;: &#39;db.host.git_pending_changes&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_commit_in&#39;: {&#39;object&#39;: &#39;db.host.git_commit_in&#39;,
+  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;git commit on open() if run inside a git repo with this branch name&#39;,
+  &#39;label&#39;: &#39;&#39;}}
 </pre></div>
 </div>
 </div>
@@ -332,11 +536,154 @@ The data model is driven by a root table of test conditions and measurement resu
     <span class="s1">&#39;analyzer_trace&#39;</span><span class="p">,</span>
 
     <span class="c1"># copy fixed values of these column across as columns in each relational data table</span>
-    <span class="p">[</span><span class="s1">&#39;sensor_frequency&#39;</span><span class="p">,</span> <span class="s1">&#39;sensor_sweep_aperture&#39;</span><span class="p">]</span>
+    <span class="p">[</span><span class="s1">&#39;sensor_frequency&#39;</span><span class="p">,</span> <span class="s1">&#39;sensor_reading&#39;</span><span class="p">]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>analyzer_trace</th>
+      <th>analyzer_trace_frequency</th>
+      <th>analyzer_trace_id</th>
+      <th>analyzer_trace_power_spectral_density</th>
+      <th>root_index</th>
+      <th>sensor_frequency</th>
+      <th>sensor_reading</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0/analyzer_trace.csv</td>
+      <td>5.795000e+09</td>
+      <td>0</td>
+      <td>-52.617</td>
+      <td>0</td>
+      <td>5.800000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0/analyzer_trace.csv</td>
+      <td>5.795050e+09</td>
+      <td>1</td>
+      <td>-52.373</td>
+      <td>0</td>
+      <td>5.800000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0/analyzer_trace.csv</td>
+      <td>5.795101e+09</td>
+      <td>2</td>
+      <td>-52.724</td>
+      <td>0</td>
+      <td>5.800000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0/analyzer_trace.csv</td>
+      <td>5.795151e+09</td>
+      <td>3</td>
+      <td>-51.893</td>
+      <td>0</td>
+      <td>5.800000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0/analyzer_trace.csv</td>
+      <td>5.795201e+09</td>
+      <td>4</td>
+      <td>-52.270</td>
+      <td>0</td>
+      <td>5.800000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>595</th>
+      <td>2/analyzer_trace.csv</td>
+      <td>5.904799e+09</td>
+      <td>195</td>
+      <td>-51.752</td>
+      <td>2</td>
+      <td>5.900000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>596</th>
+      <td>2/analyzer_trace.csv</td>
+      <td>5.904849e+09</td>
+      <td>196</td>
+      <td>-53.065</td>
+      <td>2</td>
+      <td>5.900000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>597</th>
+      <td>2/analyzer_trace.csv</td>
+      <td>5.904899e+09</td>
+      <td>197</td>
+      <td>-52.585</td>
+      <td>2</td>
+      <td>5.900000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>598</th>
+      <td>2/analyzer_trace.csv</td>
+      <td>5.904950e+09</td>
+      <td>198</td>
+      <td>-51.861</td>
+      <td>2</td>
+      <td>5.900000e+09</td>
+      <td>-52.617</td>
+    </tr>
+    <tr>
+      <th>599</th>
+      <td>2/analyzer_trace.csv</td>
+      <td>5.905000e+09</td>
+      <td>199</td>
+      <td>-51.596</td>
+      <td>2</td>
+      <td>5.900000e+09</td>
+      <td>-52.617</td>
+    </tr>
+  </tbody>
+</table>
+<p>600 rows × 7 columns</p>
+</div></div></div>
 </div>
 <p>For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in <code class="docutils literal notranslate"><span class="pre">'analyzer_trace.csv'</span></code>.</p>
 <div class="cell docutils container">
@@ -361,8 +708,8 @@ The data model is driven by a root table of test conditions and measurement resu
 
     <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># remove prior data before we start</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sensor</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sweep_aperture&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">observe_paramattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">observe_paramattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sensor</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sweep_aperture&#39;</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequency</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">frequency</span>
@@ -390,6 +737,19 @@ The data model is driven by a root table of test conditions and measurement resu
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ImportError</span><span class="g g-Whitespace">                               </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">line</span> <span class="mi">2</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="ne">----&gt; </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">labbench.testing</span> <span class="kn">import</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SignalGenerator</span><span class="p">,</span> <span class="n">pyvisa_sim_resource</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
+
+<span class="ne">ImportError</span>: cannot import name &#39;SpectrumAnalyzer&#39; from &#39;labbench.testing&#39; (/Users/dkuester/Documents/src/labbench/labbench/testing/__init__.py)
+</pre></div>
+</div>
+</div>
 </div>
 </section>
 </section>
@@ -406,8 +766,8 @@ The data model is driven by a root table of test conditions and measurement resu
     <h3><a href="../../index.html">Table of Contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">Data Logging</a><ul>
-<li><a class="reference internal" href="#example-logging-with-device-objects-in-scripts">Example: Logging with <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects in scripts</a><ul>
-<li><a class="reference internal" href="#reading-and-exploring-the-data">Reading and exploring the data</a></li>
+<li><a class="reference internal" href="#example-logging-device-objects">Example: Logging <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects</a><ul>
+<li><a class="reference internal" href="#output-data-structure">Output data structure</a></li>
 </ul>
 </li>
 </ul>
@@ -418,7 +778,7 @@ The data model is driven by a root table of test conditions and measurement resu
   <div>
     <h4>Previous topic</h4>
     <p class="topless"><a href="02%20rack.html"
-                          title="previous chapter">Procedural Snippets</a></p>
+                          title="previous chapter">Testbed Organization</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
@@ -428,7 +788,7 @@ The data model is driven by a root table of test conditions and measurement resu
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../../_sources/guide/02_getting_started/03 data logging.md.txt"
+      <li><a href="../../_sources/guide/02_getting_started/03 data logging.ipynb.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -456,7 +816,7 @@ The data model is driven by a root table of test conditions and measurement resu
           <a href="04%20concurrency.html" title="Simplified Concurrency"
              >next</a> |</li>
         <li class="right" >
-          <a href="02%20rack.html" title="Procedural Snippets"
+          <a href="02%20rack.html" title="Testbed Organization"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../02_getting_started.html" >Getting Started</a> &#187;</li>

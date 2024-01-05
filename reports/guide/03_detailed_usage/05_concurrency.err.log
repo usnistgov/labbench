@@ -1,17 +1,20 @@
 Traceback (most recent call last):
-  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\jupyter_cache\executors\utils.py", line 58, in single_nb_execution
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.12/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
     executenb(
-  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 1305, in execute
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.12/site-packages/nbclient/client.py", line 1314, in execute
     return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
-  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\jupyter_core\utils\__init__.py", line 166, in wrapped
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.12/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
     return loop.run_until_complete(inner)
-  File "C:\Python310\lib\asyncio\base_events.py", line 649, in run_until_complete
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 684, in run_until_complete
     return future.result()
-  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 705, in async_execute
+           ^^^^^^^^^^^^^^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.12/site-packages/nbclient/client.py", line 709, in async_execute
     await self.async_execute_cell(
-  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 1058, in async_execute_cell
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.12/site-packages/nbclient/client.py", line 1062, in async_execute_cell
     await self._check_raise_for_error(cell, cell_index, exec_reply)
-  File "C:\Users\dkuester\Documents\src\labbench\.venv\lib\site-packages\nbclient\client.py", line 914, in _check_raise_for_error
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.12/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
@@ -22,59 +25,34 @@ results
 ------------------
 
 ----- stdout -----
-start 4
-start 5
+start 4start 5
 ----- stderr -----
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py", line 24, in do_something_4
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 ----- stderr -----
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py", line 31, in do_something_5
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ----- stderr -----
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py", line 24, in do_something_4
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 Traceback (most recent call last):
-  File "C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py", line 31, in do_something_5
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ------------------
 
-[1;31m---------------------------------------------------------------------------[0m
-[1;31mConcurrentException[0m                       Traceback (most recent call last)
-Cell [1;32mIn[4], line 3[0m
-[0;32m      1[0m [38;5;28;01mfrom[39;00m [38;5;21;01mlabbench[39;00m [38;5;28;01mimport[39;00m concurrently, Call
-[1;32m----> 3[0m results [38;5;241m=[39m [43mconcurrently[49m[43m([49m[43mdo_something_4[49m[43m,[49m[43m [49m[43mdo_something_5[49m[43m)[49m
-[0;32m      4[0m results
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mConcurrentException[0m                       Traceback (most recent call last)
+Cell [0;32mIn[4], line 3[0m
+[1;32m      1[0m [38;5;28;01mfrom[39;00m [38;5;21;01mlabbench[39;00m [38;5;28;01mimport[39;00m concurrently, Call
+[0;32m----> 3[0m results [38;5;241m=[39m [43mconcurrently[49m[43m([49m[43mdo_something_4[49m[43m,[49m[43m [49m[43mdo_something_5[49m[43m)[49m
+[1;32m      4[0m results
 
-File [1;32m~\Documents\src\labbench\labbench\util.py:1227[0m, in [0;36mconcurrently[1;34m(*objs, **kws)[0m
-[0;32m   1172[0m [38;5;129m@hide_in_traceback[39m
-[0;32m   1173[0m [38;5;28;01mdef[39;00m [38;5;21mconcurrently[39m([38;5;241m*[39mobjs, [38;5;241m*[39m[38;5;241m*[39mkws):
-[0;32m   1174[0m [38;5;250m    [39m[38;5;124mr[39m[38;5;124;03m"""If `*objs` are callable (like functions), call each of[39;00m
-[0;32m   1175[0m [38;5;124;03m     `*objs` in concurrent threads. If `*objs` are context[39;00m
-[0;32m   1176[0m [38;5;124;03m     managers (such as Device instances to be connected),[39;00m
-[1;32m   (...)[0m
-[0;32m   1224[0m 
-[0;32m   1225[0m [38;5;124;03m    """[39;00m
-[1;32m-> 1227[0m     [38;5;28;01mreturn[39;00m [43menter_or_call[49m[43m([49m[43mconcurrently_call[49m[43m,[49m[43m [49m[43mobjs[49m[43m,[49m[43m [49m[43mkws[49m[43m)[49m
-
-File [1;32m~\Documents\src\labbench\labbench\util.py:1021[0m, in [0;36menter_or_call[1;34m(flexible_caller, objs, kws)[0m
-[0;32m   1019[0m [38;5;28;01melse[39;00m:
-[0;32m   1020[0m     ret [38;5;241m=[39m merge_inputs(dicts, candidates)
-[1;32m-> 1021[0m     result [38;5;241m=[39m [43mflexible_caller[49m[43m([49m[43mparams[49m[43m,[49m[43m [49m[43mcandidates[49m[43m)[49m
-[0;32m   1023[0m     start_keys [38;5;241m=[39m [38;5;28mset[39m(ret[38;5;241m.[39mkeys())[38;5;241m.[39munion(result[38;5;241m.[39mkeys())
-[0;32m   1024[0m     [38;5;28;01mif[39;00m params[[38;5;124m"[39m[38;5;124mflatten[39m[38;5;124m"[39m]:
-
-File [1;32m~\Documents\src\labbench\labbench\util.py:1167[0m, in [0;36mconcurrently_call[1;34m(params, name_func_pairs)[0m
-[0;32m   1165[0m         ex [38;5;241m=[39m ConcurrentException([38;5;124mf[39m[38;5;124m"[39m[38;5;132;01m{[39;00m[38;5;28mlen[39m(tracebacks)[38;5;132;01m}[39;00m[38;5;124m call(s) raised exceptions[39m[38;5;124m"[39m)
-[0;32m   1166[0m         ex[38;5;241m.[39mthread_exceptions [38;5;241m=[39m tracebacks
-[1;32m-> 1167[0m         [38;5;28;01mraise[39;00m ex
-[0;32m   1169[0m [38;5;28;01mreturn[39;00m results
-
-[1;31mConcurrentException[0m: 2 call(s) raised exceptions
+[0;31mConcurrentException[0m: 2 call(s) raised exceptions
 

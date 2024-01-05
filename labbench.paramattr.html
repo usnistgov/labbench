@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>labbench.paramattr &#8212; labbench</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="_static/documentation_options.js?v=3595839c"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="labbench.paramattr.kwarg" href="labbench.paramattr.kwarg.html" />
+    <link rel="prev" title="labbench" href="labbench.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench">
+  <link rel="canonical" href="./">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href=".//_static/NISTStyle.css">
+  <link rel="stylesheet" href=".//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="labbench.paramattr.kwarg.html" title="labbench.paramattr.kwarg"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="labbench.html" title="labbench"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api_reference.html" accesskey="U">API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">labbench.paramattr</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-labbench.paramattr">
+<span id="labbench-paramattr"></span><h1>labbench.paramattr<a class="headerlink" href="#module-labbench.paramattr" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.HasParamAttrs">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">HasParamAttrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.HasParamAttrs" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.HasParamAttrs.ns_pending">
+<span class="sig-name descname"><span class="pre">ns_pending</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[{}]</span></em><a class="headerlink" href="#labbench.paramattr.HasParamAttrs.ns_pending" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.KeyAdapterBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">KeyAdapterBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_arguments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.KeyAdapterBase" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Decorates a <a class="reference internal" href="labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> subclass to configure its
+implementation of the <cite>key</cite> argument passed to <a class="reference internal" href="labbench.paramattr.property.html#module-labbench.paramattr.property" title="labbench.paramattr.property"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.paramattr.property</span></code></a> or
+<a class="reference internal" href="labbench.paramattr.method.html#module-labbench.paramattr.method" title="labbench.paramattr.method"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.paramattr.method</span></code></a> descriptors.</p>
+<p>This can be use to to automate</p>
+<p class="rubric">Example</p>
+<p>Send a message string based on <cite>key</cite> (simplified from <a class="reference internal" href="#labbench.paramattr.visa_keying" title="labbench.paramattr.visa_keying"><code class="xref py py-func docutils literal notranslate"><span class="pre">labbench.paramattr.visa_keying()</span></code></a>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">paramattr</span> <span class="k">as</span> <span class="n">attr</span>
+
+<span class="k">class</span> <span class="nc">custom_keying</span><span class="p">(</span><span class="n">attr</span><span class="o">.</span><span class="n">message_keying</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">lb</span><span class="o">.</span><span class="n">Device</span><span class="p">,</span> <span class="n">scpi_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trait_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">device</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;?&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">lb</span><span class="o">.</span><span class="n">Device</span><span class="p">,</span> <span class="n">scpi_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">trait_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">device</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scpi_key</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nd">@custom_keying</span>
+<span class="k">class</span> <span class="nc">CustomDevice</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.KeyAdapterBase.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_key_arguments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.KeyAdapterBase.copy" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.KeyAdapterBase.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ParamAttr</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#labbench.paramattr.KeyAdapterBase.get" title="Link to this definition">¶</a></dt>
+<dd><p>this must be implemented by a subclass to support of <cite>labbench.parameter.method</cite>
+<cite>labbench.parameter.property</cite> attributes that are implemented through the <cite>key</cite> keyword.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.KeyAdapterBase.get_key_arguments">
+<span class="sig-name descname"><span class="pre">get_key_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.paramattr.KeyAdapterBase.get_key_arguments" title="Link to this definition">¶</a></dt>
+<dd><p>returns a list of arguments for the parameter attribute key.</p>
+<p>This must be implemented in order to define <cite>labbench.paramattr.method</cite> attributes
+using the <cite>key</cite> keyword.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.KeyAdapterBase.key_arguments">
+<span class="sig-name descname"><span class="pre">key_arguments</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#labbench.paramattr.KeyAdapterBase.key_arguments" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.KeyAdapterBase.method_from_key">
+<span class="sig-name descname"><span class="pre">method_from_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">THasParamAttrs</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paramattr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.KeyAdapterBase.method_from_key" title="Link to this definition">¶</a></dt>
+<dd><p>Autogenerate a parameter getter/setter method based on the message key defined in a ParamAttr method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.KeyAdapterBase.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ParamAttr</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.KeyAdapterBase.set" title="Link to this definition">¶</a></dt>
+<dd><p>this must be implemented by a subclass to support of <cite>labbench.parameter.method</cite>
+<cite>labbench.parameter.property</cite> attributes that are implemented through the <cite>key</cite> keyword.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">ParamAttr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">T</span></code>]</p>
+<p>base class for helper descriptors in <a class="reference internal" href="labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a>. These
+are multi-tools for type checking, casting, decorators, API wrapping, and callbacks.</p>
+<p>The basic types of <cite>ParamAttr</cite> descriptors implemented in <a class="reference internal" href="labbench.html#module-labbench" title="labbench"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench</span></code></a> are</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="labbench.paramattr.value.html#module-labbench.paramattr.value" title="labbench.paramattr.value"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Value</span></code></a>, a simple variable stored in the Device object</p></li>
+<li><p><a class="reference internal" href="labbench.paramattr.property.html#module-labbench.paramattr.property" title="labbench.paramattr.property"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Property</span></code></a>, a parameter of an underlying API (often <cite>Device.backend</cite>) implemented in the style of a <a class="reference internal" href="labbench.paramattr.property.html#module-labbench.paramattr.property" title="labbench.paramattr.property"><code class="xref py py-func docutils literal notranslate"><span class="pre">property()</span></code></a></p></li>
+<li><p><a class="reference internal" href="labbench.paramattr.method.html#module-labbench.paramattr.method" title="labbench.paramattr.method"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Method</span></code></a>, a parameter of an underlying API (often <cite>Device.backend</cite>) implemented as a method that can support additional keyword arguments</p></li>
+</ul>
+<p>Each of these are modules that contain more specialized descriptors targeted toward various python types.
+Method definitions also use <a class="reference internal" href="labbench.paramattr.kwarg.html#module-labbench.paramattr.kwarg" title="labbench.paramattr.kwarg"><code class="xref py py-mod docutils literal notranslate"><span class="pre">KeywordArgument</span></code></a>, which are not used as descriptors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – specify automatic implementation with the Device (backend-specific)</p></li>
+<li><p><strong>help</strong> – the ParamAttr docstring</p></li>
+<li><p><strong>label</strong> – a label for the quantity, such as units</p></li>
+<li><p><strong>sets</strong> – True if the attribute supports writes</p></li>
+<li><p><strong>gets</strong> – True if the attribute supports reads</p></li>
+<li><p><strong>cache</strong> – if True, interact with the device only once, then return copies (state attribute only)</p></li>
+<li><p><strong>only</strong> – value allowlist; others raise ValueError</p></li>
+<li><p><strong>allow_none</strong> – permit None values in addition to the specified type</p></li>
+<li><p><strong>notify</strong> – whether to emit logging/UI notifications when the value changes</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'base</span> <span class="pre">class'</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.contains">
+<span class="sig-name descname"><span class="pre">contains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.contains" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">update_kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.copy" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.doc">
+<span class="sig-name descname"><span class="pre">doc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_argument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.doc" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.doc_params">
+<span class="sig-name descname"><span class="pre">doc_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['help',</span> <span class="pre">'label']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_argument</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#labbench.paramattr.ParamAttr.doc_params" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.from_pythonic">
+<span class="sig-name descname"><span class="pre">from_pythonic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.from_pythonic" title="Link to this definition">¶</a></dt>
+<dd><p>convert from a python type representation to the format needed to communicate with the device</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.get_from_owner">
+<span class="sig-name descname"><span class="pre">get_from_owner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.get_from_owner" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.set_in_owner">
+<span class="sig-name descname"><span class="pre">set_in_owner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.set_in_owner" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#labbench.paramattr.ParamAttr.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.to_pythonic">
+<span class="sig-name descname"><span class="pre">to_pythonic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.to_pythonic" title="Link to this definition">¶</a></dt>
+<dd><p>Convert a value from an unknown type to self._type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">attrs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.update" title="Link to this definition">¶</a></dt>
+<dd><p>returns <cite>self</cite> or (if <cite>obj</cite> is None) or <cite>other</cite>, after updating its keyword
+parameters with <cite>attrs</cite></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.ParamAttr.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.ParamAttr.validate" title="Link to this definition">¶</a></dt>
+<dd><p>This is the default validator, which requires that attribute value have the same type as self._type.
+A ValueError is raised for other types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – value to check</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a valid value</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="labbench.paramattr.adjust">
+<span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paramattr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_or_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.paramattr.adjust" title="Link to this definition">¶</a></dt>
+<dd><p>decorates a Device subclass to adjust the definition of the specified ParamAttr.</p>
+<p>This can be applied to inherited classes that need one of its parents attributes
+with an adjusted definition. Multiple decorators can be stacked to the
+same class definition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>paramattr</strong> – the ParamAttr name or instance to adjust</p></li>
+<li><p><strong>default_or_key</strong> – new default or key argument (these can also be passed in <a href="#id1"><span class="problematic" id="id2">**</span></a>kws)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – invalid type of ParamAttr argument, or when d</p></li>
+<li><p><strong>TypeError</strong> – _description_</p></li>
+<li><p><strong>ValueError</strong> – _description_</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Changes to value defaults are not captured in type hints. Therefore,
+the defaults in their owning classes will not change in IDEs.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HasParamAttrs or Device with adjusted attributes value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="labbench.paramattr.get_class_attrs">
+<span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">get_class_attrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.paramattr.get_class_attrs" title="Link to this definition">¶</a></dt>
+<dd><p>returns a mapping of labbench paramattrs defined in <cite>obj</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="labbench.paramattr.hold_attr_notifications">
+<span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">hold_attr_notifications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.hold_attr_notifications" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">message_keying</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_arguments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.message_keying" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labbench.paramattr.KeyAdapterBase" title="labbench.paramattr.KeyAdapterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyAdapterBase</span></code></a></p>
+<p>Base class for decorators configure wrapper access to a backend API in of a
+:class:labbench.Device` class through string <cite>key</cite> arguments.</p>
+<p>Decorated classes connect traits that are defined with the <cite>key</cite> keyword to trigger
+backend API calls based on the key. The implementation of the <cite>set</cite> and <cite>get</cite> methods
+determines how the key is used to generate API calls.</p>
+<p class="rubric">Example</p>
+<p>A custom implementation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">paramattr</span> <span class="k">as</span> <span class="n">attr</span>
+
+<span class="k">class</span> <span class="nc">custom_keying</span><span class="p">(</span><span class="n">attr</span><span class="o">.</span><span class="n">message_keying</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">lb</span><span class="o">.</span><span class="n">Device</span><span class="p">,</span> <span class="n">scpi_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trait_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot; &quot;</span> <span class="ow">in</span> <span class="n">scpi_key</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">scpi_key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;? &quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">scpi_key</span> <span class="o">+</span> <span class="s2">&quot;?&quot;</span>
+        <span class="k">return</span> <span class="n">device</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">lb</span><span class="o">.</span><span class="n">Device</span><span class="p">,</span> <span class="n">scpi_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">trait_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot; &quot;</span> <span class="ow">in</span> <span class="n">scpi_key</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scpi_key</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scpi_key</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">device</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
+
+<span class="nd">@custom_keying</span><span class="p">(</span><span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">})</span>
+<span class="k">class</span> <span class="nc">CustomDevice</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#labbench.paramattr.visa_keying" title="labbench.paramattr.visa_keying"><code class="xref py py-meth docutils literal notranslate"><span class="pre">labbench.paramattr.visa_keying()</span></code></a></p></li>
+</ul>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_key_arguments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.message_keying.copy" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.from_message">
+<span class="sig-name descname"><span class="pre">from_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.message_keying.from_message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scpi_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paramattr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ParamAttr</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#labbench.paramattr.message_keying.get" title="Link to this definition">¶</a></dt>
+<dd><p>queries a parameter named <cite>scpi_key</cite> by sending an SCPI message string.</p>
+<p>The command message string is formatted as f’{scpi_key}?’.
+This is automatically called in wrapper objects on accesses to property traits that
+defined with ‘key=’ (which then also cast to a pythonic type).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a>) – the name of the parameter to set</p></li>
+<li><p><strong>name</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a><em>, </em><em>None</em>) – name of the trait setting the key (or None to indicate no trait) (ignored)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>response (str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.get_key_arguments">
+<span class="sig-name descname"><span class="pre">get_key_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.paramattr.message_keying.get_key_arguments" title="Link to this definition">¶</a></dt>
+<dd><p>returns an argument list based on f-string style curly-brace formatting tokens.</p>
+<p class="rubric">Example</p>
+<p><a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a>python</p>
+<p># input
+print(key_adapter.get_key_arguments(‘CH{channel}:SV:CENTERFrequency’))
+[‘channel’]
+<a href="#id7"><span class="problematic" id="id8">``</span></a><a href="#id9"><span class="problematic" id="id10">`</span></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.key_arguments">
+<span class="sig-name descname"><span class="pre">key_arguments</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#labbench.paramattr.message_keying.key_arguments" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.method_from_key">
+<span class="sig-name descname"><span class="pre">method_from_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">THasParamAttrs</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paramattr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.message_keying.method_from_key" title="Link to this definition">¶</a></dt>
+<dd><p>Autogenerate a parameter getter/setter method based on the message key defined in a ParamAttr method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scpi_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ParamAttr</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.message_keying.set" title="Link to this definition">¶</a></dt>
+<dd><p>writes an SCPI message to set a parameter with a name key
+to <cite>value</cite>.</p>
+<p>The command message string is formatted as f’{scpi_key} {value}’. This
+This is automatically called on assignment to property traits that
+are defined with ‘key=’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scpi_key</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a>) – the name of the parameter to set</p></li>
+<li><p><strong>value</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a>) – value to assign</p></li>
+<li><p><strong>name</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a><em>, </em><em>None</em>) – name of the trait setting the key (or None to indicate no trait) (ignored)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.message_keying.to_message">
+<span class="sig-name descname"><span class="pre">to_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.message_keying.to_message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="labbench.paramattr.observe">
+<span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('get',</span> <span class="pre">'set')</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.observe" title="Link to this definition">¶</a></dt>
+<dd><p>Register a handler function to be called on changes to attributes defined with ParamAttr.</p>
+<p>The handler function takes a single message argument. This
+dictionary message has the keys</p>
+<ul class="simple">
+<li><p><cite>new</cite>: the updated value</p></li>
+<li><p><cite>old</cite>: the previous value</p></li>
+<li><p><cite>owner</cite>: the object that owns the attribute</p></li>
+<li><p><cite>name</cite>: the name of the attribute</p></li>
+<li><p>‘event’: ‘set’ or ‘get’</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>handler</strong> – the handler function to call when the value changes</p></li>
+<li><p><strong>names</strong> – notify only changes to these attribute names (None to disable filtering)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="labbench.paramattr.register_key_argument">
+<span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">register_key_argument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kwarg_def</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">KeywordArgument</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">THasParamAttrs</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">THasParamAttrs</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.paramattr.register_key_argument" title="Link to this definition">¶</a></dt>
+<dd><p>decorates a Device subclass to copy the specified ParamAttr with a specified name.</p>
+<p>This can be applied to inherited classes that need one of its parents attributes
+with an adjusted definition. Multiple decorators can be stacked to the
+same class definition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>paramattr</strong> – ParamAttr instance or name of the attribute to adjust in the wrapped class</p></li>
+<li><p><strong>default</strong> – new default value (for value attributes only)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – invalid type of ParamAttr argument, or when d</p></li>
+<li><p><strong>TypeError</strong> – _description_</p></li>
+<li><p><strong>ValueError</strong> – _description_</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HasParamAttrs or Device with adjusted attributes value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="labbench.paramattr.unobserve">
+<span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">unobserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.unobserve" title="Link to this definition">¶</a></dt>
+<dd><p>Unregister a handler function from notifications in obj.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.</span></span><span class="sig-name descname"><span class="pre">visa_keying</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{key}?'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{key}</span> <span class="pre">{value}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_arguments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.visa_keying" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labbench.paramattr.message_keying" title="labbench.paramattr.message_keying"><code class="xref py py-class docutils literal notranslate"><span class="pre">message_keying</span></code></a></p>
+<p>Decorates a <a class="reference internal" href="labbench.html#labbench.VISADevice" title="labbench.VISADevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISADevice</span></code></a> (or subclass) to configure its use of the <cite>key</cite> argument
+in all <a class="reference internal" href="labbench.paramattr.property.html#module-labbench.paramattr.property" title="labbench.paramattr.property"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.paramattr.property</span></code></a> or <a class="reference internal" href="labbench.paramattr.method.html#module-labbench.paramattr.method" title="labbench.paramattr.method"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.paramattr.method</span></code></a> descriptors.</p>
+<p class="rubric">Example</p>
+<p>Configure <cite>MyDevice</cite> to format SCPI queries as <cite>‘{key}?’</cite>, and SCPI writes as f’{key} {value}’:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+
+<span class="nd">@lb</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span><span class="n">query_fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{key}</span><span class="s1">?&#39;</span><span class="p">,</span> <span class="n">write_fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{key}</span><span class="s1"> </span><span class="si">{value}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyDevice</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_key_arguments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.visa_keying.copy" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.from_message">
+<span class="sig-name descname"><span class="pre">from_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.visa_keying.from_message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scpi_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paramattr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ParamAttr</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#labbench.paramattr.visa_keying.get" title="Link to this definition">¶</a></dt>
+<dd><p>queries a parameter named <cite>scpi_key</cite> by sending an SCPI message string.</p>
+<p>The command message string is formatted as f’{scpi_key}?’.
+This is automatically called in wrapper objects on accesses to property traits that
+defined with ‘key=’ (which then also cast to a pythonic type).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a>) – the name of the parameter to set</p></li>
+<li><p><strong>name</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a><em>, </em><em>None</em>) – name of the trait setting the key (or None to indicate no trait) (ignored)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>response (str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.get_key_arguments">
+<span class="sig-name descname"><span class="pre">get_key_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.paramattr.visa_keying.get_key_arguments" title="Link to this definition">¶</a></dt>
+<dd><p>returns an argument list based on f-string style curly-brace formatting tokens.</p>
+<p class="rubric">Example</p>
+<p><a href="#id11"><span class="problematic" id="id12">``</span></a><a href="#id13"><span class="problematic" id="id14">`</span></a>python</p>
+<p># input
+print(key_adapter.get_key_arguments(‘CH{channel}:SV:CENTERFrequency’))
+[‘channel’]
+<a href="#id15"><span class="problematic" id="id16">``</span></a><a href="#id17"><span class="problematic" id="id18">`</span></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.key_arguments">
+<span class="sig-name descname"><span class="pre">key_arguments</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#labbench.paramattr.visa_keying.key_arguments" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.method_from_key">
+<span class="sig-name descname"><span class="pre">method_from_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">THasParamAttrs</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paramattr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.ParamAttr" title="labbench.paramattr.ParamAttr"><span class="pre">ParamAttr</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.visa_keying.method_from_key" title="Link to this definition">¶</a></dt>
+<dd><p>Autogenerate a parameter getter/setter method based on the message key defined in a ParamAttr method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.paramattr.HasParamAttrs" title="labbench.paramattr.HasParamAttrs"><span class="pre">HasParamAttrs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scpi_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ParamAttr</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.visa_keying.set" title="Link to this definition">¶</a></dt>
+<dd><p>writes an SCPI message to set a parameter with a name key
+to <cite>value</cite>.</p>
+<p>The command message string is formatted as f’{scpi_key} {value}’. This
+This is automatically called on assignment to property traits that
+are defined with ‘key=’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scpi_key</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a>) – the name of the parameter to set</p></li>
+<li><p><strong>value</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a>) – value to assign</p></li>
+<li><p><strong>name</strong> (<a class="reference internal" href="labbench.paramattr.kwarg.html#labbench.paramattr.kwarg.str" title="labbench.paramattr.kwarg.str"><em>str</em></a><em>, </em><em>None</em>) – name of the trait setting the key (or None to indicate no trait) (ignored)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.paramattr.visa_keying.to_message">
+<span class="sig-name descname"><span class="pre">to_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.visa_keying.to_message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">labbench.paramattr</a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.HasParamAttrs"><code class="docutils literal notranslate"><span class="pre">HasParamAttrs</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.HasParamAttrs.ns_pending"><code class="docutils literal notranslate"><span class="pre">HasParamAttrs.ns_pending</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.KeyAdapterBase"><code class="docutils literal notranslate"><span class="pre">KeyAdapterBase</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.KeyAdapterBase.copy"><code class="docutils literal notranslate"><span class="pre">KeyAdapterBase.copy()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.KeyAdapterBase.get"><code class="docutils literal notranslate"><span class="pre">KeyAdapterBase.get()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.KeyAdapterBase.get_key_arguments"><code class="docutils literal notranslate"><span class="pre">KeyAdapterBase.get_key_arguments()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.KeyAdapterBase.key_arguments"><code class="docutils literal notranslate"><span class="pre">KeyAdapterBase.key_arguments</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.KeyAdapterBase.method_from_key"><code class="docutils literal notranslate"><span class="pre">KeyAdapterBase.method_from_key()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.KeyAdapterBase.set"><code class="docutils literal notranslate"><span class="pre">KeyAdapterBase.set()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr"><code class="docutils literal notranslate"><span class="pre">ParamAttr</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.ROLE"><code class="docutils literal notranslate"><span class="pre">ParamAttr.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.allow_none"><code class="docutils literal notranslate"><span class="pre">ParamAttr.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.cache"><code class="docutils literal notranslate"><span class="pre">ParamAttr.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.contains"><code class="docutils literal notranslate"><span class="pre">ParamAttr.contains()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.copy"><code class="docutils literal notranslate"><span class="pre">ParamAttr.copy()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.doc"><code class="docutils literal notranslate"><span class="pre">ParamAttr.doc()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.doc_params"><code class="docutils literal notranslate"><span class="pre">ParamAttr.doc_params()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.from_pythonic"><code class="docutils literal notranslate"><span class="pre">ParamAttr.from_pythonic()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.get_from_owner"><code class="docutils literal notranslate"><span class="pre">ParamAttr.get_from_owner()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.gets"><code class="docutils literal notranslate"><span class="pre">ParamAttr.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.help"><code class="docutils literal notranslate"><span class="pre">ParamAttr.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.label"><code class="docutils literal notranslate"><span class="pre">ParamAttr.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.name"><code class="docutils literal notranslate"><span class="pre">ParamAttr.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.notify"><code class="docutils literal notranslate"><span class="pre">ParamAttr.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.only"><code class="docutils literal notranslate"><span class="pre">ParamAttr.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.set_in_owner"><code class="docutils literal notranslate"><span class="pre">ParamAttr.set_in_owner()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.sets"><code class="docutils literal notranslate"><span class="pre">ParamAttr.sets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.to_pythonic"><code class="docutils literal notranslate"><span class="pre">ParamAttr.to_pythonic()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.update"><code class="docutils literal notranslate"><span class="pre">ParamAttr.update()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.ParamAttr.validate"><code class="docutils literal notranslate"><span class="pre">ParamAttr.validate()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.adjust"><code class="docutils literal notranslate"><span class="pre">adjust()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.get_class_attrs"><code class="docutils literal notranslate"><span class="pre">get_class_attrs()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.hold_attr_notifications"><code class="docutils literal notranslate"><span class="pre">hold_attr_notifications()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying"><code class="docutils literal notranslate"><span class="pre">message_keying</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.copy"><code class="docutils literal notranslate"><span class="pre">message_keying.copy()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.from_message"><code class="docutils literal notranslate"><span class="pre">message_keying.from_message()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.get"><code class="docutils literal notranslate"><span class="pre">message_keying.get()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.get_key_arguments"><code class="docutils literal notranslate"><span class="pre">message_keying.get_key_arguments()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.key_arguments"><code class="docutils literal notranslate"><span class="pre">message_keying.key_arguments</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.method_from_key"><code class="docutils literal notranslate"><span class="pre">message_keying.method_from_key()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.set"><code class="docutils literal notranslate"><span class="pre">message_keying.set()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.message_keying.to_message"><code class="docutils literal notranslate"><span class="pre">message_keying.to_message()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.observe"><code class="docutils literal notranslate"><span class="pre">observe()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.register_key_argument"><code class="docutils literal notranslate"><span class="pre">register_key_argument()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.unobserve"><code class="docutils literal notranslate"><span class="pre">unobserve()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying"><code class="docutils literal notranslate"><span class="pre">visa_keying</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.copy"><code class="docutils literal notranslate"><span class="pre">visa_keying.copy()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.from_message"><code class="docutils literal notranslate"><span class="pre">visa_keying.from_message()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.get"><code class="docutils literal notranslate"><span class="pre">visa_keying.get()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.get_key_arguments"><code class="docutils literal notranslate"><span class="pre">visa_keying.get_key_arguments()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.key_arguments"><code class="docutils literal notranslate"><span class="pre">visa_keying.key_arguments</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.method_from_key"><code class="docutils literal notranslate"><span class="pre">visa_keying.method_from_key()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.set"><code class="docutils literal notranslate"><span class="pre">visa_keying.set()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.visa_keying.to_message"><code class="docutils literal notranslate"><span class="pre">visa_keying.to_message()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="labbench.html"
+                          title="previous chapter">labbench</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="labbench.paramattr.kwarg.html"
+                          title="next chapter">labbench.paramattr.kwarg</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/labbench.paramattr.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="labbench.paramattr.kwarg.html" title="labbench.paramattr.kwarg"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="labbench.html" title="labbench"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api_reference.html" >API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">labbench.paramattr</a></li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

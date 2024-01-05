@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Simplified Concurrency &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=7bb76a1a"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../../_static/documentation_options.js?v=3595839c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -72,7 +72,7 @@
           <div class="body" role="main">
             
   <section id="simplified-concurrency">
-<h1>Simplified Concurrency<a class="headerlink" href="#simplified-concurrency" title="Permalink to this heading">¶</a></h1>
+<h1>Simplified Concurrency<a class="headerlink" href="#simplified-concurrency" title="Link to this heading">¶</a></h1>
 <p><code class="docutils literal notranslate"><span class="pre">labbench</span></code> includes simplified concurrency support for this kind of I/O-constrained operations like waiting for instruments to perform long operations. It is not suited for parallelizing CPU-intensive tasks because the operations share a single process on one CPU core, instead of multiprocessing, which may be able to spread operations across multiple CPU cores.</p>
 <p>Here are very fake functions that just use <code class="docutils literal notranslate"><span class="pre">time.sleep</span></code> to block. They simulate longer instrument calls (such as triggering or acquisition) that take some time to complete.</p>
 <p>Notice that <code class="docutils literal notranslate"><span class="pre">do_something_3</span></code> takes 3 arguments (and returns them), and that <code class="docutils literal notranslate"><span class="pre">do_something_4</span></code> raises an exception.</p>
@@ -144,8 +144,8 @@ results: {&#39;do_something_1&#39;: 1, &#39;do_something_2&#39;: 2}
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 1
-start 3
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 1start 3
+
 end 1
 end 3
 </pre></div>
@@ -166,24 +166,23 @@ end 3
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 4
-start 5
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 4start 5
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Traceback (most recent call last):
-  File &quot;C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py&quot;, line 24, in do_something_4
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py&quot;, line 24, in do_something_4
     raise ValueError(&#39;I had an error&#39;)
 ValueError: I had an error
 Traceback (most recent call last):
-  File &quot;C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py&quot;, line 31, in do_something_5
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py&quot;, line 31, in do_something_5
     raise IndexError(&#39;I had a different error&#39;)
 IndexError: I had a different error
 Traceback (most recent call last):
-  File &quot;C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py&quot;, line 24, in do_something_4
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py&quot;, line 24, in do_something_4
     raise ValueError(&#39;I had an error&#39;)
 ValueError: I had an error
 Traceback (most recent call last):
-  File &quot;C:\Users\dkuester\AppData\Local\Temp\1\ipykernel_25300\3738405091.py&quot;, line 31, in do_something_5
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_2322/3738405091.py&quot;, line 31, in do_something_5
     raise IndexError(&#39;I had a different error&#39;)
 IndexError: I had a different error
 </pre></div>
@@ -194,30 +193,6 @@ IndexError: I had a different error
 <span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">concurrently</span><span class="p">,</span> <span class="n">Call</span>
 <span class="ne">----&gt; </span><span class="mi">3</span> <span class="n">results</span> <span class="o">=</span> <span class="n">concurrently</span><span class="p">(</span><span class="n">do_something_4</span><span class="p">,</span> <span class="n">do_something_5</span><span class="p">)</span>
 <span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">results</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\util.py:1227,</span> in <span class="ni">concurrently</span><span class="nt">(*objs, **kws)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1172</span> <span class="nd">@hide_in_traceback</span>
-<span class="g g-Whitespace">   </span><span class="mi">1173</span> <span class="k">def</span> <span class="nf">concurrently</span><span class="p">(</span><span class="o">*</span><span class="n">objs</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
-<span class="g g-Whitespace">   </span><span class="mi">1174</span><span class="w">     </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;If `*objs` are callable (like functions), call each of</span>
-<span class="g g-Whitespace">   </span><span class="mi">1175</span><span class="sd">      `*objs` in concurrent threads. If `*objs` are context</span>
-<span class="g g-Whitespace">   </span><span class="mi">1176</span><span class="sd">      managers (such as Device instances to be connected),</span>
-<span class="sd">   (...)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1224</span><span class="sd"> </span>
-<span class="g g-Whitespace">   </span><span class="mi">1225</span><span class="sd">     &quot;&quot;&quot;</span>
-<span class="ne">-&gt; </span><span class="mi">1227</span>     <span class="k">return</span> <span class="n">enter_or_call</span><span class="p">(</span><span class="n">concurrently_call</span><span class="p">,</span> <span class="n">objs</span><span class="p">,</span> <span class="n">kws</span><span class="p">)</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\util.py:1021,</span> in <span class="ni">enter_or_call</span><span class="nt">(flexible_caller, objs, kws)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1019</span> <span class="k">else</span><span class="p">:</span>
-<span class="g g-Whitespace">   </span><span class="mi">1020</span>     <span class="n">ret</span> <span class="o">=</span> <span class="n">merge_inputs</span><span class="p">(</span><span class="n">dicts</span><span class="p">,</span> <span class="n">candidates</span><span class="p">)</span>
-<span class="ne">-&gt; </span><span class="mi">1021</span>     <span class="n">result</span> <span class="o">=</span> <span class="n">flexible_caller</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">candidates</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1023</span>     <span class="n">start_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ret</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<span class="g g-Whitespace">   </span><span class="mi">1024</span>     <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;flatten&quot;</span><span class="p">]:</span>
-
-<span class="nn">File ~\Documents\src\labbench\labbench\util.py:1167,</span> in <span class="ni">concurrently_call</span><span class="nt">(params, name_func_pairs)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1165</span>         <span class="n">ex</span> <span class="o">=</span> <span class="n">ConcurrentException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tracebacks</span><span class="p">)</span><span class="si">}</span><span class="s2"> call(s) raised exceptions&quot;</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1166</span>         <span class="n">ex</span><span class="o">.</span><span class="n">thread_exceptions</span> <span class="o">=</span> <span class="n">tracebacks</span>
-<span class="ne">-&gt; </span><span class="mi">1167</span>         <span class="k">raise</span> <span class="n">ex</span>
-<span class="g g-Whitespace">   </span><span class="mi">1169</span> <span class="k">return</span> <span class="n">results</span>
 
 <span class="ne">ConcurrentException</span>: 2 call(s) raised exceptions
 </pre></div>

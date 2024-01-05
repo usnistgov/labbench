@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Logging device states and test results to a database &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=7bb76a1a"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../../_static/documentation_options.js?v=3595839c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -72,7 +72,7 @@
           <div class="body" role="main">
             
   <section id="logging-device-states-and-test-results-to-a-database">
-<h1>Logging device states and test results to a database<a class="headerlink" href="#logging-device-states-and-test-results-to-a-database" title="Permalink to this heading">¶</a></h1>
+<h1>Logging device states and test results to a database<a class="headerlink" href="#logging-device-states-and-test-results-to-a-database" title="Link to this heading">¶</a></h1>
 <p>A number of tools are included in <code class="docutils literal notranslate"><span class="pre">labbench</span></code> to streamline acquisition of test data into a database. A couple of methods are</p>
 <ul class="simple">
 <li><p>Automatically monitoring attributes in <code class="docutils literal notranslate"><span class="pre">state</span></code> and logging changes</p></li>
@@ -80,7 +80,7 @@
 </ul>
 <p>The data management supports automatic relational databasing. Common non-scalar data types (<code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, long strings, files generated outside of the data tree, etc.) are automatically stored relationally — placed in folders and referred to in the database. Other data can be forced to be relational by dynamically generating relational databases on the fly.</p>
 <section id="file-conventions">
-<h2>File conventions<a class="headerlink" href="#file-conventions" title="Permalink to this heading">¶</a></h2>
+<h2>File conventions<a class="headerlink" href="#file-conventions" title="Link to this heading">¶</a></h2>
 <p>All labbench data save functionality is implemented in tables with <a class="reference external" href="http://pandas.pydata.org">pandas</a> DataFrame backends. Here are database storage formats that are supported:</p>
 <table class="docutils align-default">
 <thead>
@@ -158,7 +158,7 @@
 <p>In the following example, we will use an sqlite master database, and csv record files.</p>
 </section>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
 <p>Here is a emulated “dummy” instrument. It has a few state settings similar to a simple power sensor. The state descriptors (<code class="docutils literal notranslate"><span class="pre">initiate_continuous</span></code>, <code class="docutils literal notranslate"><span class="pre">output_trigger</span></code>, etc.) are defined as local types, which means they don’t trigger communication with any actual devices. The <code class="docutils literal notranslate"><span class="pre">fetch_trace</span></code> method generates a “trace” drawn from a uniform distribution.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -174,10 +174,10 @@
 <span class="sd">        up a measurement.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">class</span> <span class="nc">state</span> <span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
-        <span class="n">initiate_continuous</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;INIT:CONT&#39;</span><span class="p">)</span>
-        <span class="n">output_trigger</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;OUTP:TRIG&#39;</span><span class="p">)</span>
-        <span class="n">sweep_aperture</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
-        <span class="n">frequency</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hz&#39;</span><span class="p">)</span>
+        <span class="n">initiate_continuous</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;INIT:CONT&#39;</span><span class="p">)</span>
+        <span class="n">output_trigger</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;OUTP:TRIG&#39;</span><span class="p">)</span>
+        <span class="n">sweep_aperture</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+        <span class="n">frequency</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hz&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; This would tell the instrument to start a measurement</span>
@@ -274,7 +274,7 @@ The arguments specify the name of the sqlite database file and the name of the t
 </div>
 </div>
 <section id="reading-and-exploring-the-data">
-<h3>Reading and exploring the data<a class="headerlink" href="#reading-and-exploring-the-data" title="Permalink to this heading">¶</a></h3>
+<h3>Reading and exploring the data<a class="headerlink" href="#reading-and-exploring-the-data" title="Link to this heading">¶</a></h3>
 <p>The master database is now populated with the test results and subdirectories are populated with trace data. <code class="docutils literal notranslate"><span class="pre">labbench</span></code> provides the function <code class="docutils literal notranslate"><span class="pre">read</span></code> as a shortcut to load the sqlite database into a pandas dataframe. Each state is a column in the database. The logger creates columns named as a combination of the device name (‘inst1’) and name of the corresponding device state.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">

@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Device Usage &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=7bb76a1a"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../../_static/documentation_options.js?v=3595839c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -72,7 +72,7 @@
           <div class="body" role="main">
             
   <section id="device-usage">
-<h1>Device Usage<a class="headerlink" href="#device-usage" title="Permalink to this heading">¶</a></h1>
+<h1>Device Usage<a class="headerlink" href="#device-usage" title="Link to this heading">¶</a></h1>
 <p>A series of short working examples here illustrate the use of labbench <code class="docutils literal notranslate"><span class="pre">Device</span></code> classes for experiment automation. The python programming interface is in the module of the same name, but it is convenient to import it as <code class="docutils literal notranslate"><span class="pre">lb</span></code> for shorthand.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -85,7 +85,7 @@
 <p>Laboratory automation wrappers are implemented as classes derived from <code class="docutils literal notranslate"><span class="pre">lb.Device</span></code>. All of them share common basic types features designed to make their usage discoverable and convenient. The goal here is to show how to navigate these objects to get started quickly automating lab tasks.</p>
 <p>Wrappers for specific instruments are not included with <code class="docutils literal notranslate"><span class="pre">labbench</span></code>, only low-level python plumbing and utility functions to streamline lab automation. Specific implementation is left for other libraries.</p>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">¶</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Device</span></code> class and subclasses represent in a sense only a definition with instructions for automating a specified type of lab tool. To bring these to life and control objects in the lab, the most general steps are to</p>
 <ol class="arabic simple">
 <li><p>construct an object from the class,</p></li>
@@ -135,9 +135,9 @@
 <p>These instruments are emulated - under the hood they are <a class="reference external" href="http://pyvisa-sim.readthedocs.io/">pyvisa-sim</a> instruments, configured in [sim_visa.yaml], which act as simple value stores for a few fake SCPI commands and sources of “canned” arrays of data. The demo labbench Device classes that control them are implemented in [sim_visa.py] (subclassed from <code class="docutils literal notranslate"><span class="pre">lb.Device</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">lb.VISADevice</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">lb.SimulatedVISADevice</span></code>).</p>
 </section>
 <section id="workflow">
-<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this heading">¶</a></h2>
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading">¶</a></h2>
 <section id="constructing-objects">
-<h3>Constructing objects<a class="headerlink" href="#constructing-objects" title="Permalink to this heading">¶</a></h3>
+<h3>Constructing objects<a class="headerlink" href="#constructing-objects" title="Link to this heading">¶</a></h3>
 <p>These Device classes (like other VISA instruments) need a VISA address in order to point to a specific instrument. To discover information about this and other available initialization parameters, use python help() or the ‘?’ magic in ipython or jupyter:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -150,7 +150,7 @@
 <p>These can also be set or changed after object construction by setting the value attributes, for example <code class="docutils literal notranslate"><span class="pre">spectrum_analyzer.resource</span> <span class="pre">=</span> <span class="pre">'GPIB::15::INSTR'</span></code> or <code class="docutils literal notranslate"><span class="pre">supply.resource</span> <span class="pre">=</span> <span class="pre">'USB::0x1111::0x2222::0x2468::INSTR'</span></code>. The complete list of these parameters is shown under “Value Attributes”, which also lists read-only values that can’t be changed and are not constructor arguments.</p>
 </section>
 <section id="opening-device-connections">
-<h3>Opening device connections<a class="headerlink" href="#opening-device-connections" title="Permalink to this heading">¶</a></h3>
+<h3>Opening device connections<a class="headerlink" href="#opening-device-connections" title="Link to this heading">¶</a></h3>
 <p>In automation scripts, it is good practice to use a context block (that <code class="docutils literal notranslate"><span class="pre">with</span></code> statement) to open connections. This ensures all of the devices open and close together, even when exceptions are raised.</p>
 <p>For interactive use on the python/ipython/jupyter prompt, this is less convenient. For this purpose, device objects also expose explicit <code class="docutils literal notranslate"><span class="pre">open</span></code> and <code class="docutils literal notranslate"><span class="pre">close</span></code> methods. As an example, a simple check for instrument response to automation could look like this,</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">supply</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
@@ -164,7 +164,7 @@
 <p>This type of exploration is a good way to learn the capabilities of a device interactively.</p>
 </section>
 <section id="automating-with-open-devices">
-<h3>Automating with open devices<a class="headerlink" href="#automating-with-open-devices" title="Permalink to this heading">¶</a></h3>
+<h3>Automating with open devices<a class="headerlink" href="#automating-with-open-devices" title="Link to this heading">¶</a></h3>
 <p>Python’s introspection tools give more opportunities to discover the API exposed by a device object. This is important because the methods and other attributes vary from one type of Device class to another. The below uses <code class="docutils literal notranslate"><span class="pre">dir</span></code> to show the list of all <em>public</em> attributes (those that don’t start with <code class="docutils literal notranslate"><span class="pre">'_'</span></code>).</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -203,7 +203,7 @@ SpectrumAnalyzer.query<span class="o">?</span>
 </section>
 </section>
 <section id="generalizing-from-the-example">
-<h2>Generalizing from the example<a class="headerlink" href="#generalizing-from-the-example" title="Permalink to this heading">¶</a></h2>
+<h2>Generalizing from the example<a class="headerlink" href="#generalizing-from-the-example" title="Link to this heading">¶</a></h2>
 <p>Different subclasses expose different method functions and attribute variables to wrap the underling low-level API. Still, several characteristics are standardized:</p>
 <ul class="simple">
 <li><p>connection management through <code class="docutils literal notranslate"><span class="pre">with</span></code> block or <code class="docutils literal notranslate"><span class="pre">open</span></code>/<code class="docutils literal notranslate"><span class="pre">close</span></code> methods</p></li>
@@ -253,7 +253,7 @@ SpectrumAnalyzer.query<span class="o">?</span>
 <p>data logging, type checking,and numerical bounds validation.</p>
 <p>These features are common to all <code class="docutils literal notranslate"><span class="pre">Device</span></code> classes (and derived classes). To get started, provide  by minimum working examples. Examples will use  we’ll look into the more specialized capabilities provided by other <code class="docutils literal notranslate"><span class="pre">Device</span></code> subclasses included <code class="docutils literal notranslate"><span class="pre">labbench</span></code> for often-used backend APIs like serial and VISA.</p>
 <section id="example">
-<h3>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h3>
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h3>
 <p>Here are very fake functions that just use <code class="docutils literal notranslate"><span class="pre">time.sleep</span></code> to block. They simulate longer instrument calls (such as triggering or acquisition) that take some time to complete.</p>
 <p>Notice that <code class="docutils literal notranslate"><span class="pre">do_something_3</span></code> takes 3 arguments (and returns them), and that <code class="docutils literal notranslate"><span class="pre">do_something_4</span></code> raises an exception.</p>
 <div class="cell docutils container">

@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Introduction &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
-    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=7bb76a1a"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../_static/documentation_options.js?v=3595839c"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Getting Started" href="02_getting_started.html" />
     <link rel="prev" title="Contents" href="../index.html" />
@@ -80,66 +80,89 @@
           <div class="body" role="main">
             
   <section id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">¶</a></h1>
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h1>
 <p><a class="reference external" href="https://pypi.org/project/labbench/"><img alt="PyPI Latest Release" src="https://img.shields.io/pypi/v/labbench.svg" /></a>
 <a class="reference external" href="https://doi.org/10.18434/M32122"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.18434/M32122.svg" /></a>
 <a class="reference external" href="https://github.com/usnistgov/labbench/blob/master/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-NIST-brightgreen" /></a>
 <a class="reference external" href="https://pepy.tech/project/labbench"><img alt="Downloads" src="https://static.pepy.tech/badge/labbench" /></a>
-<a class="reference external" href="https://pypi.org/project/labbench/"><img alt="Last commit" src="https://img.shields.io/github/last-commit/usnistgov/labbench" /></a></p>
+<a class="reference external" href="https://pypi.org/project/labbench/"><img alt="Last commit" src="https://img.shields.io/github/last-commit/usnistgov/labbench" /></a>
+<a class="reference external" href="https://github.com/usnistgov/labbench/"><img alt="Test coverage" src="guide/doc/reports/coverage.svg" /></a></p>
 <p>The <code class="docutils literal notranslate"><span class="pre">labbench</span></code> module provides API tools to support python scripting for laboratory automation.
 The goal is to simplify the process of developing an experimental procedure into clear, concise, explainable, and reusable code.
 These characteristics are necessary to scale up the complexity of large testbeds and experiments.</p>
 <p>Features include:</p>
 <ul class="simple">
 <li><p>Expedited development of python device wrappers, including specialized backends for <a class="reference external" href="https://github.com/pythonnet/pythonnet/wiki">pythonnet</a>, <a class="reference external" href="https://pyvisa.readthedocs.io/">pyvisa</a>, <a class="reference external" href="https://pyserial.readthedocs.io/en/latest/">pyserial</a>, <a class="reference external" href="https://docs.python.org/3/library/subprocess.html">subprocess</a>, <a class="reference external" href="https://docs.python.org/3/library/telnetlib.html">telnetlib</a></p></li>
-<li><p>Automated test logging into CSV, HDF, or sqlite based on introspection of wrapper objects</p></li>
-<li><p>Simplified multi-threaded concurrency for lab testing use cases</p></li>
-<li><p>Composable and nestable container objects for device wrappers</p></li>
-<li><p>Support for testing driven by tables of test conditions</p></li>
+<li><p>Descriptor-driven development: minimize the distance between programming manuals and python wrappers and apply calibrations transparently</p></li>
+<li><p>Automated tracking of simple device parameters into CSV, HDF, or sqlite based on introspection</p></li>
+<li><p>Simplified multi-threaded concurrency tools for lab applications</p></li>
+<li><p>Container objects for nesting device wrappers and snippets of test procedures</p></li>
+<li><p>Support for running experiments based on tables of test conditions</p></li>
 </ul>
-<p>Some complex measurement efforts that used labbench:</p>
+<p>The source code was developed at NIST to support complex measurement efforts. Examples of these projects include:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1952.pdf">NIST TN 1952: LTE Impacts on GPS</a> and <a class="reference external" href="https://data.nist.gov/od/id/mds2-2186">data</a></p></li>
+<li><p><a class="reference external" href="https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.1952.pdf">NIST TN 1952: LTE Impacts on GPS</a> (<a class="reference external" href="https://data.nist.gov/od/id/mds2-2186">data</a>)</p></li>
 <li><p><a class="reference external" href="https://doi.org/10.6028/NIST.TN.2069">NIST TN 2069: Characterizing LTE User Equipment Emissions: Factor Screening</a></p></li>
-<li><p><a class="reference external" href="https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2140.pdf">NIST TN 2140: AWS-3 LTE Impacts on Aeronautical Mobile Telemetry</a> and <a class="reference external" href="https://data.nist.gov/od/id/mds2-2279">data</a></p></li>
+<li><p><a class="reference external" href="https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2140.pdf">NIST TN 2140: AWS-3 LTE Impacts on Aeronautical Mobile Telemetry</a> (<a class="reference external" href="https://data.nist.gov/od/id/mds2-2279">data</a>)</p></li>
 <li><p><a class="reference external" href="https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2147.pdf">NIST TN 2147: Characterizing LTE User Equipment Emissions Under Closed-Loop Power Control</a></p></li>
-<li><p><a class="reference external" href="https://www.nist.gov/publications/blind-measurement-receiver-system-noise">Blind Measurement of Receiver System Noise</a> and <a class="reference external" href="https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121">data</a></p></li>
+<li><p><a class="reference external" href="https://www.nist.gov/publications/blind-measurement-receiver-system-noise">Blind Measurement of Receiver System Noise</a> (<a class="reference external" href="https://data.nist.gov/pdr/lps/ark:/88434/mds2-2121">data</a>)</p></li>
+<li><p>Automated Testbed for Interference Testing in Communications Systems (<a class="reference external" href="https://github.com/usnistgov/atic/">code</a>, data)</p></li>
 </ul>
 <section id="status">
-<h2>Status<a class="headerlink" href="#status" title="Permalink to this heading">¶</a></h2>
+<h2>Status<a class="headerlink" href="#status" title="Link to this heading">¶</a></h2>
+<p>The project is under ongoing development</p>
 <ul class="simple">
-<li><p>The project is under ongoing development. API changes have slowed, but deprecation warnings are not yet being provided.</p></li>
+<li><p>API changes have slowed, but deprecation warnings are not yet being provided</p>
+<ul>
+<li><p>Suggest pinning labbench dependency to an exact version</p></li>
+</ul>
+</li>
 <li><p>Parts of the documentation are in need of updates, and others have not yet been written</p></li>
 </ul>
 </section>
 <section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
 <ol class="arabic">
-<li><p>Ensure python 3.8 or newer is installed with pip for package management</p></li>
-<li><p>Run the following to install the labbench module:</p>
+<li><p>Ensure prerequisites are installed:</p>
+<ul class="simple">
+<li><p>python (3.9-3.12)</p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/pip/"><code class="docutils literal notranslate"><span class="pre">pip</span></code></a> for package management</p></li>
+</ul>
+</li>
+<li><p>Recommended module installation:</p>
+<ul>
+<li><p>For python distributions based on anaconda:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>--upgrade-strategy<span class="w"> </span>only-if-needed<span class="w"> </span>install<span class="w"> </span>labbench
+</pre></div>
+</div>
+</li>
+<li><p>For other python installations:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>labbench
 </pre></div>
 </div>
 </li>
+</ul>
+</li>
 </ol>
 </section>
 <section id="resources">
-<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this heading">¶</a></h2>
+<h2>Resources<a class="headerlink" href="#resources" title="Link to this heading">¶</a></h2>
 <ul class="simple">
+<li><p><a class="reference external" href="http://github.com/usnistgov/labbench">Source code</a></p></li>
 <li><p><a class="reference external" href="http://pages.nist.gov/labbench">Documentation</a></p></li>
-<li><p><a class="reference external" href="https://pypi.org/project/labbench/">PyPI</a> for installation</p></li>
-<li><p><a class="reference external" href="https://github.com/usnistgov/ssmdevices">ssmdevices</a>, a collection of device wrappers implemented with labbench</p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/labbench/">PyPI</a> module page</p></li>
+<li><p><a class="reference external" href="https://github.com/usnistgov/ssmdevices">ssmdevices</a>: a collection of device wrappers implemented with labbench</p></li>
 </ul>
 </section>
 <section id="contributing">
-<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading">¶</a></h2>
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference external" href="https://github.com/usnistgov/labbench/pulls">Pull requests</a> are welcome!</p></li>
+<li><p><a class="reference external" href="https://github.com/usnistgov/labbench/pulls">Pull requests</a> and <a class="reference external" href="https://github.com/usnistgov/labbench/issues">bug reports</a> are welcome!</p></li>
 <li><p><a class="reference external" href="https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings">Inline documentation style convention</a></p></li>
 </ul>
 </section>
 <section id="contributors">
-<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this heading">¶</a></h2>
+<h2>Contributors<a class="headerlink" href="#contributors" title="Link to this heading">¶</a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Name</p></th>

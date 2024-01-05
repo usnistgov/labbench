@@ -1,20 +1,18 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Device Wrappers &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=7bb76a1a"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../../_static/documentation_options.js?v=3595839c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Procedural Snippets" href="02%20rack.html" />
-    <link rel="prev" title="Orientation" href="00%20overview.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <!--[if lte IE 6]>
@@ -63,14 +61,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a></li>
-        <li class="right" >
-          <a href="02%20rack.html" title="Procedural Snippets"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="00%20overview.html" title="Orientation"
-             accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../02_getting_started.html" accesskey="U">Getting Started</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Device Wrappers</a></li> 
       </ul>
     </div>  
@@ -81,63 +72,58 @@
           <div class="body" role="main">
             
   <section id="device-wrappers">
-<h1>Device Wrappers<a class="headerlink" href="#device-wrappers" title="Permalink to this heading">¶</a></h1>
+<h1>Device Wrappers<a class="headerlink" href="#device-wrappers" title="Link to this heading">¶</a></h1>
 <p><a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> is the root object used to define and implement automation with a lower-level driver. Its purpose is to encapsulate all python data and methods for a specific laboratory device or software.</p>
 <p>This section demonstrates usage through a lean working example. The <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> design pattern for a specific device starts by defining a subclass, often from one of the backend subclasses that has been specialized for a low-level driver module (<a class="reference external" href="http://pyvisa.readthedocs.org/"><code class="docutils literal notranslate"><span class="pre">pyvisa</span></code></a>, shell commands, etc.). Doing this has several advantages:</p>
 <ul class="simple">
-<li><p>hooks into the <a class="reference internal" href="03%20data%20logging.html"><span class="std std-doc">data logging subsystem</span></a> for automatic logging of parameters and acquired data</p></li>
+<li><p>hooks into the <a class="reference internal" href="#./03%20data%20logging.md"><span class="xref myst">data logging subsystem</span></a> for automatic logging of parameters and acquired data</p></li>
 <li><p>automatic coercion between python types and low-level/over-the-wire data types</p></li>
 <li><p>constraints on instrument parameters</p></li>
 <li><p>multi-threaded connection management</p></li>
 </ul>
 <section id="example-implementation-a-visa-instrument">
-<h2>Example Implementation: A VISA Instrument<a class="headerlink" href="#example-implementation-a-visa-instrument" title="Permalink to this heading">¶</a></h2>
+<h2>Example Implementation: A VISA Instrument<a class="headerlink" href="#example-implementation-a-visa-instrument" title="Link to this heading">¶</a></h2>
 <p>Let’s start by a simple demonstration with <a class="reference external" href="https://en.wikipedia.org/wiki/Virtual_instrument_software_architecture">VISA</a> instrument automation. The example below gives a simplified working example modeled on <a class="reference external" href="https://github.com/usnistgov/ssmdevices/blob/main/ssmdevices/instruments/power_sensors.py">an actual commercial RF power sensor</a>:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># sim_instrument1.py</span>
 <span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">paramattr</span> <span class="k">as</span> <span class="n">attr</span>
 
-<span class="nd">@lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span>
+<span class="nd">@attr</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span>
     <span class="c1"># the default SCPI query and write formats</span>
     <span class="n">query_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">?&quot;</span><span class="p">,</span>
     <span class="n">write_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> </span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">,</span>
-
     <span class="c1"># map python True and False values to these SCPI strings</span>
-    <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">}</span>
+    <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">},</span>
 <span class="p">)</span>
-<span class="nd">@lb</span><span class="o">.</span><span class="n">adjusted</span><span class="p">(</span>
-    <span class="c1"># set the identity_pattern </span>
-    <span class="s1">&#39;identity_pattern&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Power Sensor model \#1234&#39;</span>
-<span class="p">)</span>
-<span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+<span class="c1"># set the automatic connection filters</span>
+<span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;make&quot;</span><span class="p">,</span> <span class="s2">&quot;pyvisa_sim&quot;</span><span class="p">)</span>
+<span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;Power Sensor model 1234&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">VISADevice</span><span class="p">):</span>
     <span class="n">RATES</span> <span class="o">=</span> <span class="s2">&quot;NORM&quot;</span><span class="p">,</span> <span class="s2">&quot;DOUB&quot;</span><span class="p">,</span> <span class="s2">&quot;FAST&quot;</span>
 
     <span class="c1"># SCPI string keys and bounds on the parameter values,</span>
     <span class="c1"># taken from the instrument programming manual</span>
-    <span class="n">initiate_continuous</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;INIT:CONT&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;trigger continuously if True&quot;</span>
+    <span class="n">initiate_continuous</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;INIT:CONT&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;trigger continuously if True&quot;</span><span class="p">)</span>
+    <span class="n">trigger_count</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">int</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;TRIG:COUN&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;acquisition count&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;samples&quot;</span><span class="p">,</span>
+        <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">200</span>
     <span class="p">)</span>
-    <span class="n">trigger_count</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">int</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;TRIG:COUN&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;acquisition count&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;samples&quot;</span>
-    <span class="p">)</span>
-    <span class="n">measurement_rate</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">str</span><span class="p">(</span>
+    <span class="n">measurement_rate</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">str</span><span class="p">(</span>
         <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:MRAT&quot;</span><span class="p">,</span> <span class="n">only</span><span class="o">=</span><span class="n">RATES</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        
     <span class="p">)</span>
-    <span class="n">sweep_aperture</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SWE:APER&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;measurement duration&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;s&quot;</span>
+    <span class="n">sweep_aperture</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SWE:APER&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;measurement duration&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
+        <span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span>
     <span class="p">)</span>
-    <span class="n">frequency</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:FREQ&quot;</span><span class="p">,</span>
+    <span class="n">frequency</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:FREQ&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;calibration frequency&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
         <span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;calibration frequency&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">preset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;revert to instrument preset state&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;revert to instrument default presets&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;SYST:PRES&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -147,21 +133,49 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;spectrum&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;TRIG&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">NameError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">15</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">paramattr</span> <span class="k">as</span> <span class="n">attr</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="nd">@attr</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span>
+<span class="g g-Whitespace">      </span><span class="mi">6</span>     <span class="c1"># the default SCPI query and write formats</span>
+<span class="g g-Whitespace">      </span><span class="mi">7</span>     <span class="n">query_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">?&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">      </span><span class="mi">8</span>     <span class="n">write_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> </span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">      </span><span class="mi">9</span>     <span class="c1"># map python True and False values to these SCPI strings</span>
+<span class="g g-Whitespace">     </span><span class="mi">10</span>     <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">},</span>
+<span class="g g-Whitespace">     </span><span class="mi">11</span> <span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">12</span> <span class="c1"># set the automatic connection filters</span>
+<span class="g g-Whitespace">     </span><span class="mi">13</span> <span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;make&quot;</span><span class="p">,</span> <span class="s2">&quot;pyvisa_sim&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">14</span> <span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;Power Sensor model 1234&quot;</span><span class="p">)</span>
+<span class="ne">---&gt; </span><span class="mi">15</span> <span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">VISADevice</span><span class="p">):</span>
+<span class="g g-Whitespace">     </span><span class="mi">16</span>     <span class="n">RATES</span> <span class="o">=</span> <span class="s2">&quot;NORM&quot;</span><span class="p">,</span> <span class="s2">&quot;DOUB&quot;</span><span class="p">,</span> <span class="s2">&quot;FAST&quot;</span>
+<span class="g g-Whitespace">     </span><span class="mi">18</span>     <span class="c1"># SCPI string keys and bounds on the parameter values,</span>
+<span class="g g-Whitespace">     </span><span class="mi">19</span>     <span class="c1"># taken from the instrument programming manual</span>
+
+<span class="ne">NameError</span>: name &#39;VISADevice&#39; is not defined
 </pre></div>
 </div>
 </div>
 </div>
 <p>Automation capabilities for this instrument are fully encapsulated by the <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> object. Subclassing from <a class="reference internal" href="../../labbench.html#labbench.VISADevice" title="labbench.VISADevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISADevice</span></code></a> seeds <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> with all of its <a class="reference external" href="https://pyvisa.readthedocs.io/"><code class="docutils literal notranslate"><span class="pre">pyvisa</span></code></a>, including connection management and access to its <a class="reference external" href="https://pyvisa.readthedocs.io/en/latest/introduction/communication.html">pyvisa instrument object</a> as its <code class="docutils literal notranslate"><span class="pre">backend</span></code> attribute. The method functions (<code class="docutils literal notranslate"><span class="pre">fetch</span></code> and <code class="docutils literal notranslate"><span class="pre">preset</span></code>) represent examples of scripting SCPI commands through explicit code</p>
-<p>The various <a class="reference internal" href="../../labbench.property.html#module-labbench.property" title="labbench.property"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.property</span></code></a> definitions are shortcuts for <a class="reference external" href="https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments">SCPI</a>. In usage of objects derived from <code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISABackend</span></code>, getting or setting these properties will trigger SCPI query and commands based on each property’s <code class="docutils literal notranslate"><span class="pre">key</span></code>.</p>
+<p>The various <code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.property</span></code> definitions are shortcuts for <a class="reference external" href="https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments">SCPI</a>. In usage of objects derived from <code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISABackend</span></code>, getting or setting these properties will trigger SCPI query and commands based on each property’s <code class="docutils literal notranslate"><span class="pre">key</span></code>.</p>
 <ul class="simple">
-<li><p>The property type (<a class="reference internal" href="../../labbench.property.html#labbench.property.float" title="labbench.property.float"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.property.float</span></code></a>, <a class="reference internal" href="../../labbench.property.html#labbench.property.str" title="labbench.property.str"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.property.str</span></code></a>, etc.) sets the python type to use for the parameter</p></li>
+<li><p>The property type (<code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.property.float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.property.str</span></code>, etc.) sets the python type to use for the parameter</p></li>
 <li><p>The keyword arguments, which define the SCPI command, validation constraints and documentation metadata, would be  filled in based on the instrument programming manual.
 These properties are class <em>descriptors</em> that exist only as definition until we <em>instantiate</em> <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> in order to <em>use</em> it.</p></li>
 </ul>
 </section>
 <section id="example-usage">
-<h2>Example Usage<a class="headerlink" href="#example-usage" title="Permalink to this heading">¶</a></h2>
+<h2>Example Usage<a class="headerlink" href="#example-usage" title="Link to this heading">¶</a></h2>
 <p>The implementation of <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> is already enough for us to perform a simple measurement. Automation starts with making an instance and then connecting it. The methods and traits can be discovered through tab completion in most IDEs.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -194,35 +208,11 @@ These properties are class <em>descriptors</em> that exist only as definition un
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.345</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">resource identified with identity pattern match &quot;Power Sensor model #1234, Serial 63472&quot;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.348</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;resource&quot; → &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.349</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">opened</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.349</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SYST:PRES&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.350</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:FREQ 1000000000.0&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.350</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;frequency&quot; → 1000000000.0 (Hz)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.351</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SENS:MRAT FAST&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.351</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;measurement_rate&quot; → &#39;FAST&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.352</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;TRIG:COUN 200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.352</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.353</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;SWE:APER 2e-05&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.354</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;sweep_aperture&quot; → 2e-05 (s)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.354</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">write &#39;INIT:CONT ON&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.355</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait set: &quot;initiate_continuous&quot; → True</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.356</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;FETC?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.358</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → (1572 bytes)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.358</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">query &#39;TRIG:COUN?&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.359</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">    → &#39;200&#39;</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.359</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">trait get: &quot;trigger_count&quot; → 200 (samples)</span>
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2023-09-22 14:43:11.360</span> • <span class=" -Color -Color-Blue">PowerSensor(&#39;&#39;):</span> <span class=" -Color -Color-Green">closed</span>
-</pre></div>
-</div>
-</div>
 </div>
 <p>Creating the <code class="docutils literal notranslate"><span class="pre">sensor</span></code> instance brings the <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> class definition to life. This means:</p>
 <ul class="simple">
 <li><p>The connection remains open for VISA communication inside the <code class="docutils literal notranslate"><span class="pre">with</span></code> block</p></li>
-<li><p>Attributes that were defined with <code class="docutils literal notranslate"><span class="pre">lb.property</span></code> in <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> become interactive for instrument automation in <code class="docutils literal notranslate"><span class="pre">sensor</span></code>. This means that assigning to <code class="docutils literal notranslate"><span class="pre">sensor.frequency</span></code>, <code class="docutils literal notranslate"><span class="pre">sensor.measurement_rate</span></code> trigger VISA writes to set these parameters on the instrument. Similarly, <em>getting</em> each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.</p></li>
+<li><p>Attributes that were defined with <code class="docutils literal notranslate"><span class="pre">attr.property</span></code> in <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> become interactive for instrument automation in <code class="docutils literal notranslate"><span class="pre">sensor</span></code>. This means that assigning to <code class="docutils literal notranslate"><span class="pre">sensor.frequency</span></code>, <code class="docutils literal notranslate"><span class="pre">sensor.measurement_rate</span></code> trigger VISA writes to set these parameters on the instrument. Similarly, <em>getting</em> each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.</p></li>
 </ul>
 <div class="admonition-getting-started-with-a-new-instrument admonition">
 <p class="admonition-title">Getting started with a new instrument</p>
@@ -235,7 +225,7 @@ These properties are class <em>descriptors</em> that exist only as definition un
 </div>
 </section>
 <section id="further-reading">
-<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">¶</a></h2>
 </section>
 </section>
 
@@ -258,20 +248,10 @@ These properties are class <em>descriptors</em> that exist only as definition un
 </ul>
 
   </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="00%20overview.html"
-                          title="previous chapter">Orientation</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="02%20rack.html"
-                          title="next chapter">Procedural Snippets</a></p>
-  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../../_sources/guide/02_getting_started/01 device.md.txt"
+      <li><a href="../../_sources/guide/03_detailed_usage/01 device.md.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -295,14 +275,7 @@ These properties are class <em>descriptors</em> that exist only as definition un
         <li class="right" style="margin-right: 10px">
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a></li>
-        <li class="right" >
-          <a href="02%20rack.html" title="Procedural Snippets"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="00%20overview.html" title="Orientation"
-             >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">labbench</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../02_getting_started.html" >Getting Started</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Device Wrappers</a></li> 
       </ul>
     </div>

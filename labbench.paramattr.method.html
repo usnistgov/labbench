@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>labbench.paramattr.method &#8212; labbench</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="_static/documentation_options.js?v=3595839c"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="labbench.paramattr.property" href="labbench.paramattr.property.html" />
+    <link rel="prev" title="labbench.paramattr.kwarg" href="labbench.paramattr.kwarg.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+<header class="nist-header">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>NIST Pages Template</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="labbench">
+  <link rel="canonical" href="./">
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- Google Analytics -->
+  <!--<script type="text/javascript" id="_fed_an_js_tag" src="http://www.nist.gov/js/federated-analytics.all.min.js?agency=NIST&subagency=mml&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script> -->
+  <!-- DAP Analytics -->
+  <script type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagefncy=NIST&pua=UA-66610693-1&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href=".//_static/NISTStyle.css">
+  <link rel="stylesheet" href=".//_static/NISTPages.css">
+
+  <h1>
+    <a class="nist-logo" target="_blank" href="http://www.nist.gov/" title="Go to nist.gov">National Institute of Standards and Technology</a>
+  </h1>
+  <div class="nist-links">
+    <a class="nist-links-button" target="_blank" href="http://www.nist.gov">NIST Website</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="http://www.nist.gov/public_affairs/nandyou.cfm">About NIST</a>
+    <a class="nist-links-button mobile-hide" target="_blank" href="https://github.com/usnistgov">usnistgov on GitHub</a>
+  </div>
+  
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</header>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="labbench.paramattr.property.html" title="labbench.paramattr.property"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="labbench.paramattr.kwarg.html" title="labbench.paramattr.kwarg"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api_reference.html" accesskey="U">API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">labbench.paramattr.method</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-labbench.paramattr.method">
+<span id="labbench-paramattr-method"></span><h1>labbench.paramattr.method<a class="headerlink" href="#module-labbench.paramattr.method" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">NetworkAddress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">NetworkAddress</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.accept_port">
+<span class="sig-name descname"><span class="pre">accept_port</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.accept_port" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.case">
+<span class="sig-name descname"><span class="pre">case</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.case" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.NetworkAddress.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.NetworkAddress.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">Path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.Path" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.Path.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.Path.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.must_exist">
+<span class="sig-name descname"><span class="pre">must_exist</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.must_exist" title="Link to this definition">¶</a></dt>
+<dd><p>does the path need to exist when set?</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.Path.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.Path.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.Path.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">any</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.any" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Any</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.any.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.any.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.any.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.any.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.any.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">bool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.bool" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Bool</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.bool.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.bool.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.bool.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bool.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bool.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.bytes" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Bytes</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.bytes.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.case">
+<span class="sig-name descname"><span class="pre">case</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.case" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.bytes.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.bytes.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.bytes.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.bytes.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.complex" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Complex</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.complex.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.complex.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.complex.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.complex.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.complex.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.dict" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.dict.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.dict.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.dict.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.dict.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.dict.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.float" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Float</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.float.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.index_lookup_attr">
+<span class="sig-name descname"><span class="pre">index_lookup_attr</span></span><a class="headerlink" href="#labbench.paramattr.method.float.index_lookup_attr" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.float.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.max">
+<span class="sig-name descname"><span class="pre">max</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.paramattr.method.float.max" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.min">
+<span class="sig-name descname"><span class="pre">min</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.paramattr.method.float.min" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.float.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.path_attr">
+<span class="sig-name descname"><span class="pre">path_attr</span></span><a class="headerlink" href="#labbench.paramattr.method.float.path_attr" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.float.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.step">
+<span class="sig-name descname"><span class="pre">step</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.float" title="labbench.paramattr.method.float"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.paramattr.method.float.step" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.float.table_index_column">
+<span class="sig-name descname"><span class="pre">table_index_column</span></span><a class="headerlink" href="#labbench.paramattr.method.float.table_index_column" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.int" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Int</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.int.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.index_lookup_attr">
+<span class="sig-name descname"><span class="pre">index_lookup_attr</span></span><a class="headerlink" href="#labbench.paramattr.method.int.index_lookup_attr" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.int.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.max">
+<span class="sig-name descname"><span class="pre">max</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.paramattr.method.int.max" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.min">
+<span class="sig-name descname"><span class="pre">min</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.paramattr.method.int.min" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.int.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.path_attr">
+<span class="sig-name descname"><span class="pre">path_attr</span></span><a class="headerlink" href="#labbench.paramattr.method.int.path_attr" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.int.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.int.table_index_column">
+<span class="sig-name descname"><span class="pre">table_index_column</span></span><a class="headerlink" href="#labbench.paramattr.method.int.table_index_column" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.list" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.list.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.list.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.list.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.list.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.list.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.str" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>[<a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Unicode</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.str.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.case">
+<span class="sig-name descname"><span class="pre">case</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.case" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.str.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.str.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.str.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.str.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.paramattr.method.</span></span><span class="sig-name descname"><span class="pre">tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.paramattr.method.tuple" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.ROLE">
+<span class="sig-name descname"><span class="pre">ROLE</span></span><a class="headerlink" href="#labbench.paramattr.method.tuple.ROLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.allow_none">
+<span class="sig-name descname"><span class="pre">allow_none</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.allow_none" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.cache" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.get_on_set">
+<span class="sig-name descname"><span class="pre">get_on_set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.get_on_set" title="Link to this definition">¶</a></dt>
+<dd><p>if True, a property get follows immediately to log the “accepted” property value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.gets">
+<span class="sig-name descname"><span class="pre">gets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.gets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.help">
+<span class="sig-name descname"><span class="pre">help</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#labbench.paramattr.method.tuple.key" title="Link to this definition">¶</a></dt>
+<dd><p>when set, this defines the method implementation based on a key adapter in the owner</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.str" title="labbench.paramattr.method.str"><span class="pre">str</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#labbench.paramattr.method.tuple.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.notify">
+<span class="sig-name descname"><span class="pre">notify</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.notify" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.only">
+<span class="sig-name descname"><span class="pre">only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.tuple" title="labbench.paramattr.method.tuple"><span class="pre">tuple</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.only" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.paramattr.method.tuple.sets">
+<span class="sig-name descname"><span class="pre">sets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#labbench.paramattr.method.bool" title="labbench.paramattr.method.bool"><span class="pre">bool</span></a></em><a class="headerlink" href="#labbench.paramattr.method.tuple.sets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">labbench.paramattr.method</a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress"><code class="docutils literal notranslate"><span class="pre">NetworkAddress</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.ROLE"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.accept_port"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.accept_port</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.allow_none"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.cache"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.case"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.case</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.get_on_set"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.gets"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.help"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.key"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.label"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.name"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.notify"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.only"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.NetworkAddress.sets"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path"><code class="docutils literal notranslate"><span class="pre">Path</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.ROLE"><code class="docutils literal notranslate"><span class="pre">Path.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.allow_none"><code class="docutils literal notranslate"><span class="pre">Path.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.cache"><code class="docutils literal notranslate"><span class="pre">Path.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.get_on_set"><code class="docutils literal notranslate"><span class="pre">Path.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.gets"><code class="docutils literal notranslate"><span class="pre">Path.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.help"><code class="docutils literal notranslate"><span class="pre">Path.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.key"><code class="docutils literal notranslate"><span class="pre">Path.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.label"><code class="docutils literal notranslate"><span class="pre">Path.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.must_exist"><code class="docutils literal notranslate"><span class="pre">Path.must_exist</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.name"><code class="docutils literal notranslate"><span class="pre">Path.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.notify"><code class="docutils literal notranslate"><span class="pre">Path.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.only"><code class="docutils literal notranslate"><span class="pre">Path.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.Path.sets"><code class="docutils literal notranslate"><span class="pre">Path.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any"><code class="docutils literal notranslate"><span class="pre">any</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.ROLE"><code class="docutils literal notranslate"><span class="pre">any.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.allow_none"><code class="docutils literal notranslate"><span class="pre">any.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.cache"><code class="docutils literal notranslate"><span class="pre">any.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.get_on_set"><code class="docutils literal notranslate"><span class="pre">any.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.gets"><code class="docutils literal notranslate"><span class="pre">any.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.help"><code class="docutils literal notranslate"><span class="pre">any.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.key"><code class="docutils literal notranslate"><span class="pre">any.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.label"><code class="docutils literal notranslate"><span class="pre">any.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.name"><code class="docutils literal notranslate"><span class="pre">any.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.notify"><code class="docutils literal notranslate"><span class="pre">any.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.only"><code class="docutils literal notranslate"><span class="pre">any.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.any.sets"><code class="docutils literal notranslate"><span class="pre">any.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool"><code class="docutils literal notranslate"><span class="pre">bool</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.ROLE"><code class="docutils literal notranslate"><span class="pre">bool.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.allow_none"><code class="docutils literal notranslate"><span class="pre">bool.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.cache"><code class="docutils literal notranslate"><span class="pre">bool.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.get_on_set"><code class="docutils literal notranslate"><span class="pre">bool.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.gets"><code class="docutils literal notranslate"><span class="pre">bool.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.help"><code class="docutils literal notranslate"><span class="pre">bool.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.key"><code class="docutils literal notranslate"><span class="pre">bool.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.label"><code class="docutils literal notranslate"><span class="pre">bool.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.name"><code class="docutils literal notranslate"><span class="pre">bool.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.notify"><code class="docutils literal notranslate"><span class="pre">bool.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.only"><code class="docutils literal notranslate"><span class="pre">bool.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bool.sets"><code class="docutils literal notranslate"><span class="pre">bool.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes"><code class="docutils literal notranslate"><span class="pre">bytes</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.ROLE"><code class="docutils literal notranslate"><span class="pre">bytes.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.allow_none"><code class="docutils literal notranslate"><span class="pre">bytes.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.cache"><code class="docutils literal notranslate"><span class="pre">bytes.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.case"><code class="docutils literal notranslate"><span class="pre">bytes.case</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.get_on_set"><code class="docutils literal notranslate"><span class="pre">bytes.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.gets"><code class="docutils literal notranslate"><span class="pre">bytes.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.help"><code class="docutils literal notranslate"><span class="pre">bytes.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.key"><code class="docutils literal notranslate"><span class="pre">bytes.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.label"><code class="docutils literal notranslate"><span class="pre">bytes.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.name"><code class="docutils literal notranslate"><span class="pre">bytes.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.notify"><code class="docutils literal notranslate"><span class="pre">bytes.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.only"><code class="docutils literal notranslate"><span class="pre">bytes.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.bytes.sets"><code class="docutils literal notranslate"><span class="pre">bytes.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex"><code class="docutils literal notranslate"><span class="pre">complex</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.ROLE"><code class="docutils literal notranslate"><span class="pre">complex.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.allow_none"><code class="docutils literal notranslate"><span class="pre">complex.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.cache"><code class="docutils literal notranslate"><span class="pre">complex.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.get_on_set"><code class="docutils literal notranslate"><span class="pre">complex.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.gets"><code class="docutils literal notranslate"><span class="pre">complex.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.help"><code class="docutils literal notranslate"><span class="pre">complex.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.key"><code class="docutils literal notranslate"><span class="pre">complex.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.label"><code class="docutils literal notranslate"><span class="pre">complex.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.name"><code class="docutils literal notranslate"><span class="pre">complex.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.notify"><code class="docutils literal notranslate"><span class="pre">complex.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.only"><code class="docutils literal notranslate"><span class="pre">complex.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.complex.sets"><code class="docutils literal notranslate"><span class="pre">complex.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict"><code class="docutils literal notranslate"><span class="pre">dict</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.ROLE"><code class="docutils literal notranslate"><span class="pre">dict.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.allow_none"><code class="docutils literal notranslate"><span class="pre">dict.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.cache"><code class="docutils literal notranslate"><span class="pre">dict.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.get_on_set"><code class="docutils literal notranslate"><span class="pre">dict.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.gets"><code class="docutils literal notranslate"><span class="pre">dict.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.help"><code class="docutils literal notranslate"><span class="pre">dict.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.key"><code class="docutils literal notranslate"><span class="pre">dict.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.label"><code class="docutils literal notranslate"><span class="pre">dict.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.name"><code class="docutils literal notranslate"><span class="pre">dict.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.notify"><code class="docutils literal notranslate"><span class="pre">dict.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.only"><code class="docutils literal notranslate"><span class="pre">dict.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.dict.sets"><code class="docutils literal notranslate"><span class="pre">dict.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float"><code class="docutils literal notranslate"><span class="pre">float</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.ROLE"><code class="docutils literal notranslate"><span class="pre">float.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.allow_none"><code class="docutils literal notranslate"><span class="pre">float.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.cache"><code class="docutils literal notranslate"><span class="pre">float.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.get_on_set"><code class="docutils literal notranslate"><span class="pre">float.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.gets"><code class="docutils literal notranslate"><span class="pre">float.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.help"><code class="docutils literal notranslate"><span class="pre">float.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.index_lookup_attr"><code class="docutils literal notranslate"><span class="pre">float.index_lookup_attr</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.key"><code class="docutils literal notranslate"><span class="pre">float.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.label"><code class="docutils literal notranslate"><span class="pre">float.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.max"><code class="docutils literal notranslate"><span class="pre">float.max</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.min"><code class="docutils literal notranslate"><span class="pre">float.min</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.name"><code class="docutils literal notranslate"><span class="pre">float.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.notify"><code class="docutils literal notranslate"><span class="pre">float.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.only"><code class="docutils literal notranslate"><span class="pre">float.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.path_attr"><code class="docutils literal notranslate"><span class="pre">float.path_attr</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.sets"><code class="docutils literal notranslate"><span class="pre">float.sets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.step"><code class="docutils literal notranslate"><span class="pre">float.step</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.float.table_index_column"><code class="docutils literal notranslate"><span class="pre">float.table_index_column</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int"><code class="docutils literal notranslate"><span class="pre">int</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.ROLE"><code class="docutils literal notranslate"><span class="pre">int.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.allow_none"><code class="docutils literal notranslate"><span class="pre">int.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.cache"><code class="docutils literal notranslate"><span class="pre">int.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.get_on_set"><code class="docutils literal notranslate"><span class="pre">int.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.gets"><code class="docutils literal notranslate"><span class="pre">int.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.help"><code class="docutils literal notranslate"><span class="pre">int.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.index_lookup_attr"><code class="docutils literal notranslate"><span class="pre">int.index_lookup_attr</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.key"><code class="docutils literal notranslate"><span class="pre">int.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.label"><code class="docutils literal notranslate"><span class="pre">int.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.max"><code class="docutils literal notranslate"><span class="pre">int.max</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.min"><code class="docutils literal notranslate"><span class="pre">int.min</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.name"><code class="docutils literal notranslate"><span class="pre">int.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.notify"><code class="docutils literal notranslate"><span class="pre">int.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.only"><code class="docutils literal notranslate"><span class="pre">int.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.path_attr"><code class="docutils literal notranslate"><span class="pre">int.path_attr</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.sets"><code class="docutils literal notranslate"><span class="pre">int.sets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.int.table_index_column"><code class="docutils literal notranslate"><span class="pre">int.table_index_column</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list"><code class="docutils literal notranslate"><span class="pre">list</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.ROLE"><code class="docutils literal notranslate"><span class="pre">list.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.allow_none"><code class="docutils literal notranslate"><span class="pre">list.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.cache"><code class="docutils literal notranslate"><span class="pre">list.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.get_on_set"><code class="docutils literal notranslate"><span class="pre">list.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.gets"><code class="docutils literal notranslate"><span class="pre">list.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.help"><code class="docutils literal notranslate"><span class="pre">list.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.key"><code class="docutils literal notranslate"><span class="pre">list.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.label"><code class="docutils literal notranslate"><span class="pre">list.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.name"><code class="docutils literal notranslate"><span class="pre">list.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.notify"><code class="docutils literal notranslate"><span class="pre">list.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.only"><code class="docutils literal notranslate"><span class="pre">list.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.list.sets"><code class="docutils literal notranslate"><span class="pre">list.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str"><code class="docutils literal notranslate"><span class="pre">str</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.ROLE"><code class="docutils literal notranslate"><span class="pre">str.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.allow_none"><code class="docutils literal notranslate"><span class="pre">str.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.cache"><code class="docutils literal notranslate"><span class="pre">str.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.case"><code class="docutils literal notranslate"><span class="pre">str.case</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.get_on_set"><code class="docutils literal notranslate"><span class="pre">str.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.gets"><code class="docutils literal notranslate"><span class="pre">str.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.help"><code class="docutils literal notranslate"><span class="pre">str.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.key"><code class="docutils literal notranslate"><span class="pre">str.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.label"><code class="docutils literal notranslate"><span class="pre">str.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.name"><code class="docutils literal notranslate"><span class="pre">str.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.notify"><code class="docutils literal notranslate"><span class="pre">str.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.only"><code class="docutils literal notranslate"><span class="pre">str.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.str.sets"><code class="docutils literal notranslate"><span class="pre">str.sets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple"><code class="docutils literal notranslate"><span class="pre">tuple</span></code></a><ul>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.ROLE"><code class="docutils literal notranslate"><span class="pre">tuple.ROLE</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.allow_none"><code class="docutils literal notranslate"><span class="pre">tuple.allow_none</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.cache"><code class="docutils literal notranslate"><span class="pre">tuple.cache</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.get_on_set"><code class="docutils literal notranslate"><span class="pre">tuple.get_on_set</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.gets"><code class="docutils literal notranslate"><span class="pre">tuple.gets</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.help"><code class="docutils literal notranslate"><span class="pre">tuple.help</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.key"><code class="docutils literal notranslate"><span class="pre">tuple.key</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.label"><code class="docutils literal notranslate"><span class="pre">tuple.label</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.name"><code class="docutils literal notranslate"><span class="pre">tuple.name</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.notify"><code class="docutils literal notranslate"><span class="pre">tuple.notify</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.only"><code class="docutils literal notranslate"><span class="pre">tuple.only</span></code></a></li>
+<li><a class="reference internal" href="#labbench.paramattr.method.tuple.sets"><code class="docutils literal notranslate"><span class="pre">tuple.sets</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="labbench.paramattr.kwarg.html"
+                          title="previous chapter">labbench.paramattr.kwarg</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="labbench.paramattr.property.html"
+                          title="next chapter">labbench.paramattr.property</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/labbench.paramattr.method.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a></li>
+        <li class="right" >
+          <a href="labbench.paramattr.property.html" title="labbench.paramattr.property"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="labbench.paramattr.kwarg.html" title="labbench.paramattr.kwarg"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">labbench</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api_reference.html" >API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">labbench.paramattr.method</a></li> 
+      </ul>
+    </div>
+<hr \>
+<section class="footer">
+<br><a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#privpolicy">Privacy Policy</a> | <a target="_blank" href="http://www.nist.gov/public_affairs/privacy.cfm#secnot">Security Notice</a> | <a href="http://www.nist.gov/public_affairs/privacy.cfm#accesstate">Accessibility Statement</a>
+<br><em>United States government work, not subject to copyright in the United States</em>
+</section>
+
+  </body>
+</html>

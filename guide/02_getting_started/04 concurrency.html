@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Simplified Concurrency &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=6f14c262" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.06696a45b937849642cfa8e412e8bfb79927fd8cf52bbc9bf40c63c5e8cfefe3.css?v=be8a1c11" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=7bb76a1a"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../../_static/documentation_options.js?v=3595839c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="API Reference" href="../../api_reference.html" />
     <link rel="prev" title="Data Logging" href="03%20data%20logging.html" />
@@ -81,7 +81,7 @@
           <div class="body" role="main">
             
   <section id="simplified-concurrency">
-<h1>Simplified Concurrency<a class="headerlink" href="#simplified-concurrency" title="Permalink to this heading">¶</a></h1>
+<h1>Simplified Concurrency<a class="headerlink" href="#simplified-concurrency" title="Link to this heading">¶</a></h1>
 <p><code class="docutils literal notranslate"><span class="pre">labbench</span></code> includes simplified concurrency support for this kind of I/O-constrained operations like waiting for instruments to perform long operations. It is not suited for parallelizing CPU-intensive tasks because the operations share a single process on one CPU core, instead of multiprocessing, which may be able to spread operations across multiple CPU cores.</p>
 <p>Here are simple Device objects that use <code class="xref py py-func docutils literal notranslate"><span class="pre">time.sleep()</span></code> as a stand-in for long-running remote operations:</p>
 <div class="cell docutils container">
@@ -138,14 +138,14 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>connect both (total time): 3.1 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>connect both (total time): 3.0 s
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:25.553</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.012 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:27.558</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.003 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:28.560</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.001 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:30.566</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:30.567</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 3.008 s elapsed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:55,584.584</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.004 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:57,590.590</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.004 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:58,596.596</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:57:00,598.598</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.000 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:57:00,600.600</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 3.009 s elapsed
 </pre></div>
 </div>
 </div>
@@ -178,11 +178,11 @@
 Return value:  {&#39;fetch&#39;: 5}
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:31.600</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.011 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:32.600</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.011 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:33.612</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.009 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:34.612</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.009 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2023-09-22 14:43:34.614</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 2.012 s elapsed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:57:01,617.617</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:57:02,618.618</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:57:03,623.623</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.002 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:57:04,627.627</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:57:04,629.629</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 2.009 s elapsed
 </pre></div>
 </div>
 </div>

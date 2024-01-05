@@ -17,7 +17,7 @@ if len(missing_fields) > 0:
     raise ValueError(f'fields {missing_fields} missing from [project] in pyproject.toml')
 
 # Location of the API source code
-autoapi_dirs = [f'../{project_info["project"]["name"]}']
+autoapi_dirs = [f'../src/{project_info["project"]["name"]}']
 if not Path(autoapi_dirs[0]).exists():
     raise IOError(f'did not find source directory at expected path "{autoapi_dirs[0]}"')
 

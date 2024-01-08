@@ -21,15 +21,15 @@ except ModuleNotFoundError:
 _yaml = ruamel_yaml.YAML()
 _yaml.indent(mapping=4, sequence=4)
 
-RACK_CONFIG_FILENAME = "config.yaml"
+RACK_CONFIG_FILENAME = 'config.yaml'
 EMPTY = inspect.Parameter.empty
 
 # csv files that define sequences for function execution
-INDEX_COLUMN_NAME = "step_name"
+INDEX_COLUMN_NAME = 'step_name'
 
-_FIELD_SOURCE = "source"
-_FIELD_DEVICES = "devices"
-_FIELD_KEYWORD_DEFAULTS = "default_arguments"
+_FIELD_SOURCE = 'source'
+_FIELD_DEVICES = 'devices'
+_FIELD_KEYWORD_DEFAULTS = 'default_arguments'
 
 
 def _yaml_comment_out(cm, key):
@@ -39,7 +39,7 @@ def _yaml_comment_out(cm, key):
     from ruamel_yaml.tokens import CommentToken
 
     cm.ca.items.setdefault(key, [None, [], None, None])
-    cm.ca.items[key][1] = [CommentToken("# ", CommentMark(0), None)]
+    cm.ca.items[key][1] = [CommentToken('# ', CommentMark(0), None)]
 
 
 def _quote_strings_recursive(cm):
@@ -137,7 +137,7 @@ def _adjust_sequence_defaults(rack_cls: type, defaults_in: dict, **override_defa
             method.set_kwdefault(short_name, default)
 
     if len(defaults_in) > 0:
-        util.logger.debug(f"applied defaults {defaults_in}")
+        util.logger.debug(f'applied defaults {defaults_in}')
 
 
 def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = False):
@@ -155,7 +155,7 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
 
     func = getattr(rack, name)
     if not callable(func):
-        raise TypeError(f"{func} is not callable")
+        raise TypeError(f'{func} is not callable')
     try:
         sig = inspect.signature(func)
     except ValueError:
@@ -163,28 +163,22 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
 
     # pick out the desired column names based on with_defaults
     params = sig.parameters
-    columns = [
-        name for name, param in list(params.items())[1:] if with_defaults or param.default is EMPTY
-    ]
+    columns = [name for name, param in list(params.items())[1:] if with_defaults or param.default is EMPTY]
 
     if with_defaults:
-        defaults = [
-            [None if params[name].default is EMPTY else params[name].default for name in columns]
-        ]
+        defaults = [[None if params[name].default is EMPTY else params[name].default for name in columns]]
     else:
         defaults = []
 
     df = pd.DataFrame(defaults, columns=columns)
     df.index.name = INDEX_COLUMN_NAME
     df.to_csv(path)
-    util.logger.debug(f"writing csv template to {repr(path)}")
+    util.logger.debug(f'writing csv template to {repr(path)}')
 
 
 def _map_method_defaults(rack_cls):
     params, _ = _search_method_parameters(rack_cls)
-    cm = CommentedMap(
-        {k: (None if param.default is EMPTY else param.default) for k, param in params.items()}
-    )
+    cm = CommentedMap({k: (None if param.default is EMPTY else param.default) for k, param in params.items()})
 
     for i, k in enumerate(list(cm.keys())[::-1]):
         if params[k].default is EMPTY:
@@ -206,7 +200,7 @@ def _map_devices(cls):
         cm[dev_name] = CommentedMap()
         cm.yaml_set_comment_before_after_key(
             dev_name,
-            before="\n",
+            before='\n',
         )
 
         for value_name in param.list_value_attrs(dev):
@@ -218,16 +212,16 @@ def _map_devices(cls):
             trait = getattr(type(dev), value_name)
 
             if trait.help:
-                comment = "\n" + trait.help
+                comment = '\n' + trait.help
             else:
-                comment = "\n(define this value with help to autogenerate this comment)"
+                comment = '\n(define this value with help to autogenerate this comment)'
 
             cm[dev_name].yaml_set_comment_before_after_key(value_name, before=comment, indent=8)
 
             if trait.type is not None:
                 comment = trait.type.__name__
                 if trait.label:
-                    comment = f"{comment} ({trait.label})"
+                    comment = f'{comment} ({trait.label})'
 
                 cm[dev_name].yaml_add_eol_comment(key=value_name, comment=comment)
 
@@ -251,12 +245,12 @@ def dump_rack(
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=exist_ok, parents=True)
 
-    with open(output_path / RACK_CONFIG_FILENAME, "w") as stream:
+    with open(output_path / RACK_CONFIG_FILENAME, 'w') as stream:
         cm = CommentedMap(
             {
                 _FIELD_SOURCE: dict(
                     import_string=str(sourcepath),
-                    class_name=None if cls.__name__ == "_as_rack" else cls.__name__,
+                    class_name=None if cls.__name__ == '_as_rack' else cls.__name__,
                     python_path=str(pythonpath),
                 ),
                 _FIELD_KEYWORD_DEFAULTS: _map_method_defaults(rack),
@@ -266,17 +260,17 @@ def dump_rack(
 
         cm.yaml_set_comment_before_after_key(
             _FIELD_SOURCE,
-            before="orient the python interpreter to the source",
+            before='orient the python interpreter to the source',
         )
 
         cm.yaml_set_comment_before_after_key(
             _FIELD_KEYWORD_DEFAULTS,
-            before="\nparameter defaults for sequences in rack:"
-            "\nthese parameters can be omitted from sequence table columns",
+            before='\nparameter defaults for sequences in rack:'
+            '\nthese parameters can be omitted from sequence table columns',
         )
 
         cm.yaml_set_comment_before_after_key(
-            _FIELD_DEVICES, before="\ndevice settings: initial values for value traits"
+            _FIELD_DEVICES, before='\ndevice settings: initial values for value traits'
         )
 
         # cm = _quote_strings_recursive(cm)
@@ -288,10 +282,10 @@ def dump_rack(
             if not callable(obj):
                 continue
 
-            table_path = getattr(obj, "_tags", {}).get("table_path", None)
+            table_path = getattr(obj, '_tags', {}).get('table_path', None)
 
             if table_path is None and not hasattr(Rack, name):
-                table_path = name + ".csv"
+                table_path = name + '.csv'
 
             if table_path is not None:
                 # write_csv_template(obj, output_path/table_path)
@@ -300,7 +294,7 @@ def dump_rack(
 
 
 def read_yaml_config(config_path: str):
-    with open(config_path, "r") as f:
+    with open(config_path, 'r') as f:
         config = _yaml.load(f)
         util.logger.debug(f'loaded configuration from "{str(config_path)}"')
     return config
@@ -315,15 +309,15 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
     config_path = Path(output_path) / RACK_CONFIG_FILENAME
     config = read_yaml_config(config_path)
 
-    if "import_string" not in config[_FIELD_SOURCE]:
+    if 'import_string' not in config[_FIELD_SOURCE]:
         raise KeyError(f"import_string missing from '{str(config_path)}'")
 
-    append_path = config[_FIELD_SOURCE]["python_path"]
+    append_path = config[_FIELD_SOURCE]['python_path']
 
     # synthesize a Rack class
     rack_cls = import_as_rack(
-        import_string=config[_FIELD_SOURCE]["import_string"],
-        cls_name=config[_FIELD_SOURCE]["class_name"],
+        import_string=config[_FIELD_SOURCE]['import_string'],
+        cls_name=config[_FIELD_SOURCE]['class_name'],
         append_path=[] if append_path is None else [append_path],
         # TODO: support extensions to python path?
     )
@@ -342,9 +336,7 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
                 owned_obj = getattr(obj, name)
             except AttributeError:
                 objname = type(obj).__qualname__
-                raise IOError(
-                    f"{config_path} refers to a device '{name}' that does not exist in {objname}"
-                )
+                raise IOError(f"{config_path} refers to a device '{name}' that does not exist in {objname}")
 
             for param_name, param_value in params.items():
                 setattr(owned_obj, param_name, param_value)

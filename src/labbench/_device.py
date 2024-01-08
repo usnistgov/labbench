@@ -58,18 +58,18 @@ class DisconnectedBackend(object):
         """dev may be a class or an object for error feedback"""
         if isinstance(dev, str):
             self.name = dev
-        elif getattr(dev, "_owned_name", None) is not None:
+        elif getattr(dev, '_owned_name', None) is not None:
             self.name = dev._owned_name
         else:
-            self.name = f"{dev.__class__.__qualname__} instance"
+            self.name = f'{dev.__class__.__qualname__} instance'
 
     @util.hide_in_traceback
     def __getattr__(self, key):
-        msg = f"open {self.name} first to access its backend"
+        msg = f'open {self.name} first to access its backend'
         raise ConnectionError(msg)
 
     def __repr__(self):
-        return "DisconnectedBackend()"
+        return 'DisconnectedBackend()'
 
     def __copy__(self, memo=None):
         return DisconnectedBackend(self.name)
@@ -81,27 +81,27 @@ class DisconnectedBackend(object):
 def log_trait_activity(msg):
     """emit debug messages for trait values"""
 
-    if msg["name"] == "isopen":
+    if msg['name'] == 'isopen':
         return
 
-    device = msg["owner"]
-    attr_name = msg["name"]
+    device = msg['owner']
+    attr_name = msg['name']
 
-    label = " "
-    if msg["type"] == "set":
+    label = ' '
+    if msg['type'] == 'set':
         if attr.get_class_attrs(device)[attr_name].label:
-            label = f" ({attr.get_class_attrs(device)[attr_name].label})".rstrip()
-        value = repr(msg["new"]).rstrip()
+            label = f' ({attr.get_class_attrs(device)[attr_name].label})'.rstrip()
+        value = repr(msg['new']).rstrip()
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        device._logger.debug(f"{value}{label} → {attr_name}")
-    elif msg["type"] == "get":
+        device._logger.debug(f'{value}{label} → {attr_name}')
+    elif msg['type'] == 'get':
         if attr.get_class_attrs(device)[attr_name].label:
-            label = f" ({attr.get_class_attrs(device)[attr_name].label})"
-        value = repr(msg["new"])
+            label = f' ({attr.get_class_attrs(device)[attr_name].label})'
+        value = repr(msg['new'])
         if len(value) > 180:
             value = f'<data of type {type(msg["new"]).__qualname__}>'
-        device._logger.debug(f"{attr_name} → {value} {label}".rstrip())
+        device._logger.debug(f'{attr_name} → {value} {label}'.rstrip())
     else:
         device._logger.debug(f'unknown operation type "{msg["type"]}"')
 
@@ -120,9 +120,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         """Update default values with these arguments on instantiation."""
 
         if resource is Undefined:
-            values["resource"] = type(self).resource.default
+            values['resource'] = type(self).resource.default
         else:
-            values["resource"] = resource
+            values['resource'] = resource
 
         # validate presence of required arguments
         inspect.signature(self.__init__).bind(**values)
@@ -144,7 +144,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                     else:
                         attr_desc = attr.__repr__(owner_inst=self)
                         raise TypeError(
-                            f"unable to determine an initial value for {attr_desc} - define it with allow_none=True or default=<default value>"
+                            f'unable to determine an initial value for {attr_desc} - define it with allow_none=True or default=<default value>'
                         )
 
         util.Ownable.__init__(self)
@@ -153,8 +153,8 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         # Instantiate property trait now. It needed to wait until this point, after values are fully
         # instantiated, in case property trait implementation depends on values
-        setattr(self, "open", self.__open_wrapper__)
-        setattr(self, "close", self.__close_wrapper__)
+        setattr(self, 'open', self.__open_wrapper__)
+        setattr(self, 'close', self.__close_wrapper__)
 
     @classmethod
     @util.hide_in_traceback
@@ -168,9 +168,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
     def __update_signature__(cls):
         # Generate a signature for documentation and code autocomplete
         params = [
-            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),
             inspect.Parameter(
-                "resource",
+                'resource',
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
                 default=cls.resource.default,
                 annotation=cls.resource._type,
@@ -184,18 +184,18 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
             constructor_attrs.append(attr_def)
 
             if not isinstance(attr_def, attr.value.Value):
-                annot_desc = f"{name}: {cls.__annotations__[name].__name__}"
+                annot_desc = f'{name}: {cls.__annotations__[name].__name__}'
                 wrong_type = type(attr_def)
                 raise TypeError(
                     f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {repr(wrong_type)}'
                 )
 
-            elif name == "resource":
+            elif name == 'resource':
                 # defined above for its POSITIONAL_OR_KEYWORD special casing
                 continue
 
             else:
-                if attr_def.only and sys.version_info > (3,10):
+                if attr_def.only and sys.version_info > (3, 10):
                     # Union[*attr_def.only] is sooo close
                     annotation = typing.Union.__getitem__(tuple(attr_def.only))
                 else:
@@ -218,8 +218,8 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = "".join([f"    {t.name}: {t.doc(as_argument=True)}\n" for t in constructor_attrs])
-        cls.__init__.__doc__ = f"\nArguments:\n{value_docs}"
+        value_docs = ''.join([f'    {t.name}: {t.doc(as_argument=True)}\n' for t in constructor_attrs])
+        cls.__init__.__doc__ = f'\nArguments:\n{value_docs}'
 
 
 class Device(DeviceDataClass):
@@ -250,7 +250,7 @@ class Device(DeviceDataClass):
     """
 
     resource: str = attr.value.str(
-        default=None, allow_none=True, cache=True, kw_only=False, help="device address or URI"
+        default=None, allow_none=True, cache=True, kw_only=False, help='device address or URI'
     )
 
     """ Container for property trait traits in a Device. Getting or setting property trait traits
@@ -295,19 +295,19 @@ class Device(DeviceDataClass):
         method, starting with labbench.Device and working down
         """
         if self.isopen:
-            self._logger.debug(f"attempt to open {self}, which is already open")
+            self._logger.debug(f'attempt to open {self}, which is already open')
             return
 
         self.backend = None
 
         try:
-            for opener in util.find_methods_in_mro(self.__class__, "open", Device)[::-1]:
+            for opener in util.find_methods_in_mro(self.__class__, 'open', Device)[::-1]:
                 opener(self)
         except BaseException:
             self.backend = DisconnectedBackend(self)
             raise
 
-        self._logger.debug("opened")
+        self._logger.debug('opened')
 
         # Force an update to self.isopen
         self.isopen
@@ -325,7 +325,7 @@ class Device(DeviceDataClass):
         if not self.isopen:
             return
 
-        methods = util.find_methods_in_mro(self.__class__, "close", Device)
+        methods = util.find_methods_in_mro(self.__class__, 'close', Device)
 
         all_ex = []
         for closer in methods:
@@ -342,14 +342,14 @@ class Device(DeviceDataClass):
                 if ex[0] is not util.ThreadEndedByMaster:
                     depth = len(tuple(traceback.walk_tb(ex[2])))
                     traceback.print_exception(*ex, limit=-(depth - 1))
-                    sys.stderr.write("(Exception suppressed to continue close)\n\n")
+                    sys.stderr.write('(Exception suppressed to continue close)\n\n')
 
             self.isopen
 
-            self._logger.debug("closed")
+            self._logger.debug('closed')
         finally:
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
+                ex = util.ConcurrentException(f'multiple exceptions while closing {self}')
                 ex.thread_exceptions = all_ex
                 raise ex
 
@@ -361,7 +361,7 @@ class Device(DeviceDataClass):
         except BaseException as e:
             args = list(e.args)
             if len(args) > 0:
-                args[0] = f"{repr(self)}: {args[0]}"
+                args[0] = f'{repr(self)}: {args[0]}'
                 e.args = tuple(args)
             raise e
 
@@ -371,7 +371,7 @@ class Device(DeviceDataClass):
             self.close()
         except BaseException as e:
             args = list(e.args)
-            args[0] = "{}: {}".format(repr(self), str(args[0]))
+            args[0] = '{}: {}'.format(repr(self), str(args[0]))
             e.args = tuple(args)
             raise e
 
@@ -388,15 +388,15 @@ class Device(DeviceDataClass):
 
     def __repr__(self):
         name = self.__class__.__qualname__
-        if hasattr(self, "resource"):
+        if hasattr(self, 'resource'):
             if self.resource != type(self).resource.default:
                 resource_str = repr(self.resource)
             else:
-                resource_str = ""
-            return f"{name}({resource_str})"
+                resource_str = ''
+            return f'{name}({resource_str})'
         else:
             # In case an exception has occurred before __init__
-            return f"{name}()"
+            return f'{name}()'
 
     @attr.property.bool()
     def isopen(self):

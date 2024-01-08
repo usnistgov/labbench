@@ -8,9 +8,9 @@ import typing
 from collections import defaultdict
 
 
-__all__ = ["PowerSensor", "Oscilloscope", "SignalGenerator"]
+__all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
 
-T = typing.TypeVar("T")
+T = typing.TypeVar('T')
 
 
 class key_store_adapter(attr.visa_keying):
@@ -113,8 +113,8 @@ class TestStore:
 
             missing_args = set(required_args) - set(arguments)
             if len(missing_args) > 0:
-                print("***", missing_args, set(required_args), set(arguments), arguments)
-                raise ValueError(f"missing required argument(s): {missing_args}")
+                print('***', missing_args, set(required_args), set(arguments), arguments)
+                raise ValueError(f'missing required argument(s): {missing_args}')
 
         if len(arguments) == 0:
             return store_name
@@ -150,87 +150,83 @@ class StoreTestDevice(Device):
 
 
 class PowerSensor(StoreTestDevice):
-    RATES = "NORM", "DOUB", "FAST"
+    RATES = 'NORM', 'DOUB', 'FAST'
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = attr.property.bool(key="INIT:CONT", help="trigger continuously if True")
-    trigger_count = attr.property.int(
-        key="TRIG:COUN", min=1, max=200, help="acquisition count", label="samples"
-    )
+    initiate_continuous = attr.property.bool(key='INIT:CONT', help='trigger continuously if True')
+    trigger_count = attr.property.int(key='TRIG:COUN', min=1, max=200, help='acquisition count', label='samples')
     measurement_rate = attr.property.str(
-        key="SENS:MRAT",
+        key='SENS:MRAT',
         only=RATES,
         case=False,
     )
-    sweep_aperture = attr.property.float(
-        key="SWE:APER", min=20e-6, max=200e-3, help="measurement duration", label="s"
-    )
+    sweep_aperture = attr.property.float(key='SWE:APER', min=20e-6, max=200e-3, help='measurement duration', label='s')
     frequency = attr.property.float(
-        key="SENS:FREQ",
+        key='SENS:FREQ',
         min=10e6,
         max=18e9,
         step=1e-3,
-        help="calibration frequency",
-        label="Hz",
+        help='calibration frequency',
+        label='Hz',
     )
 
 
 class SpectrumAnalyzer(StoreTestDevice):
     center_frequency = attr.property.float(
-        key="SENS:FREQ",
+        key='SENS:FREQ',
         min=10e6,
         max=18e9,
         step=1e-3,
-        help="input signal center frequency",
-        label="Hz",
+        help='input signal center frequency',
+        label='Hz',
     )
     resolution_bandwidth = attr.property.float(
-        key="SENS:BW",
+        key='SENS:BW',
         min=1,
         max=40e6,
         step=1e-3,
-        help="resolution bandwidth",
-        label="Hz",
+        help='resolution bandwidth',
+        label='Hz',
     )
 
 
 class SignalGenerator(StoreTestDevice):
-    output_enabled = attr.property.bool(key="OUT:ENABL", help="when True, output an RF tone")
+    output_enabled = attr.property.bool(key='OUT:ENABL', help='when True, output an RF tone')
     center_frequency = attr.property.float(
-        key="SENS:FREQ",
+        key='SENS:FREQ',
         min=10e6,
         max=18e9,
         step=1e-3,
-        help="input signal center frequency",
-        label="Hz",
+        help='input signal center frequency',
+        label='Hz',
     )
-    mode = attr.property.str(key="MODE", only=["sweep", "tone", "iq"], case=False)
+    mode = attr.property.str(key='MODE', only=['sweep', 'tone', 'iq'], case=False)
 
 
 @key_store_adapter(
-    key_arguments={"channel": attr.kwarg.int(name="channel", min=1, max=4, help="input channel")},
+    key_arguments={'channel': attr.kwarg.int(name='channel', min=1, max=4, help='input channel')},
 )
 class Oscilloscope(StoreTestDevice):
     @attr.method.float(
         min=10e6,
         max=18e9,
         step=1e-3,
-        label="Hz",
-        help="channel center frequency",
+        label='Hz',
+        help='channel center frequency',
     )
     def center_frequency(self, set_value=Undefined, /, *, channel):
         if set_value is Undefined:
-            return self.query(f"CH{channel}:SENS:FREQ?")
+            return self.query(f'CH{channel}:SENS:FREQ?')
         else:
-            self.write(f"CH{channel}:SENS:FREQ {set_value}")
+            self.write(f'CH{channel}:SENS:FREQ {set_value}')
 
     resolution_bandwidth = attr.method.float(
-        key=("CH:SENS:BW", "channel"),
+        key=('CH:SENS:BW', 'channel'),
         min=1,
         max=40e6,
         step=1e-3,
-        help="channel resolution bandwidth",
-        label="Hz",
+        help='channel resolution bandwidth',
+        label='Hz',
         # arguments omitted deliberately for testing
     )

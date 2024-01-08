@@ -38,7 +38,7 @@ class Float(_bases.BoundedNumber[float], type=float):
                 return value - (mod - self.step)
         return value
 
-    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
         if as_argument:
             return None
 
@@ -46,9 +46,10 @@ class Float(_bases.BoundedNumber[float], type=float):
             # for text docs: allow subclasses to document their own params
             docs = []
             if self.step is not None:
-                docs.append(f"* Step size: {self.step} {self.label}")
+                docs.append(f'* Step size: {self.step} {self.label}')
 
             return '\n'.join(docs) + '\n'
+
 
 class Complex(_bases.ParamAttr[complex], type=complex):
     """accepts numerical or str values, following normal python casting procedures (with bounds checking)"""
@@ -67,9 +68,9 @@ class Bool(_bases.ParamAttr[bool], type=bool):
             return value
         elif isinstance(value, (str, bytes)):
             lvalue = value.lower()
-            if lvalue in ("true", b"true"):
+            if lvalue in ('true', b'true'):
                 return True
-            elif lvalue in ("false", b"false"):
+            elif lvalue in ('false', b'false'):
                 return False
         raise ValueError(
             f"'{self.__repr__(owner_inst=owner)}' accepts only boolean, numerical values,"
@@ -90,16 +91,17 @@ class String(_bases.ParamAttr):
             value = value.lower()
         return value in iterable
 
-    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
         if as_argument:
             return None
 
         else:
             # for text docs: allow subclasses to document their own params
             if self.case:
-                return f"* Case sensitive"
+                return f'* Case sensitive'
             else:
-                return f"* Case insensitive"
+                return f'* Case insensitive'
+
 
 class Unicode(String[str], type=str):
     """accepts strings or numeric values only; convert others explicitly before assignment"""
@@ -122,7 +124,7 @@ class Iterable(_bases.ParamAttr):
 
     @util.hide_in_traceback
     def validate(self, value, owner=None):
-        if not hasattr(value, "__iter__"):
+        if not hasattr(value, '__iter__'):
             raise ValueError(f"'{type(self).__qualname__}' attributes accept only iterable values")
         return value
 
@@ -153,15 +155,15 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
             raise IOError('no file at path {value}')
 
         return path
-    
-    def doc_params(self, skip: list[str]=["help", "label"], as_argument:bool=False) -> str:
+
+    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
         if as_argument:
             return None
 
         else:
             # for text docs: allow subclasses to document their own params
             if self.must_exist:
-                return f"* Path name must exist on the host"
+                return f'* Path name must exist on the host'
 
 
 class NetworkAddress(Unicode):
@@ -173,7 +175,7 @@ class NetworkAddress(Unicode):
     def validate(self, value, owner=None):
         """Rough IDN compatible domain validator"""
 
-        host, *extra = value.split(":", 1)
+        host, *extra = value.split(':', 1)
 
         if len(extra) > 0:
             port = extra[0]
@@ -183,12 +185,12 @@ class NetworkAddress(Unicode):
                 raise ValueError(f'port {port} in "{value}" is invalid')
 
             if not self.accept_port:
-                raise ValueError(f"{self} does not accept a port number (accept_port=False)")
+                raise ValueError(f'{self} does not accept a port number (accept_port=False)')
 
         for validate in _val.ipv4, _val.ipv6, _val.domain, _val.slug:
             if validate(host):
                 break
         else:
-            raise ValueError("invalid host address")
+            raise ValueError('invalid host address')
 
         return value

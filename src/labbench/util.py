@@ -22,52 +22,52 @@ import psutil
 
 
 __all__ = [  # "misc"
-    "hash_caller",
-    "kill_by_name",
-    "show_messages",
-    "logger",
-    "LabbenchDeprecationWarning",
-    "import_t0",
-    "find_methods_in_mro",
+    'hash_caller',
+    'kill_by_name',
+    'show_messages',
+    'logger',
+    'LabbenchDeprecationWarning',
+    'import_t0',
+    'find_methods_in_mro',
     # concurrency and sequencing
-    "concurrently",
-    "sequentially",
-    "lazy_import",
-    "Call",
-    "ConcurrentException",
-    "check_hanging_thread",
-    "ThreadSandbox",
-    "ThreadEndedByMaster",
-    "single_threaded_call_lock",
+    'concurrently',
+    'sequentially',
+    'lazy_import',
+    'Call',
+    'ConcurrentException',
+    'check_hanging_thread',
+    'ThreadSandbox',
+    'ThreadEndedByMaster',
+    'single_threaded_call_lock',
     # timing and flow management
-    "retry",
-    "until_timeout",
-    "sleep",
-    "stopwatch",
-    "timeout_iter",
+    'retry',
+    'until_timeout',
+    'sleep',
+    'stopwatch',
+    'timeout_iter',
     # wrapper helpers
-    "copy_func",
+    'copy_func',
     # traceback scrubbing
-    "hide_in_traceback",
-    "_force_full_traceback",
-    "force_full_traceback",
+    'hide_in_traceback',
+    '_force_full_traceback',
+    'force_full_traceback',
     # helper objects
-    "Ownable",
+    'Ownable',
 ]
 
 import_t0 = time.perf_counter()
 
 logger = logging.LoggerAdapter(
-    logging.getLogger("labbench"),
-    dict(label="labbench"),  # description of origin within labbench (for screen logs only)
+    logging.getLogger('labbench'),
+    dict(label='labbench'),  # description of origin within labbench (for screen logs only)
 )
 
 _LOG_LEVEL_NAMES = {
-    "debug": logging.DEBUG,
-    "info": logging.INFO,
-    "warning": logging.WARN,
-    "error": logging.ERROR,
-    "critical": logging.CRITICAL,
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARN,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL,
 }
 
 
@@ -76,7 +76,7 @@ class LabbenchDeprecationWarning(DeprecationWarning):
     pass
 
 
-simplefilter("once", LabbenchDeprecationWarning)
+simplefilter('once', LabbenchDeprecationWarning)
 
 
 def show_messages(minimum_level, colors=True):
@@ -89,25 +89,23 @@ def show_messages(minimum_level, colors=True):
     """
 
     err_map = {
-        "debug": logging.DEBUG,
-        "warning": logging.WARNING,
-        "error": logging.ERROR,
-        "info": logging.INFO,
+        'debug': logging.DEBUG,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'info': logging.INFO,
         None: None,
         False: None,
     }
 
     if minimum_level not in err_map and not isinstance(minimum_level, int):
-        raise ValueError(
-            f"message level must be a flag {tuple(err_map)} or an integer, not {repr(minimum_level)}"
-        )
+        raise ValueError(f'message level must be a flag {tuple(err_map)} or an integer, not {repr(minimum_level)}')
 
     level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
 
     logger.setLevel(level)
 
     # Clear out any stale handlers
-    if hasattr(logger, "_screen_handler"):
+    if hasattr(logger, '_screen_handler'):
         logger.logger.removeHandler(logger._screen_handler)
 
     if level is None:
@@ -118,16 +116,16 @@ def show_messages(minimum_level, colors=True):
     # - %(pathname)s:%(lineno)d'
 
     if colors:
-        log_fmt = "\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}.{msecs:03.0f}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}"
+        log_fmt = '\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}.{msecs:03.0f}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}'
     else:
-        log_fmt = "{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}"
-    formatter = logging.Formatter(log_fmt, style="{")
+        log_fmt = '{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}'
+    formatter = logging.Formatter(log_fmt, style='{')
 
     logger._screen_handler.setFormatter(formatter)
     logger.logger.addHandler(logger._screen_handler)
 
 
-show_messages("info")
+show_messages('info')
 
 
 def logger_metadata(obj):
@@ -137,29 +135,27 @@ def logger_metadata(obj):
         owned_name=obj._owned_name,
     )
 
-    if d["owned_name"] is not None:
-        d["label"] = d["owned_name"]
+    if d['owned_name'] is not None:
+        d['label'] = d['owned_name']
     elif repr(obj) == object.__repr__(obj):
-        d["label"] = type(obj).__qualname__ + "(...)"
+        d['label'] = type(obj).__qualname__ + '(...)'
     else:
         txt = repr(obj)
         if len(txt) > 20:
-            txt = txt[:-1].split(",")[0] + ")"
-        d["label"] = txt
+            txt = txt[:-1].split(',')[0] + ')'
+        d['label'] = txt
 
     return d
 
 
 def callable_logger(func):
-    if isinstance(getattr(func, "__self__", None), Ownable):
+    if isinstance(getattr(func, '__self__', None), Ownable):
         return func.__self__._logger
     else:
         return logger
 
 
-def find_methods_in_mro(
-    cls: type[object], name: str, until_cls: Union[type[object], None] = None
-) -> list[callable]:
+def find_methods_in_mro(cls: type[object], name: str, until_cls: Union[type[object], None] = None) -> list[callable]:
     """list all methods named `name` in `cls` and its parent classes.
 
     Args:
@@ -173,7 +169,7 @@ def find_methods_in_mro(
     methods = []
 
     if until_cls is not None and not issubclass(cls, until_cls):
-        raise TypeError(f"class {until_cls.__qualname__} is not a base class of {cls.__qualname__}")
+        raise TypeError(f'class {until_cls.__qualname__} is not a base class of {cls.__qualname__}')
 
     for cls in cls.__mro__:
         try:
@@ -213,7 +209,7 @@ class Ownable:
         if owner._owned_name is None:
             self._owned_name = self.__name__
         else:
-            self._owned_name = owner._owned_name + "." + self.__name__
+            self._owned_name = owner._owned_name + '.' + self.__name__
 
         # self._logger.extra.update(**logger_metadata(self))
 
@@ -232,9 +228,9 @@ class Ownable:
             cls = type(self)
             ownercls = self.__objclass__
 
-            typename = cls.__module__ + "." + cls.__name__
+            typename = cls.__module__ + '.' + cls.__name__
             ownedname = ownercls.__qualname__
-            return f"<{typename} object at {hex(id(self))} bound to {ownedname} class at {hex(id(ownercls))}>"
+            return f'<{typename} object at {hex(id(self))} bound to {ownedname} class at {hex(id(ownercls))}>'
 
         else:
             return object.__repr__(self)
@@ -262,10 +258,10 @@ stop_request_event = Event()
 
 sys._debug_tb = False
 
-TRACEBACK_HIDE_TAG = "🦙 hide from traceback 🦙"
+TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 
-T = TypeVar("T")
-P = ParamSpec("P")
+T = TypeVar('T')
+P = ParamSpec('P')
 
 
 def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
@@ -287,11 +283,11 @@ def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
         f.__code__ = f.__code__.replace(co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,))
 
     if not callable(func):
-        raise TypeError(f"{func} is not callable")
+        raise TypeError(f'{func} is not callable')
 
-    if hasattr(func, "__code__"):
+    if hasattr(func, '__code__'):
         adjust(func)
-    if hasattr(func.__call__, "__code__"):
+    if hasattr(func.__call__, '__code__'):
         adjust(func.__call__)
 
     return func
@@ -305,7 +301,7 @@ def force_full_traceback(force: bool) -> None:
 def _force_full_traceback(force: bool) -> None:
     """configure whether to disable traceback hiding for internal API calls inside labbench"""
     logger.warning(
-        "labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead"
+        'labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead'
     )
     force_full_traceback(force)
 
@@ -347,8 +343,8 @@ class _filtered_exc_info:
 
 def copy_func(
     func,
-    assigned=("__module__", "__name__", "__qualname__", "__doc__", "__annotations__"),
-    updated=("__dict__",),
+    assigned=('__module__', '__name__', '__qualname__', '__doc__', '__annotations__'),
+    updated=('__dict__',),
 ) -> callable:
     """returns a copy of func with specified attributes (following the inspect.wraps arguments).
 
@@ -375,7 +371,7 @@ def copy_func(
     return new
 
 
-if not hasattr(sys.exc_info, "lb_wrapped"):
+if not hasattr(sys.exc_info, 'lb_wrapped'):
     # monkeypatch sys.exc_info if it needs
     sys.exc_info, exc_info = _filtered_exc_info(sys.exc_info), sys.exc_info
 
@@ -428,11 +424,12 @@ def retry(
 
         import telnetlib
 
+
         # Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError
         @retry(ConnectionRefusedError, tries=5)
         def open(host, port):
             t = telnetlib.Telnet()
-            t.open(host,port,5)
+            t.open(host, port, 5)
             return t
 
 
@@ -462,7 +459,7 @@ def retry(
                         etype = type(e).__qualname__
                         msg = (
                             f"caught '{etype}' on first call to '{f.__name__}' - repeating the call "
-                            f"{tries-1} more times or until no exception is raised"
+                            f'{tries-1} more times or until no exception is raised'
                         )
 
                         callable_logger(f).info(msg)
@@ -485,9 +482,7 @@ def retry(
 
 
 @hide_in_traceback
-def until_timeout(
-    exception_or_exceptions, timeout, delay=0, backoff=0, exception_func=lambda: None
-):
+def until_timeout(exception_or_exceptions, timeout, delay=0, backoff=0, exception_func=lambda: None):
     """This decorator causes the function call to repeat, suppressing specified exception(s), until the
     specified timeout period has expired.
     - If the timeout expires, the underlying exception is raised.
@@ -502,10 +497,11 @@ def until_timeout(
 
         import telnetlib
 
+
         @until_timeout(ConnectionRefusedError, 5)
         def open(host, port):
             t = telnetlib.Telnet()
-            t.open(host,port,5)
+            t.open(host, port, 5)
             return t
 
     Arguments:
@@ -537,7 +533,7 @@ def until_timeout(
                         etype = type(e).__qualname__
                         msg = (
                             f"caught '{etype}' in first call to '{f.__name__}' - repeating calls for "
-                            f"another {timeout-progress:0.3f}s, or until no exception is raised"
+                            f'another {timeout-progress:0.3f}s, or until no exception is raised'
                         )
 
                         callable_logger(f).info(msg)
@@ -593,7 +589,7 @@ def kill_by_name(*names):
             proc = psutil.Process(pid)
             for target in names:
                 if proc.name().lower() == target.lower():
-                    logger.info(f"killing process {proc.name()}")
+                    logger.info(f'killing process {proc.name()}')
                     proc.kill()
         except psutil.NoSuchProcess:
             continue
@@ -618,7 +614,7 @@ def hash_caller(call_depth=1):
     elif len(arginfo.args) > 0:  # arginfo.args[0] == 'self':
         name = arginfo.args[0]
         if name not in frame.frame.f_locals:
-            raise ValueError("failed to find function object by introspection")
+            raise ValueError('failed to find function object by introspection')
         func = getattr(frame.frame.f_locals[name], frame.function)
         argnames = arginfo.args[1:]
 
@@ -629,11 +625,11 @@ def hash_caller(call_depth=1):
     args = [arginfo.locals[k] for k in argnames]
 
     s = inspect.getsource(func) + str(pickle.dumps(args))
-    return hashlib.sha224(s.encode("ascii")).hexdigest()
+    return hashlib.sha224(s.encode('ascii')).hexdigest()
 
 
 @contextmanager
-def stopwatch(desc: str = "", threshold: float = 0, logger_level="info"):
+def stopwatch(desc: str = '', threshold: float = 0, logger_level='info'):
     """Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
@@ -653,17 +649,17 @@ def stopwatch(desc: str = "", threshold: float = 0, logger_level="info"):
     finally:
         elapsed = time.perf_counter() - t0
         if elapsed >= threshold:
-            msg = str(desc) + " " if len(desc) else ""
-            msg += f"{elapsed:0.3f} s elapsed"
+            msg = str(desc) + ' ' if len(desc) else ''
+            msg += f'{elapsed:0.3f} s elapsed'
 
             exc_info = sys.exc_info()
             if exc_info != (None, None, None):
-                msg += f" before exception {exc_info[1]}"
+                msg += f' before exception {exc_info[1]}'
 
             try:
                 level = _LOG_LEVEL_NAMES[logger_level]
             except KeyError:
-                raise ValueError(f"logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}")
+                raise ValueError(f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}')
 
             logger.log(level, msg.lstrip())
 
@@ -677,7 +673,7 @@ class Call(object):
 
     def __init__(self, func, *args, **kws):
         if not callable(func):
-            raise ValueError("`func` argument is not callable")
+            raise ValueError('`func` argument is not callable')
         self.func = func
         self.name = self.func.__name__
         self.args = args
@@ -689,11 +685,9 @@ class Call(object):
         return self
 
     def __repr__(self):
-        args = ",".join(
-            [repr(v) for v in self.args] + [(k + "=" + repr(v)) for k, v in self.kws.items()]
-        )
-        qualname = self.func.__module__ + "." + self.func.__qualname__
-        return f"Call({qualname},{args})"
+        args = ','.join([repr(v) for v in self.args] + [(k + '=' + repr(v)) for k, v in self.kws.items()])
+        qualname = self.func.__module__ + '.' + self.func.__qualname__
+        return f'Call({qualname},{args})'
 
     @hide_in_traceback
     def __call__(self):
@@ -722,12 +716,12 @@ class Call(object):
         for name, func in name_func_pairs:
             try:
                 if name is None:
-                    if hasattr(func, "name"):
+                    if hasattr(func, 'name'):
                         name = func.name
-                    elif hasattr(func, "__name__"):
+                    elif hasattr(func, '__name__'):
                         name = func.__name__
                     else:
-                        raise TypeError(f"could not find name of {func}")
+                        raise TypeError(f'could not find name of {func}')
 
                 if not isinstance(func, cls):
                     func = cls(func)
@@ -736,8 +730,8 @@ class Call(object):
 
                 if name in ret:
                     msg = (
-                        f"another callable is already named {repr(name)} - "
-                        "pass as a keyword argument to specify a different name"
+                        f'another callable is already named {repr(name)} - '
+                        'pass as a keyword argument to specify a different name'
                     )
                     raise KeyError(msg)
 
@@ -786,10 +780,10 @@ class MultipleContexts:
 
         self.abort = False
         self._entered = {}
-        self.__name__ = "__enter__"
+        self.__name__ = '__enter__'
 
         # make up names for the __enter__ objects
-        self.objs = [(f"enter_{type(o).__name__}_{hex(id(o))}", o) for _, o in objs]
+        self.objs = [(f'enter_{type(o).__name__}_{hex(id(o))}', o) for _, o in objs]
 
         self.params = params
         self.call_handler = call_handler
@@ -819,7 +813,7 @@ class MultipleContexts:
             with stopwatch(
                 f"entry into context for {self.params['name']}",
                 0.5,
-                logger_level="debug",
+                logger_level='debug',
             ):
                 self.call_handler(self.params, calls)
         except BaseException as e:
@@ -830,7 +824,7 @@ class MultipleContexts:
 
     @hide_in_traceback
     def __exit__(self, *exc):
-        with stopwatch(f"{self.params['name']} - context exit", 0.5, logger_level="debug"):
+        with stopwatch(f"{self.params['name']} - context exit", 0.5, logger_level='debug'):
             for name in tuple(self._entered.keys())[::-1]:
                 context = self._entered[name]
 
@@ -854,8 +848,8 @@ class MultipleContexts:
                     except BaseException as e:
                         if e is not self.exc[name][1]:
                             msg = (
-                                f"{name}.__exit__ raised {e} in cleanup attempt after another "
-                                f"exception in {name}.__enter__"
+                                f'{name}.__exit__ raised {e} in cleanup attempt after another '
+                                f'exception in {name}.__enter__'
                             )
 
                             log_obj = callable_logger(contexts[name].__exit__)
@@ -866,9 +860,7 @@ class MultipleContexts:
             exc_info = list(self.exc.values())[0]
             raise exc_info[1]
         elif len(self.exc) > 1:
-            ex = ConcurrentException(
-                f"exceptions raised in {len(self.exc)} contexts are printed inline"
-            )
+            ex = ConcurrentException(f'exceptions raised in {len(self.exc)} contexts are printed inline')
             ex.thread_exceptions = self.exc
             raise ex
         if exc != (None, None, None):
@@ -883,9 +875,9 @@ class MultipleContexts:
 
 RUNNERS = {
     (False, False): None,
-    (False, True): "context",
-    (True, False): "callable",
-    (True, True): "both",
+    (False, True): 'context',
+    (True, False): 'callable',
+    (True, True): 'both',
 }
 
 DIR_DICT = set(dir(dict))
@@ -914,14 +906,14 @@ def enter_or_call(flexible_caller, objs, kws):
         for name, d in dicts:
             common = set(ret.keys()).difference(d.keys())
             if len(common) > 0:
-                which = ", ".join(common)
-                msg = f"attempting to merge results and dict arguments, but the key names ({which}) conflict in nested calls"
+                which = ', '.join(common)
+                msg = f'attempting to merge results and dict arguments, but the key names ({which}) conflict in nested calls'
                 raise KeyError(msg)
             ret.update(d)
 
         conflicts = set(ret.keys()).intersection([n for (n, obj) in candidates])
         if len(conflicts) > 0:
-            raise KeyError("keys of conflict in nested return dictionary keys with ")
+            raise KeyError('keys of conflict in nested return dictionary keys with ')
 
         return ret
 
@@ -930,10 +922,8 @@ def enter_or_call(flexible_caller, objs, kws):
             if isdictducktype(v.__class__):
                 conflicts = set(v.keys()).intersection(start_keys)
                 if len(conflicts) > 0:
-                    conflicts = ",".join(conflicts)
-                    raise KeyError(
-                        f"conflicts in keys ({conflicts}) when merging return dictionaries"
-                    )
+                    conflicts = ','.join(conflicts)
+                    raise KeyError(f'conflicts in keys ({conflicts}) when merging return dictionaries')
                 inputs.update(result.pop(k))
 
     # Pull parameters from the passed keywords
@@ -941,12 +931,12 @@ def enter_or_call(flexible_caller, objs, kws):
         if name in kws and not callable(kws[name]):
             params[name] = kws.pop(name)
 
-    if params["name"] is None:
+    if params['name'] is None:
         # come up with a gobbledigook name that is at least unique
         frame = inspect.currentframe().f_back.f_back
         params[
-            "name"
-        ] = f"<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>"
+            'name'
+        ] = f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
 
     # Combine the position and keyword arguments, and assign labels
     allobjs = list(objs) + list(kws.values())
@@ -968,49 +958,43 @@ def enter_or_call(flexible_caller, objs, kws):
 
         thisone = RUNNERS[
             (callable(obj) and not isinstance(obj, _GeneratorContextManager)),  # Is it callable?
-            (
-                hasattr(obj, "__enter__") or isinstance(obj, _GeneratorContextManager)
-            ),  # Is it a context manager?
+            (hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)),  # Is it a context manager?
         ]
 
         if thisone is None:
-            msg = "each argument must be a callable and/or a context manager, "
+            msg = 'each argument must be a callable and/or a context manager, '
 
             if k is None:
-                msg += f"but given {repr(obj)}"
+                msg += f'but given {repr(obj)}'
             else:
-                msg += f"but given {k}={repr(obj)}"
+                msg += f'but given {k}={repr(obj)}'
 
             raise TypeError(msg)
-        elif runner in (None, "both"):
+        elif runner in (None, 'both'):
             runner = thisone
         else:
-            if thisone not in (runner, "both"):
-                raise TypeError("cannot mix context managers and callables")
+            if thisone not in (runner, 'both'):
+                raise TypeError('cannot mix context managers and callables')
 
     # Enforce uniqueness in the (callable or context manager) object
     candidate_objs = [c[1] for c in candidates]
     if len(set(candidate_objs)) != len(candidate_objs):
-        raise ValueError("each callable and context manager must be unique")
+        raise ValueError('each callable and context manager must be unique')
 
     if runner is None:
         return {}
-    elif runner == "both":
-        raise TypeError(
-            "all objects supported both calling and context management - not sure which to run"
-        )
-    elif runner == "context":
+    elif runner == 'both':
+        raise TypeError('all objects supported both calling and context management - not sure which to run')
+    elif runner == 'context':
         if len(dicts) > 0:
-            raise ValueError(
-                f"unexpected return value dictionary argument for context management {dicts}"
-            )
+            raise ValueError(f'unexpected return value dictionary argument for context management {dicts}')
         return MultipleContexts(flexible_caller, params, candidates)
     else:
         ret = merge_inputs(dicts, candidates)
         result = flexible_caller(params, candidates)
 
         start_keys = set(ret.keys()).union(result.keys())
-        if params["flatten"]:
+        if params['flatten']:
             merge_results(ret, result)
         ret.update(result)
         return ret
@@ -1034,8 +1018,8 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
     results = {}
 
-    catch = params["catch"]
-    traceback_delay = params["traceback_delay"]
+    catch = params['catch']
+    traceback_delay = params['traceback_delay']
 
     # Setup calls then funcs
     # Set up mappings between wrappers, threads, and the function to call
@@ -1060,8 +1044,8 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             called = finished.get(timeout=0.25)
         except Empty:
             if time.perf_counter() - t0 > 60 * 15:
-                names = ",".join(list(threads.keys()))
-                logger.debug(f"{names} threads are still running")
+                names = ','.join(list(threads.keys()))
+                logger.debug(f'{names} threads are still running')
                 t0 = time.perf_counter()
             continue
         except BaseException as e:
@@ -1074,9 +1058,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
 
         # Below only happens when called is not none
         if parent_exception is not None:
-            names = ", ".join(list(threads.keys()))
+            names = ', '.join(list(threads.keys()))
             logger.error(
-                f"raising {parent_exception.__class__.__name__} in main thread after child threads {names} return"
+                f'raising {parent_exception.__class__.__name__} in main thread after child threads {names} return'
             )
 
         # if there was an exception that wasn't us ending the thread,
@@ -1093,11 +1077,11 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 try:
                     traceback.print_exception(*tb)
                 except BaseException as e:
-                    sys.stderr.write("\nthread exception, but failed to print exception")
+                    sys.stderr.write('\nthread exception, but failed to print exception')
                     sys.stderr.write(str(e))
-                    sys.stderr.write("\n")
+                    sys.stderr.write('\n')
         else:
-            if params["nones"] or called.result is not None:
+            if params['nones'] or called.result is not None:
                 results[called.name] = called.result
 
         # Remove this thread from the dictionary of running threads
@@ -1118,8 +1102,8 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
             try:
                 traceback.print_exception(*tb)
             except BaseException:
-                sys.stderr.write("\nthread error (fixme to print message)")
-                sys.stderr.write("\n")
+                sys.stderr.write('\nthread error (fixme to print message)')
+                sys.stderr.write('\n')
 
         raise parent_exception
 
@@ -1133,10 +1117,10 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 try:
                     traceback.print_exception(*tb)
                 except BaseException:
-                    sys.stderr.write("\nthread error (fixme to print message)")
-                    sys.stderr.write("\n")
+                    sys.stderr.write('\nthread error (fixme to print message)')
+                    sys.stderr.write('\n')
 
-            ex = ConcurrentException(f"{len(tracebacks)} call(s) raised exceptions")
+            ex = ConcurrentException(f'{len(tracebacks)} call(s) raised exceptions')
             ex.thread_exceptions = tracebacks
             raise ex
 
@@ -1181,7 +1165,7 @@ def concurrently(*objs, **kws):
     >>> def do_something_3 (a,b,c):
     >>>     time.sleep(2)
     >>>     return a,b,c
-    >>> rets = concurrent(myfunc1, Call(myfunc3,a,b,c=c))
+    >>> rets = concurrent(myfunc1, Call(myfunc3, a, b, c=c))
     >>> rets[do_something_3]
     a, b, c
 
@@ -1211,7 +1195,7 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
         ret = wrapper()
         if wrapper.traceback is not None:
             raise wrapper.traceback[1]
-        if ret is not None or params["nones"]:
+        if ret is not None or params['nones']:
             results[name] = ret
 
     return results
@@ -1258,7 +1242,7 @@ def sequentially(*objs, **kws):
     >>> def do_something_3 (a,b,c):
     >>>     time.sleep(2)
     >>>     return a,b,c
-    >>> rets = concurrent(myfunc1, Call(myfunc3,a,b,c=c))
+    >>> rets = concurrent(myfunc1, Call(myfunc3, a, b, c=c))
     >>> rets[do_something_3]
     a, b, c
 
@@ -1269,15 +1253,15 @@ def sequentially(*objs, **kws):
 
     """
 
-    if kws.get("catch", False):
-        raise ValueError("catch=True is not supported by sequentially")
+    if kws.get('catch', False):
+        raise ValueError('catch=True is not supported by sequentially')
 
     return enter_or_call(sequentially_call, objs, kws)
 
 
-OP_CALL = "op"
-OP_GET = "get"
-OP_SET = "set"
+OP_CALL = 'op'
+OP_GET = 'get'
+OP_SET = 'set'
 OP_QUIT = None
 
 
@@ -1307,7 +1291,7 @@ class ThreadDelegate(object):
         return self._dir
 
     def __repr__(self):
-        return f"ThreadDelegate({self._repr})"
+        return f'ThreadDelegate({self._repr})'
 
     def __setattr__(self, name, value):
         if name in delegate_keys:
@@ -1344,7 +1328,7 @@ class ThreadSandbox(object):
     Then use `obj` as a normal MyClass instance.
     """
 
-    __repr_root__ = "uninitialized ThreadSandbox"
+    __repr_root__ = 'uninitialized ThreadSandbox'
     __dir_root__ = []
     __thread = None
     _requestq = None
@@ -1368,9 +1352,7 @@ class ThreadSandbox(object):
 
             def default_sandbox_check_func(obj):
                 try:
-                    return inspect.getmodule(obj).__name__.startswith(
-                        inspect.getmodule(root).__name__
-                    )
+                    return inspect.getmodule(obj).__name__.startswith(inspect.getmodule(root).__name__)
                 except AttributeError:
                     return False
 
@@ -1420,7 +1402,7 @@ class ThreadSandbox(object):
 
             rsp.put((ret, exc), True)
 
-        logger.debug("ThreadSandbox worker thread finished")
+        logger.debug('ThreadSandbox worker thread finished')
 
     @hide_in_traceback
     def __getattr__(self, name):
@@ -1443,11 +1425,11 @@ class ThreadSandbox(object):
         if isinstance(self.__thread, Thread):
             self.__thread.join(0)
         else:
-            raise Exception("no thread running to kill")
+            raise Exception('no thread running to kill')
 
     def __del__(self):
         try:
-            del_ = message(self, OP_GET, None, "__del__", None, None)
+            del_ = message(self, OP_GET, None, '__del__', None, None)
         except AttributeError:
             pass
         else:
@@ -1459,7 +1441,7 @@ class ThreadSandbox(object):
                 pass
 
     def __repr__(self):
-        return f"ThreadSandbox({self.__repr_root__})"
+        return f'ThreadSandbox({self.__repr_root__})'
 
     def __dir__(self):
         return self.__dir_root__
@@ -1530,11 +1512,7 @@ class ttl_cache:
             time_elapsed = time.perf_counter() - (self.call_timestamp or 0)
             key = tuple(args), tuple(kws.keys()), tuple(kws.values())
 
-            if (
-                self.call_timestamp is None
-                or time_elapsed > self.timeout
-                or key not in self.last_value
-            ):
+            if self.call_timestamp is None or time_elapsed > self.timeout or key not in self.last_value:
                 ret = self.last_value[key] = func(*args, **kws)
                 self.call_timestamp = time.perf_counter()
             else:
@@ -1555,20 +1533,20 @@ def accessed_attributes(method):
 
     # really won't work unless method is a callable defined inside a class
     if not inspect.isroutine(method):
-        raise ValueError(f"{method} is not a method")
-    elif not inspect.ismethod(method) and "." not in method.__qualname__:
-        raise ValueError(f"{method} is not defined in a class")
+        raise ValueError(f'{method} is not a method')
+    elif not inspect.ismethod(method) and '.' not in method.__qualname__:
+        raise ValueError(f'{method} is not defined in a class')
 
     # parse into a code tree
     source = inspect.getsource(method)
 
     # filter out lines that start with comments, which have no tokens and confuse textwrap.dedent
-    source = "\n".join(re.findall("^[ \t\r\n]*[^#].*", source, re.MULTILINE))
+    source = '\n'.join(re.findall('^[ \t\r\n]*[^#].*', source, re.MULTILINE))
 
     parsed = ast.parse(textwrap.dedent(source))
     if len(parsed.body) > 1:
         # this should not be possible
-        raise Exception("ast parsing gave unexpected extra nodes")
+        raise Exception('ast parsing gave unexpected extra nodes')
 
     # pull out the function node and the name for the class instance
     func = parsed.body[0]
@@ -1578,6 +1556,6 @@ def accessed_attributes(method):
     self_name = func.args.args[0].arg
 
     def isselfattr(node):
-        return isinstance(node, ast.Attribute) and getattr(node.value, "id", None) == self_name
+        return isinstance(node, ast.Attribute) and getattr(node.value, 'id', None) == self_name
 
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})

@@ -16,7 +16,7 @@ import pandas as pd
 import ipywidgets as widgets
 from IPython.display import display
 
-skip_traits = {VISADevice: ["identity"], Host: ["log"], core.Device: ["isopen"]}
+skip_traits = {VISADevice: ['identity'], Host: ['log'], core.Device: ['isopen']}
 
 
 def trait_table(device):
@@ -29,11 +29,11 @@ def trait_table(device):
         `ipywidgdets.HBox` containing one `ipywidgets.HTML` widget
     """
 
-    _df = pd.DataFrame([], columns=["value"])
+    _df = pd.DataFrame([], columns=['value'])
 
-    TABLE_STYLES = [{"selector": ".col_heading, .blank", "props": [("display", "none;")]}]
+    TABLE_STYLES = [{'selector': '.col_heading, .blank', 'props': [('display', 'none;')]}]
 
-    CAPTION_FMT = "<center><b>{}<b></center>"
+    CAPTION_FMT = '<center><b>{}<b></center>'
 
     skip_attrs = []
     for cls, skip in skip_traits.items():
@@ -43,9 +43,9 @@ def trait_table(device):
     html = widgets.HTML()
 
     def on_change(change):
-        obj, name, value = change["owner"], change["name"], change["new"]
+        obj, name, value = change['owner'], change['name'], change['new']
 
-        if name != "isopen":
+        if name != 'isopen':
             print(name, value)
 
         # if name == 'isopen':
@@ -57,21 +57,18 @@ def trait_table(device):
         if name in skip_attrs:
             return
 
-        if hasattr(obj, "isopen") and name != "isopen" and not obj.isopen:
+        if hasattr(obj, 'isopen') and name != 'isopen' and not obj.isopen:
             if name in _df.index:
                 _df.drop(name, inplace=True)
             return
         else:
             print(name)
         label = get_class_attrs(obj)[name].label
-        _df.loc[name] = (str(value) + " " + str("" if label is None else label),)
+        _df.loc[name] = (str(value) + ' ' + str('' if label is None else label),)
         _df.sort_index(inplace=True)
-        caption = CAPTION_FMT.format(obj._owned_name or repr(obj)).replace(",", "<br>")
+        caption = CAPTION_FMT.format(obj._owned_name or repr(obj)).replace(',', '<br>')
         html.value = (
-            _df.style.set_caption(caption)
-            .set_table_attributes('class="table"')
-            .set_table_styles(TABLE_STYLES)
-            .render()
+            _df.style.set_caption(caption).set_table_attributes('class="table"').set_table_styles(TABLE_STYLES).render()
         )
 
     observe(device, on_change)
@@ -80,15 +77,15 @@ def trait_table(device):
 
 
 class TextareaLogHandler(logging.StreamHandler):
-    log_format = "%(asctime)s.%(msecs).03d %(levelname)10s %(message)s"
-    time_format = "%Y-%m-%d %H:%M:%S"
+    log_format = '%(asctime)s.%(msecs).03d %(levelname)10s %(message)s'
+    time_format = '%Y-%m-%d %H:%M:%S'
     max_buffer = 10000
     min_delay = 0.1
 
     def __init__(self, level=logging.DEBUG):
         self.stream = StringIO()
         super(TextareaLogHandler, self).__init__(self.stream)
-        self.widget = widgets.Textarea(layout=widgets.Layout(width="100%", height="500px"))
+        self.widget = widgets.Textarea(layout=widgets.Layout(width='100%', height='500px'))
         self.setFormatter(logging.Formatter(self.log_format, self.time_format))
         self.setLevel(level)
         self.last_time = None
@@ -123,19 +120,15 @@ class panel:
         cls.ncols = ncols
 
         if isinstance(source, Rack):
-            cls.devices = dict(
-                [(k, v) for k, v in source._ownables.items() if isinstance(v, core.Device)]
-            )
+            cls.devices = dict([(k, v) for k, v in source._ownables.items() if isinstance(v, core.Device)])
         elif isinstance(source, numbers.Number):
             cls.source = source + 1
             cls.devices = core.find_device_instances(cls.source)
         else:
-            raise ValueError(f"source must be a Rack instance or int, but got {repr(source)}")
+            raise ValueError(f'source must be a Rack instance or int, but got {repr(source)}')
 
         children = [
-            trait_table(cls.devices[k])
-            for k in sorted(cls.devices.keys())
-            if isinstance(cls.devices[k], core.Device)
+            trait_table(cls.devices[k]) for k in sorted(cls.devices.keys()) if isinstance(cls.devices[k], core.Device)
         ]
 
         if len(children) == 0:
@@ -151,7 +144,7 @@ class panel:
             # Sometimes stale source._contexts leads to AttributeError.
             # Delete them and try again
             except AttributeError:
-                if hasattr(source, "_contexts"):
+                if hasattr(source, '_contexts'):
                     return cls(source=cls.source, ncols=cls.ncols)
                 else:
                     raise
@@ -162,16 +155,16 @@ class panel:
 
         vbox = widgets.VBox(hboxes)
 
-        show_messages("error")
+        show_messages('error')
         log_handler = TextareaLogHandler()
-        logger = logging.getLogger("labbench")
+        logger = logging.getLogger('labbench')
 
         logger.addHandler(log_handler)
 
         cls.widget = widgets.Tab([vbox, log_handler.widget])
 
-        cls.widget.set_title(0, "State")
-        cls.widget.set_title(1, "Debug")
+        cls.widget.set_title(0, 'State')
+        cls.widget.set_title(1, 'Debug')
 
         display(cls.widget)
 

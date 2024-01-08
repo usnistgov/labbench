@@ -27,38 +27,37 @@
 # licenses.
 
 import time
-from labbench.testing.store_backend import StoreTestDevice
+
+import numpy as np
+import pytest
 
 import labbench as lb
 from labbench import paramattr as attr
-import numpy as np
-import pytest
+from labbench.testing.store_backend import StoreTestDevice
 
 
 class LaggyInstrument(StoreTestDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
 
-    delay: float = attr.value.float(default=0, min=0, help="connection time")
-    fetch_time: float = attr.value.float(default=0, min=0, help="fetch time")
-    fail_disconnect = attr.value.bool(
-        default=False, help="whether to raise DivideByZero on disconnect"
-    )
+    delay: float = attr.value.float(default=0, min=0, help='connection time')
+    fetch_time: float = attr.value.float(default=0, min=0, help='fetch time')
+    fail_disconnect = attr.value.bool(default=False, help='whether to raise DivideByZero on disconnect')
 
     def open(self):
         self.perf = {}
-        self._logger.info(f"{self} connect start")
+        self._logger.info(f'{self} connect start')
         t0 = time.perf_counter()
         lb.sleep(self.delay)
-        self.perf["open"] = time.perf_counter() - t0
-        self._logger.info(f"{self} connected")
+        self.perf['open'] = time.perf_counter() - t0
+        self._logger.info(f'{self} connected')
 
     def fetch(self):
         """Return the argument after a 1s delay"""
-        lb.logger.info(f"{self}.fetch start")
+        lb.logger.info(f'{self}.fetch start')
         t0 = time.perf_counter()
         lb.sleep(self.fetch_time)
-        lb.logger.info(f"{self}.fetch done")
-        self.perf["fetch"] = time.perf_counter() - t0
+        lb.logger.info(f'{self}.fetch done')
+        self.perf['fetch'] = time.perf_counter() - t0
         return self.fetch_time
 
     def dict(self):
@@ -69,7 +68,7 @@ class LaggyInstrument(StoreTestDevice):
         return None
 
     def close(self):
-        self._logger.info(f"{self} disconnected")
+        self._logger.info(f'{self} disconnected')
         if self.fail_disconnect:
             1 / 0
 
@@ -92,11 +91,11 @@ class Rack2(lb.Rack):
     dev: LaggyInstrument = LaggyInstrument()
 
     def setup(self):
-        return "rack 2 - setup"
+        return 'rack 2 - setup'
         return self.dev.dict()
 
     def acquire(self, *, param1):
-        return "rack 3 - acquire"
+        return 'rack 3 - acquire'
 
     def fetch(self, *, param2: int = 7):
         return self.dev.fetch()
@@ -125,18 +124,18 @@ class Rack3(lb.Rack):
 class MyRack(lb.Rack):
     db = lb.CSVLogger(
         path=time.strftime(
-            f"test db/test-rack %Y-%m-%d_%Hh%Mm%Ss"
+            'test db/test-rack %Y-%m-%d_%Hh%Mm%Ss'
         ),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
-        force_relational=["host_log"],  # Data in these columns will always be relational
-        nonscalar_file_type="csv",  # Default format of numerical data, when possible
+        force_relational=['host_log'],  # Data in these columns will always be relational
+        nonscalar_file_type='csv',  # Default format of numerical data, when possible
         tar=False,  # `True` to embed relational data folders within `data.tar`
     )
 
     # Devices
-    inst1: LaggyInstrument = LaggyInstrument(resource="a", delay=0.12)
-    inst2: LaggyInstrument = LaggyInstrument(resource="b", delay=0.06)
+    inst1: LaggyInstrument = LaggyInstrument(resource='a', delay=0.12)
+    inst2: LaggyInstrument = LaggyInstrument(resource='b', delay=0.06)
 
     # Test procedures
     rack1 = Rack1(dev1=inst1, dev2=inst2)
@@ -155,7 +154,7 @@ class MyRack(lb.Rack):
 
 @pytest.fixture
 def db_path():
-    yield f"test db/{np.random.bytes(8).hex()}"
+    return f'test db/{np.random.bytes(8).hex()}'
 
 
 def test_context_open():

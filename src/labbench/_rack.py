@@ -34,9 +34,7 @@ _INSPECT_SKIP_PARAMETER_KINDS = (
 
 
 def _filter_signature_parameters(params: dict):
-    return {
-        p.name: p for p in list(params.values())[1:] if p.kind not in _INSPECT_SKIP_PARAMETER_KINDS
-    }
+    return {p.name: p for p in list(params.values())[1:] if p.kind not in _INSPECT_SKIP_PARAMETER_KINDS}
 
 
 class notify:
@@ -70,8 +68,8 @@ class notify:
             return
 
         if not isinstance(returned, dict):
-            raise TypeError(f"returned data was {repr(returned)}, which is not a dict")
-        for handler in cls._handlers["returns"]:
+            raise TypeError(f'returned data was {repr(returned)}, which is not a dict')
+        for handler in cls._handlers['returns']:
             handler(dict(name=owner._owned_name, owner=owner, old=None, new=returned))
 
     @classmethod
@@ -80,18 +78,16 @@ class notify:
             return
 
         if not isinstance(parameters, dict):
-            raise TypeError(f"parameters data was {repr(parameters)}, which is not a dict")
-        for handler in cls._handlers["calls"]:
+            raise TypeError(f'parameters data was {repr(parameters)}, which is not a dict')
+        for handler in cls._handlers['calls']:
             handler(dict(name=owner._owned_name, owner=owner, old=None, new=parameters))
 
     @classmethod
-    def call_iteration_event(
-        cls, owner, index: int, step_name: str = None, total_count: int = None
-    ):
+    def call_iteration_event(cls, owner, index: int, step_name: str = None, total_count: int = None):
         if owner in cls._owner_hold_list:
             return
 
-        for handler in cls._handlers["iteration"]:
+        for handler in cls._handlers['iteration']:
             handler(
                 dict(
                     name=owner._owned_name,
@@ -104,46 +100,46 @@ class notify:
     @classmethod
     def observe_returns(cls, handler):
         if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers["returns"].add(handler)
+            raise AttributeError(f'{repr(handler)} is not callable')
+        cls._handlers['returns'].add(handler)
 
     @classmethod
     def observe_calls(cls, handler):
         if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers["calls"].add(handler)
+            raise AttributeError(f'{repr(handler)} is not callable')
+        cls._handlers['calls'].add(handler)
 
     @classmethod
     def observe_call_iteration(cls, handler):
         if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
-        cls._handlers["iteration"].add(handler)
+            raise AttributeError(f'{repr(handler)} is not callable')
+        cls._handlers['iteration'].add(handler)
 
     @classmethod
     def unobserve_returns(cls, handler):
         if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
+            raise AttributeError(f'{repr(handler)} is not callable')
 
         try:
-            cls._handlers["returns"].remove(handler)
+            cls._handlers['returns'].remove(handler)
         except KeyError:
             pass
 
     @classmethod
     def unobserve_calls(cls, handler):
         if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
+            raise AttributeError(f'{repr(handler)} is not callable')
         try:
-            cls._handlers["calls"].remove(handler)
+            cls._handlers['calls'].remove(handler)
         except KeyError:
             pass
 
     @classmethod
     def unobserve_call_iteration(cls, handler):
         if not callable(handler):
-            raise AttributeError(f"{repr(handler)} is not callable")
+            raise AttributeError(f'{repr(handler)} is not callable')
         try:
-            cls._handlers["iteration"].remove(handler)
+            cls._handlers['iteration'].remove(handler)
         except KeyError:
             pass
 
@@ -156,7 +152,7 @@ class CallSignatureTemplate:
         if self.target is None or callable(self.target):
             return self.target
 
-        if isinstance(owner, util.Ownable) and not hasattr(self.target, "__name__"):
+        if isinstance(owner, util.Ownable) and not hasattr(self.target, '__name__'):
             # might have no signature yet if it has not been claimed by its owner
             return None
 
@@ -184,9 +180,7 @@ class MethodTaggerDataclass:
     pending = {}
 
     def __call__(self, func):
-        self.pending.setdefault(func, {}).update(
-            {n: getattr(self, n) for n in self.__annotations__}
-        )
+        self.pending.setdefault(func, {}).update({n: getattr(self, n) for n in self.__annotations__})
 
         return func
 
@@ -260,14 +254,14 @@ class RackMethod(util.Ownable):
         else:
             self._wrapped = obj
             self._kwdefaults = kwdefaults
-            self._callable_template = CallSignatureTemplate(tags.pop("template", None))
+            self._callable_template = CallSignatureTemplate(tags.pop('template', None))
             self.tags = tags
 
         # self.__call__.__name__  = self.__name__ = obj.__name__
         # self.__qualname__ = obj.__qualname__
         self.__doc__ = obj.__doc__
         self.__name__ = name
-        self.__qualname__ = getattr(obj, "__qualname__", obj.__class__.__qualname__)
+        self.__qualname__ = getattr(obj, '__qualname__', obj.__class__.__qualname__)
 
         self._apply_signature()
 
@@ -283,9 +277,7 @@ class RackMethod(util.Ownable):
 
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.logger.info(
-                f"{self._owned_name} from '{str(path)}' " f"- '{row}' ({i+1}/{len(table.index)})"
-            )
+            util.logger.info(f"{self._owned_name} from '{str(path)}' " f"- '{row}' ({i+1}/{len(table.index)})")
             notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
 
@@ -314,14 +306,14 @@ class RackMethod(util.Ownable):
 
         # note the devices needed to execute this function
         if isinstance(self._owner, Rack):
-            annotations = getattr(self._owner, "__annotations__", {})
+            annotations = getattr(self._owner, '__annotations__', {})
 
             # set logic to identify Device dependencies
             available = {getattr(self._owner, name) for name in annotations}
 
             accessed = set()
             for name in util.accessed_attributes(self._wrapped):
-                if name.startswith("_") or not hasattr(self._owner, name):
+                if name.startswith('_') or not hasattr(self._owner, name):
                     continue
                 obj = getattr(self._owner, name)
                 if isinstance(obj, (util.Ownable,)):
@@ -336,7 +328,7 @@ class RackMethod(util.Ownable):
         params = dict(sig.parameters)
 
         # replace the **kwargs with specific keywords from the template function
-        skip_param_names = list(self.tags.get("skip", []))
+        skip_param_names = list(self.tags.get('skip', []))
 
         if self._callable_template.get_target(self._owner) is not None:
             for kws_name, param in params.items():
@@ -348,9 +340,7 @@ class RackMethod(util.Ownable):
                 )
 
             try:
-                template_params = self._callable_template.get_keyword_parameters(
-                    self._owner, skip_param_names
-                )
+                template_params = self._callable_template.get_keyword_parameters(self._owner, skip_param_names)
             except TypeError:
                 pass
             else:
@@ -415,9 +405,7 @@ class RackMethod(util.Ownable):
 
         param_list = list(_filter_signature_parameters(sig.parameters).values())
 
-        return sig.replace(
-            parameters=[param.replace(name=k) for k, param in zip(ext_names, param_list)]
-        )
+        return sig.replace(parameters=[param.replace(name=k) for k, param in zip(ext_names, param_list)])
 
     def extended_arguments(self, name_map={}):
         """returns a list of argument names from in the owned context.
@@ -427,12 +415,12 @@ class RackMethod(util.Ownable):
         """
         # TODO: should these all have 'owner' as a name, to specify the context?
         sig = self.__call__.__signature__
-        if hasattr(self._owner, "__name__"):
-            prefix = self._owner.__name__ + "_"
+        if hasattr(self._owner, '__name__'):
+            prefix = self._owner.__name__ + '_'
         else:
-            prefix = ""
+            prefix = ''
 
-        shared_names = self.tags.get("shared_names", [])
+        shared_names = self.tags.get('shared_names', [])
         name_map = dict(dict(zip(shared_names, shared_names)), **name_map)
 
         names = list(sig.parameters.keys())[1:]
@@ -441,7 +429,7 @@ class RackMethod(util.Ownable):
     @util.hide_in_traceback
     def call_by_extended_argnames(self, *args, **kws):
         """rename keywords from the long form used by an owning class"""
-        prefix = self._owner.__name__ + "_"
+        prefix = self._owner.__name__ + '_'
         prefix_start = len(prefix)
 
         # TODO: this will break in some keyword name edge-cases.
@@ -483,7 +471,7 @@ class RackMethod(util.Ownable):
         ret = self._wrapped(self._owner, *args, **kws)
         elapsed = time.perf_counter() - t0
         if elapsed > 0.1:
-            util.logger.debug(f"{self._owned_name} completed in {elapsed:0.2f}s")
+            util.logger.debug(f'{self._owned_name} completed in {elapsed:0.2f}s')
 
         # notify observers about the returned value
         if ret is not None:
@@ -495,9 +483,9 @@ class RackMethod(util.Ownable):
     def __repr__(self):
         try:
             wrapped = repr(self._wrapped)[1:-1]
-            return f"<{wrapped} wrapped by {type(self).__module__}.{type(self).__name__} object>"
+            return f'<{wrapped} wrapped by {type(self).__module__}.{type(self).__name__} object>'
         except AttributeError:
-            return f"<{type(self).__module__}.{type(self).__name__} wrapper>"
+            return f'<{type(self).__module__}.{type(self).__name__} wrapper>'
 
 
 class BoundSequence(util.Ownable):
@@ -526,17 +514,17 @@ class BoundSequence(util.Ownable):
                 util.logger.debug(
                     # TODO: removing name metadata from each step removed a descriptive name here.
                     # add something back?
-                    f"{self.__objclass__.__qualname__}.{self.__name__} ({i}/{len(self.sequence)})"
+                    f'{self.__objclass__.__qualname__}.{self.__name__} ({i}/{len(self.sequence)})'
                 )
                 ret.update(util.concurrently(**step_kws) or {})
         except self.exception_allowlist as e:
-            core.logger.warning(f"{str(e)}")
-            ret["exception"] = e.__class__.__name__
+            core.logger.warning(f'{str(e)}')
+            ret['exception'] = e.__class__.__name__
             if self.cleanup_func is not None:
                 self.cleanup_func()
 
         util.logger.debug(
-            f"{self.__objclass__.__qualname__}.{self.__name__} ({len(self.sequence)}/{len(self.sequence)}, finished)"
+            f'{self.__objclass__.__qualname__}.{self.__name__} ({len(self.sequence)}/{len(self.sequence)}, finished)'
         )
 
         return ret
@@ -546,8 +534,8 @@ class BoundSequence(util.Ownable):
         import pandas as pd
 
         if path is None:
-            path = f"{cls.__name__} template.csv"
-        util.logger.debug(f"writing csv template to {repr(path)}")
+            path = f'{cls.__name__} template.csv'
+        util.logger.debug(f'writing csv template to {repr(path)}')
         params = inspect.signature(cls.__call__).parameters
         df = pd.DataFrame(columns=list(params)[1:])
         df.index.name = cls.INDEX_COLUMN_NAME
@@ -563,9 +551,7 @@ class BoundSequence(util.Ownable):
 
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.logger.info(
-                f"{self._owned_name} from '{str(path)}' " f"- '{row}' ({i+1}/{len(table.index)})"
-            )
+            util.logger.info(f"{self._owned_name} from '{str(path)}' " f"- '{row}' ({i+1}/{len(table.index)})")
             notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
 
@@ -573,7 +559,7 @@ class BoundSequence(util.Ownable):
         """ """
 
         available = set(kwargs.keys())
-        shared_names = self.tags["shared_names"]
+        shared_names = self.tags['shared_names']
         name_map = dict(zip(shared_names, shared_names))
 
         def call(func):
@@ -588,15 +574,12 @@ class BoundSequence(util.Ownable):
 
         for item in spec:
             if callable(item):
-                name = item._owner.__class__.__qualname__ + "_" + item.__name__
+                name = item._owner.__class__.__qualname__ + '_' + item.__name__
                 kws_out[name] = call(item)
             elif isinstance(item, list):
                 kws_out[name] = self._step(item, kwargs)
             else:
-                msg = (
-                    f"unsupported type '{type(item).__qualname__}' "
-                    f"in call sequence specification"
-                )
+                msg = f"unsupported type '{type(item).__qualname__}' " f'in call sequence specification'
                 raise ValueError(msg)
 
         return kws_out
@@ -607,7 +590,7 @@ class OwnerContextAdapter:
 
     def __init__(self, owner):
         self._owner = owner
-        self._owned_name = getattr(owner, "_owned_name", repr(owner))
+        self._owned_name = getattr(owner, '_owned_name', repr(owner))
         # display_name = getattr(self, "_owned_name", type(self).__name__)
 
     def __enter__(self):
@@ -615,13 +598,13 @@ class OwnerContextAdapter:
             hold = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
             notify.hold_owner_notifications(*hold)
             cls = type(self._owner)
-            for opener in util.find_methods_in_mro(cls, "open", Owner)[::-1]:
+            for opener in util.find_methods_in_mro(cls, 'open', Owner)[::-1]:
                 if isinstance(opener, WrappedOpen):
                     opener.unwrapped(self._owner)
                 else:
                     opener(self._owner)
 
-            getattr(self._owner, "_logger", util.logger).debug(f"opened")
+            getattr(self._owner, '_logger', util.logger).debug(f'opened')
 
         finally:
             notify.allow_owner_notifications(*hold)
@@ -631,7 +614,7 @@ class OwnerContextAdapter:
             holds = [o for o in self._owner._ownables.values() if isinstance(o, RackMethod)]
             notify.hold_owner_notifications(*holds)
             cls = type(self._owner)
-            methods = util.find_methods_in_mro(cls, "close", Owner)
+            methods = util.find_methods_in_mro(cls, 'close', Owner)
 
             all_ex = []
             for closer in methods:
@@ -652,13 +635,13 @@ class OwnerContextAdapter:
                     traceback.print_exception(*ex, limit=-(depth - 1))
                     # sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
-            getattr(self._owner, "_logger", util.logger).debug(f"closed")
+            getattr(self._owner, '_logger', util.logger).debug(f'closed')
 
         finally:
             notify.allow_owner_notifications(*holds)
 
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(f"multiple exceptions while closing {self}")
+                ex = util.ConcurrentException(f'multiple exceptions while closing {self}')
                 ex.thread_exceptions = all_ex
                 raise ex
 
@@ -666,7 +649,7 @@ class OwnerContextAdapter:
         return repr(self._owner)
 
     def __str__(self):
-        return getattr(self._owner, "_owned_name", None) or repr(self)
+        return getattr(self._owner, '_owned_name', None) or repr(self)
 
 
 def flatten_nested_owner_contexts(top) -> dict:
@@ -680,15 +663,15 @@ def flatten_nested_owner_contexts(top) -> dict:
         managers.update(flatten_nested_owner_contexts(owner))
         managers[name] = OwnerContextAdapter(owner)
 
-    if "" in managers:
-        obj = managers.pop("")
+    if '' in managers:
+        obj = managers.pop('')
         managers[obj._owned_name] = obj
 
-    if getattr(top, "_owned_name", None) is not None:
-        name = "_".join(top._owned_name.split(".")[1:])
+    if getattr(top, '_owned_name', None) is not None:
+        name = '_'.join(top._owned_name.split('.')[1:])
         managers[name] = OwnerContextAdapter(top)
-    elif "" not in managers:
-        managers[""] = OwnerContextAdapter(top)
+    elif '' not in managers:
+        managers[''] = OwnerContextAdapter(top)
     else:
         raise KeyError(f"unbound owners in the manager tree: {managers['']._owned_name}")
 
@@ -707,14 +690,14 @@ def package_owned_contexts(top):
         Context manager
     """
 
-    log = getattr(top, "_logger", util.logger)
+    log = getattr(top, '_logger', util.logger)
     contexts, entry_order = recursive_devices(top)
 
     # like set(entry_order), but maintains order in python >= 3.7
     entry_order = tuple(dict.fromkeys(entry_order))
-    order_desc = " -> ".join([e.__qualname__ for e in entry_order])
+    order_desc = ' -> '.join([e.__qualname__ for e in entry_order])
     if len(order_desc) > 0:
-        log.debug(f"entry_order before other devices: {order_desc}")
+        log.debug(f'entry_order before other devices: {order_desc}')
 
     # Pull any objects of types listed by top.entry_order, in the
     # order of (1) the types listed in top.entry_order, then (2) the order
@@ -725,16 +708,12 @@ def package_owned_contexts(top):
         for attr, obj in contexts.items():
             if isinstance(obj, cls):
                 first[attr] = remaining.pop(attr)
-    firsts_desc = "->".join([str(c) for c in first.values()])
+    firsts_desc = '->'.join([str(c) for c in first.values()])
 
     # then, other devices, which need to be ready before we start into Rack setup methods
-    devices = {
-        attr: remaining.pop(attr)
-        for attr, obj in dict(remaining).items()
-        if isinstance(obj, core.Device)
-    }
+    devices = {attr: remaining.pop(attr) for attr, obj in dict(remaining).items() if isinstance(obj, core.Device)}
     devices_desc = f"({', '.join([str(c) for c in devices.values()])})"
-    devices = util.concurrently(name="", **devices)
+    devices = util.concurrently(name='', **devices)
 
     # what remain are instances of Rack and other Owner types
     owners = flatten_nested_owner_contexts(top)
@@ -753,13 +732,13 @@ def package_owned_contexts(top):
     # the dictionary here is a sequence
     seq = dict(first)
     if devices != {}:
-        seq["_devices"] = devices
+        seq['_devices'] = devices
     seq.update(owners)
 
-    desc = "->".join([d for d in (firsts_desc, devices_desc, owners_desc) if len(d) > 0])
+    desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc) if len(d) > 0])
 
-    log.debug(f"context order: {desc}")
-    return util.sequentially(name=f"{repr(top)}", **seq) or null_context(top)
+    log.debug(f'context order: {desc}')
+    return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
 
 
 def owner_getattr_chains(owner):
@@ -778,7 +757,7 @@ def owner_getattr_chains(owner):
 
 class WrappedOpen:
     def __init__(self, obj: Owner):
-        open_func = object.__getattribute__(obj, "open")
+        open_func = object.__getattribute__(obj, 'open')
         self.__call__ = wraps(open_func)(self)
         self.obj = obj
         self.unwrapped = open_func
@@ -791,7 +770,7 @@ class WrappedOpen:
 
 class WrappedClose:
     def __init__(self, obj: Owner):
-        close_func = object.__getattribute__(obj, "close")
+        close_func = object.__getattribute__(obj, 'close')
         self.__call__ = wraps(close_func)(self)
         self.obj = obj
         self.unwrapped = close_func
@@ -816,15 +795,13 @@ class Owner:
         """type configuration performed each time a new subclass is created"""
         # registries that will be context managed
         cls._devices = {}  # each of cls._devices.values() these will be context managed
-        cls._owners = (
-            {}
-        )  # each of these will get courtesy calls to open and close between _device entry and exit
+        cls._owners = {}  # each of these will get courtesy calls to open and close between _device entry and exit
         cls._ownables = {}
 
         if entry_order is not None:
             for e in entry_order:
                 if not issubclass(e, core.Device):
-                    raise TypeError(f"entry_order item {e} is not a Device subclass")
+                    raise TypeError(f'entry_order item {e} is not a Device subclass')
             cls._entry_order = entry_order
 
         cls.__propagate_cls_ownership__()
@@ -877,9 +854,7 @@ class Owner:
         for name, obj in update_ownables.items():
             if not isinstance(obj, util.Ownable):
                 type_desc = type(name).__qualname__
-                raise TypeError(
-                    f"'{name}' must have an ownable object like Device, not <{type_desc}>"
-                )
+                raise TypeError(f"'{name}' must have an ownable object like Device, not <{type_desc}>")
             if name not in self._ownables.keys():
                 raise TypeError(f"invalid keyword argument '{name}'")
 
@@ -905,7 +880,7 @@ class Owner:
         # update naming for any util.Ownable instances
         if isinstance(obj, util.Ownable):
             self._ownables[name] = obj
-            if getattr(obj, "__objclass__", None) is not type(self):
+            if getattr(obj, '__objclass__', None) is not type(self):
                 obj.__set_name__(type(self), name)
                 obj.__owner_init__(self)
                 if isinstance(obj, Owner):
@@ -920,16 +895,16 @@ class Owner:
         super().__setattr__(name, obj)
 
     def __getattribute__(self, name):
-        if name in ("_ownables", "_devices", "_owners"):
+        if name in ('_ownables', '_devices', '_owners'):
             # dicts that need to be a fresh mapping, not the class def
             obj = super().__getattribute__(name)
             if obj is getattr(type(self), name):
                 obj = dict(obj)
                 setattr(self, name, obj)
             return obj
-        elif name == "open":
+        elif name == 'open':
             return WrappedOpen(self)
-        elif name == "close":
+        elif name == 'close':
             return WrappedClose(self)
         else:
             return super().__getattribute__(name)
@@ -963,13 +938,13 @@ class Owner:
 def recursive_devices(top: Owner):
     entry_order = list(top._entry_order)
     devices = dict(top._devices)
-    top_name_prefix = getattr(top, "__name__", "")
+    top_name_prefix = getattr(top, '__name__', '')
     if len(top_name_prefix) > 0:
-        top_name_prefix = top_name_prefix + "."
+        top_name_prefix = top_name_prefix + '.'
 
     for owner in top._owners.values():
         children, o_entry_order = recursive_devices(owner)
-        name_prefix = top_name_prefix + owner.__name__ + "."
+        name_prefix = top_name_prefix + owner.__name__ + '.'
 
         # this might be faster if the key/value order is transposed in devices?
         for name, child in children.items():
@@ -993,7 +968,7 @@ def override_empty(a, b, param_name, field):
     elif len(nonempty) == 1:
         ret = tuple(nonempty)[0]
 
-        if field == "annotation" and not inspect.isclass(ret):
+        if field == 'annotation' and not inspect.isclass(ret):
             raise TypeError(f"type annotation '{ret}' for parameter '{param_name}' is not a class")
 
         return ret
@@ -1009,7 +984,7 @@ def update_parameter_dict(dest: dict, signature: inspect.Signature):
     or TypeError is raised.
     """
     # pull a dictionary of signature values (default, annotation) with EMPTY as a null sentinel value
-    if not hasattr(signature, "parameters"):
+    if not hasattr(signature, 'parameters'):
         parameters = signature
     else:
         parameters = signature.parameters
@@ -1019,10 +994,8 @@ def update_parameter_dict(dest: dict, signature: inspect.Signature):
             continue
         if name in dest:
             dest[name] = dest[name].replace(
-                annotation=override_empty(
-                    dest[name].annotation, param.annotation, name, "annotation"
-                ),
-                default=override_empty(dest[name].default, param.default, name, "default"),
+                annotation=override_empty(dest[name].annotation, param.annotation, name, 'annotation'),
+                default=override_empty(dest[name].default, param.default, name, 'default'),
             )
 
         else:
@@ -1036,7 +1009,7 @@ def attr_chain_to_method(root_obj, chain):
     for name in chain[:-1]:
         obj = getattr(obj, name)
 
-    if hasattr(obj, "_methods"):
+    if hasattr(obj, '_methods'):
         return RackMethod.from_method(obj._methods[chain[-1]])
 
     attr = getattr(obj, chain[-1])
@@ -1061,15 +1034,13 @@ def standardize_spec_step(sequence):
         # it is a class method, just need to wrap it
         sequence = [RackMethod(sequence.__self__, sequence.__name__)]
 
-    elif hasattr(sequence, "__wrapped__"):
+    elif hasattr(sequence, '__wrapped__'):
         # if it's a wrapper as implemented by functools, try again on the wrapped callable
         return standardize_spec_step(sequence.__wrapped__)
 
     else:
         typename = type(sequence).__qualname__
-        raise TypeError(
-            f"object of type '{typename}' is neither a Rack method, Sequence, nor a nested tuple/list"
-        )
+        raise TypeError(f"object of type '{typename}' is neither a Rack method, Sequence, nor a nested tuple/list")
 
     return sequence
 
@@ -1142,7 +1113,7 @@ class Sequence(util.Ownable):
             exception_allowlist=self.exception_allowlist,
             tags=self.tags,
             __name__=self.__name__,
-            __qualname__=type(owner).__qualname__ + "." + self.__name__,
+            __qualname__=type(owner).__qualname__ + '.' + self.__name__,
             __objclass__=self.__objclass__,
             __owner_subclass__=self.__owner_subclass__,  # in case the owner changes and calls this again
         )
@@ -1158,9 +1129,9 @@ class Sequence(util.Ownable):
         cls.__call__ = util.copy_func(cls.__call__)
 
         # merge together
-        params = dict(self=inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY))
+        params = dict(self=inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY))
 
-        shared_names = self.tags["shared_names"]
+        shared_names = self.tags['shared_names']
         name_map = dict(zip(shared_names, shared_names))
         for funcs in spec:
             for func in funcs:
@@ -1185,15 +1156,13 @@ class Sequence(util.Ownable):
         for spec in spec:
             for func in spec:
                 if not isinstance(func, (RackMethod, BoundSequence)):
-                    raise TypeError(
-                        f"expected RackMethod instance, but got '{type(func).__qualname__}' instead"
-                    )
+                    raise TypeError(f"expected RackMethod instance, but got '{type(func).__qualname__}' instead")
 
                 # race condition check
                 conflicts = set(deps.keys()).intersection(func.dependencies)
                 if len(conflicts) > 0:
                     users = {deps[device] for device in conflicts}
-                    raise RuntimeError(f"risk of concurrent access to {conflicts} by {users}")
+                    raise RuntimeError(f'risk of concurrent access to {conflicts} by {users}')
 
                 deps.update({device.__name__: device for device in func.dependencies})
 
@@ -1274,13 +1243,13 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
             obj = getattr(cls, name)
             if isinstance(obj, (core.Device, Owner, Sequence, BoundSequence)):
                 continue
-            if not name.startswith("_") and callable(obj):
+            if not name.startswith('_') and callable(obj):
                 cls._methods[name] = obj
 
         # include annotations from parent classes
         cls.__annotations__ = dict(
-            getattr(super(), "__annotations__", {}),
-            **getattr(cls, "__annotations__", {}),
+            getattr(super(), '__annotations__', {}),
+            **getattr(cls, '__annotations__', {}),
         )
         cls.__init__.__annotations__ = cls.__annotations__
 
@@ -1288,7 +1257,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
         # Generate a signature for documentation and code autocomplete
         params = [
-            inspect.Parameter("self", kind=inspect.Parameter.POSITIONAL_ONLY),
+            inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY),
         ]
 
         # generate and apply the sequence of call signature parameters
@@ -1316,9 +1285,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
             try:
                 dev_type = annotations.pop(name)
             except KeyError:
-                raise NameError(
-                    f"{self.__class__.__qualname__}.__init__ was given invalid keyword argument '{name}'"
-                )
+                raise NameError(f"{self.__class__.__qualname__}.__init__ was given invalid keyword argument '{name}'")
             if not isinstance(dev, dev_type):
                 # allow the sentinel EMPTY to instantiate for introspection
                 msg = f"argument '{name}' is not an instance of '{dev_type.__qualname__}'"
@@ -1332,7 +1299,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
         # any remaining items in annotations are missing arguments
         if len(annotations) > 0:
-            kwargs = [f"{repr(k)}: {v}" for k, v in annotations.items()]
+            kwargs = [f'{repr(k)}: {v}' for k, v in annotations.items()]
             raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
 
         # now move forward with applying the devices
@@ -1340,8 +1307,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
         # wrap self._methods as necessary
         self._methods = {
-            k: (obj if isinstance(obj, RackMethod) else RackMethod(self, k))
-            for k, obj in self._methods.items()
+            k: (obj if isinstance(obj, RackMethod) else RackMethod(self, k)) for k, obj in self._methods.items()
         }
 
     def __deepcopy__(self, memo=None):
@@ -1365,7 +1331,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
         super().__owner_init__(owner)
 
     def __getattribute__(self, item):
-        if item != "_methods" and item in self._methods:
+        if item != '_methods' and item in self._methods:
             return self._methods[item]
         else:
             return super().__getattribute__(item)
@@ -1407,7 +1373,7 @@ def import_as_rack(
     cls_name: str = None,
     append_path: list = [],
     base_cls: type = Rack,
-    replace_attrs: list = ["__doc__", "__module__"],
+    replace_attrs: list = ['__doc__', '__module__'],
 ):
     """Creates a Rack subclass with the specified module's contents. Ownable objects are annotated
     by type, allowing the resulting class to be instantiated.
@@ -1437,7 +1403,7 @@ def import_as_rack(
 
         # __name__ causes an undesired __name__ attribute to exist in the root Rack class
         # (this breaks logic that expects this to exist only in owned instances
-        name_ok = name in replace_attrs or not name.startswith("_")
+        name_ok = name in replace_attrs or not name.startswith('_')
 
         return type_ok and name_ok
 
@@ -1459,17 +1425,17 @@ def import_as_rack(
         elif inspect.ismodule(cls):
             module = cls
         else:
-            raise TypeError(f"{cls_name} is not a subclass of {base_cls.__qualname__}")
+            raise TypeError(f'{cls_name} is not a subclass of {base_cls.__qualname__}')
 
         dunder_updates = dict()
     else:
-        cls_name = "__main__"
+        cls_name = '__main__'
 
         dunder_updates = dict(
             __module__=module.__name__,
             __attributes__=dict(
-                getattr(base_cls, "__attributes__", {}),
-                **getattr(module, "__attributes__", {}),
+                getattr(base_cls, '__attributes__', {}),
+                **getattr(module, '__attributes__', {}),
             ),
         )
 
@@ -1518,11 +1484,9 @@ def find_owned_rack_by_type(parent_rack: Rack, target_type: Rack, include_parent
         }
 
         if len(type_matches) == 0:
-            raise TypeError(f"{parent_rack} contains no racks of type {target_type}")
+            raise TypeError(f'{parent_rack} contains no racks of type {target_type}')
         elif len(type_matches) > 1:
-            raise TypeError(
-                f"{parent_rack} contains multiple racks {type_matches.keys()} of type {target_type}"
-            )
+            raise TypeError(f'{parent_rack} contains multiple racks {type_matches.keys()} of type {target_type}')
         else:
             (target_rack,) = type_matches.values()
 

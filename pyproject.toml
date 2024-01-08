@@ -135,3 +135,17 @@ html="sphinx-build -b html doc doc/html"
 latex="sphinx-build -b latex doc doc/latex"
 pdf="pdflatex doc/latex/labbench-api.tex --output-directory=doc" 
 rst="sphinx-apidoc -F . -o doc"
+
+[tool.ruff]
+target-version = "py312"
+extend-include = ["*.ipynb"]
+
+[tool.ruff.format]
+quote-style = "single"
+line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"**/__init__.py" = ["F401", "F403"]
+

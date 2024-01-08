@@ -1,4 +1,3 @@
-import importlib
 import labbench as lb
 from labbench import paramattr as attr
 
@@ -6,11 +5,11 @@ flag_start = False
 
 
 class Shell_Python(lb.ShellBackend):
-    binary_path = attr.value.str(f"python")
+    binary_path = attr.value.str('python')
 
-    path = attr.value.str(key=None, help="path to a python script file")
+    path = attr.value.str(key=None, help='path to a python script file')
 
-    command = attr.value.str(key="-c", help="execute a python command")
+    command = attr.value.str(key='-c', help='execute a python command')
 
     def _flag_names(self):
         return (name for name, trait in self._traits.items() if trait.key is not lb.Undefined)
@@ -25,7 +24,7 @@ class Shell_Python(lb.ShellBackend):
         # validate the set of flags
         unsupported = set(flags).difference(self._flag_names())
         if len(unsupported) > 1:
-            raise KeyError(f"flags {unsupported} are unsupported")
+            raise KeyError(f'flags {unsupported} are unsupported')
 
         # apply flags
         for name, value in flags.items():
@@ -41,10 +40,10 @@ class Shell_Python(lb.ShellBackend):
 
             if value is None:
                 continue
-            elif trait.key in (None, ""):
+            elif trait.key in (None, ''):
                 cmd = cmd + (value,)
             elif not isinstance(trait.key, str) and trait.key is not lb._traits.Undefined:
-                raise TypeError(f"keys defined in {self} must be strings")
+                raise TypeError(f'keys defined in {self} must be strings')
             else:
                 cmd = cmd + (trait.key, value)
         return cmd
@@ -57,13 +56,13 @@ class Shell_Python(lb.ShellBackend):
 #                 self.assertEqual(getattr(m, name),
 #                                  trait.default, msg=f'defaults: {name}')
 #
-if __name__ == "__main__":
+if __name__ == '__main__':
     import inspect
 
-    lb.show_messages("debug")
+    lb.show_messages('debug')
 
-    python = Shell_Python(path=r"c:\script.py", command='print("hello world")')
-    print(python["resource"].key is lb.Undefined)
+    python = Shell_Python(path=r'c:\script.py', command='print("hello world")')
+    print(python['resource'].key is lb.Undefined)
     print(lb.Unicode.__defaults__)
     print(inspect.signature(lb.Unicode.__init__))
 

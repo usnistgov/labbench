@@ -25,8 +25,8 @@ from ._device import Device
 from . import paramattr as attr
 
 try:
-    serial = util.lazy_import("serial")
-    telnetlib = util.lazy_import("telnetlib")
+    serial = util.lazy_import('serial')
+    telnetlib = util.lazy_import('telnetlib')
 except RuntimeWarning:
     # not executed: help coding tools recognize lazy_imports as imports
     import telnetlib
@@ -49,15 +49,13 @@ class ShellBackend(Device):
     queued stdout.
     """
 
-    binary_path: Path = attr.value.Path(
-        default=None, allow_none=True, help="path to the file to run", cache=True
-    )
+    binary_path: Path = attr.value.Path(default=None, allow_none=True, help='path to the file to run', cache=True)
 
     timeout: float = attr.value.float(
         default=1,
         min=0,
-        help="wait time after close before killing background processes",
-        label="s",
+        help='wait time after close before killing background processes',
+        label='s',
         cache=True,
     )
 
@@ -70,9 +68,7 @@ class ShellBackend(Device):
 
         def check_state_change(change={}):
             if self.running():
-                raise ValueError(
-                    "cannot change command line property trait traits during execution"
-                )
+                raise ValueError('cannot change command line property trait traits during execution')
 
         if not os.path.exists(self.binary_path):
             raise OSError(f'executable does not exist at resource=r"{self.binary_path}"')
@@ -108,7 +104,7 @@ class ShellBackend(Device):
             )
 
         if respawn:
-            raise ValueError("respawn argument requires pipe=True and background=True")
+            raise ValueError('respawn argument requires pipe=True and background=True')
 
         if pipe and not background:
             return self._run_piped(
@@ -119,9 +115,9 @@ class ShellBackend(Device):
             )
         else:
             if background:
-                raise ValueError("background argument requires pipe=True")
+                raise ValueError('background argument requires pipe=True')
             if check_stderr:
-                raise ValueError("check_stderr requires pipe=True")
+                raise ValueError('check_stderr requires pipe=True')
 
             return self._run_simple(*argv, check_return=check_return, timeout=timeout)
 
@@ -187,17 +183,15 @@ class ShellBackend(Device):
             show_count = min(40, len(lines))
             remaining = max(0, len(lines) - show_count)
 
-            logger_msgs = [f"► {line}" for line in lines[: show_count // 2]]
+            logger_msgs = [f'► {line}' for line in lines[: show_count // 2]]
             if remaining > 0:
-                logger_msgs.append(f"…{remaining} more lines")
+                logger_msgs.append(f'…{remaining} more lines')
             for line in lines[-show_count // 2 :]:
-                logger_msgs.append(f"► {line}")
-            self._logger.debug("\n".join(logger_msgs))
+                logger_msgs.append(f'► {line}')
+            self._logger.debug('\n'.join(logger_msgs))
         return ret
 
-    def _background_piped(
-        self, *argv, check_return=False, check_stderr=False, respawn=False, timeout=None
-    ):
+    def _background_piped(self, *argv, check_return=False, check_stderr=False, respawn=False, timeout=None):
         """Run the executable in the background (returning immediately while
         the executable continues running).
 
@@ -229,8 +223,8 @@ class ShellBackend(Device):
 
             pid = self.backend.pid
             q = self._stdout
-            for line in iter(fd.readline, ""):
-                line = line.decode(errors="replace").replace("\r", "")
+            for line in iter(fd.readline, ''):
+                line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
                     q.put(line)
                 else:
@@ -239,22 +233,22 @@ class ShellBackend(Device):
 
             # Respawn (or don't)
             if respawn and not self.__kill:
-                self._logger.debug("respawning")
+                self._logger.debug('respawning')
                 self._kill_proc_tree(pid)
                 spawn(cmdl)
             else:
-                self._logger.debug("process ended")
+                self._logger.debug('process ended')
 
         def stderr_to_exception(fd, cmdl):
             """Thread worker to raise exceptions on standard error output"""
             q = self._stderr
-            for line in iter(fd.readline, ""):
+            for line in iter(fd.readline, ''):
                 if self.backend is None:
                     break
-                line = line.decode(errors="replace").replace("\r", "")
+                line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
                     q.put(line)
-                    self._logger.debug(f"stderr {repr(line)}")
+                    self._logger.debug(f'stderr {repr(line)}')
                 #                    raise Exception(line)
                 else:
                     break
@@ -272,7 +266,7 @@ class ShellBackend(Device):
                 None
             """
             if self.running():
-                raise Exception("already running")
+                raise Exception('already running')
 
             si = sp.STARTUPINFO()
             si.dwFlags |= sp.STARTF_USESHOWWINDOW
@@ -305,7 +299,7 @@ class ShellBackend(Device):
         # find keys in flags that do not exist as value traits
         unsupported = set(flags.keys()).difference(attr.list_value_attrs(self))
         if len(unsupported) > 1:
-            raise KeyError(f"flags point to value traits {unsupported} that do not exist in {self}")
+            raise KeyError(f'flags point to value traits {unsupported} that do not exist in {self}')
 
         argv = []
         for name, flag_str in flags.items():
@@ -313,9 +307,7 @@ class ShellBackend(Device):
             trait_value = getattr(self, name)
 
             if not isinstance(flag_str, str) and flag_str is not None:
-                raise TypeError(
-                    f"keys defined in {self} must be str (for a flag) or None (for no flag"
-                )
+                raise TypeError(f'keys defined in {self} must be str (for a flag) or None (for no flag')
 
             if trait_value is None:
                 continue
@@ -324,9 +316,7 @@ class ShellBackend(Device):
                 if flag_str is None:
                     # this would require a remap parameter in value traits, which are not supported (should they be?)
                     # (better to use string?)
-                    raise ValueError(
-                        "cannot map a Bool onto a string argument specified by None mapping"
-                    )
+                    raise ValueError('cannot map a Bool onto a string argument specified by None mapping')
 
                 elif trait_value:
                     # trait_value is truey
@@ -350,7 +340,7 @@ class ShellBackend(Device):
                 argv += [flag_str, str(trait_value)]
 
             else:
-                raise ValueError("unexpected error condition (this should not be possible)")
+                raise ValueError('unexpected error condition (this should not be possible)')
 
         return argv
 
@@ -377,7 +367,7 @@ class ShellBackend(Device):
             elif isinstance(item, dict):
                 argv += self._flags_to_argv(item)
             else:
-                raise TypeError(f"command line list item {item} has unsupported type")
+                raise TypeError(f'command line list item {item} has unsupported type')
 
         return argv
 
@@ -389,10 +379,10 @@ class ShellBackend(Device):
 
             stdout
         """
-        result = ""
+        result = ''
 
         if not self.isopen:
-            raise ConnectionError("open the device to read stdout from the background process")
+            raise ConnectionError('open the device to read stdout from the background process')
 
         try:
             n = 0
@@ -418,7 +408,7 @@ class ShellBackend(Device):
         try:
             self.backend.stdin.write(text)
         except ConnectionError:
-            raise Exception("process not running, could not write no stdin")
+            raise Exception('process not running, could not write no stdin')
 
     def kill(self):
         """If a process is running in the background, kill it. Sends a console
@@ -427,7 +417,7 @@ class ShellBackend(Device):
         self.__kill = True
         backend = self.backend
         if self.running():
-            self._logger.debug(f"killing process {backend.pid}")
+            self._logger.debug(f'killing process {backend.pid}')
             self._kill_proc_tree(backend.pid)
 
     def running(self):
@@ -504,11 +494,11 @@ class DotNetDevice(Device):
             # static linters really don't like this, since it's created dynamically
             import clr
         except ImportError:
-            raise ImportError("pythonnet module is required to use dotnet drivers")
+            raise ImportError('pythonnet module is required to use dotnet drivers')
 
         # base dotnet libraries needed to identify what we're working with
         clr.setPreload(False)
-        clr.AddReference("System.Reflection")
+        clr.AddReference('System.Reflection')
 
         # more frustration for static linters
         import System
@@ -517,7 +507,7 @@ class DotNetDevice(Device):
         try:
             contents = importlib.util.find_spec(library.__package__).loader.get_data(str(dll_path))
         except BaseException:
-            with open(dll_path, "rb") as f:
+            with open(dll_path, 'rb') as f:
                 contents = f.read()
 
         # binary file contents
@@ -530,7 +520,7 @@ class DotNetDevice(Device):
         self.dll = importlib.import_module(dll_path.stem)
 
 
-@attr.message_keying(write_fmt="{key} {value}", write_func="write")
+@attr.message_keying(write_fmt='{key} {value}', write_func='write')
 class LabviewSocketInterface(Device):
     """Base class demonstrating simple sockets-based control of a LabView VI.
 
@@ -543,17 +533,11 @@ class LabviewSocketInterface(Device):
         - backend: connection object mapping {'rx': rxsock, 'tx': txsock}
     """
 
-    resource: str = attr.value.NetworkAddress(
-        default="127.0.0.1", accept_port=False, help="LabView VI host address"
-    )
-    tx_port: int = attr.value.int(default=61551, help="TX port to send to the LabView VI")
-    rx_port: int = attr.value.int(default=61552, help="TX port to send to the LabView VI")
-    delay: float = attr.value.float(
-        default=1, min=0, help="time to wait after each property trait write or query"
-    )
-    timeout: float = attr.value.float(
-        default=2, min=0, help="maximum wait replies before raising TimeoutError"
-    )
+    resource: str = attr.value.NetworkAddress(default='127.0.0.1', accept_port=False, help='LabView VI host address')
+    tx_port: int = attr.value.int(default=61551, help='TX port to send to the LabView VI')
+    rx_port: int = attr.value.int(default=61552, help='TX port to send to the LabView VI')
+    delay: float = attr.value.float(default=1, min=0, help='time to wait after each property trait write or query')
+    timeout: float = attr.value.float(default=2, min=0, help='maximum wait replies before raising TimeoutError')
     rx_buffer_size: int = attr.value.int(default=1024, min=1)
 
     def open(self):
@@ -562,8 +546,8 @@ class LabviewSocketInterface(Device):
             rx=socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
         )
 
-        self.backend["rx"].bind((self.resource, self.rx_port))
-        self.backend["rx"].settimeout(self.timeout)
+        self.backend['rx'].bind((self.resource, self.rx_port))
+        self.backend['rx'].settimeout(self.timeout)
         self.clear()
 
     def close(self):
@@ -572,12 +556,12 @@ class LabviewSocketInterface(Device):
                 sock.shutdown(socket.SHUT_RDWR)
                 sock.close()
             except BaseException:
-                self._logger.error("could not close socket ", repr(sock))
+                self._logger.error('could not close socket ', repr(sock))
 
     def write(self, msg):
         """Send a string over the tx socket."""
-        self._logger.debug(f"write {repr(msg)}")
-        self.backend["tx"].sendto(msg, (self.resource, self.tx_port))
+        self._logger.debug(f'write {repr(msg)}')
+        self.backend['tx'].sendto(msg, (self.resource, self.tx_port))
         util.sleep(self.delay)
 
     def read(self, convert_func=None):
@@ -587,14 +571,14 @@ class LabviewSocketInterface(Device):
         Optionally, apply the conversion function to the value after
         it is received.
         """
-        rx, addr = self.backend["rx"].recvfrom(self.rx_buffer_size)
+        rx, addr = self.backend['rx'].recvfrom(self.rx_buffer_size)
         if addr is None:
-            raise Exception("received no data")
-        rx_disp = rx[: min(80, len(rx))] + ("..." if len(rx) > 80 else "")
-        self._logger.debug(f"read {repr(rx_disp)}")
+            raise Exception('received no data')
+        rx_disp = rx[: min(80, len(rx))] + ('...' if len(rx) > 80 else '')
+        self._logger.debug(f'read {repr(rx_disp)}')
 
-        key, value = rx.rsplit(" ", 1)
-        key = key.split(":", 1)[1].lstrip()
+        key, value = rx.rsplit(' ', 1)
+        key = key.split(':', 1)[1].lstrip()
         if convert_func is not None:
             value = convert_func(value)
         return {key: value}
@@ -602,7 +586,7 @@ class LabviewSocketInterface(Device):
     def clear(self):
         """Clear any data present in the read socket buffer."""
         while True:
-            inputready, o, e = select.select([self.backend["rx"]], [], [], 0.0)
+            inputready, o, e = select.select([self.backend['rx']], [], [], 0.0)
             if len(inputready) == 0:
                 break
             for s in inputready:
@@ -612,7 +596,7 @@ class LabviewSocketInterface(Device):
                     continue
 
 
-@attr.adjust("resource", help="platform-dependent serial port address")
+@attr.adjust('resource', help='platform-dependent serial port address')
 class SerialDevice(Device):
     """Base class for wrappers that communicate via pyserial.
 
@@ -627,38 +611,30 @@ class SerialDevice(Device):
     timeout: float = attr.value.float(
         default=2,
         min=0,
-        help="Max time to wait for a connection before raising TimeoutError.",
+        help='Max time to wait for a connection before raising TimeoutError.',
     )
-    write_termination: bytes = attr.value.bytes(
-        default=b"\n", help="Termination character to send after a write."
-    )
-    baud_rate: int = attr.value.int(
-        default=9600, min=1, help="Data rate of the physical serial connection."
-    )
-    parity: bytes = attr.value.bytes(default=b"N", help="Parity in the physical serial connection.")
-    stopbits: float = attr.value.float(default=1, only=[1, 1.5, 2], help="number of stop bits")
-    xonxoff: bool = attr.value.bool(default=False, help="`True` to enable software flow control.")
-    rtscts: bool = attr.value.bool(
-        default=False, help="`True` to enable hardware (RTS/CTS) flow control."
-    )
-    dsrdtr: bool = attr.value.bool(
-        default=False, help="`True` to enable hardware (DSR/DTR) flow control."
-    )
+    write_termination: bytes = attr.value.bytes(default=b'\n', help='Termination character to send after a write.')
+    baud_rate: int = attr.value.int(default=9600, min=1, help='Data rate of the physical serial connection.')
+    parity: bytes = attr.value.bytes(default=b'N', help='Parity in the physical serial connection.')
+    stopbits: float = attr.value.float(default=1, only=[1, 1.5, 2], help='number of stop bits')
+    xonxoff: bool = attr.value.bool(default=False, help='`True` to enable software flow control.')
+    rtscts: bool = attr.value.bool(default=False, help='`True` to enable hardware (RTS/CTS) flow control.')
+    dsrdtr: bool = attr.value.bool(default=False, help='`True` to enable hardware (DSR/DTR) flow control.')
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):
         """Connect to the serial device with the VISA resource string defined
         in self.resource
         """
-        keys = "timeout", "parity", "stopbits", "xonxoff", "rtscts", "dsrdtr"
+        keys = 'timeout', 'parity', 'stopbits', 'xonxoff', 'rtscts', 'dsrdtr'
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(self.resource, self.baud_rate, **params)
-        self._logger.debug(f"opened")
+        self._logger.debug(f'opened')
 
     def close(self):
         """Disconnect the serial instrument"""
         self.backend.close()
-        self._logger.debug(f"closed")
+        self._logger.debug(f'closed')
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):
@@ -671,7 +647,7 @@ class SerialDevice(Device):
 
         usb_map = cls._map_serial_hwid_to_port()
         if hwid not in usb_map:
-            raise Exception(f"Cannot find serial port with hwid {repr(hwid)}")
+            raise Exception(f'Cannot find serial port with hwid {repr(hwid)}')
         return cls(usb_map[hwid], *args, **connection_params)
 
     @staticmethod
@@ -683,14 +659,11 @@ class SerialDevice(Device):
         """
         from serial.tools import list_ports
 
-        ports = [
-            (port.device, {"hwid": port.hwid, "description": port.description})
-            for port in list_ports.comports()
-        ]
+        ports = [(port.device, {'hwid': port.hwid, 'description': port.description}) for port in list_ports.comports()]
         ports = OrderedDict(ports)
 
         if hwid is not None:
-            ports = [(port, meta) for port, meta in list(ports.items()) if meta["id"] == hwid]
+            ports = [(port, meta) for port, meta in list(ports.items()) if meta['id'] == hwid]
 
         return dict(ports)
 
@@ -728,16 +701,10 @@ class SerialLoggingDevice(SerialDevice):
     from the serial port.
     """
 
-    poll_rate: float = attr.value.float(
-        default=0.1, min=0, help="Data retreival rate from the device (in seconds)"
-    )
-    data_format: bytes = attr.value.bytes(default=b"", help="Data format metadata")
-    stop_timeout: float = attr.value.float(
-        default=0.5, min=0, help="delay after `stop` before terminating run thread"
-    )
-    max_queue_size: int = attr.value.int(
-        default=100000, min=1, help="bytes to allocate in the data retreival buffer"
-    )
+    poll_rate: float = attr.value.float(default=0.1, min=0, help='Data retreival rate from the device (in seconds)')
+    data_format: bytes = attr.value.bytes(default=b'', help='Data format metadata')
+    stop_timeout: float = attr.value.float(default=0.5, min=0, help='delay after `stop` before terminating run thread')
+    max_queue_size: int = attr.value.int(default=100000, min=1, help='bytes to allocate in the data retreival buffer')
 
     def configure(self):
         """This is called at the beginning of the logging thread that runs
@@ -746,7 +713,7 @@ class SerialLoggingDevice(SerialDevice):
         This is a stub that does nothing --- it should be implemented by a
         subclass for a specific serial logger device.
         """
-        self._logger.debug(f"{repr(self)}: no device-specific configuration implemented")
+        self._logger.debug(f'{repr(self)}: no device-specific configuration implemented')
 
     def start(self):
         """Start a background thread that acquires log data into a queue.
@@ -759,9 +726,9 @@ class SerialLoggingDevice(SerialDevice):
             timeout, self.backend.timeout = self.backend.timeout, 0
             q = self._stdout
             stop_event = self._stop
-            self._logger.debug(f"{repr(self)}: configuring log acquisition")
+            self._logger.debug(f'{repr(self)}: configuring log acquisition')
             self.configure()
-            self._logger.debug(f"{repr(self)}: starting log acquisition")
+            self._logger.debug(f'{repr(self)}: starting log acquisition')
             try:
                 while stop_event.wait(self.poll_rate) is not True:
                     q.put(self.backend.read(10 * self.baud_rate * self.poll_rate))
@@ -770,14 +737,14 @@ class SerialLoggingDevice(SerialDevice):
                 self.close()
                 raise e
             finally:
-                self._logger.debug(f"{repr(self)} ending log acquisition")
+                self._logger.debug(f'{repr(self)} ending log acquisition')
                 try:
                     self.backend.timeout = timeout
                 except BaseException:
                     pass
 
         if self.running():
-            raise Exception("already running")
+            raise Exception('already running')
 
         self._stdout = Queue()
         self._stop = Event()
@@ -801,7 +768,7 @@ class SerialLoggingDevice(SerialDevice):
         Returns:
             `True` if the logger is running
         """
-        return hasattr(self, "_stop") and not self._stop.is_set()
+        return hasattr(self, '_stop') and not self._stop.is_set()
 
     def fetch(self):
         """Retrieve and return any log data in the buffer.
@@ -810,7 +777,7 @@ class SerialLoggingDevice(SerialDevice):
 
             any bytes in the buffer
         """
-        ret = b""
+        ret = b''
         try:
             while True:
                 ret += self._stdout.get_nowait()
@@ -845,14 +812,14 @@ class TelnetDevice(Device):
     """
 
     # Connection value traits
-    resource: str = attr.value.NetworkAddress(default="127.0.0.1:23", help="server host address")
-    timeout: float = attr.value.float(default=2, min=0, label="s", help="connection timeout")
+    resource: str = attr.value.NetworkAddress(default='127.0.0.1:23', help='server host address')
+    timeout: float = attr.value.float(default=2, min=0, label='s', help='connection timeout')
 
     def open(self):
         """Open a telnet connection to the host defined
         by the string in self.resource
         """
-        host, *port = self.resource.split(":")
+        host, *port = self.resource.split(':')
 
         if len(port) > 0:
             port = int(port[0])
@@ -869,7 +836,7 @@ class TelnetDevice(Device):
 _pyvisa_resource_managers = {}
 
 
-@attr.visa_keying(query_fmt="{key}?", write_fmt="{key} {value}", remap={True: "ON", False: "OFF"})
+@attr.visa_keying(query_fmt='{key}?', write_fmt='{key} {value}', remap={True: 'ON', False: 'OFF'})
 class VISADevice(Device):
     r"""A basic VISA device wrapper.
 
@@ -914,40 +881,38 @@ class VISADevice(Device):
 
     # Settings
     read_termination: str = attr.value.str(
-        default="\n", cache=True, help="end of line string to expect in query replies"
+        default='\n', cache=True, help='end of line string to expect in query replies'
     )
 
-    write_termination: str = attr.value.str(
-        default="\n", cache=True, help="end-of-line string to send after writes"
-    )
+    write_termination: str = attr.value.str(default='\n', cache=True, help='end-of-line string to send after writes')
 
     open_timeout: float = attr.value.float(
         default=None,
         allow_none=True,
-        help="timeout for opening a connection to the instrument",
-        label="s",
+        help='timeout for opening a connection to the instrument',
+        label='s',
     )
 
     timeout: float = attr.value.float(
         default=None,
         cache=True,
         allow_none=True,
-        help="message response timeout",
-        label="s",
+        help='message response timeout',
+        label='s',
     )
 
     make = attr.value.str(
         default=None,
         allow_none=True,
         cache=True,
-        help="device manufacturer name used to autodetect resource string",
+        help='device manufacturer name used to autodetect resource string',
     )
 
     model = attr.value.str(
         default=None,
         allow_none=True,
         cache=True,
-        help="device model used to autodetect resource string",
+        help='device model used to autodetect resource string',
     )
 
     @attr.property.str(sets=False, cache=True)
@@ -956,7 +921,7 @@ class VISADevice(Device):
         make, model, serial, rev = _visa_parse_identity(self._identity)
         return serial
 
-    @attr.property.str(sets=False, cache=True, help="device revision information")
+    @attr.property.str(sets=False, cache=True, help='device revision information')
     def _revision(self):
         """device-reported revision"""
         make, model, serial, rev = _visa_parse_identity(self._identity)
@@ -964,28 +929,28 @@ class VISADevice(Device):
 
     # Common VISA properties
     _identity = attr.property.str(
-        key="*IDN",
+        key='*IDN',
         sets=False,
         cache=True,
-        help="identity string reported by the instrument",
+        help='identity string reported by the instrument',
     )
 
     @attr.property.dict(sets=False)
     def status_byte(self):
         """instrument status decoded from '*STB?'"""
-        code = int(self.query("*STB?"))
+        code = int(self.query('*STB?'))
 
         return {
-            "error queue not empty": bool(code & 0b00000100),
-            "questionable state": bool(code & 0b00001000),
-            "message available": bool(code & 0b00010000),
-            "event status flag": bool(code & 0b00100000),
-            "service request": bool(code & 0b01000000),
-            "top level status summary": bool(code & 0b01000000),
-            "operating": bool(code & 0b10000000),
+            'error queue not empty': bool(code & 0b00000100),
+            'questionable state': bool(code & 0b00001000),
+            'message available': bool(code & 0b00010000),
+            'event status flag': bool(code & 0b00100000),
+            'service request': bool(code & 0b01000000),
+            'top level status summary': bool(code & 0b01000000),
+            'operating': bool(code & 0b10000000),
         }
 
-    _rm = "@py"
+    _rm = '@py'
     _opc = False
 
     # Overload methods as needed to implement RemoteDevice
@@ -1011,51 +976,45 @@ class VISADevice(Device):
         elif (self.make, self.model) != (None, None) or self.resource:
             if self.resource:
                 self._logger.debug(
-                    f"treating resource as a serial number (pyvisa does not recognize it as a VISA name)"
+                    f'treating resource as a serial number (pyvisa does not recognize it as a VISA name)'
                 )
             # match the supplied (make, model) and/or treat self.resource as a serial number to match
-            search_desc = ", ".join(
-                [
-                    f"{name} {repr(getattr(self, name))}"
-                    for name in ("make", "model", "resource")
-                    if getattr(self, name)
-                ]
-            ).replace("resource", "serial number")
+            search_desc = ', '.join(
+                [f'{name} {repr(getattr(self, name))}' for name in ('make', 'model', 'resource') if getattr(self, name)]
+            ).replace('resource', 'serial number')
 
             matches = visa_probe_devices(self)
 
             if len(matches) == 0:
                 msg = (
-                    f"could not open VISA device {repr(type(self))}: resource not specified, "
-                    f"and no devices were discovered matching {search_desc}"
+                    f'could not open VISA device {repr(type(self))}: resource not specified, '
+                    f'and no devices were discovered matching {search_desc}'
                 )
                 raise IOError(msg)
             elif len(matches) == 1:
-                self._logger.debug(f"probed resource by matching {search_desc}")
+                self._logger.debug(f'probed resource by matching {search_desc}')
                 self.resource = matches[0].resource
             else:
                 msg = (
-                    f"resource ambiguity: {len(matches)} VISA resources matched {search_desc}, "
-                    f"disconnect {len(matches)-1} or specify explicit resource names"
+                    f'resource ambiguity: {len(matches)} VISA resources matched {search_desc}, '
+                    f'disconnect {len(matches)-1} or specify explicit resource names'
                 )
                 raise IOError(msg)
         else:
             raise ConnectionError(
-                f"must specify a pyvisa resource name, an instrument serial number, or define {repr(type(self))} with default make and model"
+                f'must specify a pyvisa resource name, an instrument serial number, or define {repr(type(self))} with default make and model'
             )
 
         if self.timeout is not None:
-            kwargs["timeout"] = int(self.timeout * 1000)
+            kwargs['timeout'] = int(self.timeout * 1000)
         if self.open_timeout is not None:
-            kwargs["open_timeout"] = int(self.open_timeout * 1000)
+            kwargs['open_timeout'] = int(self.open_timeout * 1000)
 
         rm = self._get_rm()
         self.backend = rm.open_resource(self.resource, **kwargs)
 
         if self.timeout is not None:
-            self.backend.set_visa_attribute(
-                pyvisa.constants.ResourceAttribute.timeout_value, int(self.timeout * 1000)
-            )
+            self.backend.set_visa_attribute(pyvisa.constants.ResourceAttribute.timeout_value, int(self.timeout * 1000))
 
     def close(self):
         """closes the instrument.
@@ -1068,7 +1027,7 @@ class VISADevice(Device):
             return
 
         try:
-            if hasattr(self.backend.visalib, "viGpibControlREN"):
+            if hasattr(self.backend.visalib, 'viGpibControlREN'):
                 with contextlib.suppress(pyvisa.errors.VisaIOError):
                     self.backend.visalib.viGpibControlREN(
                         self.backend.session, pyvisa.constants.VI_GPIB_REN_ADDRESS_GTL
@@ -1078,7 +1037,7 @@ class VISADevice(Device):
             e = str(e)
             if len(e.strip()) > 0:
                 # some emulated backends raise empty errors
-                self._logger.warning("unhandled close error: " + e)
+                self._logger.warning('unhandled close error: ' + e)
 
         finally:
             self.backend.close()
@@ -1101,20 +1060,18 @@ class VISADevice(Device):
         # TODO: this implementation doesn't generalize, since not all instruments
         # support *OPC in this context
         if self._opc:
-            msg = msg + ";*OPC"
+            msg = msg + ';*OPC'
 
         # substitute message based on remap() in self._keying
         kws = {k: self._keying.to_message(v) for k, v in kws.items()}
         msg = msg.format(**kws)
 
         # outbound message as truncated event log entry
-        msg_out = repr(msg) if len(msg) < 1024 else f"({len(msg)} bytes)"
-        self._logger.debug(f"write({msg_out})")
+        msg_out = repr(msg) if len(msg) < 1024 else f'({len(msg)} bytes)'
+        self._logger.debug(f'write({msg_out})')
         self.backend.write(msg)
 
-    def query(
-        self, msg: str, timeout=None, remap: bool = False, kws: dict[str, typing.Any] = {}
-    ) -> str:
+    def query(self, msg: str, timeout=None, remap: bool = False, kws: dict[str, typing.Any] = {}) -> str:
         """queries the device with an SCPI message and returns its reply.
 
         Handles debug logging and adjustments when in overlap_and_block
@@ -1131,8 +1088,8 @@ class VISADevice(Device):
         msg = msg.format(**kws)
 
         # outbound message as truncated event log entry
-        msg_out = repr(msg) if len(msg) < 80 else f"({len(msg)} bytes)"
-        self._logger.debug(f"query({msg_out}):")
+        msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
+        self._logger.debug(f'query({msg_out}):')
 
         try:
             ret = self.backend.query(msg)
@@ -1141,23 +1098,21 @@ class VISADevice(Device):
                 self.backend.timeout = _to
 
         # inbound response as truncated event log entry
-        msg_out = repr(ret) if len(ret) < 80 else f"({len(ret)} bytes)"
-        self._logger.debug(f"    → {msg_out}")
+        msg_out = repr(ret) if len(ret) < 80 else f'({len(ret)} bytes)'
+        self._logger.debug(f'    → {msg_out}')
 
         if remap:
             return self._keying.from_message(ret)
         else:
             return ret
 
-    def query_ascii_values(
-        self, msg: str, type_, separator=",", container=list, delay=None, timeout=None
-    ):
+    def query_ascii_values(self, msg: str, type_, separator=',', container=list, delay=None, timeout=None):
         # pre debug
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
 
-        msg_out = repr(msg) if len(msg) < 80 else f"({len(msg)} bytes)"
-        self._logger.debug(f"query_ascii_values({msg_out}):")
+        msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
+        self._logger.debug(f'query_ascii_values({msg_out}):')
 
         try:
             ret = self.backend.query_ascii_values(msg, type_, separator, container, delay)
@@ -1168,24 +1123,24 @@ class VISADevice(Device):
         # post debug
         if len(ret) < 80 and len(repr(ret)) < 80:
             logmsg = repr(ret)
-        elif hasattr(ret, "shape"):
-            logmsg = f"({type(ret).__qualname__} with shape {ret.shape})"
-        elif hasattr(ret, "__len__"):
-            logmsg = f"({type(ret).__qualname__} with length {len(ret)})"
+        elif hasattr(ret, 'shape'):
+            logmsg = f'({type(ret).__qualname__} with shape {ret.shape})'
+        elif hasattr(ret, '__len__'):
+            logmsg = f'({type(ret).__qualname__} with length {len(ret)})'
         else:
-            logmsg = f"(iterable sequence of type {type(ret)})"
+            logmsg = f'(iterable sequence of type {type(ret)})'
 
-        self._logger.debug(f"    -> {logmsg}")
+        self._logger.debug(f'    -> {logmsg}')
 
         return ret
 
     def wait(self):
         """sends '*WAI' to wait for all commands to complete before continuing"""
-        self.write("*WAI")
+        self.write('*WAI')
 
     def preset(self):
         """sends '*RST' to reset the instrument to preset"""
-        self.write("*RST")
+        self.write('*RST')
 
     @contextlib.contextmanager
     def overlap_and_block(self, timeout=None, quiet=False):
@@ -1213,7 +1168,7 @@ class VISADevice(Device):
         self._opc = True
         yield
         self._opc = False
-        self.query("*OPC?", timeout=timeout)
+        self.query('*OPC?', timeout=timeout)
 
     class suppress_timeout(contextlib.suppress):
         """context manager that suppresses timeout exceptions on `write` or `query`.
@@ -1238,13 +1193,13 @@ class VISADevice(Device):
     def _get_rm(self):
         backend_name = self._rm
 
-        if backend_name in ("@ivi", "@ni"):
+        if backend_name in ('@ivi', '@ni'):
             is_ivi = True
             # compatibility layer for changes in pyvisa 1.12
-            if "ivi" in pyvisa.highlevel.list_backends():
-                backend_name = "@ivi"
+            if 'ivi' in pyvisa.highlevel.list_backends():
+                backend_name = '@ivi'
             else:
-                backend_name = "@ni"
+                backend_name = '@ni'
         else:
             is_ivi = False
 
@@ -1255,8 +1210,8 @@ class VISADevice(Device):
             rm = _pyvisa_resource_managers[backend_name]
         except OSError as e:
             if is_ivi:
-                url = r"https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa"
-                msg = f"could not connect to resource manager - see {url}"
+                url = r'https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa'
+                msg = f'could not connect to resource manager - see {url}'
                 e.args[0] += msg
             raise e
 
@@ -1269,19 +1224,19 @@ def _visa_missing_pyvisapy_support() -> list[str]:
 
     # gpib
     try:
-        warnings.filterwarnings("ignore", "GPIB library not found")
+        warnings.filterwarnings('ignore', 'GPIB library not found')
         import gpib_ctypes
 
         if not gpib_ctypes.gpib._load_lib():
-            missing.append("GPIB")
+            missing.append('GPIB')
     except ModuleNotFoundError:
-        missing.append("GPIB")
+        missing.append('GPIB')
 
     # hislip discovery
     try:
         import zeroconf
     except ModuleNotFoundError:
-        missing.append("TCPIP")
+        missing.append('TCPIP')
 
     # libusb
     try:
@@ -1290,13 +1245,13 @@ def _visa_missing_pyvisapy_support() -> list[str]:
         with usb1.USBContext() as context:
             pass
     except OSError:
-        missing.append("USB")
+        missing.append('USB')
 
     return missing
 
 
 def _visa_parse_identity(identity: str):
-    return identity.split(",", 4)
+    return identity.split(',', 4)
 
 
 def visa_list_resources(resourcemanager: str = None) -> list[str]:
@@ -1315,17 +1270,15 @@ def visa_default_resource_manager(name: str):
     Arguments:
         name: the name of the resource manager, such as '@py', '@sim', or '@ivi'
     """
-    if name == "@sim":
+    if name == '@sim':
         from .testing import pyvisa_sim_resource as full_name
     else:
         full_name = name
 
-    if name == "@py":
-        warnings.filterwarnings("ignore", "VICP resources discovery requires the zeroconf package")
-        warnings.filterwarnings(
-            "ignore", "TCPIP::hislip resource discovery requires the zeroconf package"
-        )
-        warnings.filterwarnings("ignore", "GPIB library not found")
+    if name == '@py':
+        warnings.filterwarnings('ignore', 'VICP resources discovery requires the zeroconf package')
+        warnings.filterwarnings('ignore', 'TCPIP::hislip resource discovery requires the zeroconf package')
+        warnings.filterwarnings('ignore', 'GPIB library not found')
 
     if name not in _pyvisa_resource_managers:
         _pyvisa_resource_managers[name] = pyvisa.ResourceManager(full_name)
@@ -1333,7 +1286,7 @@ def visa_default_resource_manager(name: str):
 
 
 @util.ttl_cache(10)  # a cache of recent resource parameters
-def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: "ascii") -> VISADevice:
+def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: 'ascii') -> VISADevice:
     device = VISADevice(resource, open_timeout=open_timeout, timeout=timeout)
     device._logger = logging.getLogger()  # suppress the normal logger for probing
 
@@ -1343,16 +1296,16 @@ def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: "ascii"
 
     @util.retry(pyvisa.errors.VisaIOError, tries=3, log=False, exception_func=reopen)
     def probe_read_termination():
-        query = "*IDN?" + device.write_termination
+        query = '*IDN?' + device.write_termination
         device.backend.write_raw(query.encode(encoding))
         identity = device.backend.read_raw().decode(encoding)
 
-        for read_termination in ("\r\n", "\n", "\r"):
+        for read_termination in ('\r\n', '\n', '\r'):
             if identity.endswith(read_termination):
                 identity = identity[: -len(read_termination)]
                 break
         else:
-            read_termination = ""
+            read_termination = ''
 
         return identity, read_termination
 
@@ -1361,7 +1314,7 @@ def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: "ascii"
     except TimeoutError:
         return None
 
-    for write_term in ("\n", "\r", "\r\n"):
+    for write_term in ('\n', '\r', '\r\n'):
         device.backend.write_termination = device.write_termination = write_term
 
         try:
@@ -1375,10 +1328,10 @@ def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: "ascii"
 
             break
         except pyvisa.errors.VisaIOError as ex:
-            if "VI_ERROR_TMO" not in str(ex):
+            if 'VI_ERROR_TMO' not in str(ex):
                 raise
         except BaseException as ex:
-            device._logger.debug(f"visa_list_identities exception on probing identity: {str(ex)}")
+            device._logger.debug(f'visa_list_identities exception on probing identity: {str(ex)}')
             raise
     else:
         device = None
@@ -1454,7 +1407,7 @@ def visa_probe_devices(
         return True
 
     calls = {
-        res: util.Call(_visa_probe_resource, res, open_timeout, timeout, "ascii")
+        res: util.Call(_visa_probe_resource, res, open_timeout, timeout, 'ascii')
         for res in visa_list_resources()
         if keep_interface(res)
     }
@@ -1468,11 +1421,7 @@ def visa_probe_devices(
         if not isinstance(target, Device) and issubclass(target, Device):
             target = target()
 
-        devices = {
-            resource: device
-            for resource, device in devices.items()
-            if match_target(device)
-        }
+        devices = {resource: device for resource, device in devices.items() if match_target(device)}
 
     return list(devices.values())
 
@@ -1485,7 +1434,7 @@ class Win32ComDevice(Device):
     """
 
     concurrency = attr.value.bool(
-        default=True, sets=False, help="if False, enforces locking for single-threaded access"
+        default=True, sets=False, help='if False, enforces locking for single-threaded access'
     )
 
     # The python wrappers for COM drivers still basically require that
@@ -1495,9 +1444,7 @@ class Win32ComDevice(Device):
     # to the dispatched COM object block until the previous calls are completed
     # from within.
 
-    com_object = attr.value.str(
-        default="", sets=False, help="the win32com object string"
-    )  # Must be a module
+    com_object = attr.value.str(default='', sets=False, help='the win32com object string')  # Must be a module
 
     def open(self):
         """Connect to the win32 com object"""
@@ -1520,8 +1467,8 @@ class Win32ComDevice(Device):
         # Oddness for win32 threadsafety
         sys.coinit_flags = 0
 
-        if self.com_object == "":
-            raise Exception("value traits.com_object needs to be set")
+        if self.com_object == '':
+            raise Exception('value traits.com_object needs to be set')
 
         if self.concurrency:
             self.backend = util.ThreadSandbox(factory, should_sandbox)

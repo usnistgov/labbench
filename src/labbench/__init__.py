@@ -49,8 +49,8 @@ from ._version import __version__
 
 # scrub __module__ for cleaner repr() and doc
 for _obj in dict(locals()).values():
-    if getattr(_obj, "__module__", "").startswith("labbench."):
-        _obj.__module__ = "labbench"
+    if getattr(_obj, '__module__', '').startswith('labbench.'):
+        _obj.__module__ = 'labbench'
 del _obj
 
 util.force_full_traceback(False)
@@ -59,6 +59,6 @@ util.force_full_traceback(False)
 def _force_full_traceback(force: bool) -> None:
     """configure whether to disable traceback hiding for internal API calls inside labbench"""
     logger.warning(
-        "labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead"
+        'labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead'
     )
     util.force_full_traceback(True)

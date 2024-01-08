@@ -1,82 +1,79 @@
 import builtins
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import toml
 from sphinx.domains.python import PythonDomain
 from sphinx.ext import autodoc
-from pathlib import Path
+
 import labbench as lb
-from typing_extensions import Union, Literal
 
 lb.util.force_full_traceback(False)
 
 # load and validate the project definition from pyproject.toml
-project_info = toml.load("../pyproject.toml")
-missing_fields = {'name', 'version'} - set(project_info["project"].keys())
+project_info = toml.load('../pyproject.toml')
+missing_fields = {'name', 'version'} - set(project_info['project'].keys())
 if len(missing_fields) > 0:
     raise ValueError(f'fields {missing_fields} missing from [project] in pyproject.toml')
 
 # Location of the API source code
 autoapi_dirs = [f'../src/{project_info["project"]["name"]}']
 if not Path(autoapi_dirs[0]).exists():
-    raise IOError(f'did not find source directory at expected path "{autoapi_dirs[0]}"')
+    raise OSError(f'did not find source directory at expected path "{autoapi_dirs[0]}"')
 
 # -------- General information about the project ------------------
-project = project_info["project"]["name"]
+project = project_info['project']['name']
 
-if 'authors' in project_info["project"]:
-    authors = [author["name"] for author in project_info["project"]["authors"]]
-    author_groups = [
-        ", ".join(a) for a in np.array_split(authors, np.ceil(len(authors) / 3))
-    ]
+if 'authors' in project_info['project']:
+    authors = [author['name'] for author in project_info['project']['authors']]
+    author_groups = [', '.join(a) for a in np.array_split(authors, np.ceil(len(authors) / 3))]
 else:
     author_groups = []
 
-copyright = (
-    "United States government work, not subject to copyright in the United States"
-)
+copyright = 'United States government work, not subject to copyright in the United States'
 version = release = lb.__version__
-language = "en"
+language = 'en'
 
 # ------------- base sphinx setup -------------------------------
 extensions = [
     #
     # base sphinx capabilities
-    "sphinx.ext.autodoc",
-    "sphinx.ext.coverage",
+    'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
     #
     # handles notebooks
-    "myst_nb",
+    'myst_nb',
     #
     # numpy- and google-style docstrings
-    "sphinx.ext.napoleon",
+    'sphinx.ext.napoleon',
     #
     # for code that will be hosted on github pages (or NIST pages)
-    "sphinx.ext.githubpages",
+    'sphinx.ext.githubpages',
 ]
 
 exclude_patterns = [
-    "_build",
-    "jupyter_execute",
-    f"{project}/_version.py",
-    "**.ipynb_checkpoints",
-    "setup*",
+    '_build',
+    'jupyter_execute',
+    f'{project}/_version.py',
+    '**.ipynb_checkpoints',
+    'setup*',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+templates_path = ['_templates']
 
 # Force handlers
 source_suffix = {
-    ".rst": "restructuredtext",
-    ".ipynb": "myst-nb",
-    ".md": "myst-nb",
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+    '.md': 'myst-nb',
 }
 
 autodoc_mock_imports = []
 
 # The master toctree document.
-master_doc = "index"
+master_doc = 'index'
 
 
 # ------------------ myst_nb ---------------------------------------
@@ -87,42 +84,40 @@ master_doc = "index"
 nb_merge_streams = True
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "default"
+pygments_style = 'default'
 todo_include_todos = False
 
 # ------------- HTML output ----------------------------------------
-html_theme = "pyramid"
-html_title = f"{project}"
-html_static_path = ["_static"]
+html_theme = 'pyramid'
+html_title = f'{project}'
+html_static_path = ['_static']
 html_use_index = False
 html_show_sphinx = False
-html_theme_options = {
-    'sidebarwidth': '28em'
-}
-htmlhelp_basename = project + "doc"
+html_theme_options = {'sidebarwidth': '28em'}
+htmlhelp_basename = project + 'doc'
 
 # ------ LaTeX output ---------------------------------------------
 latex_elements = {
-    "papersize": "letterpaper",
-    "pointsize": "10pt",
-    "preamble": r"\setcounter{tocdepth}{5}",
+    'papersize': 'letterpaper',
+    'pointsize': '10pt',
+    'preamble': r'\setcounter{tocdepth}{5}',
 }
 
 latex_documents = [
     (
         master_doc,
-        "{}-api.tex".format(project),
-        r"API reference for {}".format(project),
-        r", \\".join(author_groups),
-        "manual",
+        f'{project}-api.tex',
+        rf'API reference for {project}',
+        r', \\'.join(author_groups),
+        'manual',
     ),
 ]
-latex_show_urls = "False"
+latex_show_urls = 'False'
 latex_domain_indices = False
 
 # ------------- misc ---------------------------------------------
 mathjax_config = {
-    "TeX": {"equationNumbers": {"autoNumber": "AMS", "useLabelIds": True}},
+    'TeX': {'equationNumbers': {'autoNumber': 'AMS', 'useLabelIds': True}},
 }
 
 
@@ -134,13 +129,11 @@ class PatchedPythonDomain(PythonDomain):
         # ref: https://github.com/sphinx-doc/sphinx/issues/3866#issuecomment-311181219
         exclude_targets = set(dir(builtins))
 
-        if "refspecific" in node:
-            if not node["refspecific"] and node["reftarget"] in exclude_targets:
-                del node["refspecific"]
+        if 'refspecific' in node:
+            if not node['refspecific'] and node['reftarget'] in exclude_targets:
+                del node['refspecific']
 
-        return super(PatchedPythonDomain, self).resolve_xref(
-            env, fromdocname, builder, typ, target, node, contnode
-        )
+        return super(PatchedPythonDomain, self).resolve_xref(env, fromdocname, builder, typ, target, node, contnode)
 
 
 class AttributeDocumenter(autodoc.AttributeDocumenter):
@@ -174,8 +167,7 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
         sourcename = self.get_sourcename()
         if self.object.default is not lb.Undefined:
             defaultrepr = autodoc.object_description(self.object.default)
-            self.add_line("   :value: " + defaultrepr, sourcename)
-
+            self.add_line('   :value: ' + defaultrepr, sourcename)
 
     def get_doc(self):
         if isinstance(self.object, lb.paramattr.value.Value):
@@ -185,6 +177,7 @@ class AttributeDocumenter(autodoc.AttributeDocumenter):
             return [autodoc.prepare_docstring(docstring, tab_width)]
         else:
             return super().get_doc()
+
 
 class PropertyDocumenter(autodoc.PropertyDocumenter):
     """Document lb.property traits in the style of python properties"""
@@ -224,19 +217,17 @@ class PropertyDocumenter(autodoc.PropertyDocumenter):
         new_directives = set(self.directive.result) - start_directives
         if not any(':type:' in line for line in new_directives):
             # if signature.return_annotation is not Parameter.empty:
-            if self.config.autodoc_typehints_format == "short":
-                typerepr = autodoc.stringify_annotation(self.object._type, "smart")
+            if self.config.autodoc_typehints_format == 'short':
+                typerepr = autodoc.stringify_annotation(self.object._type, 'smart')
             else:
-                typerepr = autodoc.stringify_annotation(
-                    self.object._type, "fully-qualified-except-typing"
-                )
-            self.add_line("   :type: " + typerepr, sourcename)
+                typerepr = autodoc.stringify_annotation(self.object._type, 'fully-qualified-except-typing')
+            self.add_line('   :type: ' + typerepr, sourcename)
 
     def format_args(self, **kwargs) -> str:
         if isinstance(self.object, lb.paramattr.property.Property):
             return super().format_args(**kwargs)
         else:
-            self.env.app.emit("autodoc-before-process-signature", self.object, False)
+            self.env.app.emit('autodoc-before-process-signature', self.object, False)
             return super().format_args(**kwargs)
 
     def get_doc(self):

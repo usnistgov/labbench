@@ -109,7 +109,6 @@ path = "src/labbench/_version.py"
 features = ["dev"]
 path = ".venv"
 python = "3.12"
-scripts = {tests="test:all"}
 
 # test environment
 [tool.hatch.envs.test]
@@ -119,8 +118,10 @@ dependencies = [
     "genbadge",
     "defusedxml",
 ]
+
 [[tool.hatch.envs.test.matrix]]
 python = ["3.9", "3.10", "3.11", "3.12"]
+
 [tool.hatch.envs.test.scripts]
 all = [
     "pytest --cov-report xml:doc/reports/coverage.xml --cov-report term --cov=labbench tests",

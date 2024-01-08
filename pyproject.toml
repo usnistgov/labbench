@@ -128,9 +128,11 @@ all = [
     "genbadge coverage -i doc/reports/coverage.xml -o doc/reports/coverage.svg -l"
 ]
 
+# documentation
 [tool.hatch.envs.doc]
 features = ["doc"]
 env-vars = {TEXINPUTS="doc/latex"}
+
 [tool.hatch.envs.doc.scripts]
 html="sphinx-build -b html doc doc/html"
 latex="sphinx-build -b latex doc doc/latex"

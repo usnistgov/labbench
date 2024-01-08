@@ -31,7 +31,7 @@ dependencies = [
     "typing-extensions>=4.8.0",
     # numerical
     "numpy>=1.19",
-    "pandas>=1.2.0",
+    "pandas>=1.2.0,<2.2",
     # data formats
     "ruamel-yaml>=0.17.21",
     "h5py>=3",
@@ -58,12 +58,12 @@ dev = [
     "ipykernel",
     "pip",
     "ipython",
-    # linting
-    "black[jupyter]",
-    "flake8",
-    # introspection
+    # for compatibility outside hatch
+    "ruff",
+    # introspection and stub generation
     "ast_decompiler",
     "astor>=0.8.1",
+    # publishing
     "twine",
 ]
 doc = [
@@ -108,7 +108,7 @@ path = "src/labbench/_version.py"
 [tool.hatch.envs.default]
 features = ["dev"]
 path = ".venv"
-python = "3.9"
+python = "3.12"
 scripts = {tests="test:all"}
 
 # test environment

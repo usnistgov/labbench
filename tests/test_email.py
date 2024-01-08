@@ -24,20 +24,21 @@
 # legally bundled with the code in compliance with the conditions of those
 # licenses.
 
-import labbench as lb
 import sys
 
-if __name__ == "__main__":
+import labbench as lb
+
+if __name__ == '__main__':
     # The tooling needed to make this a formal test case hasn't been run yet
-    lb.show_messages("info")
+    lb.show_messages('info')
 
     try:
         with lb.Email(
-            sender="<sender email address here>",
-            recipients=["<email address here>"],
+            sender='<sender email address here>',
+            recipients=['<email address here>'],
         ) as email:
-            lb.logger.warning("test warning message")
-            sys.stderr.write("error info\n")
+            lb.logger.warning('test warning message')
+            sys.stderr.write('error info\n')
             1 // 0
     except ZeroDivisionError:
         pass

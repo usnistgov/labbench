@@ -1,6 +1,6 @@
 [project]
 name = "labbench"
-version = "0.33.1"
+version = "0.34"
 
 description = """\
     The `labbench` module provides API tools to support python scripting for laboratory automation.\
@@ -31,7 +31,7 @@ dependencies = [
     "typing-extensions>=4.8.0",
     # numerical
     "numpy>=1.19",
-    "pandas>=1.2.0",
+    "pandas>=1.2.0,<2.2",
     # data formats
     "ruamel-yaml>=0.17.21",
     "h5py>=3",
@@ -58,26 +58,23 @@ dev = [
     "ipykernel",
     "pip",
     "ipython",
-    # linting
-    "black[jupyter]",
-    "flake8",
-    # introspection
+    # for compatibility outside hatch
+    "ruff",
+    # introspection and stub generation
     "ast_decompiler",
-    # testing
-    "pytest",
-    "pytest-cov",
-    "genbadge",
-    "defusedxml",
+    "astor>=0.8.1",
+    # publishing
+    "twine",
+]
+doc = [
     # documentation
     "sphinx>=7",
-    "twine",
     "toml",
     "jupytext>=1.6.0",
     "myst-nb>=1.0",
     "pyperf>=2.6.2",
     "mypy-extensions>=1.0.0",
     "mypy>=1.7.0",
-    "astor>=0.8.1",
 ]
 
 [project.urls]
@@ -91,24 +88,67 @@ labbench = "cli.__main__:do_cli"
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312"]
 include = '\.pyi?$'
 
+#
+# hatch project and build configuration
+# 
 [build-system]
-requires = ["pdm-pep517>=1.0"]
-build-backend = "pdm.pep517.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool]
-[tool.pdm.version]
-source = "scm"
-write_to = "labbench/_version.py"
-write_template = "__version__ = '{}'"
+[tool.hatch.build.targets.wheel]
+packages = ["src/labbench"]
 
-[tool.pdm.scripts]
-doc-html = {cmd = "sphinx-build -b html doc doc/html"}
-doc-latex = {cmd = "sphinx-build -b latex doc doc/latex"}
-doc-pdf = {cmd = "pdflatex doc/latex/labbench-api.tex --output-directory=doc", env = {"TEXINPUTS" = "doc/latex"}}
-doc-rst = {cmd = "sphinx-apidoc -F . -o doc"}
-_pytest = {cmd = "pytest --cov-report xml:doc/reports/coverage.xml --cov-report term --cov=labbench tests"}
-_coverage = {cmd = "genbadge coverage -i doc/reports/coverage.xml -o doc/reports/coverage.svg -l"}
-tests = {composite = ["_pytest", "_coverage"]}
+[tool.hatch.version]
+path = "src/labbench/_version.py"
+
+# the default virtual environment
+[tool.hatch.envs.default]
+features = ["dev"]
+path = ".venv"
+python = "3.12"
+
+# test environment
+[tool.hatch.envs.test]
+dependencies = [
+    "pytest",
+    "pytest-cov",
+    "genbadge",
+    "defusedxml",
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.9", "3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.test.scripts]
+all = [
+    "pytest --cov-report xml:doc/reports/coverage.xml --cov-report term --cov=labbench tests",
+    "genbadge coverage -i doc/reports/coverage.xml -o doc/reports/coverage.svg -l"
+]
+
+# documentation
+[tool.hatch.envs.doc]
+features = ["doc"]
+env-vars = {TEXINPUTS="doc/latex"}
+
+[tool.hatch.envs.doc.scripts]
+html="sphinx-build -b html doc doc/html"
+latex="sphinx-build -b latex doc doc/latex"
+pdf="pdflatex doc/latex/labbench-api.tex --output-directory=doc" 
+rst="sphinx-apidoc -F . -o doc"
+
+[tool.ruff]
+target-version = "py312"
+extend-include = ["*.ipynb"]
+
+[tool.ruff.format]
+quote-style = "single"
+line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"**/__init__.py" = ["F401", "F403"]
+

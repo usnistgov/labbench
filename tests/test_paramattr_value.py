@@ -1,18 +1,20 @@
-import pytest
-import labbench as lb
-from labbench.testing import store_backend
 from numbers import Number
+
+import pytest
+from paramattr_tooling import eval_set_then_get, has_steps, loop_closed_loop_set_gets
+
+import labbench as lb
 from labbench import paramattr as attr
-from paramattr_tooling import eval_set_then_get, loop_closed_loop_set_gets, has_steps
+from labbench.testing import store_backend
 
 
-@store_backend.key_store_adapter(defaults={"str_or_none": None, "str_cached": "cached string"})
+@store_backend.key_store_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
         int: 5,
         float: 3.14,
-        str: "moose",
+        str: 'moose',
         bool: True,
         object: None,
     }
@@ -31,14 +33,14 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     # strings
     str_explicit_none = attr.value.str(default=None, allow_none=True)
     str_allow_none = attr.value.str(default=None, allow_none=True)
-    str_cached = attr.value.str(default="47", cache=True)
-    str = attr.value.str(default="squirrel")
-    any = attr.value.any(default="empty", allow_none=True)
-    str_with_only = attr.value.str(default="moose", only=("moose", "squirrel"))
-    str_no_case_with_only = attr.value.str(default="moose", only=("MOOSE", "squirrel"), case=False)
+    str_cached = attr.value.str(default='47', cache=True)
+    str = attr.value.str(default='squirrel')
+    any = attr.value.any(default='empty', allow_none=True)
+    str_with_only = attr.value.str(default='moose', only=('moose', 'squirrel'))
+    str_no_case_with_only = attr.value.str(default='moose', only=('MOOSE', 'squirrel'), case=False)
 
 
-@attr.adjust("bool", default=False)
+@attr.adjust('bool', default=False)
 class AdjustedTestDevice(StoreTestDevice):
     pass
 
@@ -58,14 +60,14 @@ def change_case(s: str):
 def set_param(device, attr_name, value, arguments={}):
     if len(arguments) > 0:
         attr_def = attr.get_class_attrs(device)[attr_name]
-        raise ValueError(f"{attr_def.ROLE} do not accept arguments")
+        raise ValueError(f'{attr_def.ROLE} do not accept arguments')
     setattr(device, attr_name, value)
 
 
 def get_param(device, attr_name, arguments={}):
     if len(arguments) > 0:
         attr_def = attr.get_class_attrs(device)[attr_name]
-        raise ValueError(f"{attr_def.ROLE} properties do not accept arguments")
+        raise ValueError(f'{attr_def.ROLE} properties do not accept arguments')
     return getattr(device, attr_name)
 
 
@@ -77,19 +79,19 @@ def set_then_get(device, attr_name, value_in, arguments={}):
 #
 # Fixtures that convert to arguments in test functions
 #
-@pytest.fixture(autouse=True, scope="module")
+@pytest.fixture(autouse=True, scope='module')
 def labbench_fixture():
-    lb.visa_default_resource_manager("@sim")
-    lb.show_messages("info")
+    lb.visa_default_resource_manager('@sim')
+    lb.show_messages('info')
     lb.util.force_full_traceback(True)
 
 
-@pytest.fixture()
+@pytest.fixture
 def role_type():
     return lb.paramattr.value.Value
 
 
-@pytest.fixture()
+@pytest.fixture
 def opened_device():
     device = StoreTestDevice()
     device.open()
@@ -97,7 +99,7 @@ def opened_device():
     device.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def opened_adjusted_device():
     device = AdjustedTestDevice()
     device.open()
@@ -105,7 +107,7 @@ def opened_adjusted_device():
     device.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def instantiated_device():
     device = StoreTestDevice()
     device.open()
@@ -117,7 +119,7 @@ def instantiated_device():
 # The tests
 #
 def test_basic_get(opened_device):
-    get_param(opened_device, "any")
+    get_param(opened_device, 'any')
 
 
 def test_basic_set(opened_device):
@@ -127,9 +129,9 @@ def test_basic_set(opened_device):
 
 def test_cache(opened_device):
     # repeat to set->get to ensure proper caching
-    eval_set_then_get(opened_device, "str_cached", set_then_get)
-    result = eval_set_then_get(opened_device, "str_cached", set_then_get)
-    assert len(result["notifications"]) == 2, "notification count for cached string"
+    eval_set_then_get(opened_device, 'str_cached', set_then_get)
+    result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
+    assert len(result['notifications']) == 2, 'notification count for cached string'
 
 
 def test_default_types(opened_device, role_type):
@@ -147,7 +149,7 @@ def test_default_types(opened_device, role_type):
         if issubclass(attr_def._type, Number):
             allow_types = allow_types + (Number,)
 
-        assert issubclass(type(value), allow_types), f"pythonic type of {attr_def.name}"
+        assert issubclass(type(value), allow_types), f'pythonic type of {attr_def.name}'
 
 
 def test_default_values(opened_device, role_type):
@@ -156,7 +158,7 @@ def test_default_values(opened_device, role_type):
             continue
 
         value = getattr(opened_device, attr_def.name)
-        assert value == attr_def.default, f"pythonic type of {attr_def.name}"
+        assert value == attr_def.default, f'pythonic type of {attr_def.name}'
 
 
 def test_only(opened_device):
@@ -166,7 +168,7 @@ def test_only(opened_device):
 
     opened_device.str_with_only = expected_valid
     with pytest.raises(ValueError):
-        opened_device.str_with_only = "boris"
+        opened_device.str_with_only = 'boris'
     with pytest.raises(ValueError):
         opened_device.str_with_only = alt_case
 
@@ -176,7 +178,7 @@ def test_only(opened_device):
 
     opened_device.str_no_case_with_only = expected_valid
     with pytest.raises(ValueError):
-        opened_device.str_no_case_with_only = "boris"
+        opened_device.str_no_case_with_only = 'boris'
     opened_device.str_no_case_with_only = alt_case
 
 
@@ -199,18 +201,18 @@ def test_numeric_bounds(opened_device):
 
 def test_numeric_casting(opened_device):
     # float
-    value_in = "3.91"
+    value_in = '3.91'
     expected_out = float(value_in)
     opened_device.float_low_bounded = value_in
     value_out = opened_device.float_low_bounded
-    assert value_out == expected_out, "string to float casting"
+    assert value_out == expected_out, 'string to float casting'
 
     # float
-    value_in = "-48"
+    value_in = '-48'
     expected_out = int(value_in)
     opened_device.int_no_default = value_in
     value_out = opened_device.int_no_default
-    assert value_out == expected_out, "string to float casting"
+    assert value_out == expected_out, 'string to float casting'
 
 
 def test_str_casting(opened_device):
@@ -219,7 +221,7 @@ def test_str_casting(opened_device):
     expected_out = str(value_in)
     opened_device.str = value_in
     value_out = opened_device.str
-    assert value_out == expected_out, "string to float casting"
+    assert value_out == expected_out, 'string to float casting'
 
 
 def test_numeric_step(opened_device):
@@ -261,9 +263,7 @@ def test_device_initialization(instantiated_device, role_type):
 
         with instantiated_device:
             value_out = getattr(instantiated_device, attr_def.name)
-            assert (
-                value_in == value_out
-            ), f"{test_name} - initialize default values from Device constructor"
+            assert value_in == value_out, f'{test_name} - initialize default values from Device constructor'
 
 
 def test_all_get_sets(opened_device, role_type):
@@ -278,4 +278,4 @@ def test_requried_parameter_instantiation():
     with pytest.raises(TypeError):
         RequiredParametersTestDevice()
 
-    RequiredParametersTestDevice(required_str="hi", required_str_allow_none=None)
+    RequiredParametersTestDevice(required_str='hi', required_str_allow_none=None)

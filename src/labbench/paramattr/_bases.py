@@ -906,6 +906,19 @@ class OwnerAccessAttr(ParamAttr[T]):
         obj._method = self._method
         return obj
 
+    def setter(self, method: callable) -> typing.Self:
+        """decorate a method to implement the parameter "set" operation for `self`"""
+        self._setter = method
+        if not self.sets:
+            raise TypeError("cannot implement setter after setting sets=False")
+        return self
+
+    def getter(self, method: callable) -> typing.Self:
+        """decorate a method to implement the parameter "get" operation for `self`"""
+        self._getter = method
+        if not self.gets:
+            raise TypeError("cannot implement getter after setting gets=False")
+        return self
 
 class Method(OwnerAccessAttr[T]):
     # this structure seems to trick some type checkers into honoring the @overloads in

@@ -21,12 +21,14 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     bool_keyed = attr.property.bool(key='bool_keyed')
     int_keyed_unbounded = attr.property.int(key='int_keyed_unbounded')
 
-    @attr.property.int(min=0, sets=False)
-    def int_decorated_low_bound_getonly(self):
+    int_decorated_low_bound_getonly = attr.property.int(min=0)
+    @int_decorated_low_bound_getonly.getter
+    def _(self):
         return self.backend.setdefault('int_decorated_low_bound_getonly', 0)
 
-    @attr.property.int(min=10, gets=False)
-    def int_decorated_low_bound_setonly(self, set_value=lb.Undefined, *, channel=1):
+    int_decorated_low_bound_setonly  = attr.property.int(min=10, gets=False)
+    @int_decorated_low_bound_getonly.setter
+    def _(self, set_value=lb.Undefined):
         self.backend['int_decorated_high_bound_setonly'] = set_value
 
     str_or_none = attr.property.str(key='str_or_none', allow_none=True)

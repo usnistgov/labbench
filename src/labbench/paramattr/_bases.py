@@ -488,8 +488,8 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     def __set_name__(self, owner_cls, name):
         """Called on owner class instantiation (python object protocol)"""
         
-        if self.name is not None:
-            # uneeded extra calls here result when both .setter() and .getter()
+        if self.name not in (name, None):
+            # extra calls here result when .setter() and .getter()
             # decorators are applied in Method or Property
             return
         
@@ -896,10 +896,12 @@ class OwnerAccessAttr(ParamAttr[T]):
 
         This is also where we finalize selecting decorator behavior; is it a property or a method?
         """
-        if getattr(self._setter, '__name__', self.name) != self.name:
+        # delete any leftovers from .setter() and .getter(), such as '_'
+        if getattr(self._setter, '__name__', self.name) != self.name and getattr(owner_cls, self._setter.__name__, None) is self:
             delattr(owner_cls, self._setter.__name__)
-        if getattr(self._getter, '__name__', self.name) != self.name:
+        if getattr(self._getter, '__name__', self.name) != self.name and getattr(owner_cls, self._getter.__name__, None) is self:
             delattr(owner_cls, self._getter.__name__)            
+
         if self.key is Undefined:
             if 'sets' in self.kws and self.sets and not self._setter:
                 raise TypeError('defined with sets=True, but key=False and no setter was defined')
@@ -980,6 +982,9 @@ class OwnerAccessAttr(ParamAttr[T]):
         self._getter = func
         add_docstring_to_help(self, func)
 
+        if self.name is None and hasattr(func, '__name__'):
+            self.name = func.__name__
+
         return self
 
     def setter(self, func: _TSetter[T,_P]) -> typing.Self:
@@ -996,6 +1001,9 @@ class OwnerAccessAttr(ParamAttr[T]):
         
         self._setter = func
         add_docstring_to_help(self, func)
+
+        if self.name is None and hasattr(func, '__name__'):
+            self.name = func.__name__
 
         return self
 
@@ -1584,7 +1592,9 @@ class DependentParamAttr(ParamAttr):
     _paramattr_dependencies = set()
 
     def __set_name__(self, owner_cls, name):
-        if self.name is not None:
+        if self.name not in (name, None):
+            # extra calls here result when .setter() and .getter()
+            # decorators are applied in Method or Property
             return
 
         super().__set_name__(owner_cls, name)

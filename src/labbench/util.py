@@ -350,7 +350,7 @@ def copy_func(
 
     This is similar to wrapping `func` with `lambda *args, **kws: func(*args, **kws)`, except
     the returned callable contains a duplicate of the bytecode in `func`. The idea is that the
-    returned copy has fresh to __doc__, __signature__, etc., which can be changed
+    returned copy has fresh __doc__, __signature__, etc., which can be changed
     independently of `func`.
     """
 

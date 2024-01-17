@@ -37,13 +37,22 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     # test "get_on_set" keyword
     int_keyed_get_on_set = attr.method.int(key='int_keyed_unbounded', get_on_set=True)
 
-    @attr.method.int(get_on_set=True)
-    def int_decorated_get_on_set(self, new_value=lb.Undefined):
-        if new_value is lb.Undefined:
-            return self.backend.get('int_decorated_get_on_set', 0)
-        else:
-            # pretend the instrument is changing the stored value, unknown to us
-            self.backend.set('int_decorated_get_on_set', int(new_value))
+    int_decorated_get_on_set = attr.method.int(get_on_set=True)
+
+    @int_decorated_get_on_set.setter
+    def _(self, new_value):
+        self.backend.set('int_decorated_get_on_set', int(new_value))
+
+    @int_decorated_get_on_set.getter
+    def _(self):
+        return self.backend.get('int_decorated_get_on_set', 0)
+
+    # @attr.method.int(get_on_set=True)
+    # def int_decorated_get_on_set(self):
+    #     return self.backend.get('int_decorated_get_on_set', 0)
+
+    # def int_decorated_get_on_set(self, new_value: int):
+    #     self.backend.set('int_decorated_get_on_set', int(new_value))
 
     str_or_none = attr.method.str(key='str_or_none', allow_none=True)
     str_cached = attr.method.str(key='str_cached', cache=True)
@@ -51,10 +60,12 @@ class StoreTestDevice(store_backend.StoreTestDevice):
 
     str_keyed_with_arg = attr.method.str(key='str_with_arg_ch_{registered_channel}')
 
+    str_decorated_with_arg = attr.method.str(allow_none=True)
+
+    @str_decorated_with_arg.setter
     @attr.kwarg.int(name='decorated_channel', min=1, max=4)
-    @attr.method.str(allow_none=True)
     @attr.kwarg.float(name='bandwidth', min=10e3, max=100e6)
-    def str_decorated_with_arg(self, set_value=lb.Undefined, *, decorated_channel, bandwidth):
+    def _(self, set_value=lb.Undefined, *, decorated_channel, bandwidth):
         key = self.backend.get_backend_key(
             self,
             type(self).str_decorated_with_arg,

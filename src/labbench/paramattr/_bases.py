@@ -13,36 +13,10 @@ from copy import copy
 import numbers
 import typing_extensions as typing
 from contextlib import contextmanager
-from typing_extensions import Union, Callable, Type, Any, dataclass_transform
-from functools import wraps
-
-Undefined = inspect.Parameter.empty
-
-T = typing.TypeVar('T')
-T_co = typing.TypeVar('T_co', covariant=True)
-T_con = typing.TypeVar('T_con', contravariant=True)
-
-
-class field(typing.Generic[T]):
-    # __slots__ = 'kw_only', 'default'
-
-    def __new__(
-        cls, default: Union[None, Type[Undefined], T] = Undefined, kw_only: bool = True
-    ) -> Union[None, Type[Undefined], T, field[T]]:
-        if not kw_only:
-            ret = object.__new__(cls)
-            ret.__init__(default=default, kw_only=kw_only)
-        else:
-            ret = default
-        return ret
-
-    def __init__(self, default: Union[None, Type[Undefined], T], kw_only: bool = True):
-        self.kw_only = kw_only
-        self.default = default
-
-
+from typing_extensions import Union, Any
 # for common types
 from warnings import warn
+from functools import partial
 
 from .. import util
 
@@ -51,6 +25,31 @@ try:
 except RuntimeError:
     # not executed: help coding tools recognize lazy_imports as imports
     import pandas as pd
+
+Undefined = inspect.Parameter.empty
+
+T = typing.TypeVar('T')
+T_co = typing.TypeVar('T_co', covariant=True)
+T_con = typing.TypeVar('T_con', contravariant=True)
+SignatureType = typing.TypeVar('SignatureType')
+_P = typing.ParamSpec('_P')
+
+class field(typing.Generic[T]):
+    # __slots__ = 'kw_only', 'default'
+
+    def __new__(
+        cls, default: Union[None, type[Undefined], T] = Undefined, kw_only: bool = True
+    ) -> Union[None, type[Undefined], T, field[T]]:
+        if not kw_only:
+            ret = object.__new__(cls)
+            ret.__init__(default=default, kw_only=kw_only)
+        else:
+            ret = default
+        return ret
+
+    def __init__(self, default: Union[None, type[Undefined], T], kw_only: bool = True):
+        self.kw_only = kw_only
+        self.default = default
 
 
 class no_cast_argument:
@@ -65,13 +64,39 @@ def get_owner_store(obj: HasParamAttrs) -> HasParamAttrsInstInfo:
     return obj._attr_store
 
 
-def get_owner_defs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> HasParamAttrsClsInfo:
+def get_owner_defs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> HasParamAttrsClsInfo:
     return obj._attr_defs
 
 
-def get_class_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> dict[str, ParamAttr]:
+def get_class_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
     return obj._attr_defs.attrs
+
+
+def add_docstring_to_help(attr: ParamAttr, func: callable):
+    doc = (func.__doc__ or '').strip().rstrip()
+    if len(doc) > 0:
+        # take func docstring as default self.help
+        new_help = attr.help + '\n\n' + doc
+        attr.help = attr.kws['help'] = new_help
+
+
+def bound_valid_posargs(func: callable) -> tuple[int,int]:
+    """bound on the number of acceptable positional arguments in `func`"""
+    hi = func.__code__.co_argcount
+    lo = hi - len(func.__defaults__ or tuple())
+
+    return lo, hi
+
+
+def name_arguments(func: callable) -> tuple[str]:
+    if hasattr(func, '__signature__'):
+        return tuple(func.__signature__.parameters.keys())
+    elif hasattr(func, '__code__') and not func.__code__.co_flags & inspect.CO_VARKEYWORDS:
+        return func.__code__.co_varnames
+    else:
+        func.__signature__ = inspect.signature(func)
+        return tuple(func.__signature__.parameters.keys())
 
 
 class KeyAdapterBase:
@@ -106,14 +131,14 @@ class KeyAdapterBase:
     key_arguments: dict[str, ParamAttr]
 
     # @typing.overload
-    # def __new__(cls, /, decorated_cls: Type[T], **kws) -> Type[T]:
+    # def __new__(cls, /, decorated_cls: type[T], **kws) -> type[T]:
     #     ...
 
     # @typing.overload
     # def __new__(cls, /, decorated_cls: type(None), **kws) -> KeyAdapterBase:
     #     ...
 
-    # def __new__(cls, /, decorated_cls: Type[T] = None, **kws):
+    # def __new__(cls, /, decorated_cls: type[T] = None, **kws):
     #     """set up use as a class decorator"""
 
     #     obj = super().__new__(cls)
@@ -187,12 +212,13 @@ class KeyAdapterBase:
         """
         raise NotImplementedError('key adapter needs "get_key_arguments" to implement methods by "key" keyword')
 
-    def method_from_key(self, owner_cls: THasParamAttrsCls, paramattr: ParamAttr):
+    def method_from_key(self, owner_cls: THasParamAttrsCls, paramattr: Method[T]):
         """Autogenerate a parameter getter/setter method based on the message key defined in a ParamAttr method."""
 
         kwargs_params = []
         defaults = {}
-        for name in self.get_key_arguments(paramattr.key):
+        kwargs_names = self.get_key_arguments(paramattr.key)
+        for name in kwargs_names:
             try:
                 arg_annotation = self.key_arguments[name]._type
                 if self.key_arguments[name].default not in (None, Undefined):
@@ -222,41 +248,58 @@ class KeyAdapterBase:
             ),
         ]
 
-        def method(
-            owner: HasParamAttrs,
-            /,
-            new_value: Union[None, paramattr._type, Type[Undefined]] = Undefined,
-            **kwargs,
-        ) -> Union[None, paramattr._type]:
-            """the autogenerated method that binds the key to an owner and the attribute definition"""
+        # def method(
+        #     owner: HasParamAttrs,
+        #     /,
+        #     new_value: Union[None, paramattr._type, type[Undefined]] = Undefined,
+        #     **kwargs,
+        # ) -> Union[None, paramattr._type]:
+        #     """the autogenerated method that binds the key to an owner and the attribute definition"""
 
-            validated_kws = {
-                # cast each keyword argument
-                k: self.key_arguments[k]._finalize_get_value(owner, v)
-                for k, v in kwargs.items()
-            }
+        #     validated_kws = {
+        #         # cast each keyword argument
+        #         k: self.key_arguments[k]._finalize_get_value(owner, v)
+        #         for k, v in kwargs.items()
+        #     }
 
-            if new_value is Undefined:
-                if not paramattr.gets:
-                    # stop now if this is not a gets ParamAttr
-                    raise AttributeError(f'{self.__repr__(owner_inst=owner)} does not support gets')
+        #     if new_value is Undefined:
+        #         if not paramattr.gets:
+        #             # stop now if this is not a gets ParamAttr
+        #             raise AttributeError(f'{self.__repr__(owner_inst=owner)} does not support gets')
 
-                return paramattr.get_from_owner(owner, validated_kws)
+        #         return paramattr.get_from_owner(owner, validated_kws)
+        #     else:
+        #         paramattr.set_in_owner(owner, new_value, validated_kws)
+
+        #         if paramattr.get_on_set:
+        #             method(owner, Undefined, **kwargs)
+
+        def getter(owner: HasParamAttrs, **kwargs) -> T:
+            return self.get(owner, paramattr.key, paramattr, kwargs)
+        
+        def setter(owner: HasParamAttrs, new_value: T, **kwargs):
+            self.set(owner, paramattr.key, new_value, paramattr, kwargs)
+
+        # manually apply the kwarg decorators
+        for name in kwargs_names:
+            if paramattr.gets:
+                getter = self.key_arguments[name](getter)
             else:
-                paramattr.set_in_owner(owner, new_value, validated_kws)
+                setter = self.key_arguments[name](setter)
 
-                if paramattr.get_on_set:
-                    method(owner, Undefined, **kwargs)
+        for func in getter, setter:
+            func.__signature__ = inspect.Signature(  # type: ignore
+                pos_params + kwargs_params, return_annotation=typing.Optional[paramattr._type]
+            )
+            func.__name__ = paramattr.name  # type: ignore
+            func.__module__ = f'{owner_cls.__module__}'
+            func.__qualname__ = f'{owner_cls.__qualname__}.{paramattr.name}'
 
-        method.__signature__ = inspect.Signature(  # type: ignore
-            pos_params + kwargs_params, return_annotation=typing.Optional[paramattr._type]
-        )
-        method.__name__ = paramattr.name  # type: ignore
-        method.__module__ = f'{owner_cls.__module__}'
-        method.__qualname__ = f'{owner_cls.__qualname__}.{paramattr.name}'
-        method.__doc__ = paramattr.doc()
+        if paramattr.sets and paramattr._setter is None:
+            paramattr.setter(setter, override_kwargs=False)
 
-        return method
+        if paramattr.gets and paramattr._getter is None:
+            paramattr.getter(getter, override_kwargs=False)
 
 
 class HasParamAttrsClsInfo:
@@ -265,17 +308,19 @@ class HasParamAttrsClsInfo:
     key_arguments: dict[str, KeywordArgument]
 
     # unbound methods``
-    methods: dict[str, Callable]
+    methods: dict[str, callable]
 
     __slots__ = ['attrs', 'key_adapter', 'key_arguments', 'methods']
 
     def __init__(
         self,
-        attrs: dict[str, ParamAttr],
-        key_adapter: KeyAdapterBase,
+        key_adapter: KeyAdapterBase,        
+        attrs: dict[str, ParamAttr] = {},
+        key_arguments: dict[str, KeywordArgument] = {}
     ):
         self.attrs = attrs
         self.key_adapter = key_adapter
+        self.key_arguments = key_arguments
 
     def value_names(self) -> list[str]:
         return [k for k, v in self.attrs.items() if isinstance(v, Value)]
@@ -297,9 +342,6 @@ class HasParamAttrsClsInfo:
 
 
 class HasParamAttrsMeta(type):
-    # hold on to recent namespaces until they can be used to initialize descriptors
-    ns_pending: list = []
-
     @classmethod
     def __prepare__(mcls, names, bases, **kws):  # type: ignore
         """Prepare fresh cls._attr_defs.attrs mappings to allow copy-on-write of ParamAttr
@@ -309,11 +351,9 @@ class HasParamAttrsMeta(type):
         if len(bases) >= 1:
             cls_info = ns['_attr_defs'] = HasParamAttrsClsInfo._copy_from(bases[0])
             ns.update(cls_info.attrs)
-            mcls.ns_pending.append(cls_info.attrs)
             return ns
         else:
-            ns['_attr_defs'] = HasParamAttrsClsInfo(attrs={}, key_adapter=KeyAdapterBase())
-            mcls.ns_pending.append({})
+            ns['_attr_defs'] = HasParamAttrsClsInfo(key_adapter=KeyAdapterBase())
         return ns
 
 
@@ -324,11 +364,7 @@ def _parameter_maybe_positional(param: inspect.Parameter):
     )
 
 
-# This is only used for method types
-TCall = typing.TypeVar('TCall')
-
-
-@dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
+@typing.dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
 class ParamAttrMeta(type):
     pass
 
@@ -451,6 +487,12 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     # Descriptor methods (called automatically by the owning class or instance)
     def __set_name__(self, owner_cls, name):
         """Called on owner class instantiation (python object protocol)"""
+        
+        if self.name is not None:
+            # uneeded extra calls here result when both .setter() and .getter()
+            # decorators are applied in Method or Property
+            return
+        
         # other owning objects may unintentionally become owners; this causes problems
         # if they do not implement the HasParamAttrs object protocol
         if issubclass(owner_cls, HasParamAttrs):
@@ -462,7 +504,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
             get_class_attrs(owner_cls)[name] = self
 
-    def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
+    def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         """The owner calls this in each of its ParamAttr attributes at the end of defining the subclass
         (near the end of __init_subclass__). Now it is time to ensure properties are compatible with the
         owner class. This is here --- not in __set_name__ --- because python
@@ -596,7 +638,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         else:
             # document as an attribute
             if len(doc_params) > 0:
-                doc += f'\n\n' + '\n'.join(doc_params)
+                doc += '\n\n' + '\n'.join(doc_params)
         return doc
 
     def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
@@ -708,11 +750,11 @@ class Value(ParamAttr[T]):
             raise TypeError('cannot set default=None with allow_none=True')
 
     @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> T:
+    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> T:
         ...
 
     @typing.overload
-    def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
+    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self:
         ...
 
     @util.hide_in_traceback
@@ -770,24 +812,20 @@ class Value(ParamAttr[T]):
         if self.notify:
             owner.__notify__(self.name, value, 'set', cache=self.cache)
 
-    def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
+    def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         pass
 
 
-R = typing.TypeVar('R')
-_P = typing.ParamSpec('_P')
-TMethod = typing.TypeVar('TMethod', bound='Method')
-
-
-class KeywordArgument(ParamAttr[T]):
+class KeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):
     name: str = field(Undefined, kw_only=False)  # type: ignore
     default: Union[T, None, Undefined] = Undefined  # type: ignore
     required: bool = False
 
     ROLE = 'keyword argument'
-    _decorated: list[Union[ParamAttr, Callable]] = []
+    _decorated_kwargs: dict[str, Union[ParamAttr, callable]] = {}
+    _decorated_func = None
 
-    def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
+    def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         raise AttributeError('labbench.paramattr.kwarg instances should not be used as class attributes')
 
     def __set_name__(self, owner_cls, name):
@@ -797,21 +835,25 @@ class KeywordArgument(ParamAttr[T]):
         return self.__repr__()
 
     @typing.overload
-    def __call__(self, unvalidated_method: _DecoratorMethodType[T, _P]) -> _DecoratorMethodType[T, _P]:
+    def __call__(self, unvalidated_method: Method[T_co, _MethodKnownSignature[T_co,_P]]) -> Method[T_co, _MethodKnownSignature[T_co,_P]]:
         ...
 
     @typing.overload
-    def __call__(self, unvalidated_method: Callable[_P, Union[T, None]]) -> typing.Self:
+    def __call__(self, unvalidated_method: _TGetter[T_co, _P]) -> typing.Self:
         ...
 
     @typing.overload
-    def __call__(self, unvalidated_method: KeywordArgument[R]) -> typing.Self:
+    def __call__(self, unvalidated_method: _TSetter[T_co, _P]) -> typing.Self:
+        ...
+
+    @typing.overload
+    def __call__(self, unvalidated_method: KeywordArgument[T, T_co, _P]) -> typing.Self:
         ...
 
     def __call__(
         self,
-        to_decorate: Union[_DecoratorMethodType[T, _P], Callable[_P, Union[T, None]], KeywordArgument[R]],
-    ) -> Union[typing.Self, _DecoratorMethodType[T, _P]]:
+        to_decorate: Union[Method[T_co, _MethodKnownSignature[T_co,_P]], _TGetter[T_co, _P], _TSetter[T_co, _P], KeywordArgument[T, T_co, _P]],
+    ) -> Union[typing.Self, Method[T_co, _MethodKnownSignature[T_co,_P]]]:
         """decorate a method to apply type conversion and validation checks to one of its keyword arguments.
 
         These are applied to the keyword argument matching `self.name` immediately before each call to
@@ -822,29 +864,47 @@ class KeywordArgument(ParamAttr[T]):
             raise TypeError('the default argument is not supported when used as a decorator')
 
         if isinstance(to_decorate, Method):
-            to_decorate._decorated = to_decorate._decorated + self._decorated + [self]
+            to_decorate._decorated_kwargs.update(self._decorated_kwargs)
+            to_decorate._decorated_kwargs[self.name] = self
+            if to_decorate._decorated_func is None:
+                to_decorate._decorated_func = self._decorated_func
+
             return to_decorate  # type: ignore
         elif isinstance(to_decorate, KeywordArgument):
-            self._decorated = to_decorate._decorated + [to_decorate]
+            self._decorated_kwargs.update(to_decorate._decorated_kwargs)
+            self._decorated_kwargs[to_decorate.name] = to_decorate
             return self
+        elif isinstance(to_decorate, (Value, Property)):
+            raise TypeError("{to_decorate.ROLE} paramattrs do not accept keyword arguments")
         else:
-            self._decorated = [to_decorate]
+            self._decorated_func = to_decorate
             return self
 
 
 class OwnerAccessAttr(ParamAttr[T]):
+    """base class for property and method paramattrs, which implement wrappers into their owners
+    as specified by their key arguments and/or decorators"""
+
     _setter = None
     _getter = None
-    _method = None
-    _decorated: list[Union[ParamAttr, Callable]] = []
 
-    def __init__(self, **kws):
-        super().__init__(**kws)
-        self._decorated = []
+    def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
+        """The owner calls this in each of its ParamAttr attributes at the end of defining the subclass
+        (near the end of __init_subclass__). Now it is time to ensure properties are compatible with the
+        owner class. This is here --- not in __set_name__ --- because python
+        obfuscates exceptions raised in __set_name__.
 
-    # def __init_subclass__(cls):
-    #     setattr(cls, '__call__', cls.__call_shim__)
-    #     super().__init_subclass__()
+        This is also where we finalize selecting decorator behavior; is it a property or a method?
+        """
+        if getattr(self._setter, '__name__', self.name) != self.name:
+            delattr(owner_cls, self._setter.__name__)
+        if getattr(self._getter, '__name__', self.name) != self.name:
+            delattr(owner_cls, self._getter.__name__)            
+        if self.key is Undefined:
+            if 'sets' in self.kws and self.sets and not self._setter:
+                raise TypeError('defined with sets=True, but key=False and no setter was defined')
+            if 'gets' in self.kws and self.gets and not self._getter:
+                raise TypeError('defined with gets=True, but key=False and no getter was defined')
 
     @util.hide_in_traceback
     def get_from_owner(self, owner: HasParamAttrs, kwargs: dict[str, Any] = {}):
@@ -903,24 +963,108 @@ class OwnerAccessAttr(ParamAttr[T]):
         obj = super().copy(new_type=new_type, **update_kws)
         obj._getter = self._getter
         obj._setter = self._setter
-        obj._method = self._method
         return obj
 
-    def setter(self, method: callable) -> typing.Self:
-        """decorate a method to implement the parameter "set" operation for `self`"""
-        self._setter = method
-        if not self.sets:
-            raise TypeError("cannot implement setter after setting sets=False")
+    def getter(self, func: _TGetter[T,_P]) -> typing.Self:
+        """decorate a getter method to implement behavior in the owner"""
+
+        # validate signature
+        arg_lo, arg_hi = bound_valid_posargs(func)
+        if arg_hi < 1 or arg_lo > 1:
+            raise TypeError('decorated getter method must accept one positional argument: self')
+
+        # validate access constraints
+        if not self.gets and 'gets' in self.kws:
+            raise TypeError('cannot implement property setter when defined with sets=False')
+
+        self._getter = func
+        add_docstring_to_help(self, func)
+
         return self
 
-    def getter(self, method: callable) -> typing.Self:
-        """decorate a method to implement the parameter "get" operation for `self`"""
-        self._getter = method
-        if not self.gets:
-            raise TypeError("cannot implement getter after setting gets=False")
+    def setter(self, func: _TSetter[T,_P]) -> typing.Self:
+        """decorate a setter method to implement behavior in the owner"""
+
+        # validate signature
+        arg_lo, arg_hi = bound_valid_posargs(func)
+        if arg_hi < 2 or arg_lo > 2:
+            raise TypeError('decorated setter method must accept two positional arguments: (self, new_value)')
+        
+        # validate access constraints
+        if not self.sets and 'sets' in self.kws:
+            raise TypeError('cannot implement property setter when defined with sets=False')
+        
+        self._setter = func
+        add_docstring_to_help(self, func)
+
         return self
 
-class Method(OwnerAccessAttr[T]):
+
+def extract_method_decorations(method: Method[T, Any], to_decorate: Union[KeywordArgument,callable]) -> Union[callable,None]:
+    if method.key is not Undefined:
+        raise ValueError('implementation of Method paramattr by decorator is not allowed when `key` is set')
+
+    if isinstance(to_decorate, KeywordArgument):
+        kwargs = dict(to_decorate._decorated_kwargs)
+        kwargs[to_decorate.name] = to_decorate
+        func = to_decorate._decorated_func
+
+    elif callable(to_decorate):
+        func = to_decorate
+        kwargs = {}
+
+    return func, kwargs
+
+
+class _TGetter(typing.Protocol[T_co, _P]):
+    """call signature protocol for *decorated* methods of Method descriptors"""
+
+    if typing.TYPE_CHECKING:
+        @staticmethod
+        def __call__(owner: HasParamAttrs, *args: _P.args, **kwargs: _P.kwargs) -> T_co:
+            ...
+
+
+class _TSetter(typing.Protocol[T_co, _P]):
+    """call signature protocol for *decorated* methods of Method descriptors"""
+
+    if typing.TYPE_CHECKING:
+        @staticmethod
+        def __call__(owner: HasParamAttrs, /, new_value: T_co, *args: _P.args, **kwargs: _P.kwargs) -> None:
+            ...
+
+
+class _MethodKnownSignature(typing.Protocol[T_co], typing.Generic[T_co, _P]):
+    # call signature for type hinting decorated Method descriptors
+
+    if typing.TYPE_CHECKING:
+        @typing.overload
+        @staticmethod
+        def __call__(new_value: T_co, *args: _P.args, **kwargs: _P.kwargs) -> None:
+            ...
+
+        @typing.overload
+        @staticmethod
+        def __call__(*args: _P.args, **kwargs: _P.kwargs) -> T_co:
+            ...
+
+
+class _MethodUnknownSignature(typing.Protocol[T_co]):
+    # call signature protocol for type hinting keyed Method descriptors
+    if typing.TYPE_CHECKING:
+        @typing.overload
+        @staticmethod
+        def __call__(new_value: Union[T_co, None], /, **kwargs) -> None:
+            """set to `new_value` according to the scope defined by `kwargs`"""
+
+        @typing.overload
+        @staticmethod
+        def __call__(**kwargs) -> Union[T_co, None]:
+            """get the parameter according to the scope specified by `kwargs`."""
+
+
+
+class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
     # this structure seems to trick some type checkers into honoring the @overloads in
     # _MethodMeta
     key: typing.Any = field(Undefined, kw_only=False)
@@ -931,223 +1075,136 @@ class Method(OwnerAccessAttr[T]):
 
     ROLE = 'method'
 
-    _decorated_kwargs = {}
+    _decorated_kwargs: dict[Union[ParamAttr, callable]] = {}
+    _decorated_func = None
 
-    def get_key_arguments(self, owner_cls: Type[HasParamAttrs], validate: bool = False):
-        if self.key is not Undefined:
-            return get_owner_defs(owner_cls).key_adapter.get_key_arguments(self.key)
+    def __init__(self, **kws):
+        super().__init__(**kws)
+        self._decorated_kwargs = {}
 
-        _, *params = inspect.signature(self._decorated[0]).parameters.items()  # type: ignore
-
-        if self.sets:
-            # must support a positional argument unless sets=False
-            if len(params) == 0 or not _parameter_maybe_positional(params[0][1]):
-                label = f'{owner_cls.__qualname__}.{self.name}'
-                raise TypeError(
-                    f'{label}: method signature must start with 1 positional argument to support setting (or define with `sets=False`)'
-                )
-            else:
-                value_argument_name, _ = params[0]
-                params = params[1:]
-
+    def get_key_arguments(self, owner_cls: type[HasParamAttrs]):
+        # assumes that the two below have already been validated to be the
+        # same, e.g., in self.setter and self.getter
+        if self.gets:
+            return name_arguments(self._getter)[1:]
         else:
-            # otherwise, must *not* support a positional argument if sets=False
-            if len(params) > 0 and _parameter_maybe_positional(params[0][1]):
-                value_argument_name, _ = params[0]
-                label = f'{owner_cls.__qualname__}.{self.name}'
-                raise TypeError(
-                    f'{label}: no positional arguments allowed when gets=False (indicate keyword arguments by defining "self, * ,")'
-                )
-            else:
-                value_argument_name = None
+            return name_arguments(self._setter)[2:]
 
-        params = dict(params)
+    @util.hide_in_traceback   
+    def unbound_call(
+        self, owner: HasParamAttrs, new_value: Union[T, None, type[Undefined]] = Undefined, **kwargs
+    ) -> Union[T, None, Undefined]:
+        """the autogenerated method that binds the key to an owner and the attribute definition"""
+        if not isinstance(owner, HasParamAttrs):
+            raise TypeError('labbench.paramattr.method may only decorate methods of HasParamAttr instances')
 
-        if not validate:
-            return tuple(params.keys())
+        for name, kwarg_def in self._decorated_kwargs.items():
+            # apply keyword argument validation to incoming keyword arguments
+            if name in kwargs:
+                kwargs[name] = kwarg_def._finalize_get_value(owner, kwargs[name])
+            elif kwarg_def.required:
+                raise TypeError(f'missing required argument {self.name}')
 
-        for name, attr_def in params.items():
-            if attr_def.kind in (
-                inspect.Parameter.VAR_KEYWORD,
-                inspect.Parameter.VAR_POSITIONAL,
-            ):
-                label = f'{owner_cls.__qualname__}.{self.name}'
-                raise TypeError(
-                    f"{label}: keyword arguments must be explicit in ParamAttr methods - variable argument for '{name}' is not supported"
-                )
+        if new_value is not Undefined:
+            new_value = self._prepare_set_value(owner, new_value, kwargs)
+            self._setter(owner, new_value, **kwargs)  # type: ignore
+            if self.notify:
+                owner.__notify__(self.name, new_value, 'set', cache=self.cache, kwargs=kwargs)
+            value = None
+            if self.get_on_set:
+                self(owner, Undefined, **kwargs)
+        else:
+            if not self.gets:
+                # stop now if this is not a gets ParamAttr
+                raise AttributeError(f'{self.__repr__(owner_inst=owner)} does not support gets')
+            unvalidated_value = self._getter(owner, **kwargs)  # type: ignore
+            value = self._finalize_get_value(owner, unvalidated_value)
+            if self.notify:
+                owner.__notify__(self.name, value, 'get', cache=self.cache, kwargs=kwargs)
 
-            if _parameter_maybe_positional(attr_def):
-                label = f'{owner_cls.__qualname__}{self.name}'
-                if value_argument_name is None:
-                    suggested = f'(self, *, {name}...)'
-                else:
-                    suggested = f'(self, {value_argument_name}, *, {name}...)'
-                raise TypeError(
-                    f'{label}: arguments starting with {name} must be keyword-only. did you mean to include * as in "{suggested}"?'
-                )
+        return value
 
-        return tuple(params.keys())
 
-    def _emit_setattr_error(self, owner, value):
+    def _raise_on_setattr(self, owner, value):
         raise AttributeError(f'to set {self}, call it as a function {self}(...)')
 
     def __init_owner_instance__(self, owner: HasParamAttrs):
+        """bind a callable method in the owner, and fill in registered KeywordArguments"""
         super().__init_owner_instance__(owner)
 
-        if self.key is Undefined:
-            unbound_method = self._method
-        else:
-            cls_info = get_owner_defs(owner)
-            unbound_method = cls_info.key_adapter.method_from_key(type(owner), self)
-        bound_method = unbound_method.__get__(owner, type(owner))
-        setattr(owner, self.name, bound_method)  # type: ignore
+        unbound_method = partial(self.unbound_call, owner)
+        setattr(owner, self.name, unbound_method)  # type: ignore
+        self.__set__ = self._raise_on_setattr
 
-        # cls_info.methods[self.name] = cls_info.key_adapter.method_from_key(
-        #     owner, self
-        # )
+    def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
+        """fill in missing KeywordArgument decorators with the registery in owner_cls"""
+        super().__init_owner_subclass__(owner_cls)
 
-        # func = cls_info.methods[self.name]
-        # method = func.__get__(owner, type(owner))
+        # fill in missing KeywordArgument decorators with those registered in owner_cls
+        defs = set(self.get_key_arguments(owner_cls))
+        attrs = set(self._decorated_kwargs.keys())
+        registered = get_owner_defs(owner_cls).key_arguments
+        for missing_name in (defs - attrs):
+            try:
+                self._decorated_kwargs[missing_name] = registered[missing_name]
+            except KeyError:
+                raise AttributeError(f'no keyword argument paramattr was decorated or registered for {missing_name}')
 
-        # TODO: inject hooks
+    def getter(self, to_decorate: _TGetter[T, _P]) -> Method[T, _MethodKnownSignature[T,_P]]:            
+        func, new_kwargs = extract_method_decorations(self, to_decorate) # type: ignore
+        super().getter(func)
 
-        self.__set__ = self._emit_setattr_error
-
-    def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
-        if self.key is Undefined:
-            self._decorated_kwargs = {d.name: d for d in self._decorated if isinstance(d, KeywordArgument)}
-
-            funcs = [d for d in self._decorated if not isinstance(d, ParamAttr)]
-
-            # finalize decorators
-            if len(funcs) == 0:
-                if self.key is Undefined:
-                    raise AttributeError(f'{self} must be defined with "key" keyword unless used as a decorator')
-            elif len(funcs) == 1:
-                pass
+        # apply the new keyword arguments
+        if len(new_kwargs) > 0:
+            if self._setter is None:
+                self._decorated_kwargs = new_kwargs
             else:
-                raise AttributeError(f'{self} may not decorate more than one method')
+                raise TypeError("apply all kwarg decorators to the setter, which was defined first")       
 
-            positional_argcounts = [f.__code__.co_argcount - len(f.__defaults__ or tuple()) for f in funcs]
+        # validate arguments
+        if self._setter is not None:
+            setter_kwargs = name_arguments(self._setter)[2:]
+            getter_kwargs = name_arguments(self._getter)[1:]
+            if setter_kwargs != getter_kwargs:
+                raise TypeError(f'setter keywords {setter_kwargs} mismatch getter keywords {getter_kwargs}')
 
-            for func, argcount in zip(funcs, positional_argcounts):
-                if len(self.help.rstrip().strip()) == 0:
-                    # take func docstring as default self.help
-                    self.help = (func.__doc__ or '').rstrip().strip()
+        return self
 
-            # validate the key arguments
-            self.get_key_arguments(owner_cls, validate=True)
+    def setter(self, to_decorate: _TSetter[T, _P]) -> Method[T, _MethodKnownSignature[T,_P]]:
+        func, new_kwargs = extract_method_decorations(self, to_decorate) # type: ignore
+        super().setter(func)
 
-    def __call__(self, to_decorate: _DecoratedMethodCallableType[T, _P]) -> _DecoratorMethodType[T, _P]:
-        if isinstance(to_decorate, KeywordArgument):
-            func = to_decorate._decorated[0]
-        else:
-            func = to_decorate
-
-        if self.key is not Undefined:
-            raise ValueError('implementation of Method paramattr by decorator is not allowed when `key` is set')
-
-        def meth(
-            owner: HasParamAttrs, new_value: Union[T, None, Type[Undefined]] = Undefined, **kwargs
-        ) -> Union[T, None, Undefined]:
-            """the autogenerated method that binds the key to an owner and the attribute definition"""
-
-            if not isinstance(owner, HasParamAttrs):
-                raise TypeError(f'labbench.paramattr.method may only decorate methods of HasParamAttr instances')
-
-            for name, kwarg_def in self._decorated_kwargs.items():
-                # apply keyword argument validation to incoming keyword arguments
-                if name in kwargs:
-                    kwargs[name] = kwarg_def._finalize_get_value(owner, kwargs[name])
-                elif kwarg_def.required:
-                    raise TypeError(f'missing required argument {self.name}')
-
-            if new_value is not Undefined:
-                new_value = self._prepare_set_value(owner, new_value, kwargs)
-                func(owner, new_value, **kwargs)  # type: ignore
-                if self.notify:
-                    owner.__notify__(self.name, new_value, 'set', cache=self.cache, kwargs=kwargs)
-                value = None
-                if self.get_on_set:
-                    meth(owner, Undefined, **kwargs)
+        # apply new keyword arguments
+        if len(new_kwargs) > 0:
+            if self._getter is None:
+                self._decorated_kwargs = new_kwargs
             else:
-                if not self.gets:
-                    # stop now if this is not a gets ParamAttr
-                    raise AttributeError(f'{self.__repr__(owner_inst=owner)} does not support gets')
-                unvalidated_value = func(owner, **kwargs)  # type: ignore
-                value = self._finalize_get_value(owner, unvalidated_value)
-                if self.notify:
-                    owner.__notify__(self.name, value, 'get', cache=self.cache, kwargs=kwargs)
+                raise TypeError("apply all kwarg decorators to the getter, which was defined first")           
 
-            return value
+        if self._getter is not None:
+            setter_kwargs = name_arguments(self._setter)[2:]
+            getter_kwargs = name_arguments(self._getter)[1:]
+            if setter_kwargs != getter_kwargs:
+                raise TypeError(f'setter keywords {setter_kwargs} mismatch getter keywords {getter_kwargs}')
 
-        if isinstance(to_decorate, KeywordArgument):
-            self._decorated = to_decorate._decorated + [to_decorate]
-        else:
-            self._decorated = [to_decorate]
+        return self
+    
+    def __call__(self, func: _TSetter[T,_P]) -> typing.Self:
+        return self.getter(func)
 
-        self._method = wraps(to_decorate)(meth)  # type: ignore
-
-        return self  # type: ignore
-
-        # setattr(owner, self.name, bound_method) # type: ignore
 
     if typing.TYPE_CHECKING:
         # call signatures hints for IDEs
-        @typing.overload
-        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> _KeyedMethodCallableType[T]:
+
+        def __new__(cls, *args, **kwargs) -> Method[T,_MethodUnknownSignature[T]]:
             ...
 
         @typing.overload
-        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> _DecoratedMethodCallableType[T, ...]:
+        def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> SignatureType:
             ...
 
         @typing.overload
-        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> typing.Callable:
-            ...
-
-        @typing.overload
-        def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
-            ...
-
-
-class _DecoratedMethodCallableType(typing.Protocol[T_co, _P]):
-    """call signature protocol for *decorated* methods of Method descriptors"""
-
-    if typing.TYPE_CHECKING:
-
-        @staticmethod
-        def __call__(owner: HasParamAttrs, *args: _P.args, **kwargs: _P.kwargs) -> Union[T_co, None]:
-            ...
-
-
-class _KeyedMethodCallableType(typing.Protocol[T]):
-    """call signature protocol for type hinting _keyed_ Method descriptors"""
-
-    if typing.TYPE_CHECKING:
-
-        @typing.overload
-        @staticmethod
-        def __call__(new_value: Union[T, None], /, **kwargs) -> None:
-            """set to `new_value` according to the scope defined by `kwargs`"""
-
-        @typing.overload
-        @staticmethod
-        def __call__(**kwargs) -> Union[T, None]:
-            """get the parameter according to the scope specified by `kwargs`."""
-
-
-class _DecoratorMethodType(Method[T], typing.Generic[T, _P]):
-    """typing shim to hint at descriptor behavior"""
-
-    if typing.TYPE_CHECKING:
-
-        @typing.overload
-        def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> Callable[_P, T]:
-            ...
-
-        @typing.overload
-        def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
+        def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self:
             ...
 
 
@@ -1161,49 +1218,19 @@ class Property(OwnerAccessAttr[T]):
     # for descriptive purposes
     ROLE = 'property'
 
-    def __init_owner_subclass__(self, owner_cls: Type[HasParamAttrs]):
-        """The owner calls this in each of its ParamAttr attributes at the end of defining the subclass
-        (near the end of __init_subclass__). Now it is time to ensure properties are compatible with the
-        owner class. This is here --- not in __set_name__ --- because python
-        obfuscates exceptions raised in __set_name__.
-
-        This is also where we finalize selecting decorator behavior; is it a property or a method?
-        """
-
-        if len(self._decorated) == 0:
-            return
-
-        positional_argcounts = [f.__code__.co_argcount - len(f.__defaults__ or tuple()) for f in self._decorated]
-
-        if set(positional_argcounts) not in ({1}, {1, 2}, {2}):
-            raise AttributeError(
-                f'a decorator implementation with @{self} must apply to a getter '
-                f'(above `def func(self)`) and/or setter (above `def func(self, value):`)'
-            )
-        for func, argcount in zip(self._decorated, positional_argcounts):
-            doc = (func.__doc__ or '').strip().rstrip()
-            if len(doc) > 0:
-                # take func docstring as default self.help
-                self.help = self.kws['help'] = doc
-
-            if argcount == 1:
-                self._getter = func
-            else:
-                self._setter = func
-
     @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: Type[HasParamAttrs]) -> T:
+    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> T:
         ...
 
     @typing.overload
-    def __get__(self, owner: None, owner_cls: Type[HasParamAttrs]) -> typing.Self:
+    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self:
         ...
 
     @util.hide_in_traceback
     def __get__(
         self,
         owner: typing.Union[HasParamAttrs, None],
-        owner_cls: Type[HasParamAttrs],
+        owner_cls: type[HasParamAttrs],
     ) -> T:
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
@@ -1236,28 +1263,31 @@ class Property(OwnerAccessAttr[T]):
         if self.get_on_set:
             self.__get__(owner, type(owner))
 
-    @util.hide_in_traceback
-    def __call__(self, to_decorate, **kwargs) -> Union[T, None, Type[Undefined], ParamAttr]:
-        """decorate a class attribute with the ParamAttr"""
+    def __call__(self, func: _TSetter[T,_P]) -> typing.Self:
+        return self.getter(func)
 
-        # only decorate functions.
-        if not callable(to_decorate):
-            target_name = type(to_decorate).__qualname__
-            raise Exception(f"object of type '{target_name}' must be callable")
+    # @util.hide_in_traceback
+    # def __call__(self, to_decorate, **kwargs) -> Union[T, None, type[Undefined], ParamAttr]:
+    #     """decorate a class attribute with the ParamAttr"""
 
-        self._decorated.append(to_decorate)
+    #     # only decorate functions.
+    #     if not callable(to_decorate):
+    #         target_name = type(to_decorate).__qualname__
+    #         raise Exception(f"object of type '{target_name}' must be callable")
 
-        # Register in the list of decorators, in case we are overwritten by an
-        # overloading function
-        if getattr(self, 'name', None) is None:
-            self.name = to_decorate.__name__
-        else:
-            self._keywords = kwargs
-        if len(HasParamAttrsMeta.ns_pending) > 0:
-            HasParamAttrsMeta.ns_pending[-1][to_decorate.__name__] = self
+    #     self._decorated.append(to_decorate)
 
-        # return self to ensure `self` is the value assigned in the class definition
-        return self
+    #     # Register in the list of decorators, in case we are overwritten by an
+    #     # overloading function
+    #     if getattr(self, 'name', None) is None:
+    #         self.name = to_decorate.__name__
+    #     else:
+    #         self._keywords = kwargs
+    #     if len(HasParamAttrsMeta.ns_pending) > 0:
+    #         HasParamAttrsMeta.ns_pending[-1][to_decorate.__name__] = self
+
+    #     # return self to ensure `self` is the value assigned in the class definition
+    #     return self
 
 
 @contextmanager
@@ -1273,7 +1303,7 @@ def hold_attr_notifications(owner):
 
 
 class HasParamAttrsInstInfo:
-    handlers: dict[str, Callable]
+    handlers: dict[str, callable]
     calibrations: dict[Union[None, str], Any]
     cache: dict[Union[None, str], Any]
 
@@ -1285,21 +1315,21 @@ class HasParamAttrsInstInfo:
         self.calibrations = {}
 
 
-def get_key_adapter(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> KeyAdapterBase:
+def get_key_adapter(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> KeyAdapterBase:
     return obj._attr_defs.key_adapter
 
 
-def list_value_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> list[str]:
+def list_value_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> list[str]:
     """returns a mapping of names of labbench value paramattrs defined in `obj`"""
     return get_owner_defs(obj).value_names()
 
 
-def list_method_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> list[str]:
+def list_method_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> list[str]:
     """returns a mapping of names of labbench method paramattrs defined in `obj`"""
     return get_owner_defs(obj).method_names()
 
 
-def list_property_attrs(obj: Union[HasParamAttrs, Type[HasParamAttrs]]) -> list[str]:
+def list_property_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> list[str]:
     """returns a list of names of labbench property paramattrs defined in `obj`"""
     return get_owner_defs(obj).property_names()
 
@@ -1336,9 +1366,9 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
             setattr(cls, name, attr_defs[name])
 
-        # clear the initialized attributes from the pending entries in the metaclass
-        if attr_defs in type(cls).ns_pending:
-            type(cls).ns_pending.remove(attr_defs)
+        # # clear the initialized attributes from the pending entries in the metaclass
+        # if attr_defs in type(cls).ns_pending:
+        #     type(cls).ns_pending.remove(attr_defs)
 
         # finalize attribute setup
         for name, attr_def in dict(attr_defs).items():
@@ -1381,7 +1411,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
         pass
 
 
-def adjust(paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws) -> Callable[[Type[T]], Type[T]]:
+def adjust(paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws) -> callable[[type[T]], type[T]]:
     """decorates a Device subclass to adjust the definition of the specified ParamAttr.
 
     This can be applied to inherited classes that need one of its parents attributes
@@ -1438,12 +1468,12 @@ def adjust(paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /,
 
 
 THasParamAttrs = typing.TypeVar('THasParamAttrs', bound=HasParamAttrs)
-THasParamAttrsCls = Type[THasParamAttrs]
+THasParamAttrsCls = type[THasParamAttrs]
 
 
 def register_key_argument(
     kwarg_def: KeywordArgument,
-) -> Callable[[THasParamAttrsCls], THasParamAttrsCls]:
+) -> callable[[THasParamAttrsCls], THasParamAttrsCls]:
     """decorates a Device subclass to copy the specified ParamAttr with a specified name.
 
     This can be applied to inherited classes that need one of its parents attributes
@@ -1554,6 +1584,9 @@ class DependentParamAttr(ParamAttr):
     _paramattr_dependencies = set()
 
     def __set_name__(self, owner_cls, name):
+        if self.name is not None:
+            return
+
         super().__set_name__(owner_cls, name)
 
         # propagate ownership of dependent ParamAttr instances, if available
@@ -1610,7 +1643,7 @@ class DependentParamAttr(ParamAttr):
         if as_argument:
             return None
         else:
-            return f'* Bounds depend on calibration data at run-time'
+            return '* Bounds depend on calibration data at run-time'
 
 
 class RemappingCorrectionMixIn(DependentParamAttr):

@@ -1,6 +1,6 @@
+
 from . import _types
 from ._bases import Property
-import typing as _typing
 
 
 class any(Property, _types.Any):

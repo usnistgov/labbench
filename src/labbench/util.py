@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import ast
 import hashlib
 import importlib.util
@@ -11,15 +12,16 @@ import textwrap
 import time
 import traceback
 import types
+from collections.abc import Callable
 from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
-from typing_extensions import Union, TypeVar, ParamSpec, Callable
+from typing import Union
 from warnings import simplefilter
 
 import psutil
-
+from typing_extensions import ParamSpec, TypeVar
 
 __all__ = [  # "misc"
     'hash_caller',
@@ -98,7 +100,7 @@ def show_messages(minimum_level, colors=True):
     }
 
     if minimum_level not in err_map and not isinstance(minimum_level, int):
-        raise ValueError(f'message level must be a flag {tuple(err_map)} or an integer, not {repr(minimum_level)}')
+        raise ValueError(f'message level must be a flag {tuple(err_map)} or an integer, not {minimum_level!r}')
 
     level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
 
@@ -664,7 +666,7 @@ def stopwatch(desc: str = '', threshold: float = 0, logger_level='info'):
             logger.log(level, msg.lstrip())
 
 
-class Call(object):
+class Call:
     """Wrap a function to apply arguments for threaded calls to `concurrently`.
     This can be passed in directly by a user in order to provide arguments;
     otherwise, it will automatically be wrapped inside `concurrently` to
@@ -730,7 +732,7 @@ class Call(object):
 
                 if name in ret:
                     msg = (
-                        f'another callable is already named {repr(name)} - '
+                        f'another callable is already named {name!r} - '
                         'pass as a keyword argument to specify a different name'
                     )
                     raise KeyError(msg)
@@ -965,9 +967,9 @@ def enter_or_call(flexible_caller, objs, kws):
             msg = 'each argument must be a callable and/or a context manager, '
 
             if k is None:
-                msg += f'but given {repr(obj)}'
+                msg += f'but given {obj!r}'
             else:
-                msg += f'but given {k}={repr(obj)}'
+                msg += f'but given {k}={obj!r}'
 
             raise TypeError(msg)
         elif runner in (None, 'both'):
@@ -1265,7 +1267,7 @@ OP_SET = 'set'
 OP_QUIT = None
 
 
-class ThreadDelegate(object):
+class ThreadDelegate:
     _sandbox = None
     _obj = None
     _dir = None
@@ -1317,7 +1319,7 @@ def message(sandbox, *msg):
     return ret
 
 
-class ThreadSandbox(object):
+class ThreadSandbox:
     """Execute all calls in the class in a separate background thread. This
     is intended to work around challenges in threading wrapped win32com APIs.
 

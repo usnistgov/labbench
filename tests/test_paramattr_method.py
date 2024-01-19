@@ -6,7 +6,7 @@ from labbench import paramattr as attr
 from labbench.testing import store_backend
 
 
-@attr.register_key_argument(attr.kwarg.int('registered_channel', min=1, max=4))
+@attr.kwarg.int('registered_channel', min=1, max=4)
 @store_backend.key_store_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
@@ -27,25 +27,22 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     @attr.method.int(min=0, sets=False)
     def int_decorated_low_bound_getonly(self):
         ret = self.backend.get('int_decorated_low_bound_getonly', 0)
-        print(f'return value is {ret!r}')
         return ret
 
-    @attr.method.int(min=10, gets=False)
+    @attr.method.int(min=10, gets=False).setter
     def int_decorated_low_bound_setonly(self, new_value=lb.Undefined, *, channel=1):
         self.backend.set('int_decorated_high_bound_setonly', new_value)
 
     # test "get_on_set" keyword
     int_keyed_get_on_set = attr.method.int(key='int_keyed_unbounded', get_on_set=True)
 
-    int_decorated_get_on_set = attr.method.int(get_on_set=True)
+    @attr.method.int(get_on_set=True)
+    def int_decorated_get_on_set(self):
+        return self.backend.get('int_decorated_get_on_set', 0)
 
     @int_decorated_get_on_set.setter
     def _(self, new_value):
         self.backend.set('int_decorated_get_on_set', int(new_value))
-
-    @int_decorated_get_on_set.getter
-    def _(self):
-        return self.backend.get('int_decorated_get_on_set', 0)
 
     # @attr.method.int(get_on_set=True)
     # def int_decorated_get_on_set(self):
@@ -57,26 +54,6 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     str_or_none = attr.method.str(key='str_or_none', allow_none=True)
     str_cached = attr.method.str(key='str_cached', cache=True)
     any = attr.method.any(key='any', allow_none=True)
-
-    str_keyed_with_arg = attr.method.str(key='str_with_arg_ch_{registered_channel}')
-
-    str_decorated_with_arg = attr.method.str(allow_none=True)
-
-    @str_decorated_with_arg.setter
-    @attr.kwarg.int(name='decorated_channel', min=1, max=4)
-    @attr.kwarg.float(name='bandwidth', min=10e3, max=100e6)
-    def _(self, set_value=lb.Undefined, *, decorated_channel, bandwidth):
-        key = self.backend.get_backend_key(
-            self,
-            type(self).str_decorated_with_arg,
-            {'decorated_channel': decorated_channel, 'bandwidth': bandwidth},
-        )
-
-        if set_value is lb.Undefined:
-            return self.backend.get(key, None)
-        else:
-            return self.backend.set(key, set_value)
-
 
 def set_param(device, attr_name, value, arguments={}):
     param_method = getattr(device, attr_name)
@@ -92,6 +69,11 @@ def set_then_get(device, attr_name, value_in, arguments={}):
     set_param(device, attr_name, value_in, arguments)
     return get_param(device, attr_name, arguments)
 
+def kwargs(locals_: dict) -> dict:
+    # kwargs from locals()
+    locals_.pop('self', None)
+    locals_.pop('set_value', None)
+    return locals_
 
 #
 # Fixtures convert to arguments in test functions
@@ -129,11 +111,14 @@ def instantiated_device():
 #
 def test_cache(opened_device: StoreTestDevice):
     # repeat to set->get to ensure proper caching
-    eval_set_then_get(opened_device, 'str_cached', set_then_get)
     result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
 
-    assert result['get_count'] == 0, 'cache test - second "get" operation count'
-    assert result['set_count'] == 2, 'cache test - second "get" operation count'
+    assert result['get_count'] == 0, f"cache test - first 'get' operation count (got {result['get_count']})"
+    assert result['set_count'] == 1, f"cache test - first 'set' operation count (got {result['set_count']})"
+
+    result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
+    assert result['get_count'] == 0, f"cache test - second 'get' operation count (got {result['get_count']})"
+    assert result['set_count'] == 2, f"cache test - second 'set' operation count (got {result['set_count']})"
 
 
 def test_get_on_set_keyed(opened_device: StoreTestDevice):
@@ -171,45 +156,81 @@ def test_disabled_get(opened_device: StoreTestDevice):
     opened_device.int_decorated_low_bound_getonly()
 
 
-def test_keyed_argument_bounds(opened_device: StoreTestDevice):
-    TEST_VALUE = 'text'
+def test_keyed_argument_bounds():
+    @attr.kwarg.int('channel', min=1, max=4)
+    class Device(store_backend.StoreTestDevice):
+        method = attr.method.str(key='command_{channel}')
 
-    with pytest.raises(ValueError):
-        opened_device.str_keyed_with_arg(TEST_VALUE, registered_channel=0)
+    device = Device()
+    device.open()
 
-    opened_device.str_keyed_with_arg(TEST_VALUE, registered_channel=1)
-    expected_key = (
-        'str_with_arg_ch_{registered_channel}',
-        frozenset({('registered_channel', 1)}),
-    )
-    assert opened_device.backend.values[expected_key] == TEST_VALUE
-
-
-def test_decorated_argument_bounds(opened_device: StoreTestDevice):
-    TEST_VALUE = 'text'
+    # bounds checking on keyword arguments
     with pytest.raises(ValueError):
         # channel too small
-        opened_device.str_decorated_with_arg(TEST_VALUE, decorated_channel=0, bandwidth=50e6)
+        device.method('value', channel=0)
+
+    # normal set/get behavior
+    TEST_VALUE = 'text'
+    TEST_KWS = {'channel': 1}
+    EXPECT_KEY = (Device.method.key, frozenset(TEST_KWS.items()))
+
+    device.method(TEST_VALUE, **TEST_KWS)    
+    assert device.backend.values[EXPECT_KEY] == TEST_VALUE
+
+
+def test_decorated_argument_bounds():    
+    class Device(store_backend.StoreTestDevice):
+        @attr.method.str(allow_none=True)
+        @attr.kwarg.int(name='channel', min=1, max=4)
+        @attr.kwarg.float(name='bandwidth', min=10e3, max=100e6)
+        def method(self, *, channel, bandwidth):
+            key = self.backend.get_backend_key(self, type(self).method, kwargs(locals()))
+            return self.backend.get(key, None)
+
+        @method.setter
+        def _(self, set_value, /, *, channel, bandwidth):
+            key = self.backend.get_backend_key(self, type(self).method, kwargs(locals()))
+            return self.backend.set(key, set_value)
+
+    device = Device()
+    device.open()
+
+    TEST_VALUE = 'text'
+
+    with pytest.raises(ValueError):
+        # channel too small
+        device.method(TEST_VALUE, channel=0, bandwidth=50e6)
 
     with pytest.raises(ValueError):
         # bandwidth too small
-        opened_device.str_decorated_with_arg(TEST_VALUE, decorated_channel=1, bandwidth=0)
+        device.method(TEST_VALUE, channel=1, bandwidth=0)
 
     # valid channel and bandwidth
-    test_kws = dict(decorated_channel=1, bandwidth=51e6)
-    expected_key = ('str_decorated_with_arg', frozenset(test_kws.items()))
+    TEST_KWS = dict(channel=1, bandwidth=51e6)
+    EXPECT_KEY = ('method', frozenset(TEST_KWS.items()))
 
-    opened_device.str_decorated_with_arg(TEST_VALUE, **test_kws)
-    assert opened_device.backend.values[expected_key] == TEST_VALUE
+    device.method(TEST_VALUE, **TEST_KWS)
+    assert device.backend.values[EXPECT_KEY] == TEST_VALUE
 
 
 def test_decorated_argument_with_default():
+    # the 'default' argument is only allowed on registering key arguments,
+    # not for decorators
+
     with pytest.raises(TypeError):
-        # the 'default' argument is only allowed on registering key arguments,
-        # not for decorators
-        class TestDevice(store_backend.StoreTestDevice):
+        class _(store_backend.StoreTestDevice):
             @attr.kwarg.float(name='bandwidth', default=10e3)
-            def str_decorated_with_arg(self, set_value=lb.Undefined, *, bandwidth):
+            def method(self, set_value=lb.Undefined, *, bandwidth):
+                pass
+
+def test_kwarg_decorator_above_method():
+    # the 'default' argument is only allowed on registering key arguments,
+    # not for decorators
+    with pytest.raises(TypeError):
+        class _(store_backend.StoreTestDevice):
+            @attr.kwarg.float(name='bandwidth')
+            @attr.method.str()
+            def method(self, set_value=lb.Undefined, *, bandwidth):
                 pass
 
 

@@ -1,3 +1,4 @@
+from . import paramattr, util
 from .util import (
     Call,
     concurrently,
@@ -11,12 +12,8 @@ from .util import (
     until_timeout,
 )
 
-from . import util, paramattr
-
 util.force_full_traceback(True)
 
-
-from .paramattr import Undefined
 
 from ._backends import (
     DotNetDevice,
@@ -28,8 +25,8 @@ from ._backends import (
     VISADevice,
     Win32ComDevice,
     visa_default_resource_manager,
-    visa_probe_devices,
     visa_list_resources,
+    visa_probe_devices,
 )
 from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
 from ._device import Device
@@ -45,7 +42,7 @@ from ._rack import (
 )
 from ._serialize import dump_rack, load_rack
 from ._version import __version__
-
+from .paramattr import Undefined
 
 # scrub __module__ for cleaner repr() and doc
 for _obj in dict(locals()).values():

@@ -1,11 +1,11 @@
 import datetime
+import email.mime.text
 import io
 import json
 import logging
 import socket
 import sys
 import time
-import email.mime.text
 from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
@@ -19,10 +19,11 @@ try:
     smtplib = util.lazy_import('smtplib')
 except RuntimeWarning:
     # not executed: help coding tools recognize lazy_imports as imports
+    import smtplib
+
     import git
     import pandas as pd
     import pip
-    import smtplib
 
 __all__ = ['Host', 'Email']
 
@@ -328,7 +329,7 @@ class Host(core.Device):
     def git_pending_changes(self):
         if self.backend['repo'] is not None:
             diffs = self.backend['repo'].index.diff(None)
-            return str(tuple((diff.b_path for diff in diffs)))[1:-1]
+            return str(tuple(diff.b_path for diff in diffs))[1:-1]
         else:
             return ''
 

@@ -1,12 +1,12 @@
 # testing Device objects implemented as a simple dict store for closed-loop get/set testing of
 # method and property attributes
 
-from .. import Device, Undefined
-from .. import paramattr as attr
-from typing import Dict, Any, List, Union, Tuple
 import typing
 from collections import defaultdict
+from typing import Any, Union
 
+from .. import Device, Undefined
+from .. import paramattr as attr
 
 __all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
 
@@ -17,24 +17,24 @@ class key_store_adapter(attr.visa_keying):
     def __init__(
         self,
         *,
-        defaults: Dict[str, Any] = {},
-        key_arguments: Dict[Any, attr.kwarg.KeywordArgument] = {},
+        defaults: dict[str, Any] = {},
     ):
-        super().__init__(key_arguments=key_arguments)
+        super().__init__()
         self.defaults = defaults
 
-    # def get_key_arguments(self, key_def: Union[str, Tuple[str]]) -> frozenset[str]:
-    #     if isinstance(key_def, str) or len(key_def) == 1:
-    #         return frozenset()
-    #     else:
-    #         return frozenset(key_def[1:])
+    def get_kwarg_names(self, key_def: Union[str, tuple[str]]) -> tuple[str]:
+        print('get kwarg names: ', key_def)
+        if isinstance(key_def, str) or len(key_def) == 1:
+            return super().get_kwarg_names(key_def)
+        else:
+            return tuple(key_def[1:])
 
     def get(
         self,
         owner: attr.HasParamAttrs,
-        key_def: Union[str, List[str]],
+        key_def: Union[str, list[str]],
         paramattr: attr.ParamAttr = None,
-        arguments: Dict[str, Any] = {},
+        arguments: dict[str, Any] = {},
     ):
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
@@ -61,7 +61,7 @@ class key_store_adapter(attr.visa_keying):
         key_def: str,
         value,
         attr: attr.ParamAttr = None,
-        arguments: Dict[str, Any] = {},
+        arguments: dict[str, Any] = {},
     ):
         """writes an attribute
 
@@ -109,11 +109,10 @@ class TestStore:
         # print('***', attr_def.get_key_arguments(type(owner)), arguments)
 
         if isinstance(attr_def, attr.method.Method):
-            required_args = attr_def.get_key_arguments(type(owner))
+            required_args = attr_def.get_kwarg_names()
 
             missing_args = set(required_args) - set(arguments)
             if len(missing_args) > 0:
-                print('***', missing_args, set(required_args), set(arguments), arguments)
                 raise ValueError(f'missing required argument(s): {missing_args}')
 
         if len(arguments) == 0:
@@ -132,20 +131,20 @@ class StoreTestDevice(Device):
         attr.observe(self, self.backend.notification_handler)
 
     @classmethod
-    def get_paramattr_arguments(cls, attr_name) -> List[attr.kwarg.KeywordArgument]:
+    def get_paramattr_arguments(cls, attr_name) -> list[attr.kwarg.MethodKeywordArgument]:
         attr = getattr(cls, attr_name)
         return attr.get_key_arguments(cls)
 
     @classmethod
-    def get_attr_defs(cls) -> Dict[str, attr.ParamAttr]:
+    def get_attr_defs(cls) -> dict[str, attr.ParamAttr]:
         return cls._attr_defs.attrs
 
     @classmethod
-    def get_method_names(cls) -> List[str]:
+    def get_method_names(cls) -> list[str]:
         return cls._attr_defs.method_names()
 
     @classmethod
-    def get_property_names(cls) -> List[str]:
+    def get_property_names(cls) -> list[str]:
         return set(cls._attr_defs.method_names()) - set(dir(Device))
 
 
@@ -204,9 +203,7 @@ class SignalGenerator(StoreTestDevice):
     mode = attr.property.str(key='MODE', only=['sweep', 'tone', 'iq'], case=False)
 
 
-@key_store_adapter(
-    key_arguments={'channel': attr.kwarg.int(name='channel', min=1, max=4, help='input channel')},
-)
+@attr.kwarg.int(name='channel', min=1, max=4, help='input channel')
 class Oscilloscope(StoreTestDevice):
     @attr.method.float(
         min=10e6,
@@ -215,11 +212,12 @@ class Oscilloscope(StoreTestDevice):
         label='Hz',
         help='channel center frequency',
     )
-    def center_frequency(self, set_value=Undefined, /, *, channel):
-        if set_value is Undefined:
-            return self.query(f'CH{channel}:SENS:FREQ?')
-        else:
-            self.write(f'CH{channel}:SENS:FREQ {set_value}')
+    def center_frequency(self, *, channel):
+        return self.query(f'CH{channel}:SENS:FREQ?')
+
+    @center_frequency.setter
+    def _(self, set_value, /, *, channel):
+        self.write(f'CH{channel}:SENS:FREQ {set_value}')
 
     resolution_bandwidth = attr.method.float(
         key=('CH:SENS:BW', 'channel'),

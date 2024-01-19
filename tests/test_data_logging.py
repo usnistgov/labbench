@@ -9,7 +9,7 @@ from labbench import paramattr as attr
 from labbench.testing import store_backend
 
 
-@attr.register_key_argument(attr.kwarg.int('registered_channel', min=1, max=4))
+@attr.kwarg.int('registered_channel', min=1, max=4)
 @store_backend.key_store_adapter(defaults={'SWE:APER': '20e-6'})
 class StoreDevice(store_backend.StoreTestDevice):
     """This "instrument" makes mock data and instrument property traits to
@@ -30,20 +30,28 @@ class StoreDevice(store_backend.StoreTestDevice):
     str_keyed_with_arg = attr.method.str(key='str_with_arg_ch_{registered_channel}')
     str_keyed_allow_none = attr.method.str(key='str_with_arg_ch_{registered_channel}', allow_none=True)
 
-    @attr.kwarg.int(name='decorated_channel', min=1, max=4)
     @attr.method.str()
+    @attr.kwarg.int(name='decorated_channel', min=1, max=4)
     @attr.kwarg.float(name='bandwidth', min=10e3, max=100e6)
-    def str_decorated_with_arg(self, new_value=lb.Undefined, *, decorated_channel, bandwidth):
+    def str_decorated_with_arg(self, /, *, decorated_channel, bandwidth):
         key = self.backend.get_backend_key(
             self,
             type(self).str_decorated_with_arg,
             {'decorated_channel': decorated_channel, 'bandwidth': bandwidth},
         )
 
-        if new_value is not lb.Undefined:
-            self.backend.set(key, new_value)
-        else:
-            return self.backend.get(key, None)
+        return self.backend.get(key, None)
+
+    @str_decorated_with_arg.setter
+    def str_decorated_with_arg(self, new_value, /, *, decorated_channel, bandwidth):
+        key = self.backend.get_backend_key(
+            self,
+            type(self).str_decorated_with_arg,
+            {'decorated_channel': decorated_channel, 'bandwidth': bandwidth},
+        )
+
+        self.backend.set(key, new_value)
+
 
     def trigger(self):
         """This would tell the instrument to start a measurement"""

@@ -27,7 +27,7 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     def _(self):
         return self.backend.setdefault('int_decorated_low_bound_getonly', 0)
 
-    @attr.property.int(min=10, gets=False)
+    @attr.property.int(min=10, gets=False).setter
     def int_decorated_low_bound_setonly(self, set_value=lb.Undefined):
         self.backend['int_decorated_high_bound_setonly'] = set_value
 

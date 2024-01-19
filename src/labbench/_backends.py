@@ -1,15 +1,13 @@
 import contextlib
-import functools
 import importlib
 import inspect
 import logging
 import os
-import re
 import select
 import socket
 import subprocess as sp
 import sys
-import typing_extensions as typing
+import warnings
 from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
@@ -18,11 +16,11 @@ from threading import Event, Thread
 import psutil
 import pyvisa
 import pyvisa.errors
-import warnings
+import typing_extensions as typing
 
+from . import paramattr as attr
 from . import util
 from ._device import Device
-from . import paramattr as attr
 
 try:
     serial = util.lazy_import('serial')
@@ -30,6 +28,7 @@ try:
 except RuntimeWarning:
     # not executed: help coding tools recognize lazy_imports as imports
     import telnetlib
+
     import serial
 
 
@@ -170,7 +169,7 @@ class ShellBackend(Device):
         except ValueError:
             pass
 
-        self._logger.debug(f"shell execute '{repr(' '.join(cmdl))}'")
+        self._logger.debug(f"shell execute '{' '.join(cmdl)!r}'")
         cp = sp.run(cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return)
         ret = cp.stdout
 
@@ -248,7 +247,7 @@ class ShellBackend(Device):
                 line = line.decode(errors='replace').replace('\r', '')
                 if len(line) > 0:
                     q.put(line)
-                    self._logger.debug(f'stderr {repr(line)}')
+                    self._logger.debug(f'stderr {line!r}')
                 #                    raise Exception(line)
                 else:
                     break
@@ -291,7 +290,7 @@ class ShellBackend(Device):
 
         # Generate the commandline and spawn
         cmdl = self._commandline(*argv)
-        self._logger.debug(f"background execute: {repr(' '.join(cmdl))}")
+        self._logger.debug(f"background execute: {' '.join(cmdl)!r}")
         self.__kill = False
         spawn(cmdl)
 
@@ -560,7 +559,7 @@ class LabviewSocketInterface(Device):
 
     def write(self, msg):
         """Send a string over the tx socket."""
-        self._logger.debug(f'write {repr(msg)}')
+        self._logger.debug(f'write {msg!r}')
         self.backend['tx'].sendto(msg, (self.resource, self.tx_port))
         util.sleep(self.delay)
 
@@ -575,7 +574,7 @@ class LabviewSocketInterface(Device):
         if addr is None:
             raise Exception('received no data')
         rx_disp = rx[: min(80, len(rx))] + ('...' if len(rx) > 80 else '')
-        self._logger.debug(f'read {repr(rx_disp)}')
+        self._logger.debug(f'read {rx_disp!r}')
 
         key, value = rx.rsplit(' ', 1)
         key = key.split(':', 1)[1].lstrip()
@@ -629,12 +628,12 @@ class SerialDevice(Device):
         keys = 'timeout', 'parity', 'stopbits', 'xonxoff', 'rtscts', 'dsrdtr'
         params = dict([(k, getattr(self, k)) for k in keys])
         self.backend = serial.Serial(self.resource, self.baud_rate, **params)
-        self._logger.debug(f'opened')
+        self._logger.debug('opened')
 
     def close(self):
         """Disconnect the serial instrument"""
         self.backend.close()
-        self._logger.debug(f'closed')
+        self._logger.debug('closed')
 
     @classmethod
     def from_hwid(cls, hwid=None, *args, **connection_params):
@@ -647,7 +646,7 @@ class SerialDevice(Device):
 
         usb_map = cls._map_serial_hwid_to_port()
         if hwid not in usb_map:
-            raise Exception(f'Cannot find serial port with hwid {repr(hwid)}')
+            raise Exception(f'Cannot find serial port with hwid {hwid!r}')
         return cls(usb_map[hwid], *args, **connection_params)
 
     @staticmethod
@@ -713,7 +712,7 @@ class SerialLoggingDevice(SerialDevice):
         This is a stub that does nothing --- it should be implemented by a
         subclass for a specific serial logger device.
         """
-        self._logger.debug(f'{repr(self)}: no device-specific configuration implemented')
+        self._logger.debug(f'{self!r}: no device-specific configuration implemented')
 
     def start(self):
         """Start a background thread that acquires log data into a queue.
@@ -726,9 +725,9 @@ class SerialLoggingDevice(SerialDevice):
             timeout, self.backend.timeout = self.backend.timeout, 0
             q = self._stdout
             stop_event = self._stop
-            self._logger.debug(f'{repr(self)}: configuring log acquisition')
+            self._logger.debug(f'{self!r}: configuring log acquisition')
             self.configure()
-            self._logger.debug(f'{repr(self)}: starting log acquisition')
+            self._logger.debug(f'{self!r}: starting log acquisition')
             try:
                 while stop_event.wait(self.poll_rate) is not True:
                     q.put(self.backend.read(10 * self.baud_rate * self.poll_rate))
@@ -737,7 +736,7 @@ class SerialLoggingDevice(SerialDevice):
                 self.close()
                 raise e
             finally:
-                self._logger.debug(f'{repr(self)} ending log acquisition')
+                self._logger.debug(f'{self!r} ending log acquisition')
                 try:
                     self.backend.timeout = timeout
                 except BaseException:
@@ -976,21 +975,21 @@ class VISADevice(Device):
         elif (self.make, self.model) != (None, None) or self.resource:
             if self.resource:
                 self._logger.debug(
-                    f'treating resource as a serial number (pyvisa does not recognize it as a VISA name)'
+                    'treating resource as a serial number (pyvisa does not recognize it as a VISA name)'
                 )
             # match the supplied (make, model) and/or treat self.resource as a serial number to match
             search_desc = ', '.join(
-                [f'{name} {repr(getattr(self, name))}' for name in ('make', 'model', 'resource') if getattr(self, name)]
+                [f'{name} {getattr(self, name)!r}' for name in ('make', 'model', 'resource') if getattr(self, name)]
             ).replace('resource', 'serial number')
 
             matches = visa_probe_devices(self)
 
             if len(matches) == 0:
                 msg = (
-                    f'could not open VISA device {repr(type(self))}: resource not specified, '
+                    f'could not open VISA device {type(self)!r}: resource not specified, '
                     f'and no devices were discovered matching {search_desc}'
                 )
-                raise IOError(msg)
+                raise OSError(msg)
             elif len(matches) == 1:
                 self._logger.debug(f'probed resource by matching {search_desc}')
                 self.resource = matches[0].resource
@@ -999,10 +998,10 @@ class VISADevice(Device):
                     f'resource ambiguity: {len(matches)} VISA resources matched {search_desc}, '
                     f'disconnect {len(matches)-1} or specify explicit resource names'
                 )
-                raise IOError(msg)
+                raise OSError(msg)
         else:
             raise ConnectionError(
-                f'must specify a pyvisa resource name, an instrument serial number, or define {repr(type(self))} with default make and model'
+                f'must specify a pyvisa resource name, an instrument serial number, or define {type(self)!r} with default make and model'
             )
 
         if self.timeout is not None:
@@ -1331,7 +1330,7 @@ def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: 'ascii'
             if 'VI_ERROR_TMO' not in str(ex):
                 raise
         except BaseException as ex:
-            device._logger.debug(f'visa_list_identities exception on probing identity: {str(ex)}')
+            device._logger.debug(f'visa_list_identities exception on probing identity: {ex!s}')
             raise
     else:
         device = None

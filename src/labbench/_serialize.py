@@ -7,7 +7,6 @@ from pathlib import Path
 
 from . import util
 from ._rack import Rack, import_as_rack, update_parameter_dict
-from . import paramattr as attr
 
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
 # using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
@@ -173,7 +172,7 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
     df = pd.DataFrame(defaults, columns=columns)
     df.index.name = INDEX_COLUMN_NAME
     df.to_csv(path)
-    util.logger.debug(f'writing csv template to {repr(path)}')
+    util.logger.debug(f'writing csv template to {path!r}')
 
 
 def _map_method_defaults(rack_cls):
@@ -294,9 +293,9 @@ def dump_rack(
 
 
 def read_yaml_config(config_path: str):
-    with open(config_path, 'r') as f:
+    with open(config_path) as f:
         config = _yaml.load(f)
-        util.logger.debug(f'loaded configuration from "{str(config_path)}"')
+        util.logger.debug(f'loaded configuration from "{config_path!s}"')
     return config
 
 
@@ -310,7 +309,7 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
     config = read_yaml_config(config_path)
 
     if 'import_string' not in config[_FIELD_SOURCE]:
-        raise KeyError(f"import_string missing from '{str(config_path)}'")
+        raise KeyError(f"import_string missing from '{config_path!s}'")
 
     append_path = config[_FIELD_SOURCE]['python_path']
 
@@ -336,7 +335,7 @@ def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack
                 owned_obj = getattr(obj, name)
             except AttributeError:
                 objname = type(obj).__qualname__
-                raise IOError(f"{config_path} refers to a device '{name}' that does not exist in {objname}")
+                raise OSError(f"{config_path} refers to a device '{name}' that does not exist in {objname}")
 
             for param_name, param_value in params.items():
                 setattr(owned_obj, param_name, param_value)

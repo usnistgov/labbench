@@ -1,6 +1,5 @@
-from . import _types
-from . import _bases
-import typing as _typing
+
+from . import _bases, _types
 from ._bases import Method
 
 

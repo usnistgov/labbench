@@ -4,15 +4,15 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-from functools import wraps
 import inspect
 import sys
 import traceback
+from functools import wraps
+
 import typing_extensions as typing
 
-from . import util
 from . import paramattr as attr
-
+from . import util
 from .paramattr._bases import (
     HasParamAttrs,
     Undefined,
@@ -49,7 +49,7 @@ def find_device_instances(depth=1):
     return ret
 
 
-class DisconnectedBackend(object):
+class DisconnectedBackend:
     """ "Null Backend" implementation to raises an exception with discriptive
     messages on attempts to use a backend before a Device is connected.
     """
@@ -153,8 +153,8 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         # Instantiate property trait now. It needed to wait until this point, after values are fully
         # instantiated, in case property trait implementation depends on values
-        setattr(self, 'open', self.__open_wrapper__)
-        setattr(self, 'close', self.__close_wrapper__)
+        self.open = self.__open_wrapper__
+        self.close = self.__close_wrapper__
 
     @classmethod
     @util.hide_in_traceback
@@ -187,7 +187,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 annot_desc = f'{name}: {cls.__annotations__[name].__name__}'
                 wrong_type = type(attr_def)
                 raise TypeError(
-                    f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {repr(wrong_type)}'
+                    f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {wrong_type!r}'
                 )
 
             elif name == 'resource':
@@ -361,7 +361,7 @@ class Device(DeviceDataClass):
         except BaseException as e:
             args = list(e.args)
             if len(args) > 0:
-                args[0] = f'{repr(self)}: {args[0]}'
+                args[0] = f'{self!r}: {args[0]}'
                 e.args = tuple(args)
             raise e
 
@@ -371,7 +371,7 @@ class Device(DeviceDataClass):
             self.close()
         except BaseException as e:
             args = list(e.args)
-            args[0] = '{}: {}'.format(repr(self), str(args[0]))
+            args[0] = f'{self!r}: {args[0]!s}'
             e.args = tuple(args)
             raise e
 

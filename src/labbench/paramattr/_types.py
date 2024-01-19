@@ -1,9 +1,11 @@
+import numbers
 import typing
 from pathlib import Path as _Path
-import numbers
-from . import _bases
-from .. import util
+
 import validators as _val
+
+from .. import util
+from . import _bases
 
 
 class Any(_bases.ParamAttr[typing.Any], type=object):
@@ -98,9 +100,9 @@ class String(_bases.ParamAttr):
         else:
             # for text docs: allow subclasses to document their own params
             if self.case:
-                return f'* Case sensitive'
+                return '* Case sensitive'
             else:
-                return f'* Case insensitive'
+                return '* Case insensitive'
 
 
 class Unicode(String[str], type=str):
@@ -152,7 +154,7 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
         path = self._type(value)
 
         if self.must_exist and not path.exists():
-            raise IOError('no file at path {value}')
+            raise OSError('no file at path {value}')
 
         return path
 
@@ -163,7 +165,7 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
         else:
             # for text docs: allow subclasses to document their own params
             if self.must_exist:
-                return f'* Path name must exist on the host'
+                return '* Path name must exist on the host'
 
 
 class NetworkAddress(Unicode):

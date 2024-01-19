@@ -13,9 +13,7 @@ import inspect
 import numbers
 from contextlib import contextmanager
 from copy import copy
-from functools import partial
 from typing import Any, Union
-from collections import ChainMap
 
 # for common types
 from warnings import warn
@@ -87,7 +85,7 @@ def add_docstring_to_help(attr: ParamAttr, func: callable):
 
 def bound_valid_posargs(func: callable) -> tuple[int,int]:
     """bound on the number of acceptable positional arguments in `func`"""
-    
+
     hi = func.__code__.co_argcount
     lo = hi - len(func.__defaults__ or tuple())
 
@@ -539,7 +537,6 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
         This is also where we finalize selecting decorator behavior; is it a property or a method?
         """
-        pass
 
     def __init_owner_instance__(self, owner: HasParamAttrs):
         pass
@@ -849,7 +846,7 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):
 
     ROLE = 'keyword argument'
 
-    # decorated keyword arguments not yet adopted by a Method 
+    # decorated keyword arguments not yet adopted by a Method
     _decorated: typing.ClassVar[dict[callable, dict[str, ParamAttr[T]]]] = {}
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
@@ -1024,7 +1021,7 @@ class OwnerAccessAttr(ParamAttr[T]):
             self.name = func.__name__
 
         return self
-    
+
     __call__ = getter
 
 
@@ -1113,7 +1110,7 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
                 value = self.get_from_owner(owner, kwargs)
 
             return value
-        
+
         call_in_owner.__signature__ = build_method_signature(type(owner_inst), self, self.get_kwarg_names())
 
         # bind to the owner instance
@@ -1180,7 +1177,7 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
                 raise TypeError("apply kwarg decorators to the getter, since it was defined first")
 
         if self._getter is not None:
-            self._validate_paired_signatures()            
+            self._validate_paired_signatures()
 
         return self
 

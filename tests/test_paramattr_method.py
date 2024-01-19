@@ -174,11 +174,11 @@ def test_keyed_argument_bounds():
     TEST_KWS = {'channel': 1}
     EXPECT_KEY = (Device.method.key, frozenset(TEST_KWS.items()))
 
-    device.method(TEST_VALUE, **TEST_KWS)    
+    device.method(TEST_VALUE, **TEST_KWS)
     assert device.backend.values[EXPECT_KEY] == TEST_VALUE
 
 
-def test_decorated_argument_bounds():    
+def test_decorated_argument_bounds():
     class Device(store_backend.StoreTestDevice):
         @attr.method.str(allow_none=True)
         @attr.method_kwarg.int(name='channel', min=1, max=4)

@@ -131,7 +131,7 @@ class StoreTestDevice(Device):
         attr.observe(self, self.backend.notification_handler)
 
     @classmethod
-    def get_paramattr_arguments(cls, attr_name) -> list[attr.kwarg.MethodKeywordArgument]:
+    def get_paramattr_arguments(cls, attr_name) -> list[attr.method_kwarg.MethodKeywordArgument]:
         attr = getattr(cls, attr_name)
         return attr.get_key_arguments(cls)
 
@@ -203,7 +203,7 @@ class SignalGenerator(StoreTestDevice):
     mode = attr.property.str(key='MODE', only=['sweep', 'tone', 'iq'], case=False)
 
 
-@attr.kwarg.int(name='channel', min=1, max=4, help='input channel')
+@attr.method_kwarg.int(name='channel', min=1, max=4, help='input channel')
 class Oscilloscope(StoreTestDevice):
     @attr.method.float(
         min=10e6,

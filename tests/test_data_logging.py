@@ -9,7 +9,7 @@ from labbench import paramattr as attr
 from labbench.testing import store_backend
 
 
-@attr.kwarg.int('registered_channel', min=1, max=4)
+@attr.method_kwarg.int('registered_channel', min=1, max=4)
 @store_backend.key_store_adapter(defaults={'SWE:APER': '20e-6'})
 class StoreDevice(store_backend.StoreTestDevice):
     """This "instrument" makes mock data and instrument property traits to
@@ -31,8 +31,8 @@ class StoreDevice(store_backend.StoreTestDevice):
     str_keyed_allow_none = attr.method.str(key='str_with_arg_ch_{registered_channel}', allow_none=True)
 
     @attr.method.str()
-    @attr.kwarg.int(name='decorated_channel', min=1, max=4)
-    @attr.kwarg.float(name='bandwidth', min=10e3, max=100e6)
+    @attr.method_kwarg.int(name='decorated_channel', min=1, max=4)
+    @attr.method_kwarg.float(name='bandwidth', min=10e3, max=100e6)
     def str_decorated_with_arg(self, /, *, decorated_channel, bandwidth):
         key = self.backend.get_backend_key(
             self,

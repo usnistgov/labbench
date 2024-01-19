@@ -120,7 +120,7 @@ class SignalGenerator(VISADevice):
         self.write('TRIG')
 
 
-@attr.kwarg.int('channel', min=1, max=4, help='input channel')
+@attr.method_kwarg.int('channel', min=1, max=4, help='input channel')
 @attr.visa_keying(remap={True: 'ON', False: 'OFF'})
 @attr.adjust('make', default='FakeTech')
 @attr.adjust('model', default='Oscilloscope #1234')

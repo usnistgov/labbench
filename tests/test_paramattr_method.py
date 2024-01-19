@@ -6,7 +6,7 @@ from labbench import paramattr as attr
 from labbench.testing import store_backend
 
 
-@attr.kwarg.int('registered_channel', min=1, max=4)
+@attr.method_kwarg.int('registered_channel', min=1, max=4)
 @store_backend.key_store_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
@@ -157,7 +157,7 @@ def test_disabled_get(opened_device: StoreTestDevice):
 
 
 def test_keyed_argument_bounds():
-    @attr.kwarg.int('channel', min=1, max=4)
+    @attr.method_kwarg.int('channel', min=1, max=4)
     class Device(store_backend.StoreTestDevice):
         method = attr.method.str(key='command_{channel}')
 
@@ -181,8 +181,8 @@ def test_keyed_argument_bounds():
 def test_decorated_argument_bounds():    
     class Device(store_backend.StoreTestDevice):
         @attr.method.str(allow_none=True)
-        @attr.kwarg.int(name='channel', min=1, max=4)
-        @attr.kwarg.float(name='bandwidth', min=10e3, max=100e6)
+        @attr.method_kwarg.int(name='channel', min=1, max=4)
+        @attr.method_kwarg.float(name='bandwidth', min=10e3, max=100e6)
         def method(self, *, channel, bandwidth):
             key = self.backend.get_backend_key(self, type(self).method, kwargs(locals()))
             return self.backend.get(key, None)
@@ -219,8 +219,8 @@ def test_decorated_argument_with_default():
 
     with pytest.raises(TypeError):
         class _(store_backend.StoreTestDevice):
-            @attr.kwarg.float(name='bandwidth', default=10e3)
-            def method(self, set_value=lb.Undefined, *, bandwidth):
+            @attr.method_kwarg.float(name='bandwidth', default=10e3)
+            def method(self, *, bandwidth):
                 pass
 
 def test_kwarg_decorator_above_method():
@@ -228,9 +228,9 @@ def test_kwarg_decorator_above_method():
     # not for decorators
     with pytest.raises(TypeError):
         class _(store_backend.StoreTestDevice):
-            @attr.kwarg.float(name='bandwidth')
+            @attr.method_kwarg.float(name='bandwidth')
             @attr.method.str()
-            def method(self, set_value=lb.Undefined, *, bandwidth):
+            def method(self, *, bandwidth):
                 pass
 
 

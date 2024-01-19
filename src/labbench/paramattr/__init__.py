@@ -1,4 +1,4 @@
-from . import kwarg, method, property, value
+from . import method, method_kwarg, property, value
 from ._bases import (
     HasParamAttrs,
     KeyAdapterBase,

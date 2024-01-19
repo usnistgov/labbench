@@ -120,6 +120,55 @@ def default_arguments(func: callable) -> tuple[str]:
             if p.default is not p.empty
         ])
 
+def build_method_signature(owner_cls: THasParamAttrsCls, method: Method[T], kwarg_names: list[str], scope='all') -> inspect.Signature:
+    kwargs_params = []
+    defaults = {}
+    broadcast_kwargs = get_owner_meta(owner_cls).broadcast_kwargs
+
+    for name in kwarg_names:
+        try:
+            arg_annotation = broadcast_kwargs[name]._type
+            if broadcast_kwargs[name].default not in (None, Undefined):
+                defaults[name] = chain_get(broadcast_kwargs, method._kwargs, name).default
+        except KeyError:
+            arg_annotation = Any
+
+        kwargs_params.append(
+            inspect.Parameter(
+                name,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                annotation=arg_annotation,
+            )
+        )
+
+    pos_params = [inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY)]
+
+    if scope == 'all':
+        pos_params += [inspect.Parameter(
+            'new_value',
+            default=Undefined,
+            kind=inspect.Parameter.POSITIONAL_ONLY,
+            annotation=typing.Optional[method._type],
+        )]
+        return_annotation=typing.Optional[method._type]
+    elif scope == 'getter':
+        return_annotation=method._type
+    elif scope == 'setter':
+        pos_params += [inspect.Parameter(
+            'new_value',
+            kind=inspect.Parameter.POSITIONAL_ONLY,
+            annotation=method._type,
+        )]
+        return_annotation=None
+    else:
+        raise TypeError('scope argument must be one of (None, "getter", "setter")')
+
+    sig = inspect.Signature(
+        pos_params + kwargs_params, return_annotation=return_annotation
+    )
+
+    return sig
+
 def chain_get(d1: dict[Any, T], d2: dict[Any, T], key: Any, default:Union[Undefined,T]=Undefined) -> T:
     """returns d1[key] if it exists, otherwise d2[key], otherwise default if it is not Undefined"""
     if default is Undefined:
@@ -137,6 +186,7 @@ def missing_kwargs(source: dict[str, MethodKeywordArgument[T]], into: dict[str, 
         for name in only - into.keys()
         if name in source
     }
+
 
 class KeyAdapterBase:
     """Decorates a :class:`labbench.Device` subclass to configure its
@@ -236,57 +286,9 @@ class KeyAdapterBase:
         using the `key` keyword.
         """
         raise NotImplementedError('key adapter needs "get_key_arguments" to implement methods by "key" keyword')
-    
-    def method_signature(self, owner_cls: THasParamAttrsCls, paramattr: Method[T], scope=None) -> inspect.Signature:
-        """generate a call signature object"""
-        kwargs_params = []
-        defaults = {}
-        kwargs_names = self.get_kwarg_names(paramattr.key)
-        broadcast_kwargs = get_owner_meta(owner_cls).broadcast_kwargs
 
-        for name in kwargs_names:
-            try:
-                arg_annotation = broadcast_kwargs[name]._type
-                if broadcast_kwargs[name].default not in (None, Undefined):
-                    defaults[name] = chain_get(broadcast_kwargs, paramattr._kwargs, name).default
-            except KeyError:
-                arg_annotation = Any
-
-            kwargs_params.append(
-                inspect.Parameter(
-                    name,
-                    kind=inspect.Parameter.KEYWORD_ONLY,
-                    annotation=arg_annotation,
-                )
-            )
-
-        pos_params = [inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY)]
-
-        if scope is None:
-            pos_params += [inspect.Parameter(
-                'new_value',
-                default=Undefined,
-                kind=inspect.Parameter.POSITIONAL_ONLY,
-                annotation=typing.Optional[paramattr._type],
-            )]
-            return_annotation=typing.Optional[paramattr._type]
-        elif scope == 'getter':
-            return_annotation=paramattr._type
-        elif scope == 'setter':
-            pos_params += [inspect.Parameter(
-                'new_value',
-                kind=inspect.Parameter.POSITIONAL_ONLY,
-                annotation=paramattr._type,
-            )]
-            return_annotation=None
-        else:
-            raise TypeError('scope argument must be one of (None, "getter", "setter")')
-
-        sig = inspect.Signature(
-            pos_params + kwargs_params, return_annotation=return_annotation
-        )
-
-        return sig
+    def method_signature(self, owner_cls: THasParamAttrsCls, method: Method[T], scope='all') -> inspect.Signature:
+        return build_method_signature(owner_cls, method, kwarg_names=self.get_kwarg_names(method.key), scope=scope)
 
     def fill_kwargs(self, method: Method[T], owner_cls: type[HasParamAttrs]) -> dict[str, MethodKeywordArgument]:
         """return a dictionary of MethodKeywordArguments from broadcast_kwargs missing from method"""
@@ -1111,6 +1113,8 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
                 value = self.get_from_owner(owner, kwargs)
 
             return value
+        
+        call_in_owner.__signature__ = build_method_signature(type(owner_inst), self, self.get_kwarg_names())
 
         # bind to the owner instance
         unbound_method = call_in_owner.__get__(owner_inst, type(owner_inst))

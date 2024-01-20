@@ -79,7 +79,11 @@ def test_set_attenuation(opened_device):
     assert opened_device.attenuation_setting == 10, 'attenuation setting at 11 dB calibrated attenuation'
 
     opened_device.attenuation = 6
-    assert opened_device.attenuation_setting == 5, 'attenuation setting at 1 dB calibrated attenuation'
+    assert opened_device.attenuation_setting == 5, 'attenuation setting at 6 dB calibrated attenuation'
+
+    opened_device.attenuation = 1
+    assert opened_device.attenuation_setting == 0, 'attenuation setting at 1 dB calibrated attenuation'
+
 
 
 

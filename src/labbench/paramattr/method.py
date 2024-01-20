@@ -1,6 +1,6 @@
 
 from . import _bases, _types
-
+from ._bases import Method
 
 class any(_bases.Method, _types.Any):
     pass

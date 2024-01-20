@@ -1,13 +1,14 @@
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
+import pytest
 
 lb.util.force_full_traceback(True)
-
 
 @store_backend.key_store_adapter(defaults={'attenuation_setting': 0})
 class StoreTestDevice(store_backend.StoreTestDevice):
     frequency: float = attr.value.float(
+        None,
         allow_none=True,
         min=10e6,
         max=6e9,
@@ -23,7 +24,7 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     )
 
     calibration_path: float = attr.value.str(
-        default='data/attenuator_cal.csv',
+        default='tests/data/attenuator_cal.csv',
         allow_none=True,
         cache=True,
         help='path to the calibration table csv file (containing frequency ' '(row) and attenuation setting (column))',
@@ -53,5 +54,33 @@ class StoreTestDevice(store_backend.StoreTestDevice):
         label='dBm',
     )
 
+@pytest.fixture
+def opened_device():
+    device = StoreTestDevice()
+    device.open()
+    yield device
+    device.close()
 
-# TODO: use the tooling here to build the tests
+
+def test_set_attenuation_setting(opened_device):
+    opened_device.frequency = 5e9
+    
+    opened_device.attenuation_setting = 0
+    assert opened_device.attenuation == 1, 'calibrated attenuation level at 0 dB attenuation setting'
+
+    opened_device.attenuation_setting = 10
+    assert opened_device.attenuation == 11, f'calibrated attenuation setting {opened_device.attenuation_setting} at 10 dB calibrated attenuation'
+
+
+def test_set_attenuation(opened_device):
+    opened_device.frequency = 5e9
+
+    opened_device.attenuation = 11
+    assert opened_device.attenuation_setting == 10, 'attenuation setting at 11 dB calibrated attenuation'
+
+    opened_device.attenuation = 6
+    assert opened_device.attenuation_setting == 5, 'attenuation setting at 1 dB calibrated attenuation'
+
+
+
+

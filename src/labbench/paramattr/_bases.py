@@ -1636,7 +1636,6 @@ class DependentNumberParamAttr(DependentParamAttr):
     
     @util.hide_in_traceback
     def check_bounds(self, value, owner=None):
-        super().check_bounds(value, owner)
         max_ = self.derived_max(owner)
         if max_ is None:
             ex = ValueError(f'cannot set {self} while dependent attributes are unset')

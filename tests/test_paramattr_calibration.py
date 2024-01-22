@@ -34,7 +34,7 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     attenuation_setting = attr.property.float(
         key='attenuation_setting',
         min=0,
-        max=115,
+        max=110,
         step=5,
         label='dB',
         help='uncalibrated attenuation',

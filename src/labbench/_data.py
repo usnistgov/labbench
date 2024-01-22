@@ -8,14 +8,14 @@ import re
 import shutil
 import tarfile
 import warnings
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager, suppress
 from numbers import Number
 from pathlib import Path
-from typing import Union, Iterable, Callable, Any
+from typing import Any, Union
 
-from . import _device
+from . import _device, _host, _rack, util
 from . import _device as core
-from . import _host, _rack, util
 from . import paramattr as attr
 from ._device import Device
 from ._rack import Owner
@@ -113,7 +113,7 @@ class MungerBase(core.Device):
         return row
 
     def __repr__(self):
-        return f"{type(self).__name__}('{str(self.resource)}')"
+        return f"{type(self).__name__}('{self.resource!s}')"
 
     def save_metadata(self, name, name_func: Callable[[attr.HasParamAttrs, str, dict], str], **metadata):
         def process_value(value, key_name):
@@ -187,7 +187,7 @@ class MungerBase(core.Device):
                 value = pd.DataFrame([value])
         except BaseException:
             # We couldn't make a DataFrame
-            self._logger.error(f'Failed to form DataFrame from {repr(name)}; pickling object instead')
+            self._logger.error(f'Failed to form DataFrame from {name!r}; pickling object instead')
             ext = 'pickle'
         finally:
             if row is None:
@@ -330,7 +330,7 @@ class MungeToDirectory(MungerBase):
 
         try:
             move()
-            self._logger.debug(f'moved {repr(old_path)} to {repr(dest)}')
+            self._logger.debug(f'moved {old_path!r} to {dest!r}')
         except PermissionError:
             self._logger.warning(
                 'relational file was still open in another program; fallback to copy instead of rename'
@@ -401,7 +401,7 @@ class TarFileIO(io.BytesIO):
         # First: dump the data into the tar file
         try:
             if not self.overwrite and self.name in self.tarfile.getnames():
-                raise IOError(f'{self.name} already exists in {self.tarfile.name}')
+                raise OSError(f'{self.name} already exists in {self.tarfile.name}')
 
             tarinfo = tarfile.TarInfo(self.name)
             tarinfo.size = self.tell()
@@ -642,7 +642,7 @@ class Aggregator(util.Ownable):
         """Generate a name for a trait based on the names of
         a device and one of its states or paramattr.
         """
-        kwarg_repr = ', '.join([f'{k}={repr(v)}' for k, v in kwargs.items()])
+        kwarg_repr = ', '.join([f'{k}={v!r}' for k, v in kwargs.items()])
         attr_def = getattr(type(device), attr_name)
 
         bare_name = f'{self.name_map[device]}_{attr_name}_{kwarg_repr}'
@@ -733,7 +733,7 @@ class Aggregator(util.Ownable):
 
         self.incoming_rack_input = dict(row_data, **msg['new'])
 
-    def _receive_trait_update(self, msg: dict):
+    def _receive_paramattr_update(self, msg: dict):
         """called by trait owners on changes observed
 
         Arguments:
@@ -744,6 +744,9 @@ class Aggregator(util.Ownable):
 
         if msg['name'].startswith('_'):
             # skip private traits
+            return
+
+        if not msg['paramattr'].log:
             return
 
         name = self.name_map[msg['owner']]
@@ -866,9 +869,9 @@ class Aggregator(util.Ownable):
         # Register handlers
         for device in devices.keys():
             if changes:
-                observe(device, self._receive_trait_update)
+                observe(device, self._receive_paramattr_update)
             else:
-                attr.unobserve(device, self._receive_trait_update)
+                attr.unobserve(device, self._receive_paramattr_update)
             if always:
                 self.attr_rules['always'][device] = always
             if never:
@@ -918,7 +921,7 @@ class Aggregator(util.Ownable):
                 else:
                     break
             else:
-                raise RuntimeError(f'failed to automatically label {repr(target)} by inspection')
+                raise RuntimeError(f'failed to automatically label {target!r} by inspection')
         finally:
             del f, frame
 
@@ -1277,7 +1280,7 @@ class CSVLogger(TabularLoggerBase):
                 # test access by starting the root table
                 file_path.touch(exist_ok=self._append)
             except FileExistsError:
-                raise IOError(f"root table already exists at '{file_path}', while append=False")
+                raise OSError(f"root table already exists at '{file_path}', while append=False")
 
             if self._append and file_path.stat().st_size > 0:
                 # there's something here and we plan to append
@@ -1387,11 +1390,10 @@ class MungeToHDF(Device):
 
             # elif hasattr(v, "__len__") or hasattr(v, "__iter__"):
             #     # vector, table, matrix, etc.
-            #     print('***', name)
             #     row[name] = self._from_nonscalar(name, v, index, row)
 
             else:
-                self._logger.warning(rf"unrecognized type for row entry '{name}' with type {repr(v)}")
+                self._logger.warning(rf"unrecognized type for row entry '{name}' with type {v!r}")
                 row[name] = v
 
         return row
@@ -1441,7 +1443,7 @@ class MungeToHDF(Device):
                 df = pd.DataFrame([df])
         except BaseException:
             # We couldn't make a DataFrame
-            self._logger.error(f'Failed to form DataFrame from {repr(name)}; pickling object instead')
+            self._logger.error(f'Failed to form DataFrame from {name!r}; pickling object instead')
             self.backend[key] = pickle.dumps(value)
 
         else:
@@ -1599,7 +1601,7 @@ class SQLiteLogger(TabularLoggerBase):
         if self.path.exists():
             root = str(self.path.absolute())
             if not self.path.is_dir():
-                raise IOError(f"the root data directory path '{root}' already exists, and is not a directory.")
+                raise OSError(f"the root data directory path '{root}' already exists, and is not a directory.")
 
             try:
                 # test writes
@@ -1607,7 +1609,7 @@ class SQLiteLogger(TabularLoggerBase):
                     pass
                 (self.path / '_').unlink()
                 ex = None
-            except IOError as e:
+            except OSError as e:
                 ex = e
             if ex:
                 raise ex
@@ -1618,7 +1620,7 @@ class SQLiteLogger(TabularLoggerBase):
         path = os.path.join(self.path, self.ROOT_FILE_NAME)
 
         # Create an engine via sqlalchemy
-        self._engine = sqlalchemy.create_engine('sqlite:///{}'.format(path))
+        self._engine = sqlalchemy.create_engine(f'sqlite:///{path}')
 
         if os.path.exists(path):
             if self._append:
@@ -1629,7 +1631,7 @@ class SQLiteLogger(TabularLoggerBase):
                 self._columns = df.columns
                 self.output_index = df.index[-1] + 1
             else:
-                raise IOError(f"root table already exists at '{path}', but append=False")
+                raise OSError(f"root table already exists at '{path}', but append=False")
         else:
             self._columns = None
         self.inprogress = {}
@@ -1835,7 +1837,7 @@ def read(
     if isinstance(path_or_buf, (str, Path)):
         path_or_buf = str(path_or_buf)
         if os.path.getsize(path_or_buf) == 0:
-            raise IOError('file is empty')
+            raise OSError('file is empty')
 
         if format == 'auto':
             format = os.path.splitext(path_or_buf)[-1][1:]

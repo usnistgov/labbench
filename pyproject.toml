@@ -29,6 +29,7 @@ dependencies = [
     "validators>=0.20.0",
     "pip",
     "typing-extensions>=4.8.0",
+    "click~=8.0",
     # numerical
     "numpy>=1.19",
     "pandas>=1.2.0,<2.2",
@@ -84,7 +85,7 @@ documentation = "https://pages.nist.gov/labbench"
 changelog = "https://github.com/usnistgov/labbench/blob/master/ChangeLog.md"
 
 [project.scripts]
-labbench = "cli.__main__:do_cli"
+labbench = "labbench.cli.__main__:do_cli"
 
 [tool.black]
 line-length = 100

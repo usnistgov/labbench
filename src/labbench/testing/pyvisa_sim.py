@@ -1,10 +1,9 @@
-from .. import VISADevice, Device, Undefined
-from .. import paramattr as attr
-from .. import util
-import pandas as pd
+
 import numpy as np
-from typing import Dict, Any
-from pyvisa.errors import VisaIOError
+import pandas as pd
+
+from .. import Device, Undefined, VISADevice, util
+from .. import paramattr as attr
 
 __all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
 
@@ -121,7 +120,7 @@ class SignalGenerator(VISADevice):
         self.write('TRIG')
 
 
-@attr.register_key_argument(attr.kwarg.int('channel', min=1, max=4, help='input channel'))
+@attr.method_kwarg.int('channel', min=1, max=4, help='input channel')
 @attr.visa_keying(remap={True: 'ON', False: 'OFF'})
 @attr.adjust('make', default='FakeTech')
 @attr.adjust('model', default='Oscilloscope #1234')

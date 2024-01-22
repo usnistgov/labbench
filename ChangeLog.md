@@ -4,7 +4,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.33 - unreleased]
+## [0.34]
+
+### Changed
+- In order to better align `labbench.paramattr.property` and `labbench.paramattr.method` with each other and the rest of the ecosystem,
+  decorator implementation for these attributes now follows [python's built-in syntax for properties](https://docs.python.org/3/library/functions.html#property). For example, to implement getters and setters for a property named `number` or a method named `flag`:
+  ```python
+  import labbench as lb
+  from labbench import paramattr as attr
+
+  class MyDevice(lb.Device):
+      @attr.property.float(min=0)
+      def number(self) -> float:
+          ...
+
+      @number.setter
+      def _(self, new_value: float):
+          ...
+
+      @attr.method.bool()
+      def flag(self):
+          ...
+
+      @flag.setter
+      def _(self, new_value: bool):
+          ...
+  ```
+- Fixed bounds-checking bugs in calibration-corrected parameter attributes
+- Because notifications are required to properly implement calibration corrections, the `notify` constructor argument of paramattr has been replaced with `log`. The scope of that behavior now limited to (and implemented by) the loggers.
+- `labbench.paramattr.kwarg` is now `labbench.paramattr.method_kwarg`, in order to clarify the intent when decorating a device class
+
+### Removed
+- `labbench.paramattr.register_key_argument` was removed in favor of directly decorating Device classes with `labbench.paramattr.method_kwarg`
+
+## [0.33]
 This is a significant API change.
 
 ### Added

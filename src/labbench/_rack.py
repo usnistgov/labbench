@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import contextlib
-from copy import deepcopy
 import importlib
 import inspect
 import sys
 import time
 import traceback
+from copy import deepcopy
 from ctypes import ArgumentError
 from dataclasses import dataclass
 from functools import wraps
+
 import typing_extensions as typing
 
 from . import _device as core
@@ -68,7 +70,7 @@ class notify:
             return
 
         if not isinstance(returned, dict):
-            raise TypeError(f'returned data was {repr(returned)}, which is not a dict')
+            raise TypeError(f'returned data was {returned!r}, which is not a dict')
         for handler in cls._handlers['returns']:
             handler(dict(name=owner._owned_name, owner=owner, old=None, new=returned))
 
@@ -78,7 +80,7 @@ class notify:
             return
 
         if not isinstance(parameters, dict):
-            raise TypeError(f'parameters data was {repr(parameters)}, which is not a dict')
+            raise TypeError(f'parameters data was {parameters!r}, which is not a dict')
         for handler in cls._handlers['calls']:
             handler(dict(name=owner._owned_name, owner=owner, old=None, new=parameters))
 
@@ -100,25 +102,25 @@ class notify:
     @classmethod
     def observe_returns(cls, handler):
         if not callable(handler):
-            raise AttributeError(f'{repr(handler)} is not callable')
+            raise AttributeError(f'{handler!r} is not callable')
         cls._handlers['returns'].add(handler)
 
     @classmethod
     def observe_calls(cls, handler):
         if not callable(handler):
-            raise AttributeError(f'{repr(handler)} is not callable')
+            raise AttributeError(f'{handler!r} is not callable')
         cls._handlers['calls'].add(handler)
 
     @classmethod
     def observe_call_iteration(cls, handler):
         if not callable(handler):
-            raise AttributeError(f'{repr(handler)} is not callable')
+            raise AttributeError(f'{handler!r} is not callable')
         cls._handlers['iteration'].add(handler)
 
     @classmethod
     def unobserve_returns(cls, handler):
         if not callable(handler):
-            raise AttributeError(f'{repr(handler)} is not callable')
+            raise AttributeError(f'{handler!r} is not callable')
 
         try:
             cls._handlers['returns'].remove(handler)
@@ -128,7 +130,7 @@ class notify:
     @classmethod
     def unobserve_calls(cls, handler):
         if not callable(handler):
-            raise AttributeError(f'{repr(handler)} is not callable')
+            raise AttributeError(f'{handler!r} is not callable')
         try:
             cls._handlers['calls'].remove(handler)
         except KeyError:
@@ -137,7 +139,7 @@ class notify:
     @classmethod
     def unobserve_call_iteration(cls, handler):
         if not callable(handler):
-            raise AttributeError(f'{repr(handler)} is not callable')
+            raise AttributeError(f'{handler!r} is not callable')
         try:
             cls._handlers['iteration'].remove(handler)
         except KeyError:
@@ -277,7 +279,7 @@ class RackMethod(util.Ownable):
 
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.logger.info(f"{self._owned_name} from '{str(path)}' " f"- '{row}' ({i+1}/{len(table.index)})")
+            util.logger.info(f"{self._owned_name} from '{path!s}' " f"- '{row}' ({i+1}/{len(table.index)})")
             notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
 
@@ -518,7 +520,7 @@ class BoundSequence(util.Ownable):
                 )
                 ret.update(util.concurrently(**step_kws) or {})
         except self.exception_allowlist as e:
-            core.logger.warning(f'{str(e)}')
+            core.logger.warning(f'{e!s}')
             ret['exception'] = e.__class__.__name__
             if self.cleanup_func is not None:
                 self.cleanup_func()
@@ -535,7 +537,7 @@ class BoundSequence(util.Ownable):
 
         if path is None:
             path = f'{cls.__name__} template.csv'
-        util.logger.debug(f'writing csv template to {repr(path)}')
+        util.logger.debug(f'writing csv template to {path!r}')
         params = inspect.signature(cls.__call__).parameters
         df = pd.DataFrame(columns=list(params)[1:])
         df.index.name = cls.INDEX_COLUMN_NAME
@@ -551,7 +553,7 @@ class BoundSequence(util.Ownable):
 
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
-            util.logger.info(f"{self._owned_name} from '{str(path)}' " f"- '{row}' ({i+1}/{len(table.index)})")
+            util.logger.info(f"{self._owned_name} from '{path!s}' " f"- '{row}' ({i+1}/{len(table.index)})")
             notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
 
@@ -604,7 +606,7 @@ class OwnerContextAdapter:
                 else:
                     opener(self._owner)
 
-            getattr(self._owner, '_logger', util.logger).debug(f'opened')
+            getattr(self._owner, '_logger', util.logger).debug('opened')
 
         finally:
             notify.allow_owner_notifications(*hold)
@@ -635,7 +637,7 @@ class OwnerContextAdapter:
                     traceback.print_exception(*ex, limit=-(depth - 1))
                     # sys.stderr.write("(Exception suppressed to continue close)\n\n")
 
-            getattr(self._owner, '_logger', util.logger).debug(f'closed')
+            getattr(self._owner, '_logger', util.logger).debug('closed')
 
         finally:
             notify.allow_owner_notifications(*holds)
@@ -738,7 +740,7 @@ def package_owned_contexts(top):
     desc = '->'.join([d for d in (firsts_desc, devices_desc, owners_desc) if len(d) > 0])
 
     log.debug(f'context order: {desc}')
-    return util.sequentially(name=f'{repr(top)}', **seq) or null_context(top)
+    return util.sequentially(name=f'{top!r}', **seq) or null_context(top)
 
 
 def owner_getattr_chains(owner):
@@ -1299,7 +1301,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
         # any remaining items in annotations are missing arguments
         if len(annotations) > 0:
-            kwargs = [f'{repr(k)}: {v}' for k, v in annotations.items()]
+            kwargs = [f'{k!r}: {v}' for k, v in annotations.items()]
             raise AttributeError(f"missing keyword arguments {', '.join(kwargs)}'")
 
         # now move forward with applying the devices

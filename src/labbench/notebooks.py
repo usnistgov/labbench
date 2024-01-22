@@ -1,20 +1,18 @@
-from . import _device as core
-
-from ._backends import VISADevice
-from ._host import Host
-from .util import show_messages
-from ._rack import Rack
-from .paramattr import observe, get_class_attrs
-
 import logging
+import numbers
 import time
 from io import StringIO
-import numbers
-
-import pandas as pd
 
 import ipywidgets as widgets
+import pandas as pd
 from IPython.display import display
+
+from . import _device as core
+from ._backends import VISADevice
+from ._host import Host
+from ._rack import Rack
+from .paramattr import get_class_attrs, observe
+from .util import show_messages
 
 skip_traits = {VISADevice: ['identity'], Host: ['log'], core.Device: ['isopen']}
 
@@ -125,7 +123,7 @@ class panel:
             cls.source = source + 1
             cls.devices = core.find_device_instances(cls.source)
         else:
-            raise ValueError(f'source must be a Rack instance or int, but got {repr(source)}')
+            raise ValueError(f'source must be a Rack instance or int, but got {source!r}')
 
         children = [
             trait_table(cls.devices[k]) for k in sorted(cls.devices.keys()) if isinstance(cls.devices[k], core.Device)
@@ -148,7 +146,7 @@ class panel:
                     return cls(source=cls.source, ncols=cls.ncols)
                 else:
                     raise
-            if N < len(children):
+            if len(children) > N:
                 children = children[N:]
             else:
                 break

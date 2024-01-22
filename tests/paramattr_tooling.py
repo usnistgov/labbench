@@ -45,7 +45,7 @@ def loop_closed_loop_set_gets(device: lb.Device, role_type: type[lb.paramattr.Pa
     for attr_name, attr_def in attrs.items():
         if isinstance(attr_def, attr.method.Method):
             # skip methods with arguments for now
-            if len(attr_def.get_key_arguments(type(device))) > 0:
+            if len(attr_def.get_kwarg_names()) > 0:
                 continue
         test_name = f'{attr_def.ROLE} "{attr_name}"'
         has_reduced_access_count = attr_def.cache or isinstance(attr_def, attr.value.Value)

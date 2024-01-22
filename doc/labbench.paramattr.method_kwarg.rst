@@ -1,7 +1,7 @@
-labbench.paramattr.kwarg
+labbench.paramattr.method_kwarg
 ==========================
 
-.. automodule:: labbench.paramattr.kwarg
+.. automodule:: labbench.paramattr.method_kwarg
    :members:
    :show-inheritance:
    :undoc-members:

@@ -6,7 +6,7 @@ from labbench import paramattr as attr
 from labbench.testing import store_backend
 
 
-@store_backend.key_store_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
+@store_backend.key_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
@@ -21,12 +21,14 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     bool_keyed = attr.property.bool(key='bool_keyed')
     int_keyed_unbounded = attr.property.int(key='int_keyed_unbounded')
 
-    @attr.property.int(min=0, sets=False)
-    def int_decorated_low_bound_getonly(self):
+    int_decorated_low_bound_getonly = attr.property.int(min=0, sets=False)
+
+    @int_decorated_low_bound_getonly.getter
+    def _(self):
         return self.backend.setdefault('int_decorated_low_bound_getonly', 0)
 
-    @attr.property.int(min=10, gets=False)
-    def int_decorated_low_bound_setonly(self, set_value=lb.Undefined, *, channel=1):
+    @attr.property.int(min=10, gets=False).setter
+    def int_decorated_low_bound_setonly(self, set_value=lb.Undefined):
         self.backend['int_decorated_high_bound_setonly'] = set_value
 
     str_or_none = attr.property.str(key='str_or_none', allow_none=True)

@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="_static/pyramid.css?v=0613869e" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="_static/documentation_options.js?v=3595839c"></script>
+    <script src="_static/documentation_options.js?v=5273b9ac"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="search.html" />
@@ -1658,7 +1658,7 @@ arguments may be callables, in which case they are executed (and each flag value
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">do_something_3</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rets</span> <span class="o">=</span> <span class="n">concurrent</span><span class="p">(</span><span class="n">myfunc1</span><span class="p">,</span> <span class="n">Call</span><span class="p">(</span><span class="n">myfunc3</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rets</span> <span class="o">=</span> <span class="n">concurrent</span><span class="p">(</span><span class="n">myfunc1</span><span class="p">,</span> <span class="n">Call</span><span class="p">(</span><span class="n">myfunc3</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rets</span><span class="p">[</span><span class="n">do_something_3</span><span class="p">]</span>
 <span class="go">a, b, c</span>
 </pre></div>
@@ -1839,11 +1839,12 @@ Otherwise, return the result of the function call.</p>
 <p>The following retries the telnet connection 5 times on ConnectionRefusedError:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">telnetlib</span>
 
+
 <span class="c1"># Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError</span>
 <span class="nd">@retry</span><span class="p">(</span><span class="ne">ConnectionRefusedError</span><span class="p">,</span> <span class="n">tries</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">telnetlib</span><span class="o">.</span><span class="n">Telnet</span><span class="p">()</span>
-    <span class="n">t</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">host</span><span class="p">,</span><span class="n">port</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">t</span>
 </pre></div>
 </div>
@@ -1918,7 +1919,7 @@ argument may be callables in  case they are executed (and each flag value is tre
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">do_something_3</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rets</span> <span class="o">=</span> <span class="n">concurrent</span><span class="p">(</span><span class="n">myfunc1</span><span class="p">,</span> <span class="n">Call</span><span class="p">(</span><span class="n">myfunc3</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rets</span> <span class="o">=</span> <span class="n">concurrent</span><span class="p">(</span><span class="n">myfunc1</span><span class="p">,</span> <span class="n">Call</span><span class="p">(</span><span class="n">myfunc3</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rets</span><span class="p">[</span><span class="n">do_something_3</span><span class="p">]</span>
 <span class="go">a, b, c</span>
 </pre></div>
@@ -1994,10 +1995,11 @@ under the BSD license.</p>
 <p>The following retries the telnet connection for 5 seconds on ConnectionRefusedError:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">telnetlib</span>
 
+
 <span class="nd">@until_timeout</span><span class="p">(</span><span class="ne">ConnectionRefusedError</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">telnetlib</span><span class="o">.</span><span class="n">Telnet</span><span class="p">()</span>
-    <span class="n">t</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">host</span><span class="p">,</span><span class="n">port</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">t</span>
 </pre></div>
 </div>

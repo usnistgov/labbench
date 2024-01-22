@@ -18,18 +18,21 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-import labbench as lb
-from labbench.testing import SpectrumAnalyzer, PowerSensor, SignalGenerator, pyvisa_sim_resource
-import numpy as np
 from shutil import rmtree
 
+import numpy as np
+
+import labbench as lb
+from labbench.testing import PowerSensor, SpectrumAnalyzer, pyvisa_sim_resource
+
 FREQ_COUNT = 3
-DUT_NAME = "DUT 63"
+DUT_NAME = 'DUT 63'
 DATA_PATH = './data'
 
 
 # the labbench.testing devices support simulated pyvisa operations
 lb.visa_default_resource_manager(pyvisa_sim_resource)
+
 
 class Testbed(lb.Rack):
     sensor: PowerSensor = PowerSensor()
@@ -48,10 +51,8 @@ class Testbed(lb.Rack):
         self.sensor.trigger()
         self.analyzer.trigger()
 
-        return dict(
-            analyzer_trace=self.analyzer.fetch(),
-            sensor_reading=self.sensor.fetch()[0]
-        )
+        return dict(analyzer_trace=self.analyzer.fetch(), sensor_reading=self.sensor.fetch()[0])
+
 
 rmtree(Testbed.db.path, True)
 
@@ -62,18 +63,19 @@ with Testbed() as rack:
         # this could also go in single()
         rack.db.new_row(
             comments='trying for 1.21 GW to time travel',
-            dut = DUT_NAME,
+            dut=DUT_NAME,
         )
 ------------------
 
 
 [0;31m---------------------------------------------------------------------------[0m
 [0;31mImportError[0m                               Traceback (most recent call last)
-Cell [0;32mIn[6], line 2[0m
-[1;32m      1[0m [38;5;28;01mimport[39;00m [38;5;21;01mlabbench[39;00m [38;5;28;01mas[39;00m [38;5;21;01mlb[39;00m
-[0;32m----> 2[0m [38;5;28;01mfrom[39;00m [38;5;21;01mlabbench[39;00m[38;5;21;01m.[39;00m[38;5;21;01mtesting[39;00m [38;5;28;01mimport[39;00m SpectrumAnalyzer, PowerSensor, SignalGenerator, pyvisa_sim_resource
+Cell [0;32mIn[6], line 6[0m
 [1;32m      3[0m [38;5;28;01mimport[39;00m [38;5;21;01mnumpy[39;00m [38;5;28;01mas[39;00m [38;5;21;01mnp[39;00m
-[1;32m      4[0m [38;5;28;01mfrom[39;00m [38;5;21;01mshutil[39;00m [38;5;28;01mimport[39;00m rmtree
+[1;32m      5[0m [38;5;28;01mimport[39;00m [38;5;21;01mlabbench[39;00m [38;5;28;01mas[39;00m [38;5;21;01mlb[39;00m
+[0;32m----> 6[0m [38;5;28;01mfrom[39;00m [38;5;21;01mlabbench[39;00m[38;5;21;01m.[39;00m[38;5;21;01mtesting[39;00m [38;5;28;01mimport[39;00m PowerSensor, SpectrumAnalyzer, pyvisa_sim_resource
+[1;32m      8[0m FREQ_COUNT [38;5;241m=[39m [38;5;241m3[39m
+[1;32m      9[0m DUT_NAME [38;5;241m=[39m [38;5;124m'[39m[38;5;124mDUT 63[39m[38;5;124m'[39m
 
-[0;31mImportError[0m: cannot import name 'SpectrumAnalyzer' from 'labbench.testing' (/Users/dkuester/Documents/src/labbench/labbench/testing/__init__.py)
+[0;31mImportError[0m: cannot import name 'PowerSensor' from 'labbench.testing' (/Users/dkuester/Documents/src/labbench/src/labbench/testing/__init__.py)
 

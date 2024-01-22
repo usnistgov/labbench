@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../../_static/documentation_options.js?v=3595839c"></script>
+    <script src="../../_static/documentation_options.js?v=5273b9ac"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
@@ -118,28 +118,10 @@ Specialized <code class="docutils literal notranslate"><span class="pre">VISADev
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/dkuester/Documents/src/labbench/cli/__main__.py:21: SyntaxWarning: invalid escape sequence &#39;\W&#39;
-  make, model = [re.sub(&#39;([\W_])+&#39;, &#39;&#39;, s) for s in (make, model)]
-Resources discovered on resource manager &#39;@sim&#39;:
-  • Make: &quot;Faketech&quot;
-    Model: &quot;Oscilloscope #1234&quot;
-    Serial: &quot;OMGBBQ58&quot;
-    Device: lb.VISADevice(&#39;USB0::0x1111::0x2233::0x9876::0::INSTR&#39;)
-
-  • Make: &quot;Faketech&quot;
-    Model: &quot;Spectrum Analyzer #1234&quot;
-    Serial: &quot;#AUJH99&quot;
-    Device: lb.VISADevice(&#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;)
-
-  • Make: &quot;Faketech&quot;
-    Model: &quot;Signal Generator #1234&quot;
-    Serial: &quot;1837518935&quot;
-    Device: lb.VISADevice(&#39;TCPIP0::localhost:10001::inst0::INSTR&#39;)
-
-  • Make: &quot;Faketech&quot;
-    Model: &quot;Power Sensor #1234&quot;
-    Serial: &quot;63472&quot;
-    Device: lb.VISADevice(&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;, write_termination=&#39;\r\n&#39;)
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/.venv/bin/labbench&quot;, line 5, in &lt;module&gt;
+    from cli.__main__ import do_cli
+ModuleNotFoundError: No module named &#39;cli&#39;
 </pre></div>
 </div>
 </div>
@@ -211,26 +193,26 @@ simulated instrument in <code class="docutils literal notranslate"><span class="
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,314.314</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,316.316</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,317.317</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,317.317</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SYST:PRES&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,317.317</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SENS:FREQ 1000000000.0&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,318.318</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 1000000000.0 (Hz) → frequency
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,318.318</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SENS:MRAT FAST&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,319.319</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> &#39;FAST&#39;  → measurement_rate
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,319.319</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;TRIG:COUN 200&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,320.320</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 200 (samples) → trigger_count
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,321.321</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SWE:APER 2e-05&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,321.321</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 2e-05 (s) → sweep_aperture
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,322.322</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;INIT:CONT ON&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,322.322</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> True  → initiate_continuous
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,323.323</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> query(&#39;FETC?&#39;):
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,325.325</span> • <span class=" -Color -Color-Blue">PowerSensor():</span>     → (1572 bytes)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,325.325</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> query(&#39;TRIG:COUN?&#39;):
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,325.325</span> • <span class=" -Color -Color-Blue">PowerSensor():</span>     → &#39;200&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,326.326</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> trigger_count → 200  (samples)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-05 09:56:46,329.329</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> closed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,860.860</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,862.862</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,863.863</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,864.864</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SYST:PRES&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,865.865</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SENS:FREQ 1000000000.0&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,866.866</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 1000000000.0 (Hz) → frequency
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,867.867</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SENS:MRAT FAST&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,867.867</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> &#39;FAST&#39;  → measurement_rate
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,869.869</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;TRIG:COUN 200&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,869.869</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 200 (samples) → trigger_count
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,870.870</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SWE:APER 2e-05&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,871.871</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 2e-05 (s) → sweep_aperture
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,872.872</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;INIT:CONT ON&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,872.872</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> True  → initiate_continuous
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,873.873</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> query(&#39;FETC?&#39;):
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,876.876</span> • <span class=" -Color -Color-Blue">PowerSensor():</span>     → (1572 bytes)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,877.877</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> query(&#39;TRIG:COUN?&#39;):
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,878.878</span> • <span class=" -Color -Color-Blue">PowerSensor():</span>     → &#39;200&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,878.878</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> trigger_count → 200  (samples)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-01-22 14:36:39,879.879</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> closed
 </pre></div>
 </div>
 </div>

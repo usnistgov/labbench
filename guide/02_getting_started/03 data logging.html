@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../../_static/documentation_options.js?v=3595839c"></script>
+    <script src="../../_static/documentation_options.js?v=5273b9ac"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
@@ -121,16 +121,13 @@
         <span class="p">}</span>
 
         <span class="n">db</span><span class="o">.</span><span class="n">new_row</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-    <span class="kn">import</span> <span class="nn">copy</span>
-    <span class="n">pending</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">pending_output</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:50,799.799</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:50,800.800</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-05 09:56:52,699.699</span> • <span class=" -Color -Color-Blue">aggregator:</span> CSVLogger(&#39;5c8443f875c75d0f&#39;) named &#39;db&#39; by introspection
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-22 14:36:44,260.260</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-22 14:36:44,260.260</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-22 14:36:46,172.172</span> • <span class=" -Color -Color-Blue">aggregator:</span> CSVLogger(&#39;d908ee6979c1792a&#39;) named &#39;db&#39; by introspection
 </pre></div>
 </div>
 </div>
@@ -185,7 +182,7 @@
       <td>5.800000e+09</td>
       <td>5.800000e+09</td>
       <td>200</td>
-      <td>2024-01-05 09:56:52.810229</td>
+      <td>2024-01-22 14:36:46.285057</td>
       <td>0/db_host_log.json</td>
     </tr>
     <tr>
@@ -195,7 +192,7 @@
       <td>5.850000e+09</td>
       <td>5.850000e+09</td>
       <td>200</td>
-      <td>2024-01-05 09:56:52.924856</td>
+      <td>2024-01-22 14:36:46.396226</td>
       <td>1/db_host_log.json</td>
     </tr>
     <tr>
@@ -205,7 +202,7 @@
       <td>5.900000e+09</td>
       <td>5.900000e+09</td>
       <td>200</td>
-      <td>2024-01-05 09:56:53.33574</td>
+      <td>2024-01-22 14:36:46.512491</td>
       <td>2/db_host_log.json</td>
     </tr>
   </tbody>
@@ -317,209 +314,209 @@
 </div>
 <div class="cell_output docutils container">
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;sensor_isopen&#39;: {&#39;object&#39;: &#39;sensor.isopen&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
   &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
+  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;sensor_resource&#39;: {&#39;object&#39;: &#39;sensor.resource&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as resource&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;device address or URI&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;analyzer_isopen&#39;: {&#39;object&#39;: &#39;analyzer.isopen&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
   &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
+  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;analyzer_resource&#39;: {&#39;object&#39;: &#39;analyzer.resource&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as resource&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;device address or URI&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;db_host_log&#39;: {&#39;object&#39;: &#39;db.host.log&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.list()&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.list() as log&gt;&#39;,
   &#39;type&#39;: &#39;list&#39;,
-  &#39;help&#39;: &#39;Get the current host log contents.&#39;,
+  &#39;help&#39;: &#39;\n\nGet the current host log contents.&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;db_munge_force_relational&#39;: {&#39;object&#39;: &#39;db.munge.force_relational&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.list(allow_none=False, default=[])&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.list(allow_none=False, default=[]) as force_relational&gt;&#39;,
   &#39;type&#39;: &#39;list&#39;,
   &#39;help&#39;: &#39;list of column names to always save as relational data&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;analyzer_center_frequency&#39;: {&#39;object&#39;: &#39;analyzer.center_frequency&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.float(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.float(None) as center_frequency&gt;&#39;,
   &#39;type&#39;: &#39;float&#39;,
   &#39;help&#39;: &#39;input signal center frequency&#39;,
   &#39;label&#39;: &#39;Hz&#39;},
  &#39;sensor_frequency&#39;: {&#39;object&#39;: &#39;sensor.frequency&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.float(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.float(None) as frequency&gt;&#39;,
   &#39;type&#39;: &#39;float&#39;,
   &#39;help&#39;: &#39;calibration frequency&#39;,
   &#39;label&#39;: &#39;Hz&#39;},
  &#39;sensor_trigger_count&#39;: {&#39;object&#39;: &#39;sensor.trigger_count&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.int(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.int(None) as trigger_count&gt;&#39;,
   &#39;type&#39;: &#39;int&#39;,
   &#39;help&#39;: &#39;acquisition count&#39;,
   &#39;label&#39;: &#39;samples&#39;},
  &#39;db_host_time&#39;: {&#39;object&#39;: &#39;db.host.time&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as time&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;Get a timestamp of the current time&#39;,
+  &#39;help&#39;: &#39;\n\nGet a timestamp of the current time&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;db_host_isopen&#39;: {&#39;object&#39;: &#39;db.host.isopen&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
   &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_munge_isopen&#39;: {&#39;object&#39;: &#39;db.munge.isopen&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.bool()&#39;,
-  &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;`True` if the backend is ready for use&#39;,
+  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;db_munge_resource&#39;: {&#39;object&#39;: &#39;db.munge.resource&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.Path(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.Path(None) as resource&gt;&#39;,
   &#39;type&#39;: &#39;pathlib.Path&#39;,
   &#39;help&#39;: &#39;base directory for all data&#39;,
   &#39;label&#39;: &#39;&#39;},
+ &#39;db_munge_isopen&#39;: {&#39;object&#39;: &#39;db.munge.isopen&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
+  &#39;type&#39;: &#39;bool&#39;,
+  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
+  &#39;label&#39;: &#39;&#39;},
  &#39;db_munge_text_relational_min&#39;: {&#39;object&#39;: &#39;db.munge.text_relational_min&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.int(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.int(None) as text_relational_min&gt;&#39;,
   &#39;type&#39;: &#39;int&#39;,
   &#39;help&#39;: &#39;minimum size threshold that triggers storing text in a relational file&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;db_munge_relational_name_fmt&#39;: {&#39;object&#39;: &#39;db.munge.relational_name_fmt&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as relational_name_fmt&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;directory name format for data in each row keyed on column&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;db_munge_nonscalar_file_type&#39;: {&#39;object&#39;: &#39;db.munge.nonscalar_file_type&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as nonscalar_file_type&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;file format for non-scalar numerical data&#39;,
   &#39;label&#39;: &#39;&#39;},
- &#39;sensor_serial&#39;: {&#39;object&#39;: &#39;sensor.serial&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device-reported serial number&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor__revision&#39;: {&#39;object&#39;: &#39;sensor._revision&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device-reported revision&#39;,
-  &#39;label&#39;: &#39;&#39;},
  &#39;sensor_read_termination&#39;: {&#39;object&#39;: &#39;sensor.read_termination&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as read_termination&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;end of line string to expect in query replies&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;sensor_write_termination&#39;: {&#39;object&#39;: &#39;sensor.write_termination&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as write_termination&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;end-of-line string to send after writes&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;sensor_open_timeout&#39;: {&#39;object&#39;: &#39;sensor.open_timeout&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as open_timeout&gt;&#39;,
   &#39;type&#39;: &#39;float&#39;,
   &#39;help&#39;: &#39;timeout for opening a connection to the instrument&#39;,
   &#39;label&#39;: &#39;s&#39;},
  &#39;sensor_timeout&#39;: {&#39;object&#39;: &#39;sensor.timeout&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as timeout&gt;&#39;,
   &#39;type&#39;: &#39;float&#39;,
   &#39;help&#39;: &#39;message response timeout&#39;,
   &#39;label&#39;: &#39;s&#39;},
  &#39;sensor_make&#39;: {&#39;object&#39;: &#39;sensor.make&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as make&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;device manufacturer name used to autodetect resource string&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;sensor_model&#39;: {&#39;object&#39;: &#39;sensor.model&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as model&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;device model used to autodetect resource string&#39;,
   &#39;label&#39;: &#39;&#39;},
+ &#39;sensor_serial&#39;: {&#39;object&#39;: &#39;sensor.serial&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as serial&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;\n\ndevice-reported serial number&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;sensor__revision&#39;: {&#39;object&#39;: &#39;sensor._revision&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _revision&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device revision information\n\ndevice-reported revision&#39;,
+  &#39;label&#39;: &#39;&#39;},
  &#39;sensor__identity&#39;: {&#39;object&#39;: &#39;sensor._identity&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _identity&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;identity string reported by the instrument&#39;,
   &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_serial&#39;: {&#39;object&#39;: &#39;analyzer.serial&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device-reported serial number&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer__revision&#39;: {&#39;object&#39;: &#39;analyzer._revision&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device-reported revision&#39;,
-  &#39;label&#39;: &#39;&#39;},
  &#39;analyzer_read_termination&#39;: {&#39;object&#39;: &#39;analyzer.read_termination&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as read_termination&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;end of line string to expect in query replies&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;analyzer_write_termination&#39;: {&#39;object&#39;: &#39;analyzer.write_termination&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as write_termination&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;end-of-line string to send after writes&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;analyzer_open_timeout&#39;: {&#39;object&#39;: &#39;analyzer.open_timeout&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as open_timeout&gt;&#39;,
   &#39;type&#39;: &#39;float&#39;,
   &#39;help&#39;: &#39;timeout for opening a connection to the instrument&#39;,
   &#39;label&#39;: &#39;s&#39;},
  &#39;analyzer_timeout&#39;: {&#39;object&#39;: &#39;analyzer.timeout&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.float(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as timeout&gt;&#39;,
   &#39;type&#39;: &#39;float&#39;,
   &#39;help&#39;: &#39;message response timeout&#39;,
   &#39;label&#39;: &#39;s&#39;},
  &#39;analyzer_make&#39;: {&#39;object&#39;: &#39;analyzer.make&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as make&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;device manufacturer name used to autodetect resource string&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;analyzer_model&#39;: {&#39;object&#39;: &#39;analyzer.model&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as model&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;device model used to autodetect resource string&#39;,
   &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer_serial&#39;: {&#39;object&#39;: &#39;analyzer.serial&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as serial&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;\n\ndevice-reported serial number&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;analyzer__revision&#39;: {&#39;object&#39;: &#39;analyzer._revision&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _revision&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;device revision information\n\ndevice-reported revision&#39;,
+  &#39;label&#39;: &#39;&#39;},
  &#39;analyzer__identity&#39;: {&#39;object&#39;: &#39;analyzer._identity&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _identity&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;identity string reported by the instrument&#39;,
   &#39;label&#39;: &#39;&#39;},
  &#39;db_host_resource&#39;: {&#39;object&#39;: &#39;db.host.resource&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as resource&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;device address or URI&#39;,
   &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_commit_id&#39;: {&#39;object&#39;: &#39;db.host.git_commit_id&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;Try to determine the current commit hash of the current git repo&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_remote_url&#39;: {&#39;object&#39;: &#39;db.host.git_remote_url&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;Try to identify the remote URL of the repository of the current git repo&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_hostname&#39;: {&#39;object&#39;: &#39;db.host.hostname&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;Get the name of the current host&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_browse_url&#39;: {&#39;object&#39;: &#39;db.host.git_browse_url&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;URL for browsing the current git repository&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_pending_changes&#39;: {&#39;object&#39;: &#39;db.host.git_pending_changes&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.property.str(None)&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;&#39;,
-  &#39;label&#39;: &#39;&#39;},
  &#39;db_host_git_commit_in&#39;: {&#39;object&#39;: &#39;db.host.git_commit_in&#39;,
-  &#39;paramattr&#39;: &#39;labbench.paramattr.value.str(None)&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as git_commit_in&gt;&#39;,
   &#39;type&#39;: &#39;str&#39;,
   &#39;help&#39;: &#39;git commit on open() if run inside a git repo with this branch name&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_commit_id&#39;: {&#39;object&#39;: &#39;db.host.git_commit_id&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_commit_id&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;\n\nTry to determine the current commit hash of the current git repo&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_remote_url&#39;: {&#39;object&#39;: &#39;db.host.git_remote_url&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_remote_url&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;\n\nTry to identify the remote URL of the repository of the current git repo&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_hostname&#39;: {&#39;object&#39;: &#39;db.host.hostname&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as hostname&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;\n\nGet the name of the current host&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_browse_url&#39;: {&#39;object&#39;: &#39;db.host.git_browse_url&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_browse_url&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;\n\nURL for browsing the current git repository&#39;,
+  &#39;label&#39;: &#39;&#39;},
+ &#39;db_host_git_pending_changes&#39;: {&#39;object&#39;: &#39;db.host.git_pending_changes&#39;,
+  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_pending_changes&gt;&#39;,
+  &#39;type&#39;: &#39;str&#39;,
+  &#39;help&#39;: &#39;&#39;,
   &#39;label&#39;: &#39;&#39;}}
 </pre></div>
 </div>
@@ -689,7 +686,7 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
-<span class="kn">from</span> <span class="nn">labbench.testing</span> <span class="kn">import</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SignalGenerator</span><span class="p">,</span> <span class="n">pyvisa_sim_resource</span>
+<span class="kn">from</span> <span class="nn">labbench.testing.pyvisa_sim</span> <span class="kn">import</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SignalGenerator</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
 
@@ -699,7 +696,7 @@
 
 
 <span class="c1"># the labbench.testing devices support simulated pyvisa operations</span>
-<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="n">pyvisa_sim_resource</span><span class="p">)</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim&#39;</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="n">sensor</span><span class="p">:</span> <span class="n">PowerSensor</span> <span class="o">=</span> <span class="n">PowerSensor</span><span class="p">()</span>
@@ -731,22 +728,9 @@
 
         <span class="c1"># this could also go in single()</span>
         <span class="n">rack</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">new_row</span><span class="p">(</span>
-            <span class="n">comments</span><span class="o">=</span><span class="s1">&#39;trying for 1.21 GW to time travel&#39;</span><span class="p">,</span>
+            <span class="n">comments</span><span class="o">=</span><span class="s1">&#39;try 1.21 GW for time-travel&#39;</span><span class="p">,</span>
             <span class="n">dut</span> <span class="o">=</span> <span class="n">DUT_NAME</span><span class="p">,</span>
         <span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">ImportError</span><span class="g g-Whitespace">                               </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">line</span> <span class="mi">2</span>
-<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
-<span class="ne">----&gt; </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">labbench.testing</span> <span class="kn">import</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SignalGenerator</span><span class="p">,</span> <span class="n">pyvisa_sim_resource</span>
-<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
-
-<span class="ne">ImportError</span>: cannot import name &#39;SpectrumAnalyzer&#39; from &#39;labbench.testing&#39; (/Users/dkuester/Documents/src/labbench/labbench/testing/__init__.py)
 </pre></div>
 </div>
 </div>
@@ -788,7 +772,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../../_sources/guide/02_getting_started/03 data logging.ipynb.txt"
+      <li><a href="../../_sources/guide/02_getting_started/03 data logging.md.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>

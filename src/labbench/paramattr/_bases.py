@@ -590,7 +590,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             value = self.to_pythonic(value)
             self.validate(value, owner)
         except BaseException as e:
-            e.add_note(f"while attempting to get attribute '{self}' in {owner}")
+            if hasattr(e, 'add_note'):
+                # python >= 3.10
+                e.add_note(f"while attempting to get attribute '{self}' in {owner}")
             raise
 
         if value is None:
@@ -1208,9 +1210,12 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
         # number and names of arguments
         if name_arguments(self._setter)[2:] != name_arguments(self._getter)[1:]:
             ex = TypeError('setter and getter keyword argument names must match')
-            ex.add_note(f'method name: {self.name}')
-            ex.add_note(f'setter arguments: {name_arguments(self._setter)}')
-            ex.add_note(f'getter arguments: {name_arguments(self._getter)}')
+            if hasattr(ex, 'add_note'):
+                # python >= 3.10
+
+                ex.add_note(f'method name: {self.name}')
+                ex.add_note(f'setter arguments: {name_arguments(self._setter)}')
+                ex.add_note(f'getter arguments: {name_arguments(self._getter)}')
             raise ex
 
         # defaults
@@ -1643,8 +1648,10 @@ class DependentNumberParamAttr(DependentParamAttr):
         max_ = self.derived_max(owner)
         if max_ is None:
             ex = ValueError(f'cannot set {self} while dependent attributes are unset')
-            for dep in self._paramattr_dependencies.values():
-                ex.add_note(f'dependent attribute: {dep}')
+            if hasattr(ex, 'add_note'):
+                for dep in self._paramattr_dependencies.values():
+                    # python >= 3.10
+                    ex.add_note(f'dependent attribute: {dep}')
             raise ex
         if value > max_:
             raise ValueError(f'{value} is greater than the max limit {max_} of {self._owned_name(owner)}')
@@ -2266,15 +2273,3 @@ class BoundedNumber(ParamAttr[T]):
             return None if None in (x, y) else y / x
 
         return self.transform(other, div, mul, allow_none=self.allow_none, help=f'({self.help}) + {other}')
-
-
-class NonScalar(Any):
-    """generically non-scalar data, such as a list, array, but not including a string or bytes"""
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        if isinstance(value, (bytes, str)):
-            raise ValueError('given text data but expected a non-scalar data')
-        if not hasattr(value, '__iter__') and not hasattr(value, '__len__'):
-            raise ValueError('expected non-scalar data but given a non-iterable')
-        return value

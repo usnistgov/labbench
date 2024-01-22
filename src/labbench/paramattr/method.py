@@ -4,7 +4,7 @@ import typing as _typing
 from ._bases import Method
 
 
-class any(Method[_typing.Any], _types.Any):
+class any(Method, _types.Any):
     pass
 
 

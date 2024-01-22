@@ -1,6 +1,6 @@
 [project]
 name = "labbench"
-version = "0.34"
+version = "0.34.0"
 
 description = """\
     The `labbench` module provides API tools to support python scripting for laboratory automation.\

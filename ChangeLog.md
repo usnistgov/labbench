@@ -32,10 +32,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   ```
 - Fixed bounds-checking bugs in calibration-corrected parameter attributes
 - Because notifications are required to properly implement calibration corrections, the `notify` constructor argument of paramattr has been replaced with `log`. The scope of that behavior now limited to (and implemented by) the loggers.
-- `labbench.paramattr.kwarg` is now `labbench.paramattr.method_kwarg`
+- `labbench.paramattr.kwarg` is now `labbench.paramattr.method_kwarg`, in order to clarify the intent when decorating a device class
 
 ### Removed
-- `labbench.paramattr.register_key_argument` was removed in favor of directly decorating Device classes with `labbench.paramattr.kwarg`
+- `labbench.paramattr.register_key_argument` was removed in favor of directly decorating Device classes with `labbench.paramattr.method_kwarg`
 
 ## [0.33]
 This is a significant API change.

@@ -746,7 +746,7 @@ class Aggregator(util.Ownable):
             # skip private traits
             return
 
-        if not msg['owner'].log:
+        if not msg['paramattr'].log:
             return
 
         name = self.name_map[msg['owner']]

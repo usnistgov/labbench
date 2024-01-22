@@ -49,9 +49,6 @@ with sensor, analyzer, db:
         }
 
         db.new_row(data)
-
-    import copy
-    pending = copy.deepcopy(db.pending_output)
 ```
 
 ### Output data structure
@@ -103,7 +100,7 @@ For each row in the root table, the expanded table is expanded with a copy of th
 
 ```{code-cell} ipython3
 import labbench as lb
-from labbench.testing import SpectrumAnalyzer, PowerSensor, SignalGenerator, pyvisa_sim_resource
+from labbench.testing.pyvisa_sim import SpectrumAnalyzer, PowerSensor, SignalGenerator
 import numpy as np
 from shutil import rmtree
 
@@ -113,7 +110,7 @@ DATA_PATH = './data'
 
 
 # the labbench.testing devices support simulated pyvisa operations
-lb.visa_default_resource_manager(pyvisa_sim_resource)
+lb.visa_default_resource_manager('@sim')
 
 class Testbed(lb.Rack):
     sensor: PowerSensor = PowerSensor()
@@ -145,7 +142,7 @@ with Testbed() as rack:
 
         # this could also go in single()
         rack.db.new_row(
-            comments='trying for 1.21 GW to time travel',
+            comments='try 1.21 GW for time-travel',
             dut = DUT_NAME,
         )
 ```

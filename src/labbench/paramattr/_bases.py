@@ -1382,8 +1382,16 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
     @util.hide_in_traceback
     def __notify__(self, name, value, type, cache, kwargs={}):
-        old = self._attr_store.cache.setdefault(name, Undefined)
-        msg = dict(new=value, old=old, owner=self, name=name, type=type, cache=cache, kwargs=kwargs)
+        msg = dict(
+            new=value,
+            old=self._attr_store.cache.setdefault(name, Undefined),
+            owner=self,
+            name=name,
+            paramattr=get_class_attrs(self)[name],
+            type=type,
+            cache=cache,
+            kwargs=kwargs
+        )
 
         for handler in self._attr_store.handlers.values():
             handler(dict(msg))

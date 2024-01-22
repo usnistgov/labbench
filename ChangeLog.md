@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - In order to better align `labbench.paramattr.property` and `labbench.paramattr.method` with each other and the rest of the ecosystem,
-  decorator implementation for these attributes now follows [python's built-in syntax for properties](https://docs.python.org/3/library/functions.html#property):
+  decorator implementation for these attributes now follows [python's built-in syntax for properties](https://docs.python.org/3/library/functions.html#property). For example, to implement getters and setters for a property named `number` or a method named `flag`:
   ```python
   import labbench as lb
   from labbench import paramattr as attr

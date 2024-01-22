@@ -7,7 +7,7 @@ from labbench.testing import store_backend
 
 
 @attr.method_kwarg.int('registered_channel', min=1, max=4)
-@store_backend.key_store_adapter(property_defaults={'str_or_none': None, 'str_cached': 'cached string'})
+@store_backend.key_store_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values

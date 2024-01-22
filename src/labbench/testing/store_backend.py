@@ -23,7 +23,6 @@ class key_store_adapter(attr.visa_keying):
         self.defaults = defaults
 
     def get_kwarg_names(self, key_def: Union[str, tuple[str]]) -> tuple[str]:
-        print('get kwarg names: ', key_def)
         if isinstance(key_def, str) or len(key_def) == 1:
             return super().get_kwarg_names(key_def)
         else:

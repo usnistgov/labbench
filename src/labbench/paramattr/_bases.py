@@ -590,20 +590,20 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             value = self.to_pythonic(value)
             self.validate(value, owner)
         except BaseException as e:
-            e.args = (e.args[0] + f" in attempt to get '{self.__repr__(owner_inst=owner)}'",) + e.args[1:]
+            e.args = (e.args[0] + f" in attempt to get '{self.__repr__(owner=owner)}'",) + e.args[1:]
             raise e
 
         if value is None:
             log = getattr(owner, '_logger', warn)
             log(
-                f"'{self.__repr__(owner_inst=owner)}' {self.ROLE} received value None, which"
+                f"'{self.__repr__(owner=owner)}' {self.ROLE} received value None, which"
                 f'is not allowed for {self!r}'
             )
 
         if len(self.only) > 0 and not self.contains(self.only, value):
             log = getattr(owner, '_logger', warn)
             log(
-                f"'{self.__repr__(owner_inst=owner)}' {self.ROLE} received {value!r}, which"
+                f"'{self.__repr__(owner=owner)}' {self.ROLE} received {value!r}, which"
                 f'is not in the valid value list {self.only!r}'
             )
 
@@ -711,19 +711,25 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
             return '\n'.join(docs)
 
-    def __repr__(self, skip_params=['help', 'label'], owner_inst=None, declaration=True):
+    def __repr__(self, skip_params=['help', 'label'], owner: Union[None,HasParamAttrs]=None, with_declaration:bool=True):
         param_doc = self.doc_params(skip=skip_params, as_argument=True)
         declaration = f'{type(self).__module__}.{type(self).__qualname__}({param_doc})'
 
-        if owner_inst is None:
-            if declaration:
-                return declaration
+        if owner is None and not with_declaration:
+            raise TypeError('must specify at least one of `declaration` and `owner_inst`')
+
+        elif owner is None:
+            if self.name is None:
+                return f'<{declaration}>'
             else:
-                raise TypeError('must specify at least one of `declaration` and `owner_inst`')
-        elif declaration:
-            return f'<{owner_inst}.{self.name} defined as {declaration}>'
+                return f'<{self.name} defined as {declaration}>'
+
+        if get_class_attrs(owner).get(self.name, None) is None:
+            raise AttributeError(f'{self} is not owned by {owner}')
+        if declaration:
+            return f'<{owner}.{self.name} defined as {declaration}>'
         else:
-            return f'{owner_inst}.{self.name}'
+            return f'{owner}.{self.name}'
 
     __str__ = __repr__
 
@@ -821,7 +827,7 @@ class Value(ParamAttr[T]):
     def get_from_owner(self, owner: HasParamAttrs, kwargs: dict[str, Any] = {}) -> T:
         if not self.gets:
             # stop now if this is not a gets ParamAttr
-            raise AttributeError(f'{self.__repr__(owner_inst=owner)} does not support gets')
+            raise AttributeError(f'{self.__repr__(owner=owner)} does not support gets')
 
         need_notify = self.notify and self.name not in owner._attr_store.cache
         value = owner._attr_store.cache.setdefault(self.name, self.default)
@@ -924,7 +930,7 @@ class OwnerAccessAttr(ParamAttr[T]):
     def get_from_owner(self, owner: HasParamAttrs, kwargs: dict[str, Any] = {}):
         if not self.gets:
             # stop now if this is not a gets ParamAttr
-            raise AttributeError(f'{self.__repr__(owner_inst=owner)} does not support get operations')
+            raise AttributeError(f'{self.__repr__(owner=owner)} does not support get operations')
 
         if self.cache and self.name in owner._attr_store.cache:
             # return the cached value if applicable
@@ -967,7 +973,7 @@ class OwnerAccessAttr(ParamAttr[T]):
         else:
             objname = str(type(owner).__qualname__) + '.' + (self.name)
             raise AttributeError(
-                f'cannot set {objname}: no @{self.__repr__(owner_inst=owner)}.' f'setter and no key argument'
+                f'cannot set {objname}: no @{self.__repr__(owner=owner)}.' f'setter and no key argument'
             )
 
         if self.notify:
@@ -1133,10 +1139,6 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
 
         else:
             # fill in undefined getter/setter with the key adapter
-            if self._getter is not None and self._setter is not None:
-                me = repr(self)
-                util.logger.warning(f'{me} key argument overridden by both @getter and @setter')
-
             self._kwargs.update(key_adapter.fill_kwargs(self, owner_cls))
 
             if self.gets and self._getter is None:
@@ -1194,12 +1196,20 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
             return tuple()
 
     def _raise_on_setattr(self, owner, value):
-        raise AttributeError(f'to set {self}, call it as a function {self}(...)')
+        me = self.__repr__(owner=owner)
+        call_name = self.__repr__(owner=owner, with_declaration=False)
+        raise AttributeError(f'set {me} through the function call {call_name}(new_value, ...)')
 
     @util.hide_in_traceback
     def _validate_paired_signatures(self):
-        """ensure that keyword arguments of the getter and setter are matched"""
+        """called when both getter and setter are decorated to ensure that their arguments match"""
 
+        if self.name is None and self.key is not Undefined and self._getter is not None and self._setter is not None:
+            # in this case, we've defined the setter and getter through decorators, even though we expect
+            # a key implementation
+            util.logger.warning(f'{self} key argument overridden by both @getter and @setter')
+
+        # number and names of arguments
         if name_arguments(self._setter)[2:] != name_arguments(self._getter)[1:]:
             ex = TypeError('setter and getter keyword argument names must match')
             ex.add_note(f'method name: {self.name}')
@@ -1207,6 +1217,7 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
             ex.add_note(f'getter arguments: {name_arguments(self._getter)}')
             raise ex
 
+        # defaults
         getter_defaults = default_arguments(self._getter)
         setter_defaults = default_arguments(self._setter)
         if getter_defaults[::-1] != setter_defaults[::-1][:len(getter_defaults)]:
@@ -1663,7 +1674,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
             return owner_cal['by_uncal'].loc[uncal]
         except KeyError:
             # spare us pandas details in the traceback
-            util.logger.warning(f'{self.__repr__(owner_inst=owner)} has no entry at {uncal!r} {self.label}')
+            util.logger.warning(f'{self.__repr__(owner=owner)} has no entry at {uncal!r} {self.label}')
 
         return None
 
@@ -1751,7 +1762,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
             # raise an exception if the calibration table contains invalid
             # values, instead
             raise ValueError(
-                f'calibration lookup in {self.__repr__(owner_inst=owner)} produced invalid value {uncal_value!r}'
+                f'calibration lookup in {self.__repr__(owner=owner)} produced invalid value {uncal_value!r}'
             )
         else:
             # execute the set
@@ -1834,7 +1845,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
         if path is None:
             if not self.allow_none:
-                desc = self.__repr__(owner_inst=owner, declaration=False)
+                desc = self.__repr__(owner=owner, declaration=False)
                 raise ValueError(f'{desc} defined with allow_none=False; path_attr must not be None')
             else:
                 return None

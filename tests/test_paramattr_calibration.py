@@ -62,29 +62,18 @@ def opened_device():
     device.close()
 
 
-def test_set_attenuation_setting(opened_device):
+def test_get_from_table_calibration(opened_device):
     opened_device.frequency = 5e9
     
-    opened_device.attenuation_setting = 0
-    assert opened_device.attenuation == 1, 'calibrated attenuation level at 0 dB attenuation setting'
-
-    opened_device.attenuation_setting = 10
-    assert opened_device.attenuation == 11, f'calibrated attenuation setting {opened_device.attenuation_setting} at 10 dB calibrated attenuation'
+    for attenuation_setting in (0,10,20):
+        opened_device.attenuation_setting = attenuation_setting
+        assert opened_device.attenuation == attenuation_setting + 1, 'attenuation was {attenuation} dB when attenuation setting was set to {attenuation_setting} dB'
 
 
-def test_set_attenuation(opened_device):
+def test_set_to_table_calibration(opened_device):
     opened_device.frequency = 5e9
 
-    opened_device.attenuation = 11
-    assert opened_device.attenuation_setting == 10, 'attenuation setting at 11 dB calibrated attenuation'
-
-    opened_device.attenuation = 6
-    assert opened_device.attenuation_setting == 5, 'attenuation setting at 6 dB calibrated attenuation'
-
-    opened_device.attenuation = 1
-    assert opened_device.attenuation_setting == 0, 'attenuation setting at 1 dB calibrated attenuation'
-
-
-
-
-
+    for attenuation in (1,11,21):
+        opened_device.attenuation = attenuation
+        attenuation_setting = opened_device.attenuation_setting
+        assert attenuation_setting == attenuation - 1, 'attenuation setting {attenuation_setting} dB when attenuation was set to {attenuation} dB'

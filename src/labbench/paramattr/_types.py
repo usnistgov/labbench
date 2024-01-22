@@ -75,7 +75,7 @@ class Bool(_bases.ParamAttr[bool], type=bool):
             elif lvalue in ('false', b'false'):
                 return False
         raise ValueError(
-            f"'{self.__repr__(owner_inst=owner)}' accepts only boolean, numerical values,"
+            f"'{self.__repr__(owner=owner)}' accepts only boolean, numerical values,"
             "or one of ('true',b'true','false',b'false'), case-insensitive"
         )
 

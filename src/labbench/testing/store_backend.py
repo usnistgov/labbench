@@ -13,7 +13,7 @@ __all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
 T = typing.TypeVar('T')
 
 
-class key_store_adapter(attr.visa_keying):
+class key_adapter(attr.visa_keying):
     def __init__(
         self,
         *,
@@ -123,7 +123,7 @@ class TestStore:
         self.notifications.append(msg)
 
 
-@key_store_adapter()
+@key_adapter()
 class StoreTestDevice(Device):
     def open(self):
         self.backend = TestStore()

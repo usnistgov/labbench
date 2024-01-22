@@ -1,32 +1,34 @@
 
 from . import _bases, _types
+import typing as _typing
 from ._bases import Method
 
-class any(_bases.Method, _types.Any):
+
+class any(Method[_typing.Any], _types.Any):
     pass
 
 
-class bool(_bases.Method, _types.Bool):
+class bool(Method[bool], _types.Bool):
     pass
 
 
-class float(_bases.Method, _types.Float):
+class float(Method[float], _types.Float):
     pass
 
 
-class int(_bases.Method, _types.Int):
+class int(Method[int], _types.Int):
     pass
 
 
-class complex(_bases.Method, _types.Complex):
+class complex(Method[complex], _types.Complex):
     pass
 
 
-class str(_bases.Method[str], _types.Unicode):
+class str(Method[str], _types.Unicode):
     pass
 
 
-class bytes(_bases.Method, _types.Bytes):
+class bytes(Method, _types.Bytes):
     pass
 
 

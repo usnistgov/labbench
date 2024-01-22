@@ -1633,7 +1633,7 @@ class DependentNumberParamAttr(DependentParamAttr):
     def derived_min(self, owner):
         """this should be overloaded to dynamically compute max"""
         return self.min
-    
+
     @util.hide_in_traceback
     def check_bounds(self, value, owner=None):
         max_ = self.derived_max(owner)
@@ -1745,7 +1745,7 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
             return None
         else:
             return table.index[-1]
-        
+
     @util.hide_in_traceback
     def get_from_owner(self, owner: HasParamAttrs, kwargs: dict[str, Any] = {}):
         # by_cal, by_uncal = owner._attr_store.calibrations.get(self.name, (None, None))
@@ -1960,7 +1960,7 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
             return
 
         owner = msg['owner']
-        if self.notify:
+        if self.notify and self.name is not None:
             owner.__notify__(self.name, msg['new'], msg['type'], cache=msg['cache'])
 
     def _transformed_extrema(self, owner):
@@ -2013,7 +2013,7 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
         else:
             ret = self._forward(base_value)
 
-        if hasattr(self, 'name') and self.notify:
+        if getattr(self, 'name', None) is not None and self.notify:
             owner.__notify__(
                 self.name,
                 ret,
@@ -2023,24 +2023,24 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
 
         return ret
 
-    def __set__(self, owner, value_request):
+    def set_in_owner(self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}):
         # use the other to the value into the proper format and validate it
         base_attr = self._paramattr_dependencies['base']
-        value = base_attr.to_pythonic(value_request)
+        value = base_attr.to_pythonic(value)
 
         # now reverse the transformation
         if 'other' in self._paramattr_dependencies:
             other_attr = self._paramattr_dependencies['other']
-            other_value = other_attr.__get__(owner, other_attr.__objclass__)
+            other_value = other_attr.get_from_owner(owner, kwargs)
 
             base_value = self._reverse(value, other_value)
         else:
             base_value = self._reverse(value)
 
         # set the value of the base attr with the reverse-transformed value
-        base_attr.__set__(owner, base_value)
+        base_attr.set_in_owner(owner, base_value, kwargs)
 
-        if hasattr(self, 'name') and self.notify:
+        if getattr(self, 'name', None) is not None and self.notify:
             owner.__notify__(
                 self.name,
                 value,
@@ -2090,7 +2090,7 @@ class BoundedNumber(ParamAttr[T]):
 
             return '\n'.join(docs) + '\n'
 
-    def calibrate_from_table(
+    def corrected_from_table(
         self,
         path_attr: ParamAttr,
         index_lookup_attr: ParamAttr,
@@ -2124,7 +2124,7 @@ class BoundedNumber(ParamAttr[T]):
 
         return ret
 
-    def calibrate_from_expression(
+    def corrected_from_expression(
         self,
         attr_expression: ParamAttr,
         help: str = '',
@@ -2188,18 +2188,14 @@ class BoundedNumber(ParamAttr[T]):
             reverse: implementation of the reverse transformation
         """
 
-        kws = dict(
-            self.kws,
-            help=help,
-            allow_none=allow_none,
-            _forward=forward,
-            _reverse=reverse,
-        )
-
         obj = TransformedNumberMixIn.derive(
             self,
             dependent_attrs={} if other_attr is None else dict(other=other_attr),
-            **kws
+            help=help,
+            label=self.label,
+            allow_none=allow_none,
+            _forward=forward,
+            _reverse=reverse,
         )
 
         return obj

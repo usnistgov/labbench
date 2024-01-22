@@ -10,7 +10,7 @@ from labbench.testing import store_backend
 
 
 @attr.method_kwarg.int('registered_channel', min=1, max=4)
-@store_backend.key_store_adapter(defaults={'SWE:APER': '20e-6'})
+@store_backend.key_adapter(defaults={'SWE:APER': '20e-6'})
 class StoreDevice(store_backend.StoreTestDevice):
     """This "instrument" makes mock data and instrument property traits to
     demonstrate we can show the process of value trait

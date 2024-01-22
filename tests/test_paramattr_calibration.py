@@ -8,10 +8,10 @@ lb.util.force_full_traceback(True)
 @store_backend.key_store_adapter(defaults={'attenuation_setting': 0})
 class StoreTestDevice(store_backend.StoreTestDevice):
     frequency: float = attr.value.float(
-        None,
+        5e9,
         allow_none=True,
-        min=10e6,
-        max=6e9,
+        min=1e9,
+        max=5e9,
         help='frequency for calibration data (None for no calibration)',
         label='Hz',
     )
@@ -63,17 +63,19 @@ def opened_device():
 
 
 def test_get_from_table_calibration(opened_device):
-    opened_device.frequency = 5e9
-    
-    for attenuation_setting in (0,10,20):
+    for attenuation_setting in (0,10,100):
         opened_device.attenuation_setting = attenuation_setting
         assert opened_device.attenuation == attenuation_setting + 1, 'attenuation was {attenuation} dB when attenuation setting was set to {attenuation_setting} dB'
 
 
 def test_set_to_table_calibration(opened_device):
-    opened_device.frequency = 5e9
-
-    for attenuation in (1,11,21):
+    for attenuation in (1,11,111):
         opened_device.attenuation = attenuation
         attenuation_setting = opened_device.attenuation_setting
         assert attenuation_setting == attenuation - 1, 'attenuation setting {attenuation_setting} dB when attenuation was set to {attenuation} dB'
+
+    with pytest.raises(ValueError):
+        opened_device.attenuation = 0
+
+    with pytest.raises(ValueError):
+        opened_device.attenuation = 112

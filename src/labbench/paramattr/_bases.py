@@ -590,8 +590,8 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             value = self.to_pythonic(value)
             self.validate(value, owner)
         except BaseException as e:
-            e.args = (e.args[0] + f" in attempt to get '{self.__repr__(owner=owner)}'",) + e.args[1:]
-            raise e
+            e.add_note(f"while attempting to get attribute '{self}' in {owner}")
+            raise
 
         if value is None:
             log = getattr(owner, '_logger', warn)
@@ -722,14 +722,14 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             if self.name is None:
                 return f'<{declaration}>'
             else:
-                return f'<{self.name} defined as {declaration}>'
+                return f'<{declaration} as {self.name}>'
 
         if get_class_attrs(owner).get(self.name, None) is None:
             raise AttributeError(f'{self} is not owned by {owner}')
         if declaration:
-            return f'<{owner}.{self.name} defined as {declaration}>'
+            return f'<{declaration} as {self._owned_name(owner)}>'
         else:
-            return f'{owner}.{self.name}'
+            return self._owned_name(owner)
 
     __str__ = __repr__
 
@@ -1551,7 +1551,7 @@ def unobserve(obj, handler):
 
 
 def find_paramattr_in_mro(cls):
-    if issubclass(cls, DependentParamAttr):
+    if issubclass(cls, DependentNumberParamAttr):
         return find_paramattr_in_mro(type(cls._paramattr_dependencies['base']))
     else:
         return cls
@@ -1598,22 +1598,22 @@ class DependentParamAttr(ParamAttr):
     def derive(
         mixin_cls: type[ParamAttr], template_attr: ParamAttr, dependent_attrs={}, *init_args, **init_kws
     ) -> type[ParamAttr]:
-        name = type(template_attr).__name__
-        name = ('' if name.startswith('dependent_') else 'dependent_') + name
+        type_name = type(template_attr).__name__
+        type_name = ('' if type_name.startswith('derived') else 'derived_') + type_name
 
         dependent_attrs['base'] = template_attr
 
         attrs_dict = {}
 
         for c in mixin_cls.__mro__:
-            if issubclass(c, DependentParamAttr):
+            if issubclass(c, DependentNumberParamAttr):
                 attrs_dict.update(c._paramattr_dependencies)
 
         attrs_dict.update(dependent_attrs)
 
         ns = dict(_paramattr_dependencies=attrs_dict, **dependent_attrs)
 
-        ttype = type(name, (mixin_cls, find_paramattr_in_mro(type(template_attr))), ns)
+        ttype = type(type_name, (mixin_cls, find_paramattr_in_mro(type(template_attr))), ns)
 
         obj = ttype(*init_args, **init_kws)
         return obj
@@ -1625,28 +1625,40 @@ class DependentParamAttr(ParamAttr):
             return '* Bounds depend on calibration data at run-time'
 
 
-class RemappingCorrectionMixIn(DependentParamAttr):
+class DependentNumberParamAttr(DependentParamAttr):
+    def derived_max(self, owner):
+        """this should be overloaded to dynamically compute max"""
+        return self.max
+
+    def derived_min(self, owner):
+        """this should be overloaded to dynamically compute max"""
+        return self.min
+    
+    @util.hide_in_traceback
+    def check_bounds(self, value, owner=None):
+        super().check_bounds(value, owner)
+        max_ = self.derived_max(owner)
+        if max_ is None:
+            ex = ValueError(f'cannot set {self} while dependent attributes are unset')
+            for dep in self._paramattr_dependencies.values():
+                ex.add_note(f'dependent attribute: {dep}')
+            raise ex
+        if value > max_:
+            raise ValueError(f'{value} is greater than the max limit {max_} of {self._owned_name(owner)}')
+
+        min_ = self.derived_min(owner)
+        if value < min_:
+            raise ValueError(f'{value} is less than the min limit {min_} of {self._owned_name(owner)}')
+
+class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
     """act as another BoundedNumber ParamAttr, calibrated with a mapping"""
 
     mapping: Any = None  # really a pandas Series
 
     EMPTY_STORE = dict(by_cal=None, by_uncal=None)
 
-    def _min(self, owner: HasParamAttrs):
-        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get('by_uncal', None)
-        if by_uncal is None:
-            return None
-        else:
-            return by_uncal.min()
-
-    def _max(self, owner: HasParamAttrs):
-        by_uncal = owner._attr_store.calibrations.get(self.name, {}).get('by_uncal', None)
-        if by_uncal is None:
-            return None
-        else:
-            return by_uncal.max()
-
     def __init_owner_instance__(self, owner: HasParamAttrs):
+        super().__init_owner_instance__(owner)
         self.set_mapping(self.mapping, owner=owner)
         observe(
             owner,
@@ -1669,7 +1681,6 @@ class RemappingCorrectionMixIn(DependentParamAttr):
         owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         if owner_cal.get('by_uncal', None) is None:
             return None
-
         try:
             return owner_cal['by_uncal'].loc[uncal]
         except KeyError:
@@ -1720,6 +1731,22 @@ class RemappingCorrectionMixIn(DependentParamAttr):
 
         (owner._attr_store.calibrations.setdefault(self.name, {}).update(by_cal=by_cal, by_uncal=by_uncal))
 
+    def derived_min(self, owner):
+        table = get_owner_store(owner).calibrations.setdefault(self.name, {}).get('by_cal', None)
+
+        if table is None:
+            return None
+        else:
+            return table.index[0]
+
+    def derived_max(self, owner):
+        table = get_owner_store(owner).calibrations.setdefault(self.name, {}).get('by_cal', None)
+
+        if table is None:
+            return None
+        else:
+            return table.index[-1]
+        
     @util.hide_in_traceback
     def get_from_owner(self, owner: HasParamAttrs, kwargs: dict[str, Any] = {}):
         # by_cal, by_uncal = owner._attr_store.calibrations.get(self.name, (None, None))
@@ -1748,6 +1775,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
     def set_in_owner(self, owner: HasParamAttrs, cal_value, kwargs: dict[str, Any] = {}):
         # owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         self._validate_attr_dependencies(owner, False, 'set')
+        self._prepare_set_value(owner, cal_value, kwargs)
 
         # start with type conversion and validation on the requested calibrated value
         cal_value = self._paramattr_dependencies['base'].to_pythonic(cal_value)
@@ -1758,9 +1786,8 @@ class RemappingCorrectionMixIn(DependentParamAttr):
 
         if uncal_value is None:
             base.set_in_owner(owner, cal_value, kwargs)
-        elif uncal_value != type(base).validate(self, uncal_value, owner):
-            # raise an exception if the calibration table contains invalid
-            # values, instead
+        elif uncal_value != base.validate(uncal_value, owner):
+            # raise an exception if the calibration table contains invalid values instead
             raise ValueError(
                 f'calibration lookup in {self.__repr__(owner=owner)} produced invalid value {uncal_value!r}'
             )
@@ -1777,7 +1804,7 @@ class RemappingCorrectionMixIn(DependentParamAttr):
             )
 
 
-class TableCorrectionMixIn(RemappingCorrectionMixIn):
+class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
     _CAL_TABLE_KEY = 'table'
 
     path_attr: ParamAttr = None  # a dependent Unicode ParamAttr
@@ -1786,6 +1813,16 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
     def __init_owner_instance__(self, owner):
         super().__init_owner_instance__(owner)
+
+        # seed the calibration table if the depenent attributes allow
+        path = getattr(owner, self.path_attr.name)
+
+        if path is not None:
+            self._load_calibration_table(owner, path)
+
+            index = getattr(owner, self.index_lookup_attr.name)
+            if index is not None:
+                self._update_index_value(owner, index)
 
         observe(
             owner,
@@ -1824,8 +1861,6 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
 
         else:
             raise KeyError(f"unsupported parameter attribute name {msg['name']}")
-
-        # return self._update_index_value(msg["owner"], msg["new"])
 
     def _load_calibration_table(self, owner, path):
         """stash the calibration table from disk"""
@@ -1903,7 +1938,7 @@ class TableCorrectionMixIn(RemappingCorrectionMixIn):
             )
 
 
-class TransformMixIn(DependentParamAttr):
+class TransformedNumberMixIn(DependentNumberParamAttr):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber"""
 
     @staticmethod
@@ -1931,7 +1966,7 @@ class TransformMixIn(DependentParamAttr):
 
     def _transformed_extrema(self, owner):
         base_attr = self._paramattr_dependencies['base']
-        base_bounds = [base_attr._min(owner), base_attr._max(owner)]
+        base_bounds = [base_attr.derived_min(owner), base_attr.derived_max(owner)]
 
         other_attr = self._paramattr_dependencies.get('other', None)
 
@@ -1942,17 +1977,6 @@ class TransformMixIn(DependentParamAttr):
             ]
         else:
             other_value = getattr(owner, other_attr.name)
-            # other_bounds = [
-            #     other_attr._min(owner),
-            #     other_attr._max(owner),
-            # ]
-
-            # trial_bounds = [
-            #     self._forward(base_bounds[0], other_bounds[0]),
-            #     self._forward(base_bounds[0], other_bounds[1]),
-            #     self._forward(base_bounds[1], other_bounds[0]),
-            #     self._forward(base_bounds[1], other_bounds[1]),
-            # ]
             trial_bounds = [
                 self._forward(base_bounds[0], other_value),
                 self._forward(base_bounds[1], other_value),
@@ -1963,7 +1987,7 @@ class TransformMixIn(DependentParamAttr):
 
         return min(trial_bounds), max(trial_bounds)
 
-    def _min(self, owner):
+    def derived_min(self, owner):
         # TODO: ensure this works properly for any reversible self._forward()?
         lo, hi = self._transformed_extrema(owner)
 
@@ -1972,7 +1996,7 @@ class TransformMixIn(DependentParamAttr):
         else:
             return min(lo, hi)
 
-    def _max(self, owner):
+    def derived_max(self, owner):
         # TODO: ensure this works properly for any reversible self._forward()?
         lo, hi = self._transformed_extrema(owner)
 
@@ -2036,25 +2060,16 @@ class BoundedNumber(ParamAttr[T]):
     def validate(self, value, owner=None):
         if not isinstance(value, (bytes, str, bool, numbers.Number)):
             raise ValueError(f"a '{type(self).__qualname__}' attribute supports only numerical, str, or bytes types")
-
-        # Check bounds once it's a numerical type
-        min = self._min(owner)
-        max = self._max(owner)
-
-        if max is not None and value > max:
-            raise ValueError(f'{value} is greater than the max limit {max} of {self._owned_name(owner)}')
-        if min is not None and value < min:
-            raise ValueError(f'{value} is less than the min limit {min} of {self._owned_name(owner)}')
-
+        self.check_bounds(value, owner)
         return value
 
-    def _max(self, owner):
-        """overload this to dynamically compute max"""
-        return self.max
-
-    def _min(self, owner):
-        """overload this to dynamically compute max"""
-        return self.min
+    @util.hide_in_traceback
+    def check_bounds(self, value, owner=None):
+        # dynamic checks against self.derived_max() or self.derived_min() are left to derived classes
+        if self.max is not None and value > self.max:
+            raise ValueError(f'{value} is greater than the max limit {self.max} of {self._owned_name(owner)}')
+        if self.min is not None and value < self.min:
+            raise ValueError(f'{value} is less than the min limit {self.min} of {self._owned_name(owner)}')
 
     path_attr = None  # TODO: should be a Unicode string attribute
 
@@ -2146,11 +2161,11 @@ class BoundedNumber(ParamAttr[T]):
         Returns:
             _type_: _description_
         """
-        if isinstance(self, DependentParamAttr):
+        if isinstance(self, DependentNumberParamAttr):
             # This a little unsatisfying, but the alternative would mean
             # solving the attr_expression for `self`
             obj = attr_expression
-            while isinstance(obj, DependentParamAttr):
+            while isinstance(obj, DependentNumberParamAttr):
                 obj = obj._paramattr_dependencies['base']
                 if obj == self:
                     break
@@ -2182,7 +2197,7 @@ class BoundedNumber(ParamAttr[T]):
             _reverse=reverse,
         )
 
-        obj = TransformMixIn.derive(
+        obj = TransformedNumberMixIn.derive(
             self,
             dependent_attrs={} if other_attr is None else dict(other=other_attr),
             **kws

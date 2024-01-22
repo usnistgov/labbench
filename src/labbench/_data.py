@@ -733,7 +733,7 @@ class Aggregator(util.Ownable):
 
         self.incoming_rack_input = dict(row_data, **msg['new'])
 
-    def _receive_trait_update(self, msg: dict):
+    def _receive_paramattr_update(self, msg: dict):
         """called by trait owners on changes observed
 
         Arguments:
@@ -744,6 +744,9 @@ class Aggregator(util.Ownable):
 
         if msg['name'].startswith('_'):
             # skip private traits
+            return
+
+        if not msg['owner'].log:
             return
 
         name = self.name_map[msg['owner']]
@@ -866,9 +869,9 @@ class Aggregator(util.Ownable):
         # Register handlers
         for device in devices.keys():
             if changes:
-                observe(device, self._receive_trait_update)
+                observe(device, self._receive_paramattr_update)
             else:
-                attr.unobserve(device, self._receive_trait_update)
+                attr.unobserve(device, self._receive_paramattr_update)
             if always:
                 self.attr_rules['always'][device] = always
             if never:

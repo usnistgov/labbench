@@ -418,7 +418,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         cache: if True, interact with the device only once, then return copies (state attribute only)
         only: value allowlist; others raise ValueError
         allow_none: permit None values in addition to the specified type
-        notify: whether to emit logging/UI notifications when the value changes
+        log: whether to emit logging/UI notifications when the value changes
     """
 
     # the python type representation defined by ParamAttr subclasses
@@ -435,7 +435,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     cache: bool = False
     only: tuple = tuple()
     allow_none: bool = False
-    notify: bool = True
+    log: bool = True
 
     _keywords = {}
     _defaults = {}
@@ -829,9 +829,8 @@ class Value(ParamAttr[T]):
             # stop now if this is not a gets ParamAttr
             raise AttributeError(f'{self.__repr__(owner=owner)} does not support gets')
 
-        need_notify = self.notify and self.name not in owner._attr_store.cache
         value = owner._attr_store.cache.setdefault(self.name, self.default)
-        if need_notify:
+        if self.name not in owner._attr_store.cache:
             owner.__notify__(self.name, value, 'get', cache=self.cache)
         return value
 
@@ -839,8 +838,7 @@ class Value(ParamAttr[T]):
     def set_in_owner(self, owner: HasParamAttrs, value: T, kwargs: dict[str, Any] = {}):
         value = self._prepare_set_value(owner, value, kwargs)
         owner._attr_store.cache[self.name] = value
-        if self.notify:
-            owner.__notify__(self.name, value, 'set', cache=self.cache)
+        owner.__notify__(self.name, value, 'set', cache=self.cache)
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         pass
@@ -952,8 +950,7 @@ class OwnerAccessAttr(ParamAttr[T]):
             value = get_owner_meta(owner).key_adapter.get(owner, self.key, self, kwargs)
 
         value = self._finalize_get_value(owner, value, strict=False)
-        if self.notify:
-            owner.__notify__(self.name, value, 'get', cache=self.cache, kwargs=kwargs)
+        owner.__notify__(self.name, value, 'get', cache=self.cache, kwargs=kwargs)
         return value
 
     @util.hide_in_traceback
@@ -976,8 +973,7 @@ class OwnerAccessAttr(ParamAttr[T]):
                 f'cannot set {objname}: no @{self.__repr__(owner=owner)}.' f'setter and no key argument'
             )
 
-        if self.notify:
-            owner.__notify__(self.name, value, 'set', cache=self.cache, kwargs=kwargs)
+        owner.__notify__(self.name, value, 'set', cache=self.cache, kwargs=kwargs)
 
     def copy(self, new_type=None, **update_kws):
         obj = super().copy(new_type=new_type, **update_kws)
@@ -1667,13 +1663,12 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
 
     def _on_base_paramattr_change(self, msg):
         owner = msg['owner']
-        if self.notify:
-            owner.__notify__(
-                self.name,
-                self.lookup_cal(msg['new'], owner),
-                msg['type'],
-                cache=msg['cache'],
-            )
+        owner.__notify__(
+            self.name,
+            self.lookup_cal(msg['new'], owner),
+            msg['type'],
+            cache=msg['cache'],
+        )
 
     def lookup_cal(self, uncal, owner):
         """look up and return the calibrated value, given the uncalibrated value"""
@@ -1760,7 +1755,7 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
         else:
             ret = cal
 
-        if hasattr(self, 'name') and self.notify:
+        if getattr(self, 'name', None) is not None:
             owner.__notify__(
                 self.name,
                 ret,
@@ -1794,7 +1789,7 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
             # execute the set
             self._paramattr_dependencies['base'].set_in_owner(owner, uncal_value, kwargs)
 
-        if hasattr(self, 'name') and self.notify:
+        if getattr(self, 'name', None) is not None:
             owner.__notify__(
                 self.name,
                 cal_value,
@@ -1960,7 +1955,7 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
             return
 
         owner = msg['owner']
-        if self.notify and self.name is not None:
+        if self.name is not None:
             owner.__notify__(self.name, msg['new'], msg['type'], cache=msg['cache'])
 
     def _transformed_extrema(self, owner):
@@ -2013,7 +2008,7 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
         else:
             ret = self._forward(base_value)
 
-        if getattr(self, 'name', None) is not None and self.notify:
+        if getattr(self, 'name', None) is not None:
             owner.__notify__(
                 self.name,
                 ret,
@@ -2040,7 +2035,7 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
         # set the value of the base attr with the reverse-transformed value
         base_attr.set_in_owner(owner, base_value, kwargs)
 
-        if getattr(self, 'name', None) is not None and self.notify:
+        if getattr(self, 'name', None) is not None:
             owner.__notify__(
                 self.name,
                 value,

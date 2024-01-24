@@ -382,13 +382,6 @@ class HasParamAttrsMeta(type):
         return ns
 
 
-def _parameter_maybe_positional(param: inspect.Parameter):
-    return param.kind in (
-        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-        inspect.Parameter.POSITIONAL_ONLY,
-    )
-
-
 @typing.dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
 class ParamAttrMeta(type):
     pass

@@ -36,6 +36,7 @@ T_con = typing.TypeVar('T_con', contravariant=True)
 SignatureType = typing.TypeVar('SignatureType')
 _P = typing.ParamSpec('_P')
 
+
 class field(typing.Generic[T]):
     # __slots__ = 'kw_only', 'default'
 
@@ -52,6 +53,11 @@ class field(typing.Generic[T]):
     def __init__(self, default: Union[None, type[Undefined], T], kw_only: bool = True):
         self.kw_only = kw_only
         self.default = default
+
+
+
+def copy_(template: ParamAttr[T], /, **kwargs) -> ParamAttr[T]:
+    return template.copy(None, **kwargs)
 
 
 class no_cast_argument:
@@ -463,9 +469,11 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         for k, v in dict(self._defaults, **kws).items():
             setattr(self, k, v)
 
-    def copy(self, new_type=None, **update_kws):
+    def copy(self, new_type=None, default=Undefined, **update_kws) -> type[typing.Self]:
         if new_type is None:
             new_type = type(self)
+        if default is not Undefined:
+            update_kws['default'] = default
         obj = new_type(**dict(self.kws, **update_kws))
         return obj
 
@@ -1443,6 +1451,13 @@ def adjust(paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /,
     Returns:
         HasParamAttrs or Device with adjusted attributes value
     """
+    warn(
+        'labbench.paramattr.adjusted("param_name") has been deprecated in favor '
+        'of the labbench.paramattr.copy(DeviceName.param_name), to improve type '
+        'hinting compatibility',
+        DeprecationWarning,
+        stacklevel=2
+    )
     if isinstance(paramattr, ParamAttr):
         name = paramattr.name
     elif isinstance(paramattr, builtins.str):

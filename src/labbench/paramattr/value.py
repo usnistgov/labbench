@@ -66,4 +66,5 @@ _ALL_TYPES = (
     dict,
     Path,
     NetworkAddress,
+    str.copy,
 )

@@ -10,6 +10,8 @@ from ._bases import (
     observe,
     unobserve,
 )
+from ._bases import copy_ as copy
+
 from ._key_adapters import message_keying, visa_keying
 
 for _obj in dict(locals()).values():

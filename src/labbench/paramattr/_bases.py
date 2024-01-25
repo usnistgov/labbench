@@ -55,8 +55,8 @@ class field(typing.Generic[T]):
         self.default = default
 
 
-
-def copy_(template: ParamAttr[T], /, **kwargs) -> ParamAttr[T]:
+def copy_(template: ParamAttr[T], **kwargs) -> ParamAttr[T]:
+    """return a copy of template, with keyword arguments adjusted according to kwargs"""
     return template.copy(None, **kwargs)
 
 

@@ -6,6 +6,7 @@ from paramattr_tooling import eval_set_then_get, has_steps, loop_closed_loop_set
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
+import inspect
 
 
 @store_backend.key_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
@@ -160,8 +161,6 @@ def test_default_values(opened_device, role_type):
         value = getattr(opened_device, attr_def.name)
         assert value == attr_def.default, f'pythonic type of {attr_def.name}'
 
-import inspect
-
 def test_constructor():
     DEFAULT_VALUE = 4
 
@@ -185,19 +184,42 @@ def test_adjusted_constructor():
         number: int = attr.value.int(0)
 
     class Device(ParentDevice):
-        number: int = ParentDevice.number.copy(default=DEFAULT_VALUE)
+        number: int = attr.copy(ParentDevice.number, default=DEFAULT_VALUE)
 
     # check Device signature
     params = inspect.signature(Device).parameters
 
     assert tuple(params.keys()) == ('resource', 'number'), \
            'constructor keyword argument names'
-    
+
     defaults = [p.default for p in params.values()]
     assert tuple(defaults) == (lb.Device.resource.default, DEFAULT_VALUE)
 
     d = Device()
     assert d.number == DEFAULT_VALUE
+
+
+def test_adjusted_constructor_posarg():
+    DEFAULT_VALUE = 4
+
+    class ParentDevice(lb.Device):
+        number: int = attr.value.int(0)
+
+    class Device(ParentDevice):
+        number: int = attr.copy(ParentDevice.number, default=DEFAULT_VALUE)
+
+    # check Device signature
+    params = inspect.signature(Device).parameters
+
+    assert tuple(params.keys()) == ('resource', 'number'), \
+           'constructor keyword argument names'
+
+    defaults = [p.default for p in params.values()]
+    assert tuple(defaults) == (lb.Device.resource.default, DEFAULT_VALUE)
+
+    d = Device()
+    assert d.number == DEFAULT_VALUE
+
 
 def test_only(opened_device):
     # low bound

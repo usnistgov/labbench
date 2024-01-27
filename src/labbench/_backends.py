@@ -169,7 +169,7 @@ class ShellBackend(Device):
         except ValueError:
             pass
 
-        self._logger.debug(f"shell execute '{' '.join(cmdl)!r}'")
+        self._logger.debug(f"shell execute {' '.join(cmdl)!r}")
         cp = sp.run(cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return)
         ret = cp.stdout
 
@@ -296,28 +296,28 @@ class ShellBackend(Device):
 
     def _flags_to_argv(self, flags):
         # find keys in flags that do not exist as value traits
-        unsupported = set(flags.keys()).difference(attr.list_value_attrs(self))
+        unsupported = flags.keys() - attr._bases.list_value_attrs(self)
         if len(unsupported) > 1:
             raise KeyError(f'flags point to value traits {unsupported} that do not exist in {self}')
 
         argv = []
         for name, flag_str in flags.items():
-            trait = self._attr_defs.attrs[name]
-            trait_value = getattr(self, name)
+            attr_def = attr.get_class_attrs(self)[name]
+            value = getattr(self, name)
 
             if not isinstance(flag_str, str) and flag_str is not None:
                 raise TypeError(f'keys defined in {self} must be str (for a flag) or None (for no flag')
 
-            if trait_value is None:
+            if value is None:
                 continue
 
-            elif trait.type is bool:
+            elif attr_def._type is bool:
                 if flag_str is None:
                     # this would require a remap parameter in value traits, which are not supported (should they be?)
                     # (better to use string?)
                     raise ValueError('cannot map a Bool onto a string argument specified by None mapping')
 
-                elif trait_value:
+                elif value:
                     # trait_value is truey
                     argv += [flag_str]
                     continue
@@ -329,14 +329,14 @@ class ShellBackend(Device):
             elif flag_str is None:
                 # do not add a flag
 
-                if trait_value is None:
+                if value is None:
                     # when trait_value is 'None', don't include this flag
                     continue
                 else:
-                    argv += [str(trait_value)]
+                    argv += [str(value)]
 
             elif isinstance(flag_str, str):
-                argv += [flag_str, str(trait_value)]
+                argv += [flag_str, str(value)]
 
             else:
                 raise ValueError('unexpected error condition (this should not be possible)')
@@ -595,7 +595,6 @@ class LabviewSocketInterface(Device):
                     continue
 
 
-@attr.adjust('resource', help='platform-dependent serial port address')
 class SerialDevice(Device):
     """Base class for wrappers that communicate via pyserial.
 
@@ -605,6 +604,8 @@ class SerialDevice(Device):
     Attributes:
         - backend (serial.Serial): control object, after open
     """
+
+    resource = attr.copy(Device.resource, help='platform-dependent serial port address')
 
     # Connection value traits
     timeout: float = attr.value.float(

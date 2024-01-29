@@ -258,8 +258,6 @@ class ThreadEndedByMaster(ThreadError):
 concurrency_count = 0
 stop_request_event = Event()
 
-sys._debug_tb = False
-
 TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 
 T = TypeVar('T')
@@ -297,50 +295,71 @@ def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
 
 def force_full_traceback(force: bool) -> None:
     """configure whether to disable traceback hiding for internal API calls inside labbench"""
-    sys._debug_tb = force
+    exc_info.debug = force
 
 
 def _force_full_traceback(force: bool) -> None:
     """configure whether to disable traceback hiding for internal API calls inside labbench"""
     logger.warning(
-        'labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead'
+        'labbench._force_full_traceback has been deprecated - use labbench.util.force_full_traceback instead',
     )
     force_full_traceback(force)
 
 
-class _filtered_exc_info:
+class exc_info:
     """a monkeypatch for sys.exc_info that removes functions from tracebacks
     that are tagged with TRACEBACK_HIDE_TAG
     """
 
-    def __init__(self, wrapped):
-        self.lb_wrapped = wrapped
+    sys_exc_info = sys.exc_info
+    debug = False
 
-    def __call__(self):
-        try:
-            etype, evalue, start_tb = self.lb_wrapped()
+    @classmethod
+    def __call__(cls):
+        etype, evalue, tb = cls.sys_exc_info()
+        return cls.filter(etype, evalue, tb)
 
-            if sys._debug_tb:
-                return etype, evalue, start_tb
+    @classmethod
+    def filter(cls, etype, evalue, tb):
+        if cls.debug:
+            return etype, evalue, tb
 
-            tb = prev_tb = start_tb
+        prev_tb = tb
+        this_tb = prev_tb.tb_next
 
-            # step through the stack traces
-            while tb is not None:
-                if TRACEBACK_HIDE_TAG in tb.tb_frame.f_code.co_consts:
-                    # when the tag is present, change the previous tb_next to skip this tb
-                    if tb is start_tb:
-                        start_tb = start_tb.tb_next
-                    else:
-                        prev_tb.tb_next = tb.tb_next
+        # step through the stack traces
+        while this_tb is not None:
+            if TRACEBACK_HIDE_TAG in this_tb.tb_frame.f_code.co_consts:
+                # filter this traceback
+                if this_tb is tb:
+                    # shift the starting traceback
+                    this_tb = prev_tb = tb = this_tb.tb_next
+                else:
+                    # skip this traceback
+                    this_tb = prev_tb.tb_next = this_tb.tb_next
+            else:
+                # pass this traceback
+                prev_tb, this_tb = this_tb, this_tb.tb_next
 
-                # on to the next traceback
-                prev_tb, tb = tb, tb.tb_next
+        return etype, evalue, tb
 
-            return etype, evalue, start_tb
 
-        except BaseException:
-            raise
+if not isinstance(sys.exc_info, exc_info):
+    # monkeypatch sys.exc_info
+    sys.exc_info = exc_info()
+
+
+class excepthook:
+    sys_excepthook = sys.excepthook
+
+    @classmethod
+    def __call__(cls, type, value, traceback):
+        return cls.sys_excepthook(*exc_info.filter(type, value, traceback))
+
+
+if not isinstance(sys.excepthook, excepthook):
+    # monkeypatch sys.excepthook
+    sys.excepthook = excepthook()
 
 
 def copy_func(
@@ -371,11 +390,6 @@ def copy_func(
         getattr(new, attr).update(getattr(func, attr))
 
     return new
-
-
-if not hasattr(sys.exc_info, 'lb_wrapped'):
-    # monkeypatch sys.exc_info if it needs
-    sys.exc_info, exc_info = _filtered_exc_info(sys.exc_info), sys.exc_info
 
 
 def sleep(seconds, tick=1.0):

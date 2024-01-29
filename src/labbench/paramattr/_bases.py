@@ -517,6 +517,11 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             # extra calls here result when .setter() and .getter()
             # decorators are applied in Method or Property
             return
+        
+        if not issubclass(owner_cls, HasParamAttrs):
+            # other owning objects may unintentionally become owners; this causes problems
+            # if they do not implement the HasParamAttrs object protocol
+            return
 
         class_attrs = get_class_attrs(owner_cls)
         if self.inherit:
@@ -533,25 +538,23 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             parent_attr = class_attrs[name]
             if type(parent_attr) is not type(self):
                 owner_name = owner_cls.__qualname__
+                type_name = type(parent_attr).__qualname__
                 raise TypeError(
                     f'cannot inherit defaults for {owner_name}.{name} '
-                    f'because it was defined with a different type {type(parent_attr)}'
+                    f'because it was defined with a different type {type_name}'
                 )
 
             if parent_attr is not self:
                 self = parent_attr.copy(**self.kws)
                 setattr(owner_cls, name, self)
 
-        # other owning objects may unintentionally become owners; this causes problems
-        # if they do not implement the HasParamAttrs object protocol
-        if issubclass(owner_cls, HasParamAttrs):
-            # inspect module expects this name - don't play with it
-            self.__objclass__ = owner_cls
+        # inspect module expects this name - don't play with it
+        self.__objclass__ = owner_cls
 
-            # Take the given name
-            self.name = name
+        # Take the given name
+        self.name = name
 
-            class_attrs[name] = self
+        class_attrs[name] = self
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         """The owner calls this in each of its ParamAttr attributes at the end of defining the subclass

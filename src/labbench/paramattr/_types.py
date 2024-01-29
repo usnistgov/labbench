@@ -93,6 +93,15 @@ class String(_bases.ParamAttr):
             value = value.lower()
         return value in iterable
 
+    @util.hide_in_traceback
+    def validate(self, value, owner=None):
+        if isinstance(value, (self._type, numbers.Number)):
+            return self._type(value)
+
+        raise ValueError(
+            f"cannot convert to {type(value).__qualname__} to {self._type.__qualname__}"
+        )
+
     def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
         if as_argument:
             return None
@@ -107,15 +116,6 @@ class String(_bases.ParamAttr):
 
 class Unicode(String[str], type=str):
     """accepts strings or numeric values only; convert others explicitly before assignment"""
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        if not isinstance(value, (str, numbers.Number)):
-            raise ValueError(
-                f"'{type(self).__qualname__}' attributes accept values of str or numerical type, not {type(value).__name__}"
-            )
-        return value
-
 
 class Bytes(String[bytes], type=bytes):
     """accepts bytes objects only - encode str (unicode) explicitly before assignment"""

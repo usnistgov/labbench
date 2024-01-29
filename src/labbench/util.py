@@ -321,10 +321,11 @@ class exc_info:
 
     @classmethod
     def filter(cls, etype, evalue, tb):
-        if cls.debug:
+        if cls.debug or tb is None:
             return etype, evalue, tb
 
         prev_tb = tb
+
         this_tb = prev_tb.tb_next
 
         # step through the stack traces

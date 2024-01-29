@@ -16,10 +16,11 @@ __all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
     remap={True: 'ON', False: 'OFF'},
 )
 # set the automatic connection filters
-@attr.adjust('make', 'FakeTech')
-@attr.adjust('model', 'Power Sensor #1234')
-@attr.adjust('write_termination', '\r\n')
 class PowerSensor(VISADevice):
+    make = attr.value.str('FakeTech', inherit=True)
+    model = attr.value.str('Power Sensor #1234', inherit=True)
+    write_termination: str = attr.value.str('\r\n', inherit=True)
+
     RATES = 'NORM', 'DOUB', 'FAST'
 
     # SCPI string keys and bounds on the parameter values,
@@ -59,9 +60,10 @@ class PowerSensor(VISADevice):
 
 
 @attr.visa_keying(remap={True: 'ON', False: 'OFF'})
-@attr.adjust('make', default='FakeTech')
-@attr.adjust('model', default='Spectrum Analyzer #1234')
 class SpectrumAnalyzer(VISADevice):
+    make = attr.value.str('FakeTech', inherit=True)
+    model = attr.value.str('Spectrum Analyzer #1234', inherit=True)
+
     center_frequency = attr.property.float(
         key='SENS:FREQ',
         min=10e6,
@@ -101,9 +103,10 @@ class SpectrumAnalyzer(VISADevice):
 
 
 @attr.visa_keying(remap={True: 'YES', False: 'NO'})
-@attr.adjust('make', 'FakeTech')
-@attr.adjust('model', 'Signal Generator #1234')
 class SignalGenerator(VISADevice):
+    make = attr.value.str('FakeTech', inherit=True)
+    model = attr.value.str('Signal Generator #1234', inherit=True)
+
     output_enabled = attr.property.bool(key='OUT:ENABL', help='when True, output an RF tone')
     center_frequency = attr.property.float(
         key='SENS:FREQ',
@@ -122,9 +125,10 @@ class SignalGenerator(VISADevice):
 
 @attr.method_kwarg.int('channel', min=1, max=4, help='input channel')
 @attr.visa_keying(remap={True: 'ON', False: 'OFF'})
-@attr.adjust('make', default='FakeTech')
-@attr.adjust('model', default='Oscilloscope #1234')
 class Oscilloscope(VISADevice):
+    make = attr.value.str('FakeTech', inherit=True)
+    model = attr.value.str('Oscilloscope #1234', inherit=True)
+
     @attr.method.float(
         label='Hz',
         help='channel center frequency',

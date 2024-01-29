@@ -6,10 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.35.0]
 ### Added
-- Paramattr now supports a boolean new keyword argument, `inherit`, which specifies
-  whether the paramattr should take default values from the same paramattr in the owning class.
-  This is meant to replace `labbench.paramattr.adjusted`, which did not update the type hints
-  for default values of Device constructors.
+- Paramattr now supports a boolean new keyword argument, `inherit`, which inherits keywords
+  from the descriptor from the parent of the owning class as default. This is meant to
+  replace the role `labbench.paramattr.adjusted`, which did not update the type hints
+  properly for default values of Device constructors.
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs

@@ -115,7 +115,7 @@ def log_paramattr_events(msg):
 @typing.dataclass_transform(
     kw_only_default=True,
     eq_default=False,
-    field_specifiers=attr.value._ALL_TYPES + (attr.copy, attr.ParamAttr.copy),
+    field_specifiers=attr.value._ALL_TYPES,
 )
 class DeviceDataClass(HasParamAttrs, util.Ownable):
     @typing.overload

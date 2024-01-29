@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.35.0]
 ### Added
-- `labbench.paramattr.copy` has been to create adjusted copies of other paramattrs.
+- Paramattr now supports a boolean new keyword argument, `inherit`, which specifies
+  whether the paramattr should take default values from the same paramattr in the owning class.
   This is meant to replace `labbench.paramattr.adjusted`, which did not update the type hints
   for default values of Device constructors.
 

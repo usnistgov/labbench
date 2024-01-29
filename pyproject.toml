@@ -141,7 +141,7 @@ pdf="pdflatex doc/latex/labbench-api.tex --output-directory=doc"
 rst="sphinx-apidoc -F . -o doc"
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py39"
 extend-include = ["*.ipynb"]
 
 [tool.ruff.format]

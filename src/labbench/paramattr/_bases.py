@@ -55,11 +55,6 @@ class field(typing.Generic[T]):
         self.default = default
 
 
-def copy_(template: ParamAttr[T], **kwargs) -> ParamAttr[T]:
-    """return a copy of template, with keyword arguments adjusted according to kwargs"""
-    return template.copy(None, **kwargs)
-
-
 class no_cast_argument:
     """duck-typed stand-in for an argument of arbitrary type"""
 
@@ -418,6 +413,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         only: value allowlist; others raise ValueError
         allow_none: permit None values in addition to the specified type
         log: whether to emit logging/UI notifications when the value changes
+        inherit: if True, use the definition in a parent class as defaults
     """
 
     # the python type representation defined by ParamAttr subclasses
@@ -435,6 +431,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     only: tuple = tuple()
     allow_none: bool = False
     log: bool = True
+    inherit: bool = False
 
     _keywords = {}
     _defaults = {}
@@ -474,7 +471,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             new_type = type(self)
         if default is not Undefined:
             update_kws['default'] = default
-        obj = new_type(**dict(self.kws, **update_kws))
+        kws = dict(self.kws, inherit=False)
+        kws.update(update_kws)
+        obj = new_type(**kws)
         return obj
 
     @classmethod
@@ -519,6 +518,30 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             # decorators are applied in Method or Property
             return
 
+        class_attrs = get_class_attrs(owner_cls)
+        if self.inherit:
+            if name not in class_attrs:
+                owner_name = owner_cls.__qualname__
+                raise TypeError(
+                    f'cannot inherit defaults for {owner_name}.{name} '
+                    f'because {name} is not defined in any parent class'
+                )
+
+            # if the parent class defines this paramattr, and it
+            # has the same type, inherit its definition to set our
+            # own defaults
+            parent_attr = class_attrs[name]
+            if type(parent_attr) is not type(self):
+                owner_name = owner_cls.__qualname__
+                raise TypeError(
+                    f'cannot inherit defaults for {owner_name}.{name} '
+                    f'because it was defined with a different type {type(parent_attr)}'
+                )
+
+            if parent_attr is not self:
+                self = parent_attr.copy(**self.kws)
+                setattr(owner_cls, name, self)
+
         # other owning objects may unintentionally become owners; this causes problems
         # if they do not implement the HasParamAttrs object protocol
         if issubclass(owner_cls, HasParamAttrs):
@@ -528,7 +551,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             # Take the given name
             self.name = name
 
-            get_class_attrs(owner_cls)[name] = self
+            class_attrs[name] = self
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         """The owner calls this in each of its ParamAttr attributes at the end of defining the subclass
@@ -538,6 +561,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
         This is also where we finalize selecting decorator behavior; is it a property or a method?
         """
+        pass
 
     def __init_owner_instance__(self, owner: HasParamAttrs):
         pass
@@ -774,6 +798,12 @@ class Value(ParamAttr[T]):
         kws.pop('kw_only', None)
         super().__init__(*args, **kws)
 
+        if self.inherit and not (len(args) > 0 or 'default' in kws):
+            raise TypeError(
+                'to avoid type hint inconsistencies, default must '
+                'be specified for values with inherit=True'
+            )
+
         if self.allow_none is None:
             if self.default is None:
                 self.allow_none = True  # type: ignore
@@ -978,12 +1008,6 @@ class OwnerAccessAttr(ParamAttr[T]):
 
         owner.__notify__(self.name, value, 'set', cache=self.cache, kwargs=kwargs)
 
-    def copy(self, new_type=None, **update_kws):
-        obj = super().copy(new_type=new_type, **update_kws)
-        obj._getter = self._getter
-        obj._setter = self._setter
-        return obj
-
     @util.hide_in_traceback
     def getter(self, func: _GetterType[T,_P]) -> typing.Self:
         """decorate a getter method to implement behavior in the owner"""
@@ -998,6 +1022,7 @@ class OwnerAccessAttr(ParamAttr[T]):
             raise TypeError('tried to implement a getter, but gets=False')
 
         self._getter = func
+        self.kws['_getter'] = func
         add_docstring_to_help(self, func)
 
         if self.name is None and hasattr(func, '__name__'):
@@ -1020,6 +1045,7 @@ class OwnerAccessAttr(ParamAttr[T]):
             raise TypeError('tried to implement a setter, but sets=False')
 
         self._setter = func
+        self.kws['_setter'] = func # for proper copying
         add_docstring_to_help(self, func)
 
         if self.name is None and hasattr(func, '__name__'):

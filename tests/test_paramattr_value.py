@@ -41,9 +41,9 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     str_no_case_with_only = attr.value.str(default='moose', only=('MOOSE', 'squirrel'), case=False)
 
 
-@attr.adjust('bool', default=False)
 class AdjustedTestDevice(StoreTestDevice):
-    pass
+    """adjusted values in inherited devices"""
+    bool: bool = attr.value.bool(default=False)
 
 
 class RequiredParametersTestDevice(lb.Device):
@@ -178,47 +178,79 @@ def test_constructor():
 
 
 def test_adjusted_constructor():
-    DEFAULT_VALUE = 4
+    OLD_DEFAULT = 0
+    NEW_DEFAULT = 1
 
-    class ParentDevice(lb.Device):
-        number: int = attr.value.int(0)
+    class Parent(lb.Device):
+        number: int = attr.value.int(OLD_DEFAULT)
 
-    class Device(ParentDevice):
-        number: int = attr.copy(ParentDevice.number, default=DEFAULT_VALUE)
+    class Child(Parent):
+        number: int = attr.value.int(default=NEW_DEFAULT, inherit=True)
+
+    #
+    assert Parent.number.default == OLD_DEFAULT
+    assert Child.number.default == NEW_DEFAULT
 
     # check Device signature
-    params = inspect.signature(Device).parameters
+    params = inspect.signature(Child).parameters
 
+    print('***', inspect.signature(Child))
     assert tuple(params.keys()) == ('resource', 'number'), \
            'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]
-    assert tuple(defaults) == (lb.Device.resource.default, DEFAULT_VALUE)
+    assert tuple(defaults) == (lb.Device.resource.default, NEW_DEFAULT)
 
-    d = Device()
-    assert d.number == DEFAULT_VALUE
-
+    d = Child()
+    assert d.number == NEW_DEFAULT
 
 def test_adjusted_constructor_posarg():
-    DEFAULT_VALUE = 4
+    OLD_DEFAULT = 0
+    NEW_DEFAULT = 1
 
-    class ParentDevice(lb.Device):
-        number: int = attr.value.int(0)
+    class Parent(lb.Device):
+        number: int = attr.value.int(OLD_DEFAULT)
 
-    class Device(ParentDevice):
-        number: int = attr.copy(ParentDevice.number, default=DEFAULT_VALUE)
+    class Child(Parent):
+        number: int = attr.value.int(NEW_DEFAULT, inherit=True)
+
+    #
+    assert Parent.number.default == OLD_DEFAULT
+    assert Child.number.default == NEW_DEFAULT
 
     # check Device signature
-    params = inspect.signature(Device).parameters
+    params = inspect.signature(Child).parameters
 
+    print('***', inspect.signature(Child))
     assert tuple(params.keys()) == ('resource', 'number'), \
            'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]
-    assert tuple(defaults) == (lb.Device.resource.default, DEFAULT_VALUE)
+    assert tuple(defaults) == (lb.Device.resource.default, NEW_DEFAULT)
 
-    d = Device()
-    assert d.number == DEFAULT_VALUE
+    d = Child()
+    assert d.number == NEW_DEFAULT
+
+def test_inherited_constructor_without_default():
+    OLD_DEFAULT = 0
+
+    class Parent(lb.Device):
+        number: int = attr.value.int(OLD_DEFAULT)
+
+    with pytest.raises(TypeError):
+        class Child(Parent):
+            number: int = attr.value.int(inherit=True)
+
+def test_inherited_defaults():
+    HELP_MSG = 'parent help'
+
+    class Parent(lb.Device):
+        number: int = attr.value.int(0, help=HELP_MSG)
+
+    class Child(Parent):
+        number: int = attr.value.int(1, inherit=True)
+
+    assert Child.number.help == HELP_MSG
 
 
 def test_only(opened_device):

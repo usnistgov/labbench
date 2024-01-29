@@ -605,7 +605,7 @@ class SerialDevice(Device):
         - backend (serial.Serial): control object, after open
     """
 
-    resource = attr.copy(Device.resource, help='platform-dependent serial port address')
+    resource = attr.value.str(default=attr.Undefined, help='platform-dependent serial port address')
 
     # Connection value traits
     timeout: float = attr.value.float(

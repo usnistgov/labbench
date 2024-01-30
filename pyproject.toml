@@ -130,7 +130,7 @@ all = [
 ]
 
 [tool.coverage.run]
-
+omit = ["src/labbench/testing/*", "src/labbench/cli/*", "src/labbench/notebooks.py"]
 
 # documentation
 [tool.hatch.envs.doc]
@@ -154,5 +154,5 @@ docstring-code-format = true
 docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.extend-per-file-ignores]
-"**/__init__.py" = ["F401", "F403"]
+"**/__init__.py" = ["F401", "F403", "E402"]
 

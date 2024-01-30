@@ -152,6 +152,9 @@ def test_cache(opened_device):
     result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
     assert len(result['notifications']) == 2, 'notification count for cached string'
 
+def test_paths(opened_device):
+    with pytest.raises(OSError):
+        opened_device.path_exists = '.../9815h1lk35jkl13j53'
 
 def test_default_types(opened_device, role_type):
     for attr_def in opened_device.get_attr_defs().values():
@@ -283,6 +286,7 @@ def test_only(opened_device):
     opened_device.str_with_only = expected_valid
     with pytest.raises(ValueError):
         opened_device.str_with_only = 'boris'
+        
     with pytest.raises(ValueError):
         opened_device.str_with_only = alt_case
 
@@ -312,6 +316,9 @@ def test_numeric_bounds(opened_device):
     # float_none_bounded
     opened_device.float_none_bounded = None
 
+def test_iterables(opened_device):
+    with pytest.raises(AttributeError):
+        opened_device.tuple = 4
 
 def test_numeric_casting(opened_device):
     # float
@@ -348,7 +355,12 @@ def test_network_address(opened_device):
 
     opened_device.uri_port = '127.0.0.1' # ipv4
     opened_device.uri_port = 'nist.gov:1234' # domain name with port
+
+    with pytest.raises(ValueError):
+        opened_device.uri_port = '127.0.0.1:hello' # bad port number
+
     opened_device.uri = '::ffff:192.0.2.128' # ipv6
+    opened_device.uri_port = '[::ffff:192.0.2.128]:1234'
 
 
 def test_numeric_step(opened_device):
@@ -392,6 +404,13 @@ def test_device_initialization(instantiated_device, role_type):
             value_out = getattr(instantiated_device, attr_def.name)
             assert value_in == value_out, f'{test_name} - initialize default values from Device constructor'
 
+def test_doc_access(opened_device):
+
+    attr_descs = attr.get_class_attrs(opened_device)
+
+    for name, attr_desc in attr_descs.items():
+        attr_desc.doc_params()
+        attr_desc.doc_params(as_argument=True)
 
 def test_all_get_sets(opened_device, role_type):
     loop_closed_loop_set_gets(opened_device, role_type, set_then_get)

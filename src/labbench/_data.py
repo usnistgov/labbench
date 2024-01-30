@@ -196,7 +196,7 @@ class MungerBase(core.Device):
             # Workaround for bytes/str encoding quirk underlying pandas 0.23.1
             try:
                 write(stream, ext, value)
-                ret = self._get_key(stream)
+                self._get_key(stream)
             except TypeError:
                 with io.TextIOWrapper(stream, newline='\n') as buf:
                     write(buf, ext, value)

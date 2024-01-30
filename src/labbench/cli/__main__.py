@@ -325,7 +325,7 @@ def open(config_dir, verbose=False):
     try:
         with rack:
             pass
-    except:
+    except BaseException:
         post_mortem_debug('devices and racks have already been closed.')
         return 1
     else:

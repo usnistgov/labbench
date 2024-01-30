@@ -1233,16 +1233,14 @@ def _visa_missing_pyvisapy_support() -> list[str]:
         missing.append('GPIB')
 
     # hislip discovery
-    try:
-        import zeroconf
-    except ModuleNotFoundError:
+    if not importlib.util.find_spec('zeroconf'):
         missing.append('TCPIP')
 
     # libusb
     try:
         import usb1
 
-        with usb1.USBContext() as context:
+        with usb1.USBContext():
             pass
     except OSError:
         missing.append('USB')

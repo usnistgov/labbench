@@ -4,6 +4,7 @@ import inspect
 import os
 from numbers import Number
 from pathlib import Path
+from . import paramattr as attr
 
 from . import util
 from ._rack import Rack, import_as_rack, update_parameter_dict
@@ -202,8 +203,8 @@ def _map_devices(cls):
             before='\n',
         )
 
-        for value_name in param.list_value_attrs(dev):
-            if not param.get_class_attrs(dev)[value_name].sets:
+        for value_name in attr.list_value_attrs(dev):
+            if not attr.get_class_attrs(dev)[value_name].sets:
                 # only show settable traits
                 continue
 

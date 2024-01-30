@@ -63,21 +63,7 @@ class Bool(_bases.ParamAttr[bool], type=bool):
     """accepts boolean or numeric values, or a case-insensitive match to one of ('true',b'true','false',b'false')"""
 
     allow_none: bool = False
-
-    @util.hide_in_traceback
-    def validate(self, value, owner=None):
-        if isinstance(value, (bool, numbers.Number)):
-            return value
-        elif isinstance(value, (str, bytes)):
-            lvalue = value.lower()
-            if lvalue in ('true', b'true'):
-                return True
-            elif lvalue in ('false', b'false'):
-                return False
-        raise ValueError(
-            f"'{self.__repr__(owner=owner)}' accepts only boolean, numerical values,"
-            "or one of ('true',b'true','false',b'false'), case-insensitive"
-        )
+    # because this becomes confusing with evaluating boolean trueness
 
 
 class String(_bases.ParamAttr):
@@ -184,13 +170,13 @@ class NetworkAddress(Unicode):
             return False
 
         def validate_port_string(s):
+            if not self.accept_port:
+                raise ValueError(f'{self} does not accept a port number (accept_port=False)')
+
             try:
                 int(s)
             except ValueError:
                 return False
-
-            if not self.accept_port:
-                raise ValueError(f'{self} does not accept a port number (accept_port=False)')
 
             return True
 
@@ -199,7 +185,7 @@ class NetworkAddress(Unicode):
 
         if value[0] == '[':
             # maybe ipv6 with port number
-            host, *port = value.rsplit(']', 1)
+            host, *port = value[1:].rsplit(']', 1)
             if len(port) > 0 and _val.ipv6(host):
                 if validate_port_string(port[0][1:]):
                     return value

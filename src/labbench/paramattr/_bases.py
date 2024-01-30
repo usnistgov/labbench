@@ -622,29 +622,17 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
                 e.add_note(f"while attempting to get attribute '{self}' in {owner}")
             raise
 
-        if value is None:
-            log = getattr(owner, '_logger', warn)
-            log(
-                f"'{self.__repr__(owner=owner)}' {self.ROLE} received value None, which"
-                f'is not allowed for {self!r}'
-            )
-
-        if len(self.only) > 0 and not self.contains(self.only, value):
-            log = getattr(owner, '_logger', warn)
-            log(
-                f"'{self.__repr__(owner=owner)}' {self.ROLE} received {value!r}, which"
-                f'is not in the valid value list {self.only!r}'
-            )
-
         return value
 
     @util.hide_in_traceback
     def to_pythonic(self, value):
         """Convert a value from an unknown type to self._type."""
         if self._type is object:
-            raise NotImplementedError
-        else:
+            raise value
+        elif callable(self._type):
             return self._type(value)
+        else:
+            raise TypeError(f'need to implement to_pythonic for type {self._type}')
 
     @util.hide_in_traceback
     def from_pythonic(self, value):

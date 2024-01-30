@@ -129,6 +129,9 @@ all = [
     "genbadge coverage -i doc/reports/coverage.xml -o doc/reports/coverage.svg -l"
 ]
 
+[tool.coverage.run]
+
+
 # documentation
 [tool.hatch.envs.doc]
 features = ["doc"]

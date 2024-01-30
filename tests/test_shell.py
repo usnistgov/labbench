@@ -8,7 +8,7 @@ class Shell_Python(lb.ShellBackend):
         'command': '-c' 
     }
 
-    binary_path = attr.value.str('python', sets=False, inherit=True)
+    binary_path = attr.value.Path('python', sets=False, inherit=True)
     path: str = attr.value.Path(None, must_exist=True, help='path to a python script file')
     command: str = attr.value.str(None, key='-c', help='execute a python command')
 

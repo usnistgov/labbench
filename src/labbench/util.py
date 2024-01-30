@@ -904,6 +904,39 @@ def isdictducktype(cls):
     return set(dir(cls)).issuperset(DIR_DICT)
 
 
+def _select_enter_or_call(candidate_objs):
+    """ensure candidates are either (1) all context managers
+    or (2) all callables. Decide what type of operation to proceed with.
+    """
+    which = None
+    for k, obj in candidate_objs:
+        thisone = RUNNERS[
+            (callable(obj) and not isinstance(obj, _GeneratorContextManager)),  # Is it callable?
+            (hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)),  # Is it a context manager?
+        ]
+
+        if thisone is None:
+            msg = 'each argument must be a callable and/or a context manager, '
+
+            if k is None:
+                msg += f'but given {obj!r}'
+            else:
+                msg += f'but given {k}={obj!r}'
+
+            raise TypeError(msg)
+        elif which in (None, 'both'):
+            which = thisone
+        else:
+            if thisone not in (which, 'both'):
+                raise TypeError('cannot mix context managers and callables')
+
+    # Enforce uniqueness in the (callable or context manager) object
+    candidate_objs = [c[1] for c in candidate_objs]
+    if len(set(candidate_objs)) != len(candidate_objs):
+        raise ValueError('each callable and context manager must be unique')
+    
+    return which
+
 @hide_in_traceback
 def enter_or_call(flexible_caller, objs, kws):
     """Extract value traits from the keyword arguments flags, decide whether
@@ -915,7 +948,7 @@ def enter_or_call(flexible_caller, objs, kws):
 
     # Treat keyword arguments passed as callables should be left as callables;
     # otherwise, override the parameter
-    params = dict(catch=False, nones=False, traceback_delay=False, flatten=True, name=None)
+    params = dict(catch=False, nones=False, traceback_delay=False, flatten=True, name=None, which='auto')
 
     def merge_inputs(dicts: list, candidates: list):
         """merges nested returns and check for data key conflicts"""
@@ -963,46 +996,21 @@ def enter_or_call(flexible_caller, objs, kws):
     del allobjs, names
 
     dicts = []
-
-    # Make sure candidates are either (1) all context managers
-    # or (2) all callables. Decide what type of operation to proceed with.
-    runner = None
-    for i, (k, obj) in enumerate(candidates):
+    for i, (_, obj) in enumerate(candidates):
         # pass through dictionary objects from nested calls
         if isdictducktype(obj.__class__):
             dicts.append(candidates.pop(i))
-            continue
 
-        thisone = RUNNERS[
-            (callable(obj) and not isinstance(obj, _GeneratorContextManager)),  # Is it callable?
-            (hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)),  # Is it a context manager?
-        ]
+    if params['which'] == 'auto':
+        which = _select_enter_or_call(candidates)
+    else:
+        which = params['which']
 
-        if thisone is None:
-            msg = 'each argument must be a callable and/or a context manager, '
-
-            if k is None:
-                msg += f'but given {obj!r}'
-            else:
-                msg += f'but given {k}={obj!r}'
-
-            raise TypeError(msg)
-        elif runner in (None, 'both'):
-            runner = thisone
-        else:
-            if thisone not in (runner, 'both'):
-                raise TypeError('cannot mix context managers and callables')
-
-    # Enforce uniqueness in the (callable or context manager) object
-    candidate_objs = [c[1] for c in candidates]
-    if len(set(candidate_objs)) != len(candidate_objs):
-        raise ValueError('each callable and context manager must be unique')
-
-    if runner is None:
+    if which is None:
         return {}
-    elif runner == 'both':
+    elif which == 'both':
         raise TypeError('all objects supported both calling and context management - not sure which to run')
-    elif runner == 'context':
+    elif which == 'context':
         if len(dicts) > 0:
             raise ValueError(f'unexpected return value dictionary argument for context management {dicts}')
         return MultipleContexts(flexible_caller, params, candidates)
@@ -1160,6 +1168,7 @@ def concurrently(*objs, **kws):
         nones: if not callable and evalues as True, includes entries for calls that return None (default is False)
         flatten: if `True`, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)
         traceback_delay: if `False`, immediately show traceback information on a thread exception; if `True` (the default), wait until all threads finish
+        operation: if 'auto' (default), try to determine automatically; otherwise, 'context' or 'call'
     Returns:
         the values returned by each call
     :rtype: dictionary keyed by function name

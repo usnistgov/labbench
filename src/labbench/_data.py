@@ -115,7 +115,7 @@ class MungerBase(core.Device):
     def __repr__(self):
         return f"{type(self).__name__}('{self.resource!s}')"
 
-    def save_metadata(self, name, name_func: Callable[[attr.HasParamAttrs, str, dict], str], **metadata):
+    def get_metadata(self, name, name_func: Callable[[attr.HasParamAttrs, str, dict], str], **metadata):
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 if len(value) > self.text_relational_min:
@@ -142,9 +142,9 @@ class MungerBase(core.Device):
         # metadata = dict(summary=pd.DataFrame([summary], index=["Value"]).T)
         metadata['global_values'] = global_values
 
-        self._write_metadata(metadata)
+        return metadata
 
-    def _write_metadata(self, metadata):
+    def save_metadata(self, metadata):
         raise NotImplementedError
 
     def _from_ndarraylike(self, name, value, index=0, row=None):
@@ -285,6 +285,18 @@ class MungerBase(core.Device):
 
     def _relational_from_file(self, old_path, dest):
         raise NotImplementedError
+    
+    def format_metadata_value(self, key_name, value):
+        if isinstance(value, (str, bytes)):
+            if len(value) > self.text_relational_min:
+                self._from_text(key_name, value)
+            else:
+                return value
+        elif isinstance(value, (pd.DataFrame, np.ndarray)):
+            self._from_ndarraylike(key_name, value)
+        else:
+            return value
+
 
     def open(self):
         # touch these modules to ensure they have imported
@@ -346,7 +358,7 @@ class MungeToDirectory(MungerBase):
         relpath = os.path.join(self.resource, relpath)
         return relpath
 
-    def _write_metadata(self, metadata: dict[str, Any]):
+    def save_metadata(self, metadata: dict[str, Any]):
         def recursive_dict_fix(d):
             d = dict(d)
             for name, obj in dict(d).items():
@@ -476,19 +488,7 @@ class MungeToTar(MungerBase):
         except PermissionError:
             self._logger.warning(f'could not remove old file or directory {old_path}')
 
-    def _write_metadata(self, metadata: dict):
-        for k, v in metadata.items():
-            if isinstance(v, pd.DataFrame):
-                v = v.to_dict()['Value']
-            if isinstance(v, dict):
-                for name, obj in v.items():
-                    if isinstance(obj, Path):
-                        v[name] = str(obj)
-
-            with self._open_metadata(k + '.json', 'w') as stream, io.TextIOWrapper(stream, newline='\n') as buf:
-                json.dump(v, buf, indent=True, sort_keys=True)
-
-    def _write_metadata(self, metadata: dict[str, Any]):
+    def save_metadata(self, metadata: dict[str, Any]):
         def recursive_dict_fix(d):
             d = dict(d)
             for name, obj in dict(d).items():
@@ -585,7 +585,7 @@ class Aggregator(util.Ownable):
             dictionary keyed on :func:`key` (defaults '{device name}_{attr name}_{repr of method kwargs}')
         """
 
-        for device, device_name in list(self.name_map.items()):
+        for device in self.name_map.keys():
             # Perform gets for each property trait called out in self.trait_rules['always']
             if device in self.attr_rules['always'].keys():
                 for attr_name in self.attr_rules['always'][device]:
@@ -634,6 +634,24 @@ class Aggregator(util.Ownable):
         # self._pending_rack_input = {}
 
         return aggregated_output, aggregated_input
+
+    def get_metadata(self, process_func: callable):
+        metadata = dict(self.metadata)
+        global_values = {}
+        for owner, owner_name in self.name_map.items():
+            if not isinstance(owner, Device):
+                # other util.Ownable instances e.g. RelationalTableLogger
+                continue
+
+            for attr_name, attr_def in attr.get_class_attrs(owner).items():
+                if isinstance(attr_def, attr.value.Value) or attr_def.cache:
+                    summary_key = self.name_attr_field(owner, attr_name)
+                    global_values[summary_key] = getattr(owner, attr_name)
+        global_values = {k: process_func(v, k) for k, v in global_values.items()}
+
+        metadata['global_values'] = global_values
+
+        return metadata
 
     def sanitize_column_name(self, string: str) -> str:
         return re.sub(r'\W+|^(?=\d)+', '_', string)
@@ -928,7 +946,7 @@ class Aggregator(util.Ownable):
         return ret
 
 
-class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)):
+class ParamAttrLogger(Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)):
     """Base class for loggers that queue dictionaries of data before writing
     to disk. This extends :class:`Aggregator` to support
 
@@ -1215,16 +1233,12 @@ class TabularLoggerBase(Owner, util.Ownable, entry_order=(_host.Email, MungerBas
 
         if self.output_index > 0:
             if self.host.isopen:
-                self.munge.save_metadata(
-                    self.aggregator.name_map,
-                    self.aggregator.name_attr_field,
-                    **self.aggregator.metadata,
-                )
+                self.munge.save_metadata(self.aggregator.get_metadata(self.munge.format_metadata_value))
             else:
                 self.munge._logger.warning('not saving metadata due to exception')
 
 
-class CSVLogger(TabularLoggerBase):
+class CSVLogger(ParamAttrLogger):
     """Manage logging of experimental data and methods into CSV files.
 
     Explicit save methods are exposed for arbitrary custom data. Automatic logging is performed for
@@ -1328,234 +1342,7 @@ class CSVLogger(TabularLoggerBase):
             self.output_index = output_df.index[-1]
 
 
-class MungeToHDF(Device):
-    """Funnel test input and output data into a file output with a key in the root database.
-
-    The following conversions to relational files are attempted in order to
-    convert each value in the row dictionary:
-
-    1. Text containing a valid file or directory *outside* of the root data
-       directory is made relational by moving the file or directory into
-       the current row. The text is replaced with the updated relative path;
-    2. Text longer than `text_relational_min` is dumped into a relational
-       text file;
-    3. 1- or 2-D data is converted to a pandas Series or DataFrame, and
-       dumped into a relational file defined by the extension set by
-       `nonscalar_file_type`
-
-    """
-
-    resource: Path = attr.value.Path(allow_none=True, help='hdf file location')
-    key_fmt: str = attr.value.str(
-        default='{id} {host_time}',
-        help='format for linked data in the root database (keyed on column)',
-    )
-    force_relational = []
-
-    def open(self):
-        self.backend = h5py.File(self.resource, 'a')
-
-    def close(self):
-        self.backend.close()
-
-    def __call__(self, index, row):
-        """
-        Break special cases of row items that need to be stored in
-        relational files. The row valueis replaced in-place with the relative
-        path to the data saved on disk.
-
-        Arguments:
-            row: dictionary of {'entry_name': "entry_value"} pairs
-        Returns:
-            the row dictionary, replacing special entries with the relative path to the saved data file
-        """
-
-        def is_path(v):
-            if not isinstance(v, str):
-                return False
-            try:
-                return os.path.exists(v)
-            except ValueError:
-                return False
-
-        for name, v in row.items():
-            # A path outside the relational database tree
-            if is_path(v):
-                # A file or directory that should be moved in
-                row[name] = self._from_external_file(name, v, index, row)
-
-            # A long string that should be written to a text file
-            elif isinstance(v, (str, bytes, Number)):
-                row[name] = v
-
-            # elif hasattr(v, "__len__") or hasattr(v, "__iter__"):
-            #     # vector, table, matrix, etc.
-            #     row[name] = self._from_nonscalar(name, v, index, row)
-
-            else:
-                self._logger.warning(rf"unrecognized type for row entry '{name}' with type {v!r}")
-                row[name] = v
-
-        return row
-
-    def save_metadata(self, name, key_func, **metadata):
-        def process_value(value, key_name):
-            return value
-            # TODO: abandon relational metadata saves?
-            if isinstance(value, (str, bytes)):
-                return value
-            elif hasattr(value, '__len__') or hasattr(value, '__iter__'):
-                return value
-                # if not hasattr(value, "__len__") or len(value) > self.text_relational_min:
-                #     self._from_nonscalar(key_name, value)
-                # else:
-                #     return value
-            else:
-                return value
-
-        global_values = {}
-        for owner, owner_name in name.items():
-            if owner_name.endswith('_values'):
-                for trait in owner:
-                    global_values[key_func(owner_name, trait.name)] = getattr(owner, trait.name)
-        global_values = {k: process_value(v, k) for k, v in global_values.items()}
-        metadata['global_values'] = global_values
-
-        metadata = pd.DataFrame([global_values], index=['Value']).T
-        metadata.astype(str).to_hdf(self.resource, key='metadata', append=True)
-
-    def _from_nonscalar(self, name, value, index=0, row=None):
-        """Write nonscalar (potentially array-like, or a python object) data
-        to a file, and return a path to the file
-
-        Arguments:
-            name: name of the entry to write, used as the filename
-            value: the object containing array-like data
-            row: row dictionary, or None (the default) to write to the metadata folder
-        Returns:
-            the path to the file, relative to the directory that contains the root database
-        """
-        key = self._get_key(name, index, row)
-
-        try:
-            df = pd.DataFrame(value)
-            if df.shape[0] == 0:
-                df = pd.DataFrame([df])
-        except BaseException:
-            # We couldn't make a DataFrame
-            self._logger.error(f'Failed to form DataFrame from {name!r}; pickling object instead')
-            self.backend[key] = pickle.dumps(value)
-
-        else:
-            df.to_hdf(self.resource, key=key)
-
-        return key
-
-    def _from_external_file(self, name, old_path, index=0, row=None, ntries=10):
-        with open(old_path, 'rb') as f:
-            return f.read()
-
-    def _get_key(self, name, index, row):
-        if row is None:
-            return f'/metadata {name}'
-        else:
-            return '/' + self.key_fmt.format(id=index, **row) + ' ' + name
-
-
-class HDFLogger(TabularLoggerBase):
-    """Store data and activity from value and property sets and gets to disk
-    into a root database formatted as an HDF file.
-
-    This extends :class:`Aggregator` to support
-
-    #. queuing aggregate property trait of devices by lists of dictionaries;
-    #. custom metadata in each queued aggregate property trait entry; and
-    #. custom response to non-scalar data (such as relational databasing).
-
-    Arguments:
-        path: Base path to use for the root database
-        append: Whether to append to the root database if it already exists (otherwise, raise IOError)
-        key_fmt: format to use for keys in the h5
-
-    """
-
-    KEY_OUTPUT = 'output'
-    KEY_INPUT = 'input'
-
-    nonscalar_file_type = 'csv'
-
-    def __init__(
-        self,
-        path: Path = None,
-        *,
-        append: bool = False,
-        key_fmt: str = '{id} {host_time}',
-        git_commit_in: str = None,
-    ):
-        if str(path).endswith('.h5'):
-            path = Path(path)
-        else:
-            path = Path(str(path) + '.h5')
-
-        super().__init__(
-            path=path,
-            append=append,
-            git_commit_in=git_commit_in,
-        )
-
-        # Switch to the HDF munger
-        self.munge = MungeToHDF(path, key_fmt=key_fmt)
-
-    def open(self):
-        """Instead of calling `open` directly, consider using
-        `with` statements to guarantee proper disconnection
-        if there is an error. For example, the following
-        sets up a connected instance::
-
-            with HDFLogger('my.csv') as db:
-                ### do the data acquisition here
-                pass
-
-        would instantiate a `CSVLogger` instance, and also guarantee
-        a final attempt to write unwritten data is written, and that
-        the file is closed when exiting the `with` block, even if there
-        is an exception.
-        """
-        self.df = None
-
-    def close(self):
-        self.write()
-        self._write_root()
-
-    def _write_root(self):
-        """Write queued rows of data to csv. This is called automatically on :func:`close`, or when
-        exiting a `with` block.
-
-        If the class was created with overwrite=True, then the first call to _write_root() will overwrite
-        the preexisting file; subsequent calls append.
-        """
-
-        def write_table(key, data):
-            if len(data) == 0:
-                return
-            isfirst = self.df is None
-            pending = pd.DataFrame(data)
-            pending.index.name = self.INDEX_LABEL
-            pending.index += self.output_index
-            if isfirst:
-                self.df = pending
-            else:
-                self.df = self.df.append(pending).loc[self.output_index :]
-            self.df.sort_index(inplace=True)
-            self.output_index = self.df.index[-1]
-
-            self.df.to_hdf(self.path, key=key, append=self._append)
-
-        write_table(self.KEY_OUTPUT, self.pending_output)
-        write_table(self.KEY_INPUT, self.pending_input)
-
-
-class SQLiteLogger(TabularLoggerBase):
+class SQLiteLogger(ParamAttrLogger):
     """Store data and property traits to disk into an an sqlite database.
 
     This extends :class:`Aggregator` to support
@@ -1777,7 +1564,7 @@ def read_sqlite(
     table_name=SQLiteLogger.OUTPUT_TABLE_NAME,
     columns=None,
     nrows=None,
-    index_col=TabularLoggerBase.INDEX_LABEL,
+    index_col=ParamAttrLogger.INDEX_LABEL,
 ):
     """Wrapper to that uses pandas.read_sql_table to load a table from an sqlite database at the specified path.
 
@@ -1920,7 +1707,7 @@ def read_relational(
     root_nrows: Union[int, None] = None,
     root_format: str = 'auto',
     prepend_column_name: bool = True,
-):
+) -> pd.DataFrame:
     """Flatten a relational database table by loading the table located each row of
     `root[expand_col]`. The value of each column in this row
     is copied to the loaded table. The columns in the resulting table generated
@@ -1931,12 +1718,13 @@ def read_relational(
     The expanded dataframe may be very large, making downselecting a practical
     necessity in some scenarios.
 
-    :param pandas.DataFrame root: the root database, consisting of columns containing data and columns containing paths to data files
-        expand_col: the column in the root database containing paths to    data files that should be expanded
-        root_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) pass all columns from `root`
-        target_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each root[expand_col]
-        root_path: a string containing the full path to the root database (to help find the relational files)
-        prepend_column_name: whether to prepend the name of the expanded column from the root database
+    Arguments:
+        path: file location of the root data table
+        expand_col: name of the columns of the root data file to expand with relational data
+        root_cols: the root columns to include in the expanded dataframe, or None (the default) pass all columns from `root`
+        target_cols: the root columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each root[expand_col]
+        prepend_column_name: whether to prepend the name of the expanded column from the root table
+
     Returns:
         the expanded dataframe
 

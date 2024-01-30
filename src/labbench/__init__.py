@@ -28,7 +28,7 @@ from ._backends import (
     visa_list_resources,
     visa_probe_devices,
 )
-from ._data import CSVLogger, HDFLogger, SQLiteLogger, read, read_relational
+from ._data import CSVLogger, SQLiteLogger, read, read_relational
 from ._device import Device
 from ._host import Email
 from ._rack import (

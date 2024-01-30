@@ -6,15 +6,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.35.0]
 ### Added
-- Paramattr now supports a boolean new keyword argument, `inherit`, which inherits keywords
-  from the descriptor from the parent of the owning class as default. This is meant to
-  replace the role `labbench.paramattr.adjusted`, which did not update the type hints
+- Paramattr now supports a new boolean keyword argument, `inherit`, which sets 
+  defaults for the other paramattr keyword arguments to be taken from the parent
+  of the owning class. This is meant to
+  replace the role of `labbench.paramattr.adjusted`, which did not update the type hints
   properly for default values of Device constructors.
 - Corrected bugs in the simplified display of tracebacks
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs
 
+### Removed
+- `labbench.HDFLogger`, which was not used and which was unable to store metadata in a portable way
 
 ## [0.34.0]
 ### Changed

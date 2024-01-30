@@ -48,7 +48,7 @@ class ShellBackend(Device):
     queued stdout.
     """
 
-    binary_path: Path = attr.value.Path(default=None, allow_none=True, help='path to the file to run', cache=True)
+    binary_path: Path = attr.value.Path(default=None, allow_none=True, help='shell command', cache=True)
 
     timeout: float = attr.value.float(
         default=1,

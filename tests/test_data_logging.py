@@ -3,11 +3,15 @@ import shutil
 import numpy as np
 import pandas as pd
 import pytest
+import warnings
+from pathlib import Path
 
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
 
+lb.show_messages('warning')
+lb.util.force_full_traceback(True)
 
 @attr.method_kwarg.int('registered_channel', min=1, max=4)
 @store_backend.key_adapter(defaults={'SWE:APER': '20e-6'})
@@ -76,23 +80,25 @@ class StoreDevice(store_backend.StoreTestDevice):
 FREQUENCIES = 10e6, 100e6, 1e9, 10e9
 EXTRA_VALUES = dict(power=1.21e9, potato=7)
 
+def simple_loop(db, inst, frequencies: list[float], **extra_column_values):
+    db.observe_paramattr(inst, changes=True, always='sweep_aperture')
+
+    for inst.frequency in frequencies:
+        inst.index = inst.frequency
+        inst.fetch_trace()
+        db.new_row(**extra_column_values)
 
 class SimpleRack(lb.Rack):
     """a device paired with a logger"""
 
     inst: StoreDevice = StoreDevice()
-    db: lb._data.TabularLoggerBase
+    db: lb._data.ParamAttrLogger
 
     FREQUENCIES = 10e6, 100e6, 1e9, 10e9
     EXTRA_VALUES = dict(power=1.21e9, potato=7)
 
     def simple_loop(self):
-        self.db.observe_paramattr(self.inst, changes=True, always='sweep_aperture')
-
-        for self.inst.frequency in self.FREQUENCIES:
-            self.inst.index = self.inst.frequency
-            self.inst.fetch_trace()
-            self.db.new_row(**self.EXTRA_VALUES)
+        return simple_loop(self.db, self.inst, self.FREQUENCIES, **self.EXTRA_VALUES)
 
     def simple_loop_expected_columns(self):
         return tuple(self.EXTRA_VALUES.keys()) + (
@@ -101,6 +107,15 @@ class SimpleRack(lb.Rack):
             'inst_sweep_aperture',
             'db_host_time',
             'db_host_log',
+        )
+    
+    def simple_loop_expected_expanded_columns(self):
+        return self.simple_loop_expected_columns () + (
+            'db_host_log_elapsed_seconds', 'db_host_log_id',
+            'db_host_log_level', 'db_host_log_message', 'db_host_log_object',
+            'db_host_log_object_log_name', 'db_host_log_process',
+            'db_host_log_source_file', 'db_host_log_source_line',
+            'db_host_log_thread', 'db_host_log_time', 'root_index'
         )
 
 
@@ -111,22 +126,16 @@ class SimpleRack(lb.Rack):
 def csv_path():
     path = f'test db/{np.random.bytes(8).hex()}.csv'
     yield path
-    shutil.rmtree(path)
-
-
-@pytest.fixture
-def hdf_path():
-    path = f'test db/{np.random.bytes(8).hex()}.hdf'
-    yield path
-    shutil.rmtree(path)
+    if Path(path).exists():
+        shutil.rmtree(path)
 
 
 @pytest.fixture
 def sqlite_path():
     path = f'test db/{np.random.bytes(8).hex()}.sqlite'
     yield path
-    shutil.rmtree(path)
-
+    # if Path(path).exists():
+    #     shutil.rmtree(path)
 
 #
 # The tests
@@ -150,6 +159,9 @@ def test_csv_tar(csv_path):
 def test_csv(csv_path):
     db = lb.CSVLogger(csv_path, tar=False)
 
+    def json_opener(p):
+        return pd.read_json(db.path/p)
+
     with SimpleRack(db=db) as rack:
         rack.simple_loop()
 
@@ -157,30 +169,20 @@ def test_csv(csv_path):
     assert (db.path / db.OUTPUT_FILE_NAME).exists()
     assert (db.path / db.INPUT_FILE_NAME).exists()
 
-    df = lb.read(db.path / 'outputs.csv')
-    assert set(rack.simple_loop_expected_columns()) == set(df.columns)
+    df = lb.read(db.path/'outputs.csv')
+    expected_root_columns = set(rack.simple_loop_expected_columns())
+    assert expected_root_columns == set(df.columns)
     assert len(df.index) == len(rack.FREQUENCIES)
+    all_json_rows = pd.concat([json_opener(p) for p in df.db_host_log])
 
+    df = lb.read_relational(
+        db.path/'outputs.csv',
+        expand_col='db_host_log'
+    )
 
-try:
-    import tables
-except ImportError:
-    pass
-else:
-
-    def test_hdf(hdf_path):
-        db = lb.HDFLogger(path=hdf_path)
-
-        with SimpleRack(db=db) as rack:
-            rack.simple_loop()
-
-        # self.assertTrue(db.path.exists())
-        # self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
-        # self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
-
-        # df = lb.read(db.path / "outputs.csv")
-        # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
-        # self.assertEqual(len(df.index), len(rack.FREQUENCIES))
+    expected_expanded_columns = set(rack.simple_loop_expected_expanded_columns())
+    assert expected_expanded_columns == set(df.columns)
+    assert len(df.index) == len(all_json_rows)
 
 
 def test_csv_keyed_method(csv_path):
@@ -208,14 +210,27 @@ def test_csv_decorated_method(csv_path):
 def test_sqlite(sqlite_path):
     db = lb.SQLiteLogger(path=sqlite_path)
 
+    def json_opener(p):
+        return pd.read_json(db.path/p)
+
     with SimpleRack(db=db) as rack:
         rack.simple_loop()
 
     assert db.path.exists()
-    # self.assertTrue((db.path / db.OUTPUT_FILE_NAME).exists())
-    # self.assertTrue((db.path / db.INPUT_FILE_NAME).exists())
-    # self.assertTrue((db.path / db.munge.tarname).exists())
+    assert (db.path/'root.db').exists()
+    assert (db.path/'metadata.json').exists()
 
-    # df = lb.read(db.path / "outputs.csv")
-    # self.assertEqual(set(rack.simple_loop_expected_columns()), set(df.columns))
-    # self.assertEqual(len(df.index), len(rack.FREQUENCIES))
+    df = lb.read(db.path/'root.db')
+    expected_root_columns = set(rack.simple_loop_expected_columns())
+    assert expected_root_columns == set(df.columns)
+    assert len(df.index) == len(rack.FREQUENCIES)
+    all_json_rows = pd.concat([json_opener(p) for p in df.db_host_log])
+
+    df = lb.read_relational(
+        db.path/'root.db',
+        expand_col='db_host_log'
+    )
+
+    expected_expanded_columns = set(rack.simple_loop_expected_expanded_columns())
+    assert expected_expanded_columns == set(df.columns)
+    assert len(df.index) == len(all_json_rows)

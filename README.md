@@ -12,7 +12,7 @@ These characteristics are necessary to scale up the complexity of large testbeds
 Features include:
 * Expedited development of python device wrappers, including specialized backends for [pythonnet](https://github.com/pythonnet/pythonnet/wiki), [pyvisa](https://pyvisa.readthedocs.io/), [pyserial](https://pyserial.readthedocs.io/en/latest/), [subprocess](https://docs.python.org/3/library/subprocess.html), [telnetlib](https://docs.python.org/3/library/telnetlib.html)
 * Descriptor-driven development: minimize the distance between programming manuals and python wrappers and apply calibrations transparently
-* Automated tracking of simple device parameters into CSV, HDF, or sqlite based on introspection
+* Automated logging of simple device parameters into root CSV or sqlite root tables, pointing to relational data and metadata in json and plain-text
 * Simplified multi-threaded concurrency tools for lab applications
 * Container objects for nesting device wrappers and snippets of test procedures
 * Support for running experiments based on tables of test conditions

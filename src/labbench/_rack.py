@@ -642,10 +642,13 @@ class OwnerContextAdapter:
         finally:
             notify.allow_owner_notifications(*holds)
 
-            if len(all_ex) > 0:
+            if len(all_ex) > 1:
                 ex = util.ConcurrentException(f'multiple exceptions while closing {self}')
                 ex.thread_exceptions = all_ex
+                print(methods, len(all_ex))
                 raise ex
+            elif len(all_ex) == 1:
+                raise all_ex[0][1]
 
     def __repr__(self):
         return repr(self._owner)
@@ -715,7 +718,8 @@ def package_owned_contexts(top):
     # then, other devices, which need to be ready before we start into Rack setup methods
     devices = {attr: remaining.pop(attr) for attr, obj in dict(remaining).items() if isinstance(obj, core.Device)}
     devices_desc = f"({', '.join([str(c) for c in devices.values()])})"
-    devices = util.concurrently(name='', **devices)
+    print(devices)
+    devices = util.concurrently(name='', which='context', **devices)
 
     # what remain are instances of Rack and other Owner types
     owners = flatten_nested_owner_contexts(top)

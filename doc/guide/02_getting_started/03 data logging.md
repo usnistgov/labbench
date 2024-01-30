@@ -16,7 +16,7 @@ Labbench provides several data logging capabilities oriented toward experiments 
 * Automatic logging of simple scalar parameters of {py:class}`labbench.Device` objects that are defined with {py:mod}`labbench.paramattr`
 * Manual logging through simple dictionary mapping
 * Consistent and automatic mapping from non-scalar types ({py:class}`pandas.DataFrame`, {py:func}`numpy.array`, long strings, files generated outside the data tree, etc.)
-* Support for several output data types: {py:class}`labbench.CSVLogger`, {py:class}`labbench.HDFLogger`, and {py:class}`labbench.SQLiteLogger`
+* Support for several output data types: {py:class}`labbench.CSVLogger` and {py:class}`labbench.SQLiteLogger`
 
 ## Example: Logging `Device` objects
 To get started, consider a simple loop:

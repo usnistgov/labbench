@@ -128,7 +128,7 @@ class Iterable(_bases.ParamAttr):
     def validate(self, value, owner=None):
         if not hasattr(value, '__iter__'):
             raise ValueError(f"'{type(self).__qualname__}' attributes accept only iterable values")
-        return value
+        return self._type(value)
 
 
 class Dict(Iterable[dict], type=dict):
@@ -151,7 +151,7 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
 
     @util.hide_in_traceback
     def validate(self, value, owner=None):
-        path = self._type(value)
+        path = _Path(value)
 
         if self.must_exist and not path.exists():
             raise OSError('no file at path {value}')
@@ -175,24 +175,40 @@ class NetworkAddress(Unicode):
 
     @util.hide_in_traceback
     def validate(self, value, owner=None):
-        """Rough IDN compatible domain validator"""
+        """roughly IDN-compatible address (not URL) validator"""
 
-        host, *extra = value.split(':', 1)
+        def any_valid(s: str, validators: list[callable]):
+            for validator in validators:
+                if validator(s):
+                    return True
+            return False
 
-        if len(extra) > 0:
-            port = extra[0]
+        def validate_port_string(s):
             try:
-                int(port)
+                int(s)
             except ValueError:
-                raise ValueError(f'port {port} in "{value}" is invalid')
+                return False
 
             if not self.accept_port:
                 raise ValueError(f'{self} does not accept a port number (accept_port=False)')
 
-        for validate in _val.ipv4, _val.ipv6, _val.domain, _val.slug:
-            if validate(host):
-                break
-        else:
-            raise ValueError('invalid host address')
+            return True
 
-        return value
+        if any_valid(value, (_val.ipv4, _val.ipv6, _val.domain, _val.slug)):
+            return value
+
+        if value[0] == '[':
+            # maybe ipv6 with port number
+            host, *port = value.rsplit(']', 1)
+            if len(port) > 0 and _val.ipv6(host):
+                if validate_port_string(port[0][1:]):
+                    return value
+
+
+        # maybe an IP address with
+        host, *extra = value.split(':', 1)
+        if len(extra) > 0 and any_valid(host, (_val.ipv4, _val.domain, _val.slug)):
+            if validate_port_string(extra[0]):
+                return value
+
+        raise ValueError('invalid host address')

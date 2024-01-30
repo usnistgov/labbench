@@ -10,7 +10,6 @@ import tarfile
 import warnings
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, suppress
-from numbers import Number
 from pathlib import Path
 from typing import Any, Union
 
@@ -29,7 +28,6 @@ try:
     feather = util.lazy_import('pyarrow.feather')
 except RuntimeWarning:
     # not executed: help static code analysis recognize lazy_imports
-    import h5py
     import numpy as np
     import pandas as pd
     import sqlalchemy
@@ -285,7 +283,7 @@ class MungerBase(core.Device):
 
     def _relational_from_file(self, old_path, dest):
         raise NotImplementedError
-    
+
     def format_metadata_value(self, key_name, value):
         if isinstance(value, (str, bytes)):
             if len(value) > self.text_relational_min:

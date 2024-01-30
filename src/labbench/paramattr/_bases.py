@@ -517,7 +517,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             # extra calls here result when .setter() and .getter()
             # decorators are applied in Method or Property
             return
-        
+
         if not issubclass(owner_cls, HasParamAttrs):
             # other owning objects may unintentionally become owners; this causes problems
             # if they do not implement the HasParamAttrs object protocol
@@ -564,7 +564,6 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
         This is also where we finalize selecting decorator behavior; is it a property or a method?
         """
-        pass
 
     def __init_owner_instance__(self, owner: HasParamAttrs):
         pass
@@ -868,6 +867,7 @@ class Value(ParamAttr[T]):
         value = owner._attr_store.cache.setdefault(self.name, self.default)
         if self.name not in owner._attr_store.cache:
             owner.__notify__(self.name, value, 'get', cache=self.cache)
+
         return value
 
     @util.hide_in_traceback
@@ -878,6 +878,14 @@ class Value(ParamAttr[T]):
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         pass
+
+    def __init_owner_instance__(self, owner: HasParamAttrs):
+        super().__init_owner_instance__(owner)
+
+        if self.default is not Undefined:
+            self.sets, sets = True, self.sets
+            self.set_in_owner(owner, self.default)
+            self.sets = sets
 
 
 class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):

@@ -139,18 +139,16 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
             for name, init_value in values.items():
                 setattr(self, name, init_value)
 
-            other_names = set(self._attr_defs.value_names()) - set(values.keys())
-            for name in other_names:
-                attr_def = getattr(type(self), name)
+            attr_defs = attr.get_class_attrs(self)
+            for name in attr_defs.keys() - values.keys():
+                attr_def = attr_defs[name]
                 if isinstance(attr_def, attr.value.Value):
-                    if attr_def.default is not Undefined:
-                        self._attr_store.cache[name] = attr_def.default
-                    elif attr_def.allow_none:
-                        self._attr_store.cache[name] = None
-                    else:
+                    if attr_def.default is Undefined:
                         attr_desc = attr.__repr__(owner_inst=self)
+
                         raise TypeError(
-                            f'unable to determine an initial value for {attr_desc} - define it with allow_none=True or default=<default value>'
+                            f'{attr_desc} is undefined - define it with a default, or '
+                            f'instantiate with {attr_def.name} keyword argument'
                         )
 
         util.Ownable.__init__(self)

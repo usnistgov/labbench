@@ -7,6 +7,7 @@ import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
 import inspect
+from pathlib import Path
 
 
 @store_backend.key_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
@@ -18,6 +19,10 @@ class StoreTestDevice(store_backend.StoreTestDevice):
         str: 'moose',
         bool: True,
         object: None,
+        dict: dict(a=4, b=5, c=6),
+        tuple: (4,5,6),
+        list: [7,8,9],
+        Path: Path('.')
     }
 
     # test both getting and setting
@@ -39,6 +44,19 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     any = attr.value.any(default='empty', allow_none=True)
     str_with_only = attr.value.str(default='moose', only=('moose', 'squirrel'))
     str_no_case_with_only = attr.value.str(default='moose', only=('MOOSE', 'squirrel'), case=False)
+
+    # iterables
+    tuple = attr.value.tuple((1,2,3))
+    dict = attr.value.dict(dict(a=1, b=2, c=3))
+    list = attr.value.list([4,5,6])
+
+    path_exists = attr.value.Path(__file__, must_exist=True)
+    any_path = attr.value.Path('132512412424')
+
+    # misc
+    uri = attr.value.NetworkAddress('127.0.0.1', accept_port=False)
+    uri_port = attr.value.NetworkAddress('127.0.0.1')
+
 
 
 class AdjustedTestDevice(StoreTestDevice):
@@ -159,7 +177,11 @@ def test_default_values(opened_device, role_type):
             continue
 
         value = getattr(opened_device, attr_def.name)
-        assert value == attr_def.default, f'pythonic type of {attr_def.name}'
+        if value is None:
+            assert value == attr_def.default, f'default None value of {attr_def.name}'
+        else:
+            assert attr_def.validate(attr_def.default) == value, f'initial value type of {attr_def.name}'
+
 
 def test_constructor():
     DEFAULT_VALUE = 4
@@ -314,6 +336,19 @@ def test_str_casting(opened_device):
     opened_device.str = value_in
     value_out = opened_device.str
     assert value_out == expected_out, 'string to float casting'
+
+
+def test_network_address(opened_device):
+    with pytest.raises(ValueError):
+        opened_device.uri = '?!?!'
+
+    with pytest.raises(ValueError):
+        # expect an error on this one when port is supplied
+        opened_device.uri = '127.0.0.1:5555'
+
+    opened_device.uri_port = '127.0.0.1' # ipv4
+    opened_device.uri_port = 'nist.gov:1234' # domain name with port
+    opened_device.uri = '::ffff:192.0.2.128' # ipv6
 
 
 def test_numeric_step(opened_device):

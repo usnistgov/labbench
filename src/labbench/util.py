@@ -934,7 +934,7 @@ def _select_enter_or_call(candidate_objs):
     candidate_objs = [c[1] for c in candidate_objs]
     if len(set(candidate_objs)) != len(candidate_objs):
         raise ValueError('each callable and context manager must be unique')
-    
+
     return which
 
 @hide_in_traceback

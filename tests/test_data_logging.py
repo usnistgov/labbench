@@ -80,6 +80,7 @@ class StoreDevice(store_backend.StoreTestDevice):
 FREQUENCIES = 10e6, 100e6, 1e9, 10e9
 EXTRA_VALUES = dict(power=1.21e9, potato=7)
 
+
 def simple_loop(db, inst, frequencies: list[float], **extra_column_values):
     db.observe_paramattr(inst, changes=True, always='sweep_aperture')
 
@@ -87,6 +88,7 @@ def simple_loop(db, inst, frequencies: list[float], **extra_column_values):
         inst.index = inst.frequency
         inst.fetch_trace()
         db.new_row(**extra_column_values)
+
 
 class SimpleRack(lb.Rack):
     """a device paired with a logger"""
@@ -151,9 +153,18 @@ def test_csv_tar(csv_path):
     assert (db.path / db.INPUT_FILE_NAME).exists()
     assert (db.path / db.munge.tarname).exists()
 
-    df = lb.read(db.path / 'outputs.csv')
-    assert set(rack.simple_loop_expected_columns()) == set(df.columns)
+    df = lb.read(db.path/'outputs.csv')
+    expected_root_columns = set(rack.simple_loop_expected_columns())
+    assert expected_root_columns == set(df.columns)
     assert len(df.index) == len(rack.FREQUENCIES)
+
+    df = lb.read_relational(
+        db.path/'outputs.csv',
+        expand_col='db_host_log'
+    )
+
+    expected_expanded_columns = set(rack.simple_loop_expected_expanded_columns())
+    assert expected_expanded_columns == set(df.columns)
 
 
 def test_csv(csv_path):

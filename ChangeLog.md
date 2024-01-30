@@ -11,7 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   of the owning class. This is meant to
   replace the role of `labbench.paramattr.adjusted`, which did not update the type hints
   properly for default values of Device constructors.
+
+### Changed
 - Corrected bugs in the simplified display of tracebacks
+- Fixed a bug in network address string validation
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs

@@ -948,7 +948,7 @@ class VISADevice(Device):
             'operating': bool(code & 0b10000000),
         }
 
-    _rm = '@py'
+    _rm = None # set at runtime
     _opc = False
 
     # Overload methods as needed to implement RemoteDevice
@@ -959,6 +959,9 @@ class VISADevice(Device):
         this is called automatically and does not need
         to be invoked.
         """
+
+        if type(self)._rm is None:
+            visa_default_resource_manager()
 
         self._opc = False
 
@@ -1243,6 +1246,13 @@ def _visa_missing_pyvisapy_support() -> list[str]:
     except OSError:
         missing.append('USB')
 
+    # 2nd check for libusb
+    import usb.core
+    try:
+        usb.core.find()
+    except usb.core.NoBackendError:
+        missing.append('USB')
+
     return missing
 
 
@@ -1260,16 +1270,23 @@ def visa_list_resources(resourcemanager: str = None) -> list[str]:
     return rm.list_resources()
 
 
-def visa_default_resource_manager(name: str):
+def visa_default_resource_manager(name: str = None):
     """set the pyvisa resource manager used by labbench.
 
     Arguments:
         name: the name of the resource manager, such as '@py', '@sim', or '@ivi'
     """
-    if name == '@sim':
-        from .testing import pyvisa_sim_resource as full_name
-    else:
-        full_name = name
+    if name is None:
+        pyvisa.__version__ # touch to force loading
+        libs = pyvisa.ctwrapper.IVIVisaLibrary.get_library_paths()
+        if len(libs) > 0:
+            name = '@ivi'
+        else:
+            util.logger.info('using pyvisa-py backend as fallback because no @ivi is installed')
+            name = '@py'
+
+    elif name == '@sim':
+        from .testing import pyvisa_sim_resource as name
 
     if name == '@py':
         warnings.filterwarnings('ignore', 'VICP resources discovery requires the zeroconf package')
@@ -1277,7 +1294,7 @@ def visa_default_resource_manager(name: str):
         warnings.filterwarnings('ignore', 'GPIB library not found')
 
     if name not in _pyvisa_resource_managers:
-        _pyvisa_resource_managers[name] = pyvisa.ResourceManager(full_name)
+        _pyvisa_resource_managers[name] = pyvisa.ResourceManager(name)
     VISADevice._rm = name
 
 

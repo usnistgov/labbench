@@ -12,6 +12,7 @@ import textwrap
 import time
 import traceback
 import types
+import typing
 from collections.abc import Callable
 from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
@@ -20,7 +21,6 @@ from threading import Event, RLock, Thread, ThreadError
 from typing import Union
 from warnings import simplefilter
 
-import psutil
 from typing_extensions import ParamSpec, TypeVar
 
 __all__ = [  # "misc"
@@ -29,7 +29,6 @@ __all__ = [  # "misc"
     'show_messages',
     'logger',
     'LabbenchDeprecationWarning',
-    'import_t0',
     'find_methods_in_mro',
     # concurrency and sequencing
     'concurrently',
@@ -56,8 +55,6 @@ __all__ = [  # "misc"
     # helper objects
     'Ownable',
 ]
-
-import_t0 = time.perf_counter()
 
 logger = logging.LoggerAdapter(
     logging.getLogger('labbench'),
@@ -582,34 +579,6 @@ def timeout_iter(duration):
     while elapsed < duration:
         yield elapsed
         elapsed = time.perf_counter() - t0
-
-
-def kill_by_name(*names):
-    """Kill one or more running processes by the name(s) of matching binaries.
-
-    Arguments:
-        names: list of names of processes to kill
-    :type names: str
-
-    :example:
-    >>> # Kill any binaries called 'notepad.exe' or 'notepad2.exe'
-    >>> kill_by_name('notepad.exe', 'notepad2.exe')
-
-    :Notes:
-    Looks for a case-insensitive match against the Process.name() in the
-    psutil library. Though psutil is cross-platform, the naming convention
-    returned by name() is platform-dependent. In windows, for example, name()
-    usually ends in '.exe'.
-    """
-    for pid in psutil.pids():
-        try:
-            proc = psutil.Process(pid)
-            for target in names:
-                if proc.name().lower() == target.lower():
-                    logger.info(f'killing process {proc.name()}')
-                    proc.kill()
-        except psutil.NoSuchProcess:
-            continue
 
 
 def hash_caller(call_depth=1):
@@ -1585,3 +1554,37 @@ def accessed_attributes(method):
         return isinstance(node, ast.Attribute) and getattr(node.value, 'id', None) == self_name
 
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})
+
+if typing.TYPE_CHECKING:
+    import psutil
+else:
+    psutil = lazy_import('psutil')
+
+def kill_by_name(*names):
+    """Kill one or more running processes by the name(s) of matching binaries.
+
+    Arguments:
+        names: list of names of processes to kill
+    :type names: str
+
+    :example:
+    >>> # Kill any binaries called 'notepad.exe' or 'notepad2.exe'
+    >>> kill_by_name('notepad.exe', 'notepad2.exe')
+
+    :Notes:
+    Looks for a case-insensitive match against the Process.name() in the
+    psutil library. Though psutil is cross-platform, the naming convention
+    returned by name() is platform-dependent. In windows, for example, name()
+    usually ends in '.exe'.
+    """
+    for pid in psutil.pids():
+        try:
+            proc = psutil.Process(pid)
+            for target in names:
+                if proc.name().lower() == target.lower():
+                    logger.info(f'killing process {proc.name()}')
+                    proc.kill()
+        except psutil.NoSuchProcess:
+            continue
+
+

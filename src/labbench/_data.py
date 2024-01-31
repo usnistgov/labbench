@@ -7,6 +7,7 @@ import pickle
 import re
 import shutil
 import tarfile
+from typing_extensions import TypeAlias
 import warnings
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, suppress
@@ -21,7 +22,6 @@ from ._rack import Owner
 from .paramattr import observe
 
 try:
-    h5py = util.lazy_import('h5py')
     np = util.lazy_import('numpy')
     pd = util.lazy_import('pandas')
     sqlalchemy = util.lazy_import('sqlalchemy')
@@ -33,6 +33,8 @@ except RuntimeWarning:
     import sqlalchemy
     from pyarrow import feather
 
+# define this alias type to avoid a forced import
+DataFrameType: TypeAlias = 'pd.DataFrame'
 
 EMPTY = inspect._empty
 
@@ -1696,7 +1698,6 @@ class MungeReader:
                 return MungeTarReader(dirname, tarname=n)
         return MungeDirectoryReader(dirname)
 
-
 def read_relational(
     path: Union[str, Path],
     expand_col: str,
@@ -1705,7 +1706,7 @@ def read_relational(
     root_nrows: Union[int, None] = None,
     root_format: str = 'auto',
     prepend_column_name: bool = True,
-) -> pd.DataFrame:
+) -> DataFrameType:
     """Flatten a relational database table by loading the table located each row of
     `root[expand_col]`. The value of each column in this row
     is copied to the loaded table. The columns in the resulting table generated

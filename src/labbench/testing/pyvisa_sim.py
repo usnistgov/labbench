@@ -1,9 +1,15 @@
 
-import numpy as np
-import pandas as pd
+import typing
 
 from .. import Device, Undefined, VISADevice, util
 from .. import paramattr as attr
+
+if typing.TYPE_CHECKING:
+    import pandas as pd
+    import numpy as np
+else:
+    pd = util.lazy_import('pandas')
+    np = util.lazy_import('numpy')
 
 __all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
 

@@ -2,6 +2,7 @@
 
 import inspect
 import os
+import typing
 from numbers import Number
 from pathlib import Path
 from . import paramattr as attr
@@ -11,12 +12,11 @@ from ._rack import Rack, import_as_rack, update_parameter_dict
 
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
 # using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
+
 try:
     import ruamel.yaml as ruamel_yaml
-    from ruamel.yaml.comments import CommentedMap
 except ModuleNotFoundError:
     import ruamel_yaml
-    from ruamel_yaml.comments import CommentedMap
 
 _yaml = ruamel_yaml.YAML()
 _yaml.indent(mapping=4, sequence=4)
@@ -178,7 +178,9 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
 
 def _map_method_defaults(rack_cls):
     params, _ = _search_method_parameters(rack_cls)
-    cm = CommentedMap({k: (None if param.default is EMPTY else param.default) for k, param in params.items()})
+    cm = ruamel_yaml.comments.CommentedMap(
+        {k: (None if param.default is EMPTY else param.default) for k, param in params.items()}
+    )
 
     for i, k in enumerate(list(cm.keys())[::-1]):
         if params[k].default is EMPTY:
@@ -194,10 +196,10 @@ def _map_method_defaults(rack_cls):
 
 
 def _map_devices(cls):
-    cm = CommentedMap()
+    cm = ruamel_yaml.comments.CommentedMap()
 
     for dev_name, dev in cls._devices.items():
-        cm[dev_name] = CommentedMap()
+        cm[dev_name] = ruamel_yaml.comments.CommentedMap()
         cm.yaml_set_comment_before_after_key(
             dev_name,
             before='\n',
@@ -246,7 +248,7 @@ def dump_rack(
     output_path.mkdir(exist_ok=exist_ok, parents=True)
 
     with open(output_path / RACK_CONFIG_FILENAME, 'w') as stream:
-        cm = CommentedMap(
+        cm = ruamel_yaml.comments.CommentedMap(
             {
                 _FIELD_SOURCE: dict(
                     import_string=str(sourcepath),

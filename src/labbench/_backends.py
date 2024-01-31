@@ -13,24 +13,22 @@ from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
 
-import psutil
-import pyvisa
-import pyvisa.errors
 import typing_extensions as typing
 
 from . import paramattr as attr
 from . import util
 from ._device import Device
 
-try:
+if typing.TYPE_CHECKING:
+    import telnetlib
+    import serial
+    import psutil
+    import pyvisa
+else:
     serial = util.lazy_import('serial')
     telnetlib = util.lazy_import('telnetlib')
-except RuntimeWarning:
-    # not executed: help coding tools recognize lazy_imports as imports
-    import telnetlib
-
-    import serial
-
+    psutil = util.lazy_import('psutil')
+    pyvisa = util.lazy_import('pyvisa')
 
 class ShellBackend(Device):
     """Virtual device controlled by a shell command in another process.

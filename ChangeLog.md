@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Corrected bugs in the simplified display of tracebacks
 - Fixed a bug in network address string validation
+- Reduced module import time through better use of lazy loading
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs

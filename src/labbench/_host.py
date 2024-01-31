@@ -6,24 +6,23 @@ import logging
 import socket
 import sys
 import time
+import typing
 from traceback import format_exc, format_exception_only, format_tb
 
 from . import _device as core
 from . import paramattr as attr
 from . import util
 
-try:
+if typing.TYPE_CHECKING:
+    import smtplib
+    import git
+    import pandas as pd
+    import pip
+else:
     git = util.lazy_import('git')
     pd = util.lazy_import('pandas')
     pip = util.lazy_import('pip')
     smtplib = util.lazy_import('smtplib')
-except RuntimeWarning:
-    # not executed: help coding tools recognize lazy_imports as imports
-    import smtplib
-
-    import git
-    import pandas as pd
-    import pip
 
 __all__ = ['Host', 'Email']
 

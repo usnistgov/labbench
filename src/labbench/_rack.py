@@ -16,6 +16,13 @@ import typing_extensions as typing
 from . import _device as core
 from . import util as util
 
+if typing.TYPE_CHECKING:
+    pass
+    import pandas as pd
+else:
+    pass
+    pd = util.lazy_import('pandas')
+
 EMPTY = inspect.Parameter.empty
 
 
@@ -275,8 +282,6 @@ class RackMethod(util.Ownable):
         (0th row). keyword values are taken from corresponding column in
         each row.
         """
-        import pandas as pd
-
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
             util.logger.info(f"{self._owned_name} from '{path!s}' " f"- '{row}' ({i+1}/{len(table.index)})")
@@ -533,8 +538,6 @@ class BoundSequence(util.Ownable):
 
     @classmethod
     def to_template(cls, path):
-        import pandas as pd
-
         if path is None:
             path = f'{cls.__name__} template.csv'
         util.logger.debug(f'writing csv template to {path!r}')
@@ -549,8 +552,6 @@ class BoundSequence(util.Ownable):
         (0th row). keyword values are taken from corresponding column in
         each row.
         """
-        import pandas as pd
-
         table = pd.read_csv(path, index_col=0)
         for i, row in enumerate(table.index):
             util.logger.info(f"{self._owned_name} from '{path!s}' " f"- '{row}' ({i+1}/{len(table.index)})")

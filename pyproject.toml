@@ -47,6 +47,7 @@ dependencies = [
     "pywin32; sys_platform == 'win32'",
     "comtypes; sys_platform == 'win32'",
     "libusb1>=3.1.0",
+    "libusb-package; sys_platform == 'win32'"
 ]
 
 [project.optional-dependencies]

@@ -1332,7 +1332,8 @@ def _visa_probe_resource(resource: str, open_timeout, timeout, encoding: 'ascii'
     else:
         device = None
 
-    device.close()
+    if device is not None:
+        device.close()
 
     return device
 

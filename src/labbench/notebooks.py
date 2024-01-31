@@ -29,7 +29,9 @@ def trait_table(device):
 
     _df = pd.DataFrame([], columns=['value'])
 
-    TABLE_STYLES = [{'selector': '.col_heading, .blank', 'props': [('display', 'none;')]}]
+    TABLE_STYLES = [
+        {'selector': '.col_heading, .blank', 'props': [('display', 'none;')]}
+    ]
 
     CAPTION_FMT = '<center><b>{}<b></center>'
 
@@ -66,7 +68,10 @@ def trait_table(device):
         _df.sort_index(inplace=True)
         caption = CAPTION_FMT.format(obj._owned_name or repr(obj)).replace(',', '<br>')
         html.value = (
-            _df.style.set_caption(caption).set_table_attributes('class="table"').set_table_styles(TABLE_STYLES).render()
+            _df.style.set_caption(caption)
+            .set_table_attributes('class="table"')
+            .set_table_styles(TABLE_STYLES)
+            .render()
         )
 
     observe(device, on_change)
@@ -83,7 +88,9 @@ class TextareaLogHandler(logging.StreamHandler):
     def __init__(self, level=logging.DEBUG):
         self.stream = StringIO()
         super(TextareaLogHandler, self).__init__(self.stream)
-        self.widget = widgets.Textarea(layout=widgets.Layout(width='100%', height='500px'))
+        self.widget = widgets.Textarea(
+            layout=widgets.Layout(width='100%', height='500px')
+        )
         self.setFormatter(logging.Formatter(self.log_format, self.time_format))
         self.setLevel(level)
         self.last_time = None
@@ -118,15 +125,25 @@ class panel:
         cls.ncols = ncols
 
         if isinstance(source, Rack):
-            cls.devices = dict([(k, v) for k, v in source._ownables.items() if isinstance(v, core.Device)])
+            cls.devices = dict(
+                [
+                    (k, v)
+                    for k, v in source._ownables.items()
+                    if isinstance(v, core.Device)
+                ]
+            )
         elif isinstance(source, numbers.Number):
             cls.source = source + 1
             cls.devices = core.find_device_instances(cls.source)
         else:
-            raise ValueError(f'source must be a Rack instance or int, but got {source!r}')
+            raise ValueError(
+                f'source must be a Rack instance or int, but got {source!r}'
+            )
 
         children = [
-            trait_table(cls.devices[k]) for k in sorted(cls.devices.keys()) if isinstance(cls.devices[k], core.Device)
+            trait_table(cls.devices[k])
+            for k in sorted(cls.devices.keys())
+            if isinstance(cls.devices[k], core.Device)
         ]
 
         if len(children) == 0:

@@ -66,11 +66,15 @@ def get_owner_store(obj: HasParamAttrs) -> HasParamAttrsInstInfo:
     return obj._attr_store
 
 
-def get_owner_meta(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> HasParamAttrsClsInfo:
+def get_owner_meta(
+    obj: Union[HasParamAttrs, type[HasParamAttrs]],
+) -> HasParamAttrsClsInfo:
     return obj._attr_defs
 
 
-def get_class_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> dict[str, ParamAttr]:
+def get_class_attrs(
+    obj: Union[HasParamAttrs, type[HasParamAttrs]],
+) -> dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
     return obj._attr_defs.attrs
 
@@ -83,7 +87,7 @@ def add_docstring_to_help(attr: ParamAttr, func: callable):
         attr.help = attr.kws['help'] = new_help
 
 
-def bound_valid_posargs(func: callable) -> tuple[int,int]:
+def bound_valid_posargs(func: callable) -> tuple[int, int]:
     """bound on the number of acceptable positional arguments in `func`"""
 
     hi = func.__code__.co_argcount
@@ -95,30 +99,44 @@ def bound_valid_posargs(func: callable) -> tuple[int,int]:
 def name_arguments(func: callable) -> tuple[str]:
     if hasattr(func, '__signature__'):
         return tuple(func.__signature__.parameters.keys())
-    elif hasattr(func, '__code__') and not func.__code__.co_flags & inspect.CO_VARKEYWORDS:
-        return func.__code__.co_varnames[:func.__code__.co_argcount]
+    elif (
+        hasattr(func, '__code__')
+        and not func.__code__.co_flags & inspect.CO_VARKEYWORDS
+    ):
+        return func.__code__.co_varnames[: func.__code__.co_argcount]
     else:
         func.__signature__ = inspect.signature(func)
         return tuple(func.__signature__.parameters.keys())
 
+
 def default_arguments(func: callable) -> tuple[str]:
     if hasattr(func, '__signature__'):
-        return tuple([
-            p.default
-            for p in func.__signature__.parameters.values()
-            if p.default is not p.empty
-        ])
-    elif hasattr(func, '__code__') and not func.__code__.co_flags & inspect.CO_VARKEYWORDS:
+        return tuple(
+            [
+                p.default
+                for p in func.__signature__.parameters.values()
+                if p.default is not p.empty
+            ]
+        )
+    elif (
+        hasattr(func, '__code__')
+        and not func.__code__.co_flags & inspect.CO_VARKEYWORDS
+    ):
         return (func.__defaults__ or ()) + (func.__kwdefaults__ or ())
     else:
         func.__signature__ = inspect.signature(func)
-        return tuple([
-            p.default
-            for p in func.__signature__.parameters.values()
-            if p.default is not p.empty
-        ])
+        return tuple(
+            [
+                p.default
+                for p in func.__signature__.parameters.values()
+                if p.default is not p.empty
+            ]
+        )
 
-def build_method_signature(owner_cls: THasParamAttrsCls, method: Method[T], kwarg_names: list[str], scope='all') -> inspect.Signature:
+
+def build_method_signature(
+    owner_cls: THasParamAttrsCls, method: Method[T], kwarg_names: list[str], scope='all'
+) -> inspect.Signature:
     kwargs_params = []
     defaults = {}
     broadcast_kwargs = get_owner_meta(owner_cls).broadcast_kwargs
@@ -127,7 +145,9 @@ def build_method_signature(owner_cls: THasParamAttrsCls, method: Method[T], kwar
         try:
             arg_annotation = broadcast_kwargs[name]._type
             if broadcast_kwargs[name].default not in (None, Undefined):
-                defaults[name] = chain_get(broadcast_kwargs, method._kwargs, name).default
+                defaults[name] = chain_get(
+                    broadcast_kwargs, method._kwargs, name
+                ).default
         except KeyError:
             arg_annotation = Any
 
@@ -142,22 +162,26 @@ def build_method_signature(owner_cls: THasParamAttrsCls, method: Method[T], kwar
     pos_params = [inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_ONLY)]
 
     if scope == 'all':
-        pos_params += [inspect.Parameter(
-            'new_value',
-            default=Undefined,
-            kind=inspect.Parameter.POSITIONAL_ONLY,
-            annotation=typing.Optional[method._type],
-        )]
-        return_annotation=typing.Optional[method._type]
+        pos_params += [
+            inspect.Parameter(
+                'new_value',
+                default=Undefined,
+                kind=inspect.Parameter.POSITIONAL_ONLY,
+                annotation=typing.Optional[method._type],
+            )
+        ]
+        return_annotation = typing.Optional[method._type]
     elif scope == 'getter':
-        return_annotation=method._type
+        return_annotation = method._type
     elif scope == 'setter':
-        pos_params += [inspect.Parameter(
-            'new_value',
-            kind=inspect.Parameter.POSITIONAL_ONLY,
-            annotation=method._type,
-        )]
-        return_annotation=None
+        pos_params += [
+            inspect.Parameter(
+                'new_value',
+                kind=inspect.Parameter.POSITIONAL_ONLY,
+                annotation=method._type,
+            )
+        ]
+        return_annotation = None
     else:
         raise TypeError('scope argument must be one of (None, "getter", "setter")')
 
@@ -167,7 +191,13 @@ def build_method_signature(owner_cls: THasParamAttrsCls, method: Method[T], kwar
 
     return sig
 
-def chain_get(d1: dict[Any, T], d2: dict[Any, T], key: Any, default:Union[Undefined,T]=Undefined) -> T:
+
+def chain_get(
+    d1: dict[Any, T],
+    d2: dict[Any, T],
+    key: Any,
+    default: Union[Undefined, T] = Undefined,
+) -> T:
     """returns d1[key] if it exists, otherwise d2[key], otherwise default if it is not Undefined"""
     if default is Undefined:
         return d1.get(key, d2.get(key))
@@ -175,15 +205,15 @@ def chain_get(d1: dict[Any, T], d2: dict[Any, T], key: Any, default:Union[Undefi
         return d1.get(key, d2.get(key, default))
 
 
-def missing_kwargs(source: dict[str, MethodKeywordArgument[T]], into: dict[str, MethodKeywordArgument[T]], only:Union[None,list[str]]=None) -> dict[str, MethodKeywordArgument[T]]:
+def missing_kwargs(
+    source: dict[str, MethodKeywordArgument[T]],
+    into: dict[str, MethodKeywordArgument[T]],
+    only: Union[None, list[str]] = None,
+) -> dict[str, MethodKeywordArgument[T]]:
     """return a dictionary of MethodKeywordArguments from self.broadcast_kwargs missing from method"""
     if only is None:
         only = source.keys()
-    return {
-        name: source[name]
-        for name in only - into.keys()
-        if name in source
-    }
+    return {name: source[name] for name in only - into.keys() if name in source}
 
 
 class KeyAdapterBase:
@@ -199,6 +229,7 @@ class KeyAdapterBase:
 
             import labbench as lb
             from labbench import paramattr as attr
+
 
             class custom_keying(attr.message_keying):
                 def get(self, device: lb.Device, scpi_key: str, trait_name=None):
@@ -262,7 +293,9 @@ class KeyAdapterBase:
         """this must be implemented by a subclass to support of `labbench.parameter.method`
         `labbench.parameter.property` attributes that are implemented through the `key` keyword.
         """
-        raise NotImplementedError(f'key adapter does not implement "get" {type(self)!r}')
+        raise NotImplementedError(
+            f'key adapter does not implement "get" {type(self)!r}'
+        )
 
     def set(
         self,
@@ -275,7 +308,9 @@ class KeyAdapterBase:
         """this must be implemented by a subclass to support of `labbench.parameter.method`
         `labbench.parameter.property` attributes that are implemented through the `key` keyword.
         """
-        raise NotImplementedError(f'key adapter does not implement "set" {type(self)!r}')
+        raise NotImplementedError(
+            f'key adapter does not implement "set" {type(self)!r}'
+        )
 
     def get_kwarg_names(self, key: Any) -> list[str]:
         """returns a list of arguments for the parameter attribute key.
@@ -283,43 +318,55 @@ class KeyAdapterBase:
         This must be implemented in order to define `labbench.paramattr.method` attributes
         using the `key` keyword.
         """
-        raise NotImplementedError('key adapter needs "get_key_arguments" to implement methods by "key" keyword')
+        raise NotImplementedError(
+            'key adapter needs "get_key_arguments" to implement methods by "key" keyword'
+        )
 
-    def method_signature(self, owner_cls: THasParamAttrsCls, method: Method[T], scope='all') -> inspect.Signature:
-        return build_method_signature(owner_cls, method, kwarg_names=self.get_kwarg_names(method.key), scope=scope)
+    def method_signature(
+        self, owner_cls: THasParamAttrsCls, method: Method[T], scope='all'
+    ) -> inspect.Signature:
+        return build_method_signature(
+            owner_cls, method, kwarg_names=self.get_kwarg_names(method.key), scope=scope
+        )
 
-    def fill_kwargs(self, method: Method[T], owner_cls: type[HasParamAttrs]) -> dict[str, MethodKeywordArgument]:
+    def fill_kwargs(
+        self, method: Method[T], owner_cls: type[HasParamAttrs]
+    ) -> dict[str, MethodKeywordArgument]:
         """return a dictionary of MethodKeywordArguments from broadcast_kwargs missing from method"""
 
         ret = missing_kwargs(
             source=get_owner_meta(owner_cls).broadcast_kwargs,
             into=method._kwargs,
-            only=self.get_kwarg_names(method.key)
+            only=self.get_kwarg_names(method.key),
         )
 
         return ret
 
-    def getter_factory(self, owner_cls: THasParamAttrsCls, method: Method[T]) -> callable:
+    def getter_factory(
+        self, owner_cls: THasParamAttrsCls, method: Method[T]
+    ) -> callable:
         """return a getter function implemented with method.key"""
 
         def func(owner: HasParamAttrs, /, **kwargs) -> T:
             return self.get(owner, method.key, method, kwargs)
 
         func.__signature__ = self.method_signature(owner_cls, method, scope='getter')
-        func.__name__ = method.name+'_getter'  # type: ignore
+        func.__name__ = method.name + '_getter'  # type: ignore
         func.__module__ = f'{owner_cls.__module__}'
         func.__qualname__ = f'{owner_cls.__qualname__}.{method.name}'
 
         return func
 
-    def setter_factory(self, owner_cls: THasParamAttrsCls, method: Method[T])  -> callable:
+    def setter_factory(
+        self, owner_cls: THasParamAttrsCls, method: Method[T]
+    ) -> callable:
         """return a getter function implemented with method.key"""
 
         def func(owner: HasParamAttrs, new_value: T, /, **kwargs):
             self.set(owner, method.key, new_value, method, kwargs)
 
         func.__signature__ = self.method_signature(owner_cls, method, scope='setter')
-        func.__name__ = method.name+'_setter'  # type: ignore
+        func.__name__ = method.name + '_setter'  # type: ignore
         func.__module__ = f'{owner_cls.__module__}'
         func.__qualname__ = f'{owner_cls.__qualname__}.{method.name}'
 
@@ -339,7 +386,7 @@ class HasParamAttrsClsInfo:
     def __init__(
         self,
         key_adapter: KeyAdapterBase,
-        broadcast_kwargs: dict[str, MethodKeywordArgument]={},
+        broadcast_kwargs: dict[str, MethodKeywordArgument] = {},
         attrs: dict[str, ParamAttr] = {},
     ):
         self.attrs = attrs
@@ -360,7 +407,7 @@ class HasParamAttrsClsInfo:
         obj = cls(
             attrs={},
             key_adapter=get_owner_meta(owner_cls).key_adapter,
-            broadcast_kwargs=dict(get_owner_meta(owner_cls).broadcast_kwargs)
+            broadcast_kwargs=dict(get_owner_meta(owner_cls).broadcast_kwargs),
         )
         obj.attrs = {k: v.copy() for k, v in get_owner_meta(owner_cls).attrs.items()}
         return obj
@@ -382,7 +429,9 @@ class HasParamAttrsMeta(type):
         return ns
 
 
-@typing.dataclass_transform(eq_default=False, kw_only_default=True, field_specifiers=(field,))
+@typing.dataclass_transform(
+    eq_default=False, kw_only_default=True, field_specifiers=(field,)
+)
 class ParamAttrMeta(type):
     pass
 
@@ -568,7 +617,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         pass
 
     @util.hide_in_traceback
-    def _prepare_set_value(self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}):
+    def _prepare_set_value(
+        self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}
+    ):
         # First, validate the pythonic types
         if not self.sets:
             raise AttributeError(f'{self.__str__()} cannot be set')
@@ -578,7 +629,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             value = self.validate(value, owner)
 
             if len(self.only) > 0 and not self.contains(self.only, value):
-                raise ValueError(f"value '{value}' is not among the allowed values {self.only!r}")
+                raise ValueError(
+                    f"value '{value}' is not among the allowed values {self.only!r}"
+                )
         elif self.allow_none:
             value = None
         else:
@@ -651,7 +704,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         if not isinstance(value, self._type):
             typename = self._type.__qualname__
             valuetypename = type(value).__qualname__
-            raise ValueError(f"{self!r} type must be '{typename}', not '{valuetypename}'")
+            raise ValueError(
+                f"{self!r} type must be '{typename}', not '{valuetypename}'"
+            )
         return value
 
     def contains(self, iterable, value):
@@ -659,8 +714,13 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
     # introspection
     def doc(self, as_argument=False):
-        doc_param_funcs = util.find_methods_in_mro(type(self), 'doc_params', ParamAttr)[::-1]
-        doc_kws = {'as_argument': as_argument, 'skip': ['help', 'default', 'label', 'cache', 'allow_none']}
+        doc_param_funcs = util.find_methods_in_mro(type(self), 'doc_params', ParamAttr)[
+            ::-1
+        ]
+        doc_kws = {
+            'as_argument': as_argument,
+            'skip': ['help', 'default', 'label', 'cache', 'allow_none'],
+        }
         doc_params = [f(self, **doc_kws) for f in doc_param_funcs]
         doc_params = [s for s in doc_params if s]
 
@@ -681,7 +741,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
                 doc += '\n\n' + '\n'.join(doc_params)
         return doc
 
-    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
+    def doc_params(
+        self, skip: list[str] = ['help', 'label'], as_argument: bool = False
+    ) -> str:
         pairs = []
 
         if as_argument:
@@ -715,7 +777,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             if not self.gets:
                 access_limits.append('get')
             if access_limits:
-                docs.append(f"* Cannot be {' or '.join(access_limits)} after device creation")
+                docs.append(
+                    f"* Cannot be {' or '.join(access_limits)} after device creation"
+                )
             if self.only:
                 only = set(list(self.only) + ([None] if self.allow_none else []))
                 docs.append(f'\n\n* Allowed values are {only!r}')
@@ -723,16 +787,25 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             if self.cache:
                 docs.append('* Logging event stored in metadata log after first access')
             else:
-                docs.append('* Logging events are triggered on each access, and are stored as a key or column')
+                docs.append(
+                    '* Logging events are triggered on each access, and are stored as a key or column'
+                )
 
             return '\n'.join(docs)
 
-    def __repr__(self, skip_params=['help', 'label'], owner: Union[None,HasParamAttrs]=None, with_declaration:bool=True):
+    def __repr__(
+        self,
+        skip_params=['help', 'label'],
+        owner: Union[None, HasParamAttrs] = None,
+        with_declaration: bool = True,
+    ):
         param_doc = self.doc_params(skip=skip_params, as_argument=True)
         declaration = f'{type(self).__module__}.{type(self).__qualname__}({param_doc})'
 
         if owner is None and not with_declaration:
-            raise TypeError('must specify at least one of `declaration` and `owner_inst`')
+            raise TypeError(
+                'must specify at least one of `declaration` and `owner_inst`'
+            )
 
         elif owner is None:
             if self.name is None:
@@ -875,7 +948,7 @@ class Value(ParamAttr[T]):
             self.sets = sets
 
 
-class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):
+class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co, _P]):
     name: str = field(Undefined, kw_only=False)  # type: ignore
     default: Union[T, None, Undefined] = Undefined  # type: ignore
 
@@ -885,7 +958,9 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):
     _decorated: typing.ClassVar[dict[callable, dict[str, ParamAttr[T]]]] = {}
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
-        raise AttributeError('labbench.paramattr.kwarg instances should not be used as class attributes')
+        raise AttributeError(
+            'labbench.paramattr.kwarg instances should not be used as class attributes'
+        )
 
     def __set_name__(self, owner_cls, name):
         super().__set_name__(owner_cls, self.name)
@@ -896,12 +971,15 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):
     @typing.overload
     def __call__(self, decorated: _GetterType[T_co, _P]) -> _GetterType[T_co, _P]:
         ...
+
     @typing.overload
     def __call__(self, decorated: _SetterType[T_co, _P]) -> _SetterType[T_co, _P]:
         ...
+
     @typing.overload
     def __call__(self, decorated: THasParamAttrs) -> THasParamAttrs:
         ...
+
     def __call__(
         self,
         decorated: Union[_GetterType[T_co, _P], _SetterType[T_co, _P], THasParamAttrs],
@@ -913,7 +991,9 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):
         """
 
         if self.default is not Undefined:
-            raise TypeError('the default argument is not supported when decorating a method')
+            raise TypeError(
+                'the default argument is not supported when decorating a method'
+            )
 
         if isinstance(decorated, HasParamAttrsMeta):
             get_owner_meta(decorated).broadcast_kwargs[self.name] = self
@@ -923,7 +1003,9 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co,_P]):
         elif callable(decorated):
             self._decorated.setdefault(decorated, {}).setdefault(self.name, self)
         elif isinstance(decorated, (Value, Property)):
-            raise TypeError("{to_decorate.ROLE} paramattrs do not accept keyword arguments")
+            raise TypeError(
+                '{to_decorate.ROLE} paramattrs do not accept keyword arguments'
+            )
 
         return decorated
 
@@ -951,15 +1033,21 @@ class OwnerAccessAttr(ParamAttr[T]):
 
         if self.key is Undefined:
             if 'sets' in self.kws and self.sets and not self._setter:
-                raise TypeError(f'a setter is needed to implement {self.ROLE} "{self.name}" {self.kws}')
+                raise TypeError(
+                    f'a setter is needed to implement {self.ROLE} "{self.name}" {self.kws}'
+                )
             if 'gets' in self.kws and self.gets and not self._getter:
-                raise TypeError(f'a getter is needed to implement {self.ROLE} "{self.name}"')
+                raise TypeError(
+                    f'a getter is needed to implement {self.ROLE} "{self.name}"'
+                )
 
     @util.hide_in_traceback
     def get_from_owner(self, owner: HasParamAttrs, kwargs: dict[str, Any] = {}):
         if not self.gets:
             # stop now if this is not a gets ParamAttr
-            raise AttributeError(f'{self.__repr__(owner=owner)} does not support get operations')
+            raise AttributeError(
+                f'{self.__repr__(owner=owner)} does not support get operations'
+            )
 
         if self.cache and self.name in owner._attr_store.cache:
             # return the cached value if applicable
@@ -985,7 +1073,9 @@ class OwnerAccessAttr(ParamAttr[T]):
         return value
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}) -> None:
+    def set_in_owner(
+        self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}
+    ) -> None:
         value = self._prepare_set_value(owner, value, kwargs)
 
         # The remaining roles act as function calls that are implemented through self.key
@@ -1001,19 +1091,22 @@ class OwnerAccessAttr(ParamAttr[T]):
         else:
             objname = str(type(owner).__qualname__) + '.' + (self.name)
             raise AttributeError(
-                f'cannot set {objname}: no @{self.__repr__(owner=owner)}.' f'setter and no key argument'
+                f'cannot set {objname}: no @{self.__repr__(owner=owner)}.'
+                f'setter and no key argument'
             )
 
         owner.__notify__(self.name, value, 'set', cache=self.cache, kwargs=kwargs)
 
     @util.hide_in_traceback
-    def getter(self, func: _GetterType[T,_P]) -> typing.Self:
+    def getter(self, func: _GetterType[T, _P]) -> typing.Self:
         """decorate a getter method to implement behavior in the owner"""
 
         # validate signature
         arg_lo, arg_hi = bound_valid_posargs(func)
         if arg_hi < 1 or arg_lo > 1:
-            raise TypeError('decorated getter method must accept one positional argument: self')
+            raise TypeError(
+                'decorated getter method must accept one positional argument: self'
+            )
 
         # validate access constraints
         if not self.gets:
@@ -1029,21 +1122,23 @@ class OwnerAccessAttr(ParamAttr[T]):
         return self
 
     @util.hide_in_traceback
-    def setter(self, func: _SetterType[T,_P]) -> typing.Self:
+    def setter(self, func: _SetterType[T, _P]) -> typing.Self:
         """decorate a setter method to implement behavior in the owner"""
 
         # validate signature
         arg_lo, arg_hi = bound_valid_posargs(func)
         if arg_hi < 2 or arg_lo > 2:
             # allow more to support methods that may have additional keyword arguments
-            raise TypeError('decorated setter method must accept two positional arguments: (self, new_value)')
+            raise TypeError(
+                'decorated setter method must accept two positional arguments: (self, new_value)'
+            )
 
         # validate access constraints
         if not self.sets:
             raise TypeError('tried to implement a setter, but sets=False')
 
         self._setter = func
-        self.kws['_setter'] = func # for proper copying
+        self.kws['_setter'] = func  # for proper copying
         add_docstring_to_help(self, func)
 
         if self.name is None and hasattr(func, '__name__'):
@@ -1058,6 +1153,7 @@ class _GetterType(typing.Protocol[T_co, _P]):
     """call signature protocol for *decorated* methods of Method descriptors"""
 
     if typing.TYPE_CHECKING:
+
         @staticmethod
         def __call__(owner: HasParamAttrs, *args: _P.args, **kwargs: _P.kwargs) -> T_co:
             ...
@@ -1067,8 +1163,15 @@ class _SetterType(typing.Protocol[T_co, _P]):
     """call signature protocol for *decorated* methods of Method descriptors"""
 
     if typing.TYPE_CHECKING:
+
         @staticmethod
-        def __call__(owner: HasParamAttrs, /, new_value: T_co, *args: _P.args, **kwargs: _P.kwargs) -> None:
+        def __call__(
+            owner: HasParamAttrs,
+            /,
+            new_value: T_co,
+            *args: _P.args,
+            **kwargs: _P.kwargs,
+        ) -> None:
             ...
 
 
@@ -1076,6 +1179,7 @@ class _MethodKnownSignature(typing.Protocol[T_co], typing.Generic[T_co, _P]):
     # call signature for type hinting decorated Method descriptors
 
     if typing.TYPE_CHECKING:
+
         @typing.overload
         @staticmethod
         def __call__(new_value: T_co, *args: _P.args, **kwargs: _P.kwargs) -> None:
@@ -1090,6 +1194,7 @@ class _MethodKnownSignature(typing.Protocol[T_co], typing.Generic[T_co, _P]):
 class _MethodUnknownSignature(typing.Protocol[T_co]):
     # call signature protocol for type hinting keyed Method descriptors
     if typing.TYPE_CHECKING:
+
         @typing.overload
         @staticmethod
         def __call__(new_value: Union[T_co, None], /, **kwargs) -> None:
@@ -1114,7 +1219,6 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
 
     _kwargs: dict[Union[ParamAttr, callable]] = {}
 
-
     def __init_owner_instance__(self, owner_inst: HasParamAttrs):
         """bind a callable method in the owner, and fill in registered KeywordArguments"""
 
@@ -1122,12 +1226,16 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
 
         @util.hide_in_traceback
         def call_in_owner(
-            owner: HasParamAttrs, new_value: Union[T, None, type[Undefined]] = Undefined, /, **kwargs
+            owner: HasParamAttrs,
+            new_value: Union[T, None, type[Undefined]] = Undefined,
+            /,
+            **kwargs,
         ) -> Union[T, None, Undefined]:
-
-            for name in (self._kwargs.keys() & kwargs.keys()):
+            for name in self._kwargs.keys() & kwargs.keys():
                 # apply keyword argument validation to incoming keyword arguments
-                kwargs[name] = self._kwargs[name]._finalize_get_value(owner, kwargs[name])
+                kwargs[name] = self._kwargs[name]._finalize_get_value(
+                    owner, kwargs[name]
+                )
 
             if new_value is not Undefined:
                 self.set_in_owner(owner, new_value, kwargs)
@@ -1140,7 +1248,9 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
 
             return value
 
-        call_in_owner.__signature__ = build_method_signature(type(owner_inst), self, self.get_kwarg_names())
+        call_in_owner.__signature__ = build_method_signature(
+            type(owner_inst), self, self.get_kwarg_names()
+        )
 
         # bind to the owner instance
         unbound_method = call_in_owner.__get__(owner_inst, type(owner_inst))
@@ -1156,7 +1266,7 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
             new_kwargs = missing_kwargs(
                 into=self._kwargs,
                 source=get_owner_meta(owner_cls).broadcast_kwargs,
-                only=self.get_kwarg_names()
+                only=self.get_kwarg_names(),
             )
             self._kwargs.update(new_kwargs)
 
@@ -1170,9 +1280,10 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
             if self.sets and self._setter is None:
                 self.setter(key_adapter.setter_factory(owner_cls, self))
 
-
     @util.hide_in_traceback
-    def getter(self, func: _GetterType[T, _P]) -> Method[T, _MethodKnownSignature[T,_P]]:
+    def getter(
+        self, func: _GetterType[T, _P]
+    ) -> Method[T, _MethodKnownSignature[T, _P]]:
         super().getter(func)
 
         # apply any new keyword arguments
@@ -1181,7 +1292,9 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
             if self._setter is None:
                 self._kwargs = getter_kwargs
             else:
-                raise TypeError("apply kwarg decorators to the setter, since it was defined first")
+                raise TypeError(
+                    'apply kwarg decorators to the setter, since it was defined first'
+                )
 
         # validate arguments
         if self._setter is not None:
@@ -1190,7 +1303,9 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
         return self
 
     @util.hide_in_traceback
-    def setter(self, func: _SetterType[T, _P]) -> Method[T, _MethodKnownSignature[T,_P]]:
+    def setter(
+        self, func: _SetterType[T, _P]
+    ) -> Method[T, _MethodKnownSignature[T, _P]]:
         super().setter(func)
 
         # apply new keyword arguments
@@ -1199,7 +1314,9 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
             if self._getter is None:
                 self._kwargs = setter_kwargs
             else:
-                raise TypeError("apply kwarg decorators to the getter, since it was defined first")
+                raise TypeError(
+                    'apply kwarg decorators to the getter, since it was defined first'
+                )
 
         if self._getter is not None:
             self._validate_paired_signatures()
@@ -1221,16 +1338,25 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
     def _raise_on_setattr(self, owner, value):
         me = self.__repr__(owner=owner)
         call_name = self.__repr__(owner=owner, with_declaration=False)
-        raise AttributeError(f'set {me} through the function call {call_name}(new_value, ...)')
+        raise AttributeError(
+            f'set {me} through the function call {call_name}(new_value, ...)'
+        )
 
     @util.hide_in_traceback
     def _validate_paired_signatures(self):
         """called when both getter and setter are decorated to ensure that their arguments match"""
 
-        if self.name is None and self.key is not Undefined and self._getter is not None and self._setter is not None:
+        if (
+            self.name is None
+            and self.key is not Undefined
+            and self._getter is not None
+            and self._setter is not None
+        ):
             # in this case, we've defined the setter and getter through decorators, even though we expect
             # a key implementation
-            util.logger.warning(f'{self} key argument overridden by both @getter and @setter')
+            util.logger.warning(
+                f'{self} key argument overridden by both @getter and @setter'
+            )
 
         # number and names of arguments
         if name_arguments(self._setter)[2:] != name_arguments(self._getter)[1:]:
@@ -1246,18 +1372,19 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
         # defaults
         getter_defaults = default_arguments(self._getter)
         setter_defaults = default_arguments(self._setter)
-        if getter_defaults[::-1] != setter_defaults[::-1][:len(getter_defaults)]:
+        if getter_defaults[::-1] != setter_defaults[::-1][: len(getter_defaults)]:
             raise TypeError('setter and getter default arguments must match')
-
 
     if typing.TYPE_CHECKING:
         # call signatures hints for IDEs
 
-        def __new__(cls, *args, **kwargs) -> Method[T,_MethodUnknownSignature[T]]:
+        def __new__(cls, *args, **kwargs) -> Method[T, _MethodUnknownSignature[T]]:
             ...
 
         @typing.overload
-        def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> SignatureType:
+        def __get__(
+            self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]
+        ) -> SignatureType:
             ...
 
         @typing.overload
@@ -1320,7 +1447,7 @@ class Property(OwnerAccessAttr[T]):
         if self.get_on_set:
             self.__get__(owner, type(owner))
 
-    def __call__(self, func: _SetterType[T,_P]) -> typing.Self:
+    def __call__(self, func: _SetterType[T, _P]) -> typing.Self:
         return self.getter(func)
 
 
@@ -1420,7 +1547,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
             paramattr=get_class_attrs(self)[name],
             type=type,
             cache=cache,
-            kwargs=kwargs
+            kwargs=kwargs,
         )
 
         for handler in self._attr_store.handlers.values():
@@ -1452,7 +1579,9 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
         # assignment to to self.__cache__ here would corrupt 'old' message key in __notify__
 
 
-def adjust(paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws) -> callable[[type[T]], type[T]]:
+def adjust(
+    paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws
+) -> callable[[type[T]], type[T]]:
     """decorates a Device subclass to adjust the definition of the specified ParamAttr.
 
     This can be applied to inherited classes that need one of its parents attributes
@@ -1480,7 +1609,7 @@ def adjust(paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /,
         'of the labbench.paramattr.copy(DeviceName.param_name), to improve type '
         'hinting compatibility',
         DeprecationWarning,
-        stacklevel=2
+        stacklevel=2,
     )
     if isinstance(paramattr, ParamAttr):
         name = paramattr.name
@@ -1500,7 +1629,9 @@ def adjust(paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /,
                 kws['key'] = default_or_key
 
         if name not in owner_cls.__dict__:
-            raise ValueError(f'the decorated class {owner_cls!r} has no paramattr "{name}"')
+            raise ValueError(
+                f'the decorated class {owner_cls!r} has no paramattr "{name}"'
+            )
 
         parent_attr = super(owner_cls, owner_cls)
         if parent_attr is attr_def:
@@ -1631,13 +1762,21 @@ class DependentParamAttr(ParamAttr):
         ]
 
         if len(none_names) == 1:
-            raise ValueError(f'cannot {operation} {owner}.{self.name} while {none_names[0]} is None')
+            raise ValueError(
+                f'cannot {operation} {owner}.{self.name} while {none_names[0]} is None'
+            )
         elif len(none_names) > 1:
-            raise ValueError(f'cannot {operation} {owner}.{self.name} while {tuple(none_names)} are None')
+            raise ValueError(
+                f'cannot {operation} {owner}.{self.name} while {tuple(none_names)} are None'
+            )
 
     @classmethod
     def derive(
-        mixin_cls: type[ParamAttr], template_attr: ParamAttr, dependent_attrs={}, *init_args, **init_kws
+        mixin_cls: type[ParamAttr],
+        template_attr: ParamAttr,
+        dependent_attrs={},
+        *init_args,
+        **init_kws,
     ) -> type[ParamAttr]:
         type_name = type(template_attr).__name__
         type_name = ('' if type_name.startswith('derived') else 'derived_') + type_name
@@ -1654,12 +1793,16 @@ class DependentParamAttr(ParamAttr):
 
         ns = dict(_paramattr_dependencies=attrs_dict, **dependent_attrs)
 
-        ttype = type(type_name, (mixin_cls, find_paramattr_in_mro(type(template_attr))), ns)
+        ttype = type(
+            type_name, (mixin_cls, find_paramattr_in_mro(type(template_attr))), ns
+        )
 
         obj = ttype(*init_args, **init_kws)
         return obj
 
-    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
+    def doc_params(
+        self, skip: list[str] = ['help', 'label'], as_argument: bool = False
+    ) -> str:
         if as_argument:
             return None
         else:
@@ -1686,11 +1829,16 @@ class DependentNumberParamAttr(DependentParamAttr):
                     ex.add_note(f'dependent attribute: {dep}')
             raise ex
         if value > max_:
-            raise ValueError(f'{value} is greater than the max limit {max_} of {self._owned_name(owner)}')
+            raise ValueError(
+                f'{value} is greater than the max limit {max_} of {self._owned_name(owner)}'
+            )
 
         min_ = self.derived_min(owner)
         if value < min_:
-            raise ValueError(f'{value} is less than the min limit {min_} of {self._owned_name(owner)}')
+            raise ValueError(
+                f'{value} is less than the min limit {min_} of {self._owned_name(owner)}'
+            )
+
 
 class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
     """act as another BoundedNumber ParamAttr, calibrated with a mapping"""
@@ -1726,7 +1874,9 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
             return owner_cal['by_uncal'].loc[uncal]
         except KeyError:
             # spare us pandas details in the traceback
-            util.logger.warning(f'{self.__repr__(owner=owner)} has no entry at {uncal!r} {self.label}')
+            util.logger.warning(
+                f'{self.__repr__(owner=owner)} has no entry at {uncal!r} {self.label}'
+            )
 
         return None
 
@@ -1760,7 +1910,8 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
             return
         else:
             raise ValueError(
-                f'must call set_mapping with None, a Series, or a pair of vector ' f'arguments, not {series_or_uncal}'
+                f'must call set_mapping with None, a Series, or a pair of vector '
+                f'arguments, not {series_or_uncal}'
             )
         by_uncal = by_uncal[~by_uncal.index.duplicated(keep='first')].sort_index()
         by_uncal.index.name = 'uncal'
@@ -1770,10 +1921,18 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
         by_cal = by_cal[~by_cal.index.duplicated(keep='first')].sort_index()
         by_cal.index.name = 'cal'
 
-        (owner._attr_store.calibrations.setdefault(self.name, {}).update(by_cal=by_cal, by_uncal=by_uncal))
+        (
+            owner._attr_store.calibrations.setdefault(self.name, {}).update(
+                by_cal=by_cal, by_uncal=by_uncal
+            )
+        )
 
     def derived_min(self, owner):
-        table = get_owner_store(owner).calibrations.setdefault(self.name, {}).get('by_cal', None)
+        table = (
+            get_owner_store(owner)
+            .calibrations.setdefault(self.name, {})
+            .get('by_cal', None)
+        )
 
         if table is None:
             return None
@@ -1781,7 +1940,11 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
             return table.index[0]
 
     def derived_max(self, owner):
-        table = get_owner_store(owner).calibrations.setdefault(self.name, {}).get('by_cal', None)
+        table = (
+            get_owner_store(owner)
+            .calibrations.setdefault(self.name, {})
+            .get('by_cal', None)
+        )
 
         if table is None:
             return None
@@ -1813,7 +1976,9 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
         return ret
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, cal_value, kwargs: dict[str, Any] = {}):
+    def set_in_owner(
+        self, owner: HasParamAttrs, cal_value, kwargs: dict[str, Any] = {}
+    ):
         # owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         self._validate_attr_dependencies(owner, False, 'set')
         self._prepare_set_value(owner, cal_value, kwargs)
@@ -1834,7 +1999,9 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
             )
         else:
             # execute the set
-            self._paramattr_dependencies['base'].set_in_owner(owner, uncal_value, kwargs)
+            self._paramattr_dependencies['base'].set_in_owner(
+                owner, uncal_value, kwargs
+            )
 
         if getattr(self, 'name', None) is not None:
             owner.__notify__(
@@ -1893,7 +2060,9 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
             path = getattr(owner, self.path_attr.name)
             index = msg['new']
 
-            if self._CAL_TABLE_KEY not in owner._attr_store.calibrations.get(self.name, {}):
+            if self._CAL_TABLE_KEY not in owner._attr_store.calibrations.get(
+                self.name, {}
+            ):
                 self._load_calibration_table(owner, path)
 
             ret = self._update_index_value(owner, index)
@@ -1915,14 +2084,18 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
                 cal.drop(self.index_lookup_attr.max, axis=0, inplace=True)
             #    self._cal_offset.values[:] = self._cal_offset.values-self._cal_offset.columns.values[np.newaxis,:]
 
-            owner._attr_store.calibrations.setdefault(self.name, {}).update({self._CAL_TABLE_KEY: cal})
+            owner._attr_store.calibrations.setdefault(self.name, {}).update(
+                {self._CAL_TABLE_KEY: cal}
+            )
 
             owner._logger.debug(f'calibration data read from "{path}"')
 
         if path is None:
             if not self.allow_none:
                 desc = self.__repr__(owner=owner, declaration=False)
-                raise ValueError(f'{desc} defined with allow_none=False; path_attr must not be None')
+                raise ValueError(
+                    f'{desc} defined with allow_none=False; path_attr must not be None'
+                )
             else:
                 return None
 
@@ -1930,7 +2103,9 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
 
     def _touch_table(self, owner):
         # make sure that calibrations have been initialized
-        table = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+        table = owner._attr_store.calibrations.get(self.name, {}).get(
+            self._CAL_TABLE_KEY, None
+        )
 
         if table is None:
             path = getattr(owner, self.path_attr.name)
@@ -1942,7 +2117,9 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
 
     def _update_index_value(self, owner, index_value):
         """update the calibration on change of index_value"""
-        cal = owner._attr_store.calibrations.get(self.name, {}).get(self._CAL_TABLE_KEY, None)
+        cal = owner._attr_store.calibrations.get(self.name, {}).get(
+            self._CAL_TABLE_KEY, None
+        )
 
         if cal is None:
             txt = 'index_value change has no effect because calibration_data has not been set'
@@ -1965,11 +2142,15 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
         return super().get_from_owner(owner, kwargs)
 
     @util.hide_in_traceback
-    def set_in_owner(self, owner: HasParamAttrs, cal_value, kwargs: dict[str, Any] = {}):
+    def set_in_owner(
+        self, owner: HasParamAttrs, cal_value, kwargs: dict[str, Any] = {}
+    ):
         self._touch_table(owner)
         super().set_in_owner(owner, cal_value, kwargs)
 
-    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
+    def doc_params(
+        self, skip: list[str] = ['help', 'label'], as_argument: bool = False
+    ) -> str:
         if as_argument:
             return None
         else:
@@ -1998,7 +2179,9 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
         # pass on a corresponding notification when the base changes
         base_attr = self._paramattr_dependencies['base']
 
-        if msg['name'] != getattr(base_attr, 'name', None) or not hasattr(base_attr, '__objclass__'):
+        if msg['name'] != getattr(base_attr, 'name', None) or not hasattr(
+            base_attr, '__objclass__'
+        ):
             return
 
         owner = msg['owner']
@@ -2050,7 +2233,9 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
         base_value = self._paramattr_dependencies['base'].get_from_owner(owner, kwargs)
 
         if 'other' in self._paramattr_dependencies:
-            other_value = self._paramattr_dependencies['other'].get_from_owner(owner, kwargs)
+            other_value = self._paramattr_dependencies['other'].get_from_owner(
+                owner, kwargs
+            )
             ret = self._forward(base_value, other_value)
         else:
             ret = self._forward(base_value)
@@ -2100,7 +2285,9 @@ class BoundedNumber(ParamAttr[T]):
     @util.hide_in_traceback
     def validate(self, value, owner=None):
         if not isinstance(value, (bytes, str, bool, numbers.Number)):
-            raise ValueError(f"a '{type(self).__qualname__}' attribute supports only numerical, str, or bytes types")
+            raise ValueError(
+                f"a '{type(self).__qualname__}' attribute supports only numerical, str, or bytes types"
+            )
         self.check_bounds(value, owner)
         return value
 
@@ -2108,17 +2295,25 @@ class BoundedNumber(ParamAttr[T]):
     def check_bounds(self, value, owner=None):
         # dynamic checks against self.derived_max() or self.derived_min() are left to derived classes
         if self.max is not None and value > self.max:
-            raise ValueError(f'{value} is greater than the max limit {self.max} of {self._owned_name(owner)}')
+            raise ValueError(
+                f'{value} is greater than the max limit {self.max} of {self._owned_name(owner)}'
+            )
         if self.min is not None and value < self.min:
-            raise ValueError(f'{value} is less than the min limit {self.min} of {self._owned_name(owner)}')
+            raise ValueError(
+                f'{value} is less than the min limit {self.min} of {self._owned_name(owner)}'
+            )
 
     path_attr = None  # TODO: should be a Unicode string attribute
 
-    index_lookup_attr = None  # TODO: this attribute should almost certainly be a BoundedNumber?
+    index_lookup_attr = (
+        None  # TODO: this attribute should almost certainly be a BoundedNumber?
+    )
 
     table_index_column = None
 
-    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
+    def doc_params(
+        self, skip: list[str] = ['help', 'label'], as_argument: bool = False
+    ) -> str:
         if as_argument:
             return None
 
@@ -2161,7 +2356,7 @@ class BoundedNumber(ParamAttr[T]):
                 index_lookup_attr=index_lookup_attr,
             ),
             table_index_column=table_index_column,
-            **kws
+            **kws,
         )
 
         return ret
@@ -2211,9 +2406,13 @@ class BoundedNumber(ParamAttr[T]):
                 if obj == self:
                     break
             else:
-                raise TypeError('calibration target attribute definition must first in the calibration expression')
+                raise TypeError(
+                    'calibration target attribute definition must first in the calibration expression'
+                )
 
-        return self.update(attr_expression, help=help, label=label, allow_none=allow_none)
+        return self.update(
+            attr_expression, help=help, label=label, allow_none=allow_none
+        )
 
     def transform(
         self,
@@ -2246,7 +2445,9 @@ class BoundedNumber(ParamAttr[T]):
         def neg(x, y=None):
             return None if x is None else -x
 
-        return self.transform(None, neg, neg, allow_none=self.allow_none, help=f'-1*({self.help})')
+        return self.transform(
+            None, neg, neg, allow_none=self.allow_none, help=f'-1*({self.help})'
+        )
 
     def __add__(self, other):
         def add(x, y):
@@ -2255,7 +2456,9 @@ class BoundedNumber(ParamAttr[T]):
         def sub(x, y):
             return None if None in (x, y) else x - y
 
-        return self.transform(other, add, sub, allow_none=self.allow_none, help=f'({self.help}) + {other}')
+        return self.transform(
+            other, add, sub, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+        )
 
     __radd__ = __add__
 
@@ -2266,7 +2469,9 @@ class BoundedNumber(ParamAttr[T]):
         def sub(x, y):
             return None if None in (x, y) else x - y
 
-        return self.transform(other, sub, add, allow_none=self.allow_none, help=f'({self.help}) + {other}')
+        return self.transform(
+            other, sub, add, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+        )
 
     def __rsub__(self, other):
         def add(x, y):
@@ -2275,7 +2480,9 @@ class BoundedNumber(ParamAttr[T]):
         def sub(x, y):
             return None if None in (x, y) else y - x
 
-        return self.transform(other, sub, add, allow_none=self.allow_none, help=f'({self.help}) + {other}')
+        return self.transform(
+            other, sub, add, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+        )
 
     def __mul__(self, other):
         def mul(x, y):
@@ -2284,7 +2491,9 @@ class BoundedNumber(ParamAttr[T]):
         def div(x, y):
             return None if None in (x, y) else x / y
 
-        return self.transform(other, mul, div, allow_none=self.allow_none, help=f'({self.help}) + {other}')
+        return self.transform(
+            other, mul, div, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+        )
 
     __rmul__ = __mul__
 
@@ -2295,7 +2504,9 @@ class BoundedNumber(ParamAttr[T]):
         def div(x, y):
             return None if None in (x, y) else x / y
 
-        return self.transform(other, div, mul, allow_none=self.allow_none, help=f'({self.help}) + {other}')
+        return self.transform(
+            other, div, mul, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+        )
 
     def __rdiv__(self, other):
         def mul(x, y):
@@ -2304,4 +2515,6 @@ class BoundedNumber(ParamAttr[T]):
         def div(x, y):
             return None if None in (x, y) else y / x
 
-        return self.transform(other, div, mul, allow_none=self.allow_none, help=f'({self.help}) + {other}')
+        return self.transform(
+            other, div, mul, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+        )

@@ -7,7 +7,9 @@ from labbench.testing import store_backend
 
 
 @attr.method_kwarg.int('registered_channel', min=1, max=4)
-@store_backend.key_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
+@store_backend.key_adapter(
+    defaults={'str_or_none': None, 'str_cached': 'cached string'}
+)
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
@@ -55,6 +57,7 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     str_cached = attr.method.str(key='str_cached', cache=True)
     any = attr.method.any(key='any', allow_none=True)
 
+
 def set_param(device, attr_name, value, arguments={}):
     param_method = getattr(device, attr_name)
     param_method(value, **arguments)
@@ -69,11 +72,13 @@ def set_then_get(device, attr_name, value_in, arguments={}):
     set_param(device, attr_name, value_in, arguments)
     return get_param(device, attr_name, arguments)
 
+
 def kwargs(locals_: dict) -> dict:
     # kwargs from locals()
     locals_.pop('self', None)
     locals_.pop('set_value', None)
     return locals_
+
 
 #
 # Fixtures convert to arguments in test functions
@@ -113,12 +118,20 @@ def test_cache(opened_device: StoreTestDevice):
     # repeat to set->get to ensure proper caching
     result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
 
-    assert result['get_count'] == 0, f"cache test - first 'get' operation count (got {result['get_count']})"
-    assert result['set_count'] == 1, f"cache test - first 'set' operation count (got {result['set_count']})"
+    assert (
+        result['get_count'] == 0
+    ), f"cache test - first 'get' operation count (got {result['get_count']})"
+    assert (
+        result['set_count'] == 1
+    ), f"cache test - first 'set' operation count (got {result['set_count']})"
 
     result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
-    assert result['get_count'] == 0, f"cache test - second 'get' operation count (got {result['get_count']})"
-    assert result['set_count'] == 2, f"cache test - second 'set' operation count (got {result['set_count']})"
+    assert (
+        result['get_count'] == 0
+    ), f"cache test - second 'get' operation count (got {result['get_count']})"
+    assert (
+        result['set_count'] == 2
+    ), f"cache test - second 'set' operation count (got {result['set_count']})"
 
 
 def test_get_on_set_keyed(opened_device: StoreTestDevice):
@@ -184,12 +197,16 @@ def test_decorated_argument_bounds():
         @attr.method_kwarg.int(name='channel', min=1, max=4)
         @attr.method_kwarg.float(name='bandwidth', min=10e3, max=100e6)
         def method(self, *, channel, bandwidth):
-            key = self.backend.get_backend_key(self, type(self).method, kwargs(locals()))
+            key = self.backend.get_backend_key(
+                self, type(self).method, kwargs(locals())
+            )
             return self.backend.get(key, None)
 
         @method.setter
         def _(self, set_value, /, *, channel, bandwidth):
-            key = self.backend.get_backend_key(self, type(self).method, kwargs(locals()))
+            key = self.backend.get_backend_key(
+                self, type(self).method, kwargs(locals())
+            )
             return self.backend.set(key, set_value)
 
     device = Device()
@@ -218,15 +235,18 @@ def test_decorated_argument_with_default():
     # not for decorators
 
     with pytest.raises(TypeError):
+
         class _(store_backend.StoreTestDevice):
             @attr.method_kwarg.float(name='bandwidth', default=10e3)
             def method(self, *, bandwidth):
                 pass
 
+
 def test_kwarg_decorator_above_method():
     # the 'default' argument is only allowed on registering key arguments,
     # not for decorators
     with pytest.raises(TypeError):
+
         class _(store_backend.StoreTestDevice):
             @attr.method_kwarg.float(name='bandwidth')
             @attr.method.str()

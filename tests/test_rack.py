@@ -41,7 +41,9 @@ class LaggyInstrument(StoreTestDevice):
 
     delay: float = attr.value.float(default=0, min=0, help='connection time')
     fetch_time: float = attr.value.float(default=0, min=0, help='fetch time')
-    fail_disconnect = attr.value.bool(default=False, help='whether to raise DivideByZero on disconnect')
+    fail_disconnect = attr.value.bool(
+        default=False, help='whether to raise DivideByZero on disconnect'
+    )
 
     def open(self):
         self.perf = {}
@@ -128,7 +130,9 @@ class MyRack(lb.Rack):
         ),  # Path to new directory that will contain containing all files
         append=True,  # `True` --- allow appends to an existing database; `False` --- append
         text_relational_min=1024,  # Minimum text string length that triggers relational storage
-        force_relational=['host_log'],  # Data in these columns will always be relational
+        force_relational=[
+            'host_log'
+        ],  # Data in these columns will always be relational
         nonscalar_file_type='csv',  # Default format of numerical data, when possible
         tar=False,  # `True` to embed relational data folders within `data.tar`
     )

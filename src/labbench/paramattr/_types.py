@@ -40,7 +40,9 @@ class Float(_bases.BoundedNumber[float], type=float):
                 return value - (mod - self.step)
         return value
 
-    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
+    def doc_params(
+        self, skip: list[str] = ['help', 'label'], as_argument: bool = False
+    ) -> str:
         if as_argument:
             return None
 
@@ -85,10 +87,12 @@ class String(_bases.ParamAttr):
             return self._type(value)
 
         raise ValueError(
-            f"cannot convert to {type(value).__qualname__} to {self._type.__qualname__}"
+            f'cannot convert to {type(value).__qualname__} to {self._type.__qualname__}'
         )
 
-    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
+    def doc_params(
+        self, skip: list[str] = ['help', 'label'], as_argument: bool = False
+    ) -> str:
         if as_argument:
             return None
 
@@ -103,6 +107,7 @@ class String(_bases.ParamAttr):
 class Unicode(String[str], type=str):
     """accepts strings or numeric values only; convert others explicitly before assignment"""
 
+
 class Bytes(String[bytes], type=bytes):
     """accepts bytes objects only - encode str (unicode) explicitly before assignment"""
 
@@ -113,7 +118,9 @@ class Iterable(_bases.ParamAttr):
     @util.hide_in_traceback
     def validate(self, value, owner=None):
         if not hasattr(value, '__iter__'):
-            raise ValueError(f"'{type(self).__qualname__}' attributes accept only iterable values")
+            raise ValueError(
+                f"'{type(self).__qualname__}' attributes accept only iterable values"
+            )
         return self._type(value)
 
 
@@ -144,7 +151,9 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
 
         return path
 
-    def doc_params(self, skip: list[str] = ['help', 'label'], as_argument: bool = False) -> str:
+    def doc_params(
+        self, skip: list[str] = ['help', 'label'], as_argument: bool = False
+    ) -> str:
         if as_argument:
             return None
 
@@ -171,7 +180,9 @@ class NetworkAddress(Unicode):
 
         def validate_port_string(s):
             if not self.accept_port:
-                raise ValueError(f'{self} does not accept a port number (accept_port=False)')
+                raise ValueError(
+                    f'{self} does not accept a port number (accept_port=False)'
+                )
 
             try:
                 int(s)
@@ -189,7 +200,6 @@ class NetworkAddress(Unicode):
             if len(port) > 0 and _val.ipv6(host):
                 if validate_port_string(port[0][1:]):
                     return value
-
 
         # maybe an IP address with
         host, *extra = value.split(':', 1)

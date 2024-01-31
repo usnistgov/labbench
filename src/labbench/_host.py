@@ -15,6 +15,7 @@ from . import util
 
 if typing.TYPE_CHECKING:
     import smtplib
+
     import git
     import pandas as pd
     import pip
@@ -76,11 +77,17 @@ class Email(core.Device):
     subject line. Stderr is also sent.
     """
 
-    resource: str = attr.value.NetworkAddress(default='smtp.nist.gov', help='smtp server to use', cache=True)
+    resource: str = attr.value.NetworkAddress(
+        default='smtp.nist.gov', help='smtp server to use', cache=True
+    )
     port: int = attr.value.int(default=25, min=1, help='TCP/IP port', cache=True)
-    sender: str = attr.value.str(default='myemail@nist.gov', help='email address of the sender', cache=True)
+    sender: str = attr.value.str(
+        default='myemail@nist.gov', help='email address of the sender', cache=True
+    )
     recipients: list = attr.value.list(
-        default=['myemail@nist.gov'], help='list of email addresses of recipients', cache=True
+        default=['myemail@nist.gov'],
+        help='list of email addresses of recipients',
+        cache=True,
     )
 
     success_message: str = attr.value.str(
@@ -133,7 +140,12 @@ class Email(core.Device):
             if self.failure_message is None:
                 return
             subject = self.failure_message
-            message = '<b>Exception</b>\n' + '<font face="Courier New, Courier, monospace">' + format_exc() + '</font>'
+            message = (
+                '<b>Exception</b>\n'
+                + '<font face="Courier New, Courier, monospace">'
+                + format_exc()
+                + '</font>'
+            )
         else:
             if self.success_message is None:
                 return
@@ -236,7 +248,10 @@ class Host(core.Device):
         try:
             repo = git.Repo('.', search_parent_directories=True)
             self._logger.debug('running in git repository')
-            if self.git_commit_in is not None and repo.active_branch == self.git_commit_in:
+            if (
+                self.git_commit_in is not None
+                and repo.active_branch == self.git_commit_in
+            ):
                 repo.index.commit('start of measurement')
                 self._logger.debug('git commit finished')
         except git.NoSuchPathError:
@@ -273,8 +288,14 @@ class Host(core.Device):
     def __python_module_versions(self):
         """Enumerate the versions of installed python modules"""
 
-        versions = dict([str(d).lower().split(' ') for d in pip.get_installed_distributions()])
-        running = dict(sorted([(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions]))
+        versions = dict(
+            [str(d).lower().split(' ') for d in pip.get_installed_distributions()]
+        )
+        running = dict(
+            sorted(
+                [(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions]
+            )
+        )
         return pd.Series(running).sort_index()
 
     @attr.property.str()
@@ -291,7 +312,9 @@ class Host(core.Device):
         if len(txt) > 1:
             self._txt = txt
             self._serialized = '[' + txt[:-2] + ']'
-            self._ret = json.loads(self._serialized)  # self.backend['log_stream'].read().replace('\n', '\r\n')
+            self._ret = json.loads(
+                self._serialized
+            )  # self.backend['log_stream'].read().replace('\n', '\r\n')
             return self._ret
         else:
             return {}

@@ -15,7 +15,9 @@ lb.util.force_full_traceback(False)
 project_info = toml.load('../pyproject.toml')
 missing_fields = {'name', 'version'} - set(project_info['project'].keys())
 if len(missing_fields) > 0:
-    raise ValueError(f'fields {missing_fields} missing from [project] in pyproject.toml')
+    raise ValueError(
+        f'fields {missing_fields} missing from [project] in pyproject.toml'
+    )
 
 # Location of the API source code
 autoapi_dirs = [f'../src/{project_info["project"]["name"]}']
@@ -27,11 +29,15 @@ project = project_info['project']['name']
 
 if 'authors' in project_info['project']:
     authors = [author['name'] for author in project_info['project']['authors']]
-    author_groups = [', '.join(a) for a in np.array_split(authors, np.ceil(len(authors) / 3))]
+    author_groups = [
+        ', '.join(a) for a in np.array_split(authors, np.ceil(len(authors) / 3))
+    ]
 else:
     author_groups = []
 
-copyright = 'United States government work, not subject to copyright in the United States'
+copyright = (
+    'United States government work, not subject to copyright in the United States'
+)
 version = release = lb.__version__
 language = 'en'
 
@@ -133,7 +139,9 @@ class PatchedPythonDomain(PythonDomain):
             if not node['refspecific'] and node['reftarget'] in exclude_targets:
                 del node['refspecific']
 
-        return super(PatchedPythonDomain, self).resolve_xref(env, fromdocname, builder, typ, target, node, contnode)
+        return super(PatchedPythonDomain, self).resolve_xref(
+            env, fromdocname, builder, typ, target, node, contnode
+        )
 
 
 class AttributeDocumenter(autodoc.AttributeDocumenter):
@@ -220,7 +228,9 @@ class PropertyDocumenter(autodoc.PropertyDocumenter):
             if self.config.autodoc_typehints_format == 'short':
                 typerepr = autodoc.stringify_annotation(self.object._type, 'smart')
             else:
-                typerepr = autodoc.stringify_annotation(self.object._type, 'fully-qualified-except-typing')
+                typerepr = autodoc.stringify_annotation(
+                    self.object._type, 'fully-qualified-except-typing'
+                )
             self.add_line('   :type: ' + typerepr, sourcename)
 
     def format_args(self, **kwargs) -> str:

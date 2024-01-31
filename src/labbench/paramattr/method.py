@@ -1,5 +1,3 @@
-
-
 from . import _bases, _types
 from ._bases import Method
 

@@ -1,10 +1,9 @@
 import shutil
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
-from pathlib import Path
 
 import labbench as lb
 from labbench import paramattr as attr
@@ -12,6 +11,7 @@ from labbench.testing import store_backend
 
 lb.show_messages('warning')
 lb.util.force_full_traceback(True)
+
 
 @attr.method_kwarg.int('registered_channel', min=1, max=4)
 @store_backend.key_adapter(defaults={'SWE:APER': '20e-6'})
@@ -27,12 +27,18 @@ class StoreDevice(store_backend.StoreTestDevice):
     # properties
     initiate_continuous = attr.property.bool(key='INIT:CONT')
     output_trigger = attr.property.bool(key='OUTP:TRIG')
-    sweep_aperture = attr.property.float(key='SWE:APER', min=20e-6, max=200e-3, help='time (in s)')
-    frequency = attr.property.float(key='SENS:FREQ', min=10e6, max=18e9, help='center frequency (in Hz)')
+    sweep_aperture = attr.property.float(
+        key='SWE:APER', min=20e-6, max=200e-3, help='time (in s)'
+    )
+    frequency = attr.property.float(
+        key='SENS:FREQ', min=10e6, max=18e9, help='center frequency (in Hz)'
+    )
     atten = attr.property.float(key='POW', min=0, max=100, step=0.5)
 
     str_keyed_with_arg = attr.method.str(key='str_with_arg_ch_{registered_channel}')
-    str_keyed_allow_none = attr.method.str(key='str_with_arg_ch_{registered_channel}', allow_none=True)
+    str_keyed_allow_none = attr.method.str(
+        key='str_with_arg_ch_{registered_channel}', allow_none=True
+    )
 
     @attr.method.str()
     @attr.method_kwarg.int(name='decorated_channel', min=1, max=4)
@@ -55,7 +61,6 @@ class StoreDevice(store_backend.StoreTestDevice):
         )
 
         self.backend.set(key, new_value)
-
 
     def trigger(self):
         """This would tell the instrument to start a measurement"""
@@ -110,14 +115,21 @@ class SimpleRack(lb.Rack):
             'db_host_time',
             'db_host_log',
         )
-    
+
     def simple_loop_expected_expanded_columns(self):
-        return self.simple_loop_expected_columns () + (
-            'db_host_log_elapsed_seconds', 'db_host_log_id',
-            'db_host_log_level', 'db_host_log_message', 'db_host_log_object',
-            'db_host_log_object_log_name', 'db_host_log_process',
-            'db_host_log_source_file', 'db_host_log_source_line',
-            'db_host_log_thread', 'db_host_log_time', 'root_index'
+        return self.simple_loop_expected_columns() + (
+            'db_host_log_elapsed_seconds',
+            'db_host_log_id',
+            'db_host_log_level',
+            'db_host_log_message',
+            'db_host_log_object',
+            'db_host_log_object_log_name',
+            'db_host_log_process',
+            'db_host_log_source_file',
+            'db_host_log_source_line',
+            'db_host_log_thread',
+            'db_host_log_time',
+            'root_index',
         )
 
 
@@ -135,9 +147,10 @@ def csv_path():
 @pytest.fixture
 def sqlite_path():
     path = f'test db/{np.random.bytes(8).hex()}.sqlite'
-    yield path
+    return path
     # if Path(path).exists():
     #     shutil.rmtree(path)
+
 
 #
 # The tests
@@ -153,15 +166,12 @@ def test_csv_tar(csv_path):
     assert (db.path / db.INPUT_FILE_NAME).exists()
     assert (db.path / db.munge.tarname).exists()
 
-    df = lb.read(db.path/'outputs.csv')
+    df = lb.read(db.path / 'outputs.csv')
     expected_root_columns = set(rack.simple_loop_expected_columns())
     assert expected_root_columns == set(df.columns)
     assert len(df.index) == len(rack.FREQUENCIES)
 
-    df = lb.read_relational(
-        db.path/'outputs.csv',
-        expand_col='db_host_log'
-    )
+    df = lb.read_relational(db.path / 'outputs.csv', expand_col='db_host_log')
 
     expected_expanded_columns = set(rack.simple_loop_expected_expanded_columns())
     assert expected_expanded_columns == set(df.columns)
@@ -171,7 +181,7 @@ def test_csv(csv_path):
     db = lb.CSVLogger(csv_path, tar=False)
 
     def json_opener(p):
-        return pd.read_json(db.path/p)
+        return pd.read_json(db.path / p)
 
     with SimpleRack(db=db) as rack:
         rack.simple_loop()
@@ -180,16 +190,13 @@ def test_csv(csv_path):
     assert (db.path / db.OUTPUT_FILE_NAME).exists()
     assert (db.path / db.INPUT_FILE_NAME).exists()
 
-    df = lb.read(db.path/'outputs.csv')
+    df = lb.read(db.path / 'outputs.csv')
     expected_root_columns = set(rack.simple_loop_expected_columns())
     assert expected_root_columns == set(df.columns)
     assert len(df.index) == len(rack.FREQUENCIES)
     all_json_rows = pd.concat([json_opener(p) for p in df.db_host_log])
 
-    df = lb.read_relational(
-        db.path/'outputs.csv',
-        expand_col='db_host_log'
-    )
+    df = lb.read_relational(db.path / 'outputs.csv', expand_col='db_host_log')
 
     expected_expanded_columns = set(rack.simple_loop_expected_expanded_columns())
     assert expected_expanded_columns == set(df.columns)
@@ -215,32 +222,32 @@ def test_csv_decorated_method(csv_path):
         rack.db.new_row()
 
     df = lb.read(db.path / 'outputs.csv')
-    assert 'inst_str_decorated_with_arg_decorated_channel_2_bandwidth_100000000_0' in df.columns
+    assert (
+        'inst_str_decorated_with_arg_decorated_channel_2_bandwidth_100000000_0'
+        in df.columns
+    )
 
 
 def test_sqlite(sqlite_path):
     db = lb.SQLiteLogger(path=sqlite_path)
 
     def json_opener(p):
-        return pd.read_json(db.path/p)
+        return pd.read_json(db.path / p)
 
     with SimpleRack(db=db) as rack:
         rack.simple_loop()
 
     assert db.path.exists()
-    assert (db.path/'root.db').exists()
-    assert (db.path/'metadata.json').exists()
+    assert (db.path / 'root.db').exists()
+    assert (db.path / 'metadata.json').exists()
 
-    df = lb.read(db.path/'root.db')
+    df = lb.read(db.path / 'root.db')
     expected_root_columns = set(rack.simple_loop_expected_columns())
     assert expected_root_columns == set(df.columns)
     assert len(df.index) == len(rack.FREQUENCIES)
     all_json_rows = pd.concat([json_opener(p) for p in df.db_host_log])
 
-    df = lb.read_relational(
-        db.path/'root.db',
-        expand_col='db_host_log'
-    )
+    df = lb.read_relational(db.path / 'root.db', expand_col='db_host_log')
 
     expected_expanded_columns = set(rack.simple_loop_expected_expanded_columns())
     assert expected_expanded_columns == set(df.columns)

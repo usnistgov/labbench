@@ -56,7 +56,9 @@ __all__ = [  # "misc"
 
 logger = logging.LoggerAdapter(
     logging.getLogger('labbench'),
-    dict(label='labbench'),  # description of origin within labbench (for screen logs only)
+    dict(
+        label='labbench'
+    ),  # description of origin within labbench (for screen logs only)
 )
 
 _LOG_LEVEL_NAMES = {
@@ -87,9 +89,15 @@ def show_messages(minimum_level, colors=True):
     }
 
     if minimum_level not in err_map and not isinstance(minimum_level, int):
-        raise ValueError(f'message level must be a flag {tuple(err_map)} or an integer, not {minimum_level!r}')
+        raise ValueError(
+            f'message level must be a flag {tuple(err_map)} or an integer, not {minimum_level!r}'
+        )
 
-    level = err_map[minimum_level.lower()] if isinstance(minimum_level, str) else minimum_level
+    level = (
+        err_map[minimum_level.lower()]
+        if isinstance(minimum_level, str)
+        else minimum_level
+    )
 
     logger.setLevel(level)
 
@@ -144,7 +152,9 @@ def callable_logger(func):
         return logger
 
 
-def find_methods_in_mro(cls: type[object], name: str, until_cls: Union[type[object], None] = None) -> list[callable]:
+def find_methods_in_mro(
+    cls: type[object], name: str, until_cls: Union[type[object], None] = None
+) -> list[callable]:
     """list all methods named `name` in `cls` and its parent classes.
 
     Args:
@@ -158,7 +168,9 @@ def find_methods_in_mro(cls: type[object], name: str, until_cls: Union[type[obje
     methods = []
 
     if until_cls is not None and not issubclass(cls, until_cls):
-        raise TypeError(f'class {until_cls.__qualname__} is not a base class of {cls.__qualname__}')
+        raise TypeError(
+            f'class {until_cls.__qualname__} is not a base class of {cls.__qualname__}'
+        )
 
     for cls in cls.__mro__:
         try:
@@ -267,7 +279,9 @@ def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
 
     def adjust(f: Callable[P, T]) -> None:
         code_obj = f.__code__
-        f.__code__ = f.__code__.replace(co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,))
+        f.__code__ = f.__code__.replace(
+            co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,)
+        )
 
     if not callable(func):
         raise TypeError(f'{func} is not callable')
@@ -486,7 +500,9 @@ def retry(
 
 
 @hide_in_traceback
-def until_timeout(exception_or_exceptions, timeout, delay=0, backoff=0, exception_func=lambda: None):
+def until_timeout(
+    exception_or_exceptions, timeout, delay=0, backoff=0, exception_func=lambda: None
+):
     """This decorator causes the function call to repeat, suppressing specified exception(s), until the
     specified timeout period has expired.
     - If the timeout expires, the underlying exception is raised.
@@ -635,7 +651,9 @@ def stopwatch(desc: str = '', threshold: float = 0, logger_level='info'):
             try:
                 level = _LOG_LEVEL_NAMES[logger_level]
             except KeyError:
-                raise ValueError(f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}')
+                raise ValueError(
+                    f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
+                )
 
             logger.log(level, msg.lstrip())
 
@@ -661,7 +679,10 @@ class Call:
         return self
 
     def __repr__(self):
-        args = ','.join([repr(v) for v in self.args] + [(k + '=' + repr(v)) for k, v in self.kws.items()])
+        args = ','.join(
+            [repr(v) for v in self.args]
+            + [(k + '=' + repr(v)) for k, v in self.kws.items()]
+        )
         qualname = self.func.__module__ + '.' + self.func.__qualname__
         return f'Call({qualname},{args})'
 
@@ -734,7 +755,9 @@ class MultipleContexts:
     __enter__ was called.
     """
 
-    def __init__(self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list):
+    def __init__(
+        self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list
+    ):
         """
             call_handler: one of `sequentially_call` or `concurrently_call`
             params: a dictionary of operating parameters (see `concurrently`)
@@ -800,7 +823,9 @@ class MultipleContexts:
 
     @hide_in_traceback
     def __exit__(self, *exc):
-        with stopwatch(f"{self.params['name']} - context exit", 0.5, logger_level='debug'):
+        with stopwatch(
+            f"{self.params['name']} - context exit", 0.5, logger_level='debug'
+        ):
             for name in tuple(self._entered.keys())[::-1]:
                 context = self._entered[name]
 
@@ -836,7 +861,9 @@ class MultipleContexts:
             exc_info = list(self.exc.values())[0]
             raise exc_info[1]
         elif len(self.exc) > 1:
-            ex = ConcurrentException(f'exceptions raised in {len(self.exc)} contexts are printed inline')
+            ex = ConcurrentException(
+                f'exceptions raised in {len(self.exc)} contexts are printed inline'
+            )
             ex.thread_exceptions = self.exc
             raise ex
         if exc != (None, None, None):
@@ -870,8 +897,12 @@ def _select_enter_or_call(candidate_objs):
     which = None
     for k, obj in candidate_objs:
         thisone = RUNNERS[
-            (callable(obj) and not isinstance(obj, _GeneratorContextManager)),  # Is it callable?
-            (hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)),  # Is it a context manager?
+            (
+                callable(obj) and not isinstance(obj, _GeneratorContextManager)
+            ),  # Is it callable?
+            (
+                hasattr(obj, '__enter__') or isinstance(obj, _GeneratorContextManager)
+            ),  # Is it a context manager?
         ]
 
         if thisone is None:
@@ -896,6 +927,7 @@ def _select_enter_or_call(candidate_objs):
 
     return which
 
+
 @hide_in_traceback
 def enter_or_call(flexible_caller, objs, kws):
     """Extract value traits from the keyword arguments flags, decide whether
@@ -907,7 +939,14 @@ def enter_or_call(flexible_caller, objs, kws):
 
     # Treat keyword arguments passed as callables should be left as callables;
     # otherwise, override the parameter
-    params = dict(catch=False, nones=False, traceback_delay=False, flatten=True, name=None, which='auto')
+    params = dict(
+        catch=False,
+        nones=False,
+        traceback_delay=False,
+        flatten=True,
+        name=None,
+        which='auto',
+    )
 
     def merge_inputs(dicts: list, candidates: list):
         """merges nested returns and check for data key conflicts"""
@@ -932,7 +971,9 @@ def enter_or_call(flexible_caller, objs, kws):
                 conflicts = set(v.keys()).intersection(start_keys)
                 if len(conflicts) > 0:
                     conflicts = ','.join(conflicts)
-                    raise KeyError(f'conflicts in keys ({conflicts}) when merging return dictionaries')
+                    raise KeyError(
+                        f'conflicts in keys ({conflicts}) when merging return dictionaries'
+                    )
                 inputs.update(result.pop(k))
 
     # Pull parameters from the passed keywords
@@ -968,10 +1009,14 @@ def enter_or_call(flexible_caller, objs, kws):
     if which is None:
         return {}
     elif which == 'both':
-        raise TypeError('all objects supported both calling and context management - not sure which to run')
+        raise TypeError(
+            'all objects supported both calling and context management - not sure which to run'
+        )
     elif which == 'context':
         if len(dicts) > 0:
-            raise ValueError(f'unexpected return value dictionary argument for context management {dicts}')
+            raise ValueError(
+                f'unexpected return value dictionary argument for context management {dicts}'
+            )
         return MultipleContexts(flexible_caller, params, candidates)
     else:
         ret = merge_inputs(dicts, candidates)
@@ -1061,7 +1106,9 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
                 try:
                     traceback.print_exception(*tb)
                 except BaseException as e:
-                    sys.stderr.write('\nthread exception, but failed to print exception')
+                    sys.stderr.write(
+                        '\nthread exception, but failed to print exception'
+                    )
                     sys.stderr.write(str(e))
                     sys.stderr.write('\n')
         else:
@@ -1322,7 +1369,9 @@ class ThreadSandbox:
         # Start the thread and block until it's ready
         self._requestq = Queue(1)
         ready = Queue(1)
-        self.__thread = Thread(target=self.__worker, args=(factory, ready, should_sandbox_func))
+        self.__thread = Thread(
+            target=self.__worker, args=(factory, ready, should_sandbox_func)
+        )
         self.__thread.start()
         exc = ready.get(True)
         if exc is not None:
@@ -1337,7 +1386,9 @@ class ThreadSandbox:
 
             def default_sandbox_check_func(obj):
                 try:
-                    return inspect.getmodule(obj).__name__.startswith(inspect.getmodule(root).__name__)
+                    return inspect.getmodule(obj).__name__.startswith(
+                        inspect.getmodule(root).__name__
+                    )
                 except AttributeError:
                     return False
 
@@ -1497,7 +1548,11 @@ class ttl_cache:
             time_elapsed = time.perf_counter() - (self.call_timestamp or 0)
             key = tuple(args), tuple(kws.keys()), tuple(kws.values())
 
-            if self.call_timestamp is None or time_elapsed > self.timeout or key not in self.last_value:
+            if (
+                self.call_timestamp is None
+                or time_elapsed > self.timeout
+                or key not in self.last_value
+            ):
                 ret = self.last_value[key] = func(*args, **kws)
                 self.call_timestamp = time.perf_counter()
             else:
@@ -1541,14 +1596,19 @@ def accessed_attributes(method):
     self_name = func.args.args[0].arg
 
     def isselfattr(node):
-        return isinstance(node, ast.Attribute) and getattr(node.value, 'id', None) == self_name
+        return (
+            isinstance(node, ast.Attribute)
+            and getattr(node.value, 'id', None) == self_name
+        )
 
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})
+
 
 if typing.TYPE_CHECKING:
     import psutil
 else:
     psutil = lazy_import('psutil')
+
 
 def kill_by_name(*names):
     """Kill one or more running processes by the name(s) of matching binaries.
@@ -1576,5 +1636,3 @@ def kill_by_name(*names):
                     proc.kill()
         except psutil.NoSuchProcess:
             continue
-
-

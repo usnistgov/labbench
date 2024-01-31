@@ -13,7 +13,9 @@ class LaggyInstrument(StoreTestDevice):
 
     delay: float = attr.value.float(default=0, min=0, help='connection time')
     fetch_time: float = attr.value.float(default=0, min=0, help='fetch time')
-    fail_disconnect = attr.value.bool(default=False, help='whether to raise DivideByZero on disconnect')
+    fail_disconnect = attr.value.bool(
+        default=False, help='whether to raise DivideByZero on disconnect'
+    )
 
     def open(self):
         self.perf = {}
@@ -115,7 +117,9 @@ def test_concurrent_fetch_as_kws():
     with inst1, inst2:
         assert inst1.isopen == True
         assert inst2.isopen == True
-        ret = lb.concurrently(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
+        ret = lb.concurrently(
+            **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
+        )
     assert inst1.resource in ret
     assert inst2.resource in ret
     assert ret[inst1.resource] == inst1.fetch_time
@@ -167,7 +171,9 @@ def test_sequential_fetch_as_kws():
     with inst1, inst2:
         assert inst1.isopen == True
         assert inst2.isopen == True
-        ret = lb.sequentially(**{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch})
+        ret = lb.sequentially(
+            **{inst1.resource: inst1.fetch, inst2.resource: inst2.fetch}
+        )
     assert inst1.resource in ret
     assert inst2.resource in ret
     assert ret[inst1.resource] == inst1.fetch_time
@@ -214,7 +220,9 @@ def test_nested_fetch_delay():
 
     with assert_delay(expect_delay):
         with inst1, inst2, inst3:
-            ret = lb.sequentially(inst1.fetch, lb.concurrently(sub_1=inst2.fetch, sub_2=inst3.fetch))
+            ret = lb.sequentially(
+                inst1.fetch, lb.concurrently(sub_1=inst2.fetch, sub_2=inst3.fetch)
+            )
 
 
 def test_sequential_nones():

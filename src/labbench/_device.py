@@ -222,7 +222,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = ''.join([f'    {t.name}: {t.doc(as_argument=True)}\n' for t in constructor_attrs])
+        value_docs = ''.join(
+            [f'    {t.name}: {t.doc(as_argument=True)}\n' for t in constructor_attrs]
+        )
         cls.__init__.__doc__ = f'\nArguments:\n{value_docs}'
 
 
@@ -254,7 +256,11 @@ class Device(DeviceDataClass):
     """
 
     resource: str = attr.value.str(
-        default=None, allow_none=True, cache=True, kw_only=False, help='device address or URI'
+        default=None,
+        allow_none=True,
+        cache=True,
+        kw_only=False,
+        help='device address or URI',
     )
 
     """ Container for property trait traits in a Device. Getting or setting property trait traits
@@ -305,7 +311,9 @@ class Device(DeviceDataClass):
         self.backend = None
 
         try:
-            for opener in util.find_methods_in_mro(self.__class__, 'open', Device)[::-1]:
+            for opener in util.find_methods_in_mro(self.__class__, 'open', Device)[
+                ::-1
+            ]:
                 opener(self)
         except BaseException:
             self.backend = DisconnectedBackend(self)
@@ -353,7 +361,9 @@ class Device(DeviceDataClass):
             self._logger.debug('closed')
         finally:
             if len(all_ex) > 0:
-                ex = util.ConcurrentException(f'multiple exceptions while closing {self}')
+                ex = util.ConcurrentException(
+                    f'multiple exceptions while closing {self}'
+                )
                 ex.thread_exceptions = all_ex
                 raise ex
 

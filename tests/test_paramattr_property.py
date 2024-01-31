@@ -6,7 +6,9 @@ from labbench import paramattr as attr
 from labbench.testing import store_backend
 
 
-@store_backend.key_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
+@store_backend.key_adapter(
+    defaults={'str_or_none': None, 'str_cached': 'cached string'}
+)
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values

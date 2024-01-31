@@ -1,4 +1,6 @@
+import inspect
 from numbers import Number
+from pathlib import Path
 
 import pytest
 from paramattr_tooling import eval_set_then_get, has_steps, loop_closed_loop_set_gets
@@ -6,11 +8,11 @@ from paramattr_tooling import eval_set_then_get, has_steps, loop_closed_loop_set
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
-import inspect
-from pathlib import Path
 
 
-@store_backend.key_adapter(defaults={'str_or_none': None, 'str_cached': 'cached string'})
+@store_backend.key_adapter(
+    defaults={'str_or_none': None, 'str_cached': 'cached string'}
+)
 class StoreTestDevice(store_backend.StoreTestDevice):
     LOOP_TEST_VALUES = {
         # make sure all test values conform to these general test values
@@ -20,9 +22,9 @@ class StoreTestDevice(store_backend.StoreTestDevice):
         bool: True,
         object: None,
         dict: dict(a=4, b=5, c=6),
-        tuple: (4,5,6),
-        list: [7,8,9],
-        Path: Path('.')
+        tuple: (4, 5, 6),
+        list: [7, 8, 9],
+        Path: Path('.'),
     }
 
     # test both getting and setting
@@ -43,12 +45,14 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     str = attr.value.str(default='squirrel')
     any = attr.value.any(default='empty', allow_none=True)
     str_with_only = attr.value.str(default='moose', only=('moose', 'squirrel'))
-    str_no_case_with_only = attr.value.str(default='moose', only=('MOOSE', 'squirrel'), case=False)
+    str_no_case_with_only = attr.value.str(
+        default='moose', only=('MOOSE', 'squirrel'), case=False
+    )
 
     # iterables
-    tuple = attr.value.tuple((1,2,3))
+    tuple = attr.value.tuple((1, 2, 3))
     dict = attr.value.dict(dict(a=1, b=2, c=3))
-    list = attr.value.list([4,5,6])
+    list = attr.value.list([4, 5, 6])
 
     path_exists = attr.value.Path(__file__, must_exist=True)
     any_path = attr.value.Path('132512412424')
@@ -58,9 +62,9 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     uri_port = attr.value.NetworkAddress('127.0.0.1')
 
 
-
 class AdjustedTestDevice(StoreTestDevice):
     """adjusted values in inherited devices"""
+
     bool: bool = attr.value.bool(default=False)
 
 
@@ -152,9 +156,11 @@ def test_cache(opened_device):
     result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
     assert len(result['notifications']) == 2, 'notification count for cached string'
 
+
 def test_paths(opened_device):
     with pytest.raises(OSError):
         opened_device.path_exists = '.../9815h1lk35jkl13j53'
+
 
 def test_default_types(opened_device, role_type):
     for attr_def in opened_device.get_attr_defs().values():
@@ -183,7 +189,9 @@ def test_default_values(opened_device, role_type):
         if value is None:
             assert value == attr_def.default, f'default None value of {attr_def.name}'
         else:
-            assert attr_def.validate(attr_def.default) == value, f'initial value type of {attr_def.name}'
+            assert (
+                attr_def.validate(attr_def.default) == value
+            ), f'initial value type of {attr_def.name}'
 
 
 def test_constructor():
@@ -195,9 +203,11 @@ def test_constructor():
     # check Device signature
     params = inspect.signature(Device).parameters
 
-    assert tuple(params.keys()) == ('resource', 'number'), \
-           'constructor keyword argument names'
-    
+    assert tuple(params.keys()) == (
+        'resource',
+        'number',
+    ), 'constructor keyword argument names'
+
     defaults = [p.default for p in params.values()]
     assert tuple(defaults) == (lb.Device.resource.default, DEFAULT_VALUE)
 
@@ -220,14 +230,17 @@ def test_adjusted_constructor():
     params = inspect.signature(Child).parameters
 
     print('***', inspect.signature(Child))
-    assert tuple(params.keys()) == ('resource', 'number'), \
-           'constructor keyword argument names'
+    assert tuple(params.keys()) == (
+        'resource',
+        'number',
+    ), 'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]
     assert tuple(defaults) == (lb.Device.resource.default, NEW_DEFAULT)
 
     d = Child()
     assert d.number == NEW_DEFAULT
+
 
 def test_adjusted_constructor_posarg():
     OLD_DEFAULT = 0
@@ -247,14 +260,17 @@ def test_adjusted_constructor_posarg():
     params = inspect.signature(Child).parameters
 
     print('***', inspect.signature(Child))
-    assert tuple(params.keys()) == ('resource', 'number'), \
-           'constructor keyword argument names'
+    assert tuple(params.keys()) == (
+        'resource',
+        'number',
+    ), 'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]
     assert tuple(defaults) == (lb.Device.resource.default, NEW_DEFAULT)
 
     d = Child()
     assert d.number == NEW_DEFAULT
+
 
 def test_inherited_constructor_without_default():
     OLD_DEFAULT = 0
@@ -263,8 +279,10 @@ def test_inherited_constructor_without_default():
         number: int = attr.value.int(OLD_DEFAULT)
 
     with pytest.raises(TypeError):
+
         class Child(Parent):
             number: int = attr.value.int(inherit=True)
+
 
 def test_inherited_defaults():
     HELP_MSG = 'parent help'
@@ -286,7 +304,7 @@ def test_only(opened_device):
     opened_device.str_with_only = expected_valid
     with pytest.raises(ValueError):
         opened_device.str_with_only = 'boris'
-        
+
     with pytest.raises(ValueError):
         opened_device.str_with_only = alt_case
 
@@ -316,9 +334,11 @@ def test_numeric_bounds(opened_device):
     # float_none_bounded
     opened_device.float_none_bounded = None
 
+
 def test_iterables(opened_device):
     with pytest.raises(AttributeError):
         opened_device.tuple = 4
+
 
 def test_numeric_casting(opened_device):
     # float
@@ -353,13 +373,13 @@ def test_network_address(opened_device):
         # expect an error on this one when port is supplied
         opened_device.uri = '127.0.0.1:5555'
 
-    opened_device.uri_port = '127.0.0.1' # ipv4
-    opened_device.uri_port = 'nist.gov:1234' # domain name with port
+    opened_device.uri_port = '127.0.0.1'  # ipv4
+    opened_device.uri_port = 'nist.gov:1234'  # domain name with port
 
     with pytest.raises(ValueError):
-        opened_device.uri_port = '127.0.0.1:hello' # bad port number
+        opened_device.uri_port = '127.0.0.1:hello'  # bad port number
 
-    opened_device.uri = '::ffff:192.0.2.128' # ipv6
+    opened_device.uri = '::ffff:192.0.2.128'  # ipv6
     opened_device.uri_port = '[::ffff:192.0.2.128]:1234'
 
 
@@ -402,15 +422,18 @@ def test_device_initialization(instantiated_device, role_type):
 
         with instantiated_device:
             value_out = getattr(instantiated_device, attr_def.name)
-            assert value_in == value_out, f'{test_name} - initialize default values from Device constructor'
+            assert (
+                value_in == value_out
+            ), f'{test_name} - initialize default values from Device constructor'
+
 
 def test_doc_access(opened_device):
-
     attr_descs = attr.get_class_attrs(opened_device)
 
     for name, attr_desc in attr_descs.items():
         attr_desc.doc_params()
         attr_desc.doc_params(as_argument=True)
+
 
 def test_all_get_sets(opened_device, role_type):
     loop_closed_loop_set_gets(opened_device, role_type, set_then_get)

@@ -7,12 +7,13 @@ import pickle
 import re
 import shutil
 import tarfile
-from typing_extensions import TypeAlias
 import warnings
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any, Union
+
+from typing_extensions import TypeAlias
 
 from . import _device, _host, _rack, util
 from . import _device as core
@@ -58,18 +59,24 @@ class MungerBase(core.Device):
 
     """
 
-    resource: Path = attr.value.Path(allow_none=True, help='base directory for all data')
+    resource: Path = attr.value.Path(
+        allow_none=True, help='base directory for all data'
+    )
     text_relational_min: int = attr.value.int(
         default=1024,
         min=0,
         help='minimum size threshold that triggers storing text in a relational file',
     )
-    force_relational: list = attr.value.list(default=[], help='list of column names to always save as relational data')
+    force_relational: list = attr.value.list(
+        default=[], help='list of column names to always save as relational data'
+    )
     relational_name_fmt: str = attr.value.str(
         default='{id}',
         help='directory name format for data in each row keyed on column',
     )
-    nonscalar_file_type: str = attr.value.str(default='csv', help='file format for non-scalar numerical data')
+    nonscalar_file_type: str = attr.value.str(
+        default='csv', help='file format for non-scalar numerical data'
+    )
     metadata_dirname = 'metadata'
 
     def __call__(self, index, row):
@@ -99,7 +106,11 @@ class MungerBase(core.Device):
 
             elif isinstance(v, (str, bytes)):
                 # A long string that should be written to a text file
-                if len(v) > self.text_relational_min or name in self.force_relational or isinstance(v, bytes):
+                if (
+                    len(v) > self.text_relational_min
+                    or name in self.force_relational
+                    or isinstance(v, bytes)
+                ):
                     row[name] = self._from_text(name, v, index, row)
 
             elif isinstance(v, (np.ndarray, pd.Series, pd.DataFrame)):
@@ -115,7 +126,12 @@ class MungerBase(core.Device):
     def __repr__(self):
         return f"{type(self).__name__}('{self.resource!s}')"
 
-    def get_metadata(self, name, name_func: Callable[[attr.HasParamAttrs, str, dict], str], **metadata):
+    def get_metadata(
+        self,
+        name,
+        name_func: Callable[[attr.HasParamAttrs, str, dict], str],
+        **metadata,
+    ):
         def process_value(value, key_name):
             if isinstance(value, (str, bytes)):
                 if len(value) > self.text_relational_min:
@@ -187,7 +203,9 @@ class MungerBase(core.Device):
                 value = pd.DataFrame([value])
         except BaseException:
             # We couldn't make a DataFrame
-            self._logger.error(f'Failed to form DataFrame from {name!r}; pickling object instead')
+            self._logger.error(
+                f'Failed to form DataFrame from {name!r}; pickling object instead'
+            )
             ext = 'pickle'
         finally:
             if row is None:
@@ -296,7 +314,6 @@ class MungerBase(core.Device):
             self._from_ndarraylike(key_name, value)
         else:
             return value
-
 
     def open(self):
         # touch these modules to ensure they have imported
@@ -656,7 +673,9 @@ class Aggregator(util.Ownable):
     def sanitize_column_name(self, string: str) -> str:
         return re.sub(r'\W+|^(?=\d)+', '_', string)
 
-    def name_attr_field(self, device: attr.HasParamAttrs, attr_name: str, kwargs: dict[str, Any] = {}):
+    def name_attr_field(
+        self, device: attr.HasParamAttrs, attr_name: str, kwargs: dict[str, Any] = {}
+    ):
         """Generate a name for a trait based on the names of
         a device and one of its states or paramattr.
         """
@@ -710,7 +729,9 @@ class Aggregator(util.Ownable):
 
         key_conflicts = set(row_data).intersection(self.incoming_rack_output)
         if len(key_conflicts) > 0:
-            self._logger.warning(f'Rack call overwrites prior data with existing keys {key_conflicts}')
+            self._logger.warning(
+                f'Rack call overwrites prior data with existing keys {key_conflicts}'
+            )
         self.incoming_rack_output.update(row_data)
 
     def _receive_rack_input(self, msg: dict):
@@ -780,7 +801,12 @@ class Aggregator(util.Ownable):
         elif not name.startswith('_'):
             self.incoming_attr_auto[data_name] = msg['new']
 
-    def update_name_map(self, ownables: dict[Device, str], owner_prefix: Union[str, None] = None, fallback_names={}):
+    def update_name_map(
+        self,
+        ownables: dict[Device, str],
+        owner_prefix: Union[str, None] = None,
+        fallback_names={},
+    ):
         """map each Device to a name in devices.values() by introspection."""
         if owner_prefix is None:
             prefix = ''
@@ -789,7 +815,9 @@ class Aggregator(util.Ownable):
 
         for obj, name in ownables.items():
             if not isinstance(obj, util.Ownable):
-                raise ValueError(f'{obj} is not a Device or other ownable labbench type')
+                raise ValueError(
+                    f'{obj} is not a Device or other ownable labbench type'
+                )
 
             if name is not None:
                 if obj not in self.name_map:
@@ -810,12 +838,16 @@ class Aggregator(util.Ownable):
 
             else:
                 try:
-                    self.name_map[obj] = new_name = prefix + self.inspect_object_name(obj)
+                    self.name_map[obj] = new_name = prefix + self.inspect_object_name(
+                        obj
+                    )
                     self._logger.info(f"{obj} named '{new_name}' by introspection")
                 except RuntimeError:
                     if obj in fallback_names:
                         self.name_map[obj] = new_name = prefix + fallback_names[obj]
-                        self._logger.info(f"{obj} named '{new_name}' based on fallback after introspection failed")
+                        self._logger.info(
+                            f"{obj} named '{new_name}' based on fallback after introspection failed"
+                        )
                     else:
                         raise
 
@@ -832,7 +864,9 @@ class Aggregator(util.Ownable):
 
             duplicates = {k: v for k, v in duplicates.items() if len(v) > 1}
 
-            raise RuntimeError(f'could not automatically resolve duplicate device name(s) {duplicates}')
+            raise RuntimeError(
+                f'could not automatically resolve duplicate device name(s) {duplicates}'
+            )
 
     def observe(
         self,
@@ -939,14 +973,18 @@ class Aggregator(util.Ownable):
                 else:
                     break
             else:
-                raise RuntimeError(f'failed to automatically label {target!r} by inspection')
+                raise RuntimeError(
+                    f'failed to automatically label {target!r} by inspection'
+                )
         finally:
             del f, frame
 
         return ret
 
 
-class ParamAttrLogger(Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)):
+class ParamAttrLogger(
+    Owner, util.Ownable, entry_order=(_host.Email, MungerBase, _host.Host)
+):
     """Base class for loggers that queue dictionaries of data before writing
     to disk. This extends :class:`Aggregator` to support
 
@@ -1048,7 +1086,9 @@ class ParamAttrLogger(Owner, util.Ownable, entry_order=(_host.Email, MungerBase,
             never: name (or iterable of multiple names) of property traits to exclude from aggregated result (overrides :param:`always`)
         """
 
-        self.aggregator.observe(devices=devices, changes=changes, always=always, never=never)
+        self.aggregator.observe(
+            devices=devices, changes=changes, always=always, never=never
+        )
 
     def set_row_preprocessor(self, func):
         """Define a function that is called to modify each pending data row
@@ -1138,11 +1178,13 @@ class ParamAttrLogger(Owner, util.Ownable, entry_order=(_host.Email, MungerBase,
             proc = self._row_preprocessor
 
             self.pending_output = [
-                self.munge(self.output_index + i, proc(row)) for i, row in enumerate(self.pending_output)
+                self.munge(self.output_index + i, proc(row))
+                for i, row in enumerate(self.pending_output)
             ]
 
             self.pending_input = [
-                self.munge(self.output_index + i, proc(row)) for i, row in enumerate(self.pending_input)
+                self.munge(self.output_index + i, proc(row))
+                for i, row in enumerate(self.pending_input)
             ]
 
             self._write_root()
@@ -1233,7 +1275,9 @@ class ParamAttrLogger(Owner, util.Ownable, entry_order=(_host.Email, MungerBase,
 
         if self.output_index > 0:
             if self.host.isopen:
-                self.munge.save_metadata(self.aggregator.get_metadata(self.munge.format_metadata_value))
+                self.munge.save_metadata(
+                    self.aggregator.get_metadata(self.munge.format_metadata_value)
+                )
             else:
                 self.munge._logger.warning('not saving metadata due to exception')
 
@@ -1294,7 +1338,9 @@ class CSVLogger(ParamAttrLogger):
                 # test access by starting the root table
                 file_path.touch(exist_ok=self._append)
             except FileExistsError:
-                raise OSError(f"root table already exists at '{file_path}', while append=False")
+                raise OSError(
+                    f"root table already exists at '{file_path}', while append=False"
+                )
 
             if self._append and file_path.stat().st_size > 0:
                 # there's something here and we plan to append
@@ -1331,7 +1377,9 @@ class CSVLogger(ParamAttrLogger):
 
             self.path.mkdir(exist_ok=True, parents=True)
 
-            self.tables[path.name].to_csv(path, mode='a', header=isfirst, index=False, encoding='utf-8')
+            self.tables[path.name].to_csv(
+                path, mode='a', header=isfirst, index=False, encoding='utf-8'
+            )
 
         if len(self.pending_input) > 0:
             append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
@@ -1388,7 +1436,9 @@ class SQLiteLogger(ParamAttrLogger):
         if self.path.exists():
             root = str(self.path.absolute())
             if not self.path.is_dir():
-                raise OSError(f"the root data directory path '{root}' already exists, and is not a directory.")
+                raise OSError(
+                    f"the root data directory path '{root}' already exists, and is not a directory."
+                )
 
             try:
                 # test writes
@@ -1418,7 +1468,9 @@ class SQLiteLogger(ParamAttrLogger):
                 self._columns = df.columns
                 self.output_index = df.index[-1] + 1
             else:
-                raise OSError(f"root table already exists at '{path}', but append=False")
+                raise OSError(
+                    f"root table already exists at '{path}', but append=False"
+                )
         else:
             self._columns = None
         self.inprogress = {}
@@ -1550,7 +1602,11 @@ def to_feather(data, path):
     cname, data.columns.name = data.columns.name, None
 
     try:
-        if not (data.index.is_monotonic and data.index[0] == 0 and data.index[-1] == data.shape[0] - 1):
+        if not (
+            data.index.is_monotonic
+            and data.index[0] == 0
+            and data.index[-1] == data.shape[0] - 1
+        ):
             data = data.reset_index()
         data.columns = np.array(data.columns).astype(np.str)
         data.to_feather(path)
@@ -1615,7 +1671,9 @@ def read(
     }
 
     try:
-        reader_guess.update({'f': feather.read_feather, 'feather': feather.read_feather})
+        reader_guess.update(
+            {'f': feather.read_feather, 'feather': feather.read_feather}
+        )
     except BaseException:
         warnings.warn(
             'feather format is not available in this pandas installation, and will not be supported in labbench'
@@ -1630,12 +1688,16 @@ def read(
             format = os.path.splitext(path_or_buf)[-1][1:]
     else:
         if format == 'auto':
-            raise ValueError('can only guess format for string path - specify extension')
+            raise ValueError(
+                'can only guess format for string path - specify extension'
+            )
 
     try:
         reader = reader_guess[format]
     except KeyError as e:
-        raise Exception(f"couldn't guess a reader from extension of file {path_or_buf}") from e
+        raise Exception(
+            f"couldn't guess a reader from extension of file {path_or_buf}"
+        ) from e
 
     if reader == read_sqlite:
         return reader(path_or_buf, columns=columns, nrows=nrows, **kws)
@@ -1697,6 +1759,7 @@ class MungeReader:
             if os.path.exists(os.path.join(dirname, n)):
                 return MungeTarReader(dirname, tarname=n)
         return MungeDirectoryReader(dirname)
+
 
 def read_relational(
     path: Union[str, Path],

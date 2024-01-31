@@ -1,12 +1,11 @@
-
 import typing
 
 from .. import Device, Undefined, VISADevice, util
 from .. import paramattr as attr
 
 if typing.TYPE_CHECKING:
-    import pandas as pd
     import numpy as np
+    import pandas as pd
 else:
     pd = util.lazy_import('pandas')
     np = util.lazy_import('numpy')
@@ -31,14 +30,20 @@ class PowerSensor(VISADevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = attr.property.bool(key='INIT:CONT', help='trigger continuously if True')
-    trigger_count = attr.property.int(key='TRIG:COUN', help='acquisition count', label='samples', min=1, max=200)
+    initiate_continuous = attr.property.bool(
+        key='INIT:CONT', help='trigger continuously if True'
+    )
+    trigger_count = attr.property.int(
+        key='TRIG:COUN', help='acquisition count', label='samples', min=1, max=200
+    )
     measurement_rate = attr.property.str(
         key='SENS:MRAT',
         only=RATES,
         case=False,
     )
-    sweep_aperture = attr.property.float(key='SWE:APER', help='measurement duration', label='s', min=20e-6, max=200e-3)
+    sweep_aperture = attr.property.float(
+        key='SWE:APER', help='measurement duration', label='s', min=20e-6, max=200e-3
+    )
     frequency = attr.property.float(
         key='SENS:FREQ',
         help='calibration frequency',
@@ -95,7 +100,9 @@ class SpectrumAnalyzer(VISADevice):
         """acquire measurements as configured"""
         response = self.query('FETC?')
 
-        series = pd.Series([float(s) for s in response.split(',')], name='power_spectral_density')
+        series = pd.Series(
+            [float(s) for s in response.split(',')], name='power_spectral_density'
+        )
         series.index = pd.Index(
             self.center_frequency + np.linspace(-5e6, 5e6, len(series)),
             name='frequency',
@@ -113,7 +120,9 @@ class SignalGenerator(VISADevice):
     make = attr.value.str('FakeTech', inherit=True)
     model = attr.value.str('Signal Generator #1234', inherit=True)
 
-    output_enabled = attr.property.bool(key='OUT:ENABL', help='when True, output an RF tone')
+    output_enabled = attr.property.bool(
+        key='OUT:ENABL', help='when True, output an RF tone'
+    )
     center_frequency = attr.property.float(
         key='SENS:FREQ',
         help='input signal center frequency',

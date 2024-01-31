@@ -130,7 +130,9 @@ class StoreTestDevice(Device):
         attr.observe(self, self.backend.notification_handler)
 
     @classmethod
-    def get_paramattr_arguments(cls, attr_name) -> list[attr.method_kwarg.MethodKeywordArgument]:
+    def get_paramattr_arguments(
+        cls, attr_name
+    ) -> list[attr.method_kwarg.MethodKeywordArgument]:
         attr = getattr(cls, attr_name)
         return attr.get_key_arguments(cls)
 
@@ -152,14 +154,20 @@ class PowerSensor(StoreTestDevice):
 
     # SCPI string keys and bounds on the parameter values,
     # taken from the instrument programming manual
-    initiate_continuous = attr.property.bool(key='INIT:CONT', help='trigger continuously if True')
-    trigger_count = attr.property.int(key='TRIG:COUN', min=1, max=200, help='acquisition count', label='samples')
+    initiate_continuous = attr.property.bool(
+        key='INIT:CONT', help='trigger continuously if True'
+    )
+    trigger_count = attr.property.int(
+        key='TRIG:COUN', min=1, max=200, help='acquisition count', label='samples'
+    )
     measurement_rate = attr.property.str(
         key='SENS:MRAT',
         only=RATES,
         case=False,
     )
-    sweep_aperture = attr.property.float(key='SWE:APER', min=20e-6, max=200e-3, help='measurement duration', label='s')
+    sweep_aperture = attr.property.float(
+        key='SWE:APER', min=20e-6, max=200e-3, help='measurement duration', label='s'
+    )
     frequency = attr.property.float(
         key='SENS:FREQ',
         min=10e6,
@@ -190,7 +198,9 @@ class SpectrumAnalyzer(StoreTestDevice):
 
 
 class SignalGenerator(StoreTestDevice):
-    output_enabled = attr.property.bool(key='OUT:ENABL', help='when True, output an RF tone')
+    output_enabled = attr.property.bool(
+        key='OUT:ENABL', help='when True, output an RF tone'
+    )
     center_frequency = attr.property.float(
         key='SENS:FREQ',
         min=10e6,

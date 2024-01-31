@@ -66,7 +66,12 @@ def ast_arg(name, annotation=lb.Undefined):
 
 def ast_typehint_optional(t, remap={}):
     remap[type(None)] = None
-    args = ','.join([getattr(remap.get(sub, sub), '__name__', sub.__class__.__name__) for sub in typing.get_args(t)])
+    args = ','.join(
+        [
+            getattr(remap.get(sub, sub), '__name__', sub.__class__.__name__)
+            for sub in typing.get_args(t)
+        ]
+    )
     print('***', f'_typing.Optional[{args}]')
     return parse_literal(f'_typing.Optional[{args}]')
 
@@ -116,7 +121,9 @@ def update_stubs(path, mod_name, sub_name):
 
     # use the interpreter to identify the names of classes with the desired type
     target_names = [
-        name for name, obj in namespace.__dict__.items() if isclass(obj) and issubclass(obj, (ParamAttr, Rack, Device))
+        name
+        for name, obj in namespace.__dict__.items()
+        if isclass(obj) and issubclass(obj, (ParamAttr, Rack, Device))
     ]
 
     if len(target_names) > 0:
@@ -126,7 +133,9 @@ def update_stubs(path, mod_name, sub_name):
 
     # find their definitions in the parsed ast tree
     target_cls_defs = [
-        ast_obj for ast_obj in ast.iter_child_nodes(ast_root) if getattr(ast_obj, 'name', None) in target_names
+        ast_obj
+        for ast_obj in ast.iter_child_nodes(ast_root)
+        if getattr(ast_obj, 'name', None) in target_names
     ]
 
     for cls_def in target_cls_defs:
@@ -179,9 +188,20 @@ def update_stubs(path, mod_name, sub_name):
                 args = list(raw_annots.keys())
 
             defaults.update({name: getattr(cls, name) for name in args})
-            defaults = {name: (None if d is Undefined else d) for name, d in defaults.items()}
-            annotations.update({name: transform_annot(cls, type_) for name, type_ in raw_annots.items()})
-            annotations = {name: type_ for name, type_ in annotations.items() if type_ not in (Any, None, Undefined)}
+            defaults = {
+                name: (None if d is Undefined else d) for name, d in defaults.items()
+            }
+            annotations.update(
+                {
+                    name: transform_annot(cls, type_)
+                    for name, type_ in raw_annots.items()
+                }
+            )
+            annotations = {
+                name: type_
+                for name, type_ in annotations.items()
+                if type_ not in (Any, None, Undefined)
+            }
         else:
             raise TypeError(f'{cls} is an unknown class type')
 
@@ -194,7 +214,11 @@ def update_stubs(path, mod_name, sub_name):
             cls_def.body.insert(
                 0,
                 ast_function_stub(
-                    '__new__', ['cls'] + args, list(defaults.values()), annotations, decorator_list=decorators
+                    '__new__',
+                    ['cls'] + args,
+                    list(defaults.values()),
+                    annotations,
+                    decorator_list=decorators,
                 ),
             )
 
@@ -205,12 +229,22 @@ def update_stubs(path, mod_name, sub_name):
             cls_def.body.insert(
                 0,
                 ast_function_stub(
-                    '__new__', ['cls'] + args, list(defaults.values()), annotations, decorator_list=decorators
+                    '__new__',
+                    ['cls'] + args,
+                    list(defaults.values()),
+                    annotations,
+                    decorator_list=decorators,
                 ),
             )
         else:
             cls_def.body.insert(
-                0, ast_function_stub(target_method_names, ['self'] + args, list(defaults.values()), annotations)
+                0,
+                ast_function_stub(
+                    target_method_names,
+                    ['self'] + args,
+                    list(defaults.values()),
+                    annotations,
+                ),
             )
 
     with open(path, 'w') as f:

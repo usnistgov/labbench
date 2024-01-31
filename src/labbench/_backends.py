@@ -1107,7 +1107,7 @@ class VISADevice(Device):
         else:
             return ret
 
-    def query_ascii_values(self, msg: str, type_, separator=',', container=list, delay=None, timeout=None):
+    def query_ascii_values(self, msg: str, converter='f', separator=',', container=list, delay=None, timeout=None):
         # pre debug
         if timeout is not None:
             _to, self.backend.timeout = self.backend.timeout, timeout
@@ -1116,7 +1116,7 @@ class VISADevice(Device):
         self._logger.debug(f'query_ascii_values({msg_out}):')
 
         try:
-            ret = self.backend.query_ascii_values(msg, type_, separator, container, delay)
+            ret = self.backend.query_ascii_values(msg, converter=converter, separator=separator, container=container, delay=delay)
         finally:
             if timeout is not None:
                 self.backend.timeout = _to
@@ -1276,8 +1276,10 @@ def visa_default_resource_manager(name: str = None):
     Arguments:
         name: the name of the resource manager, such as '@py', '@sim', or '@ivi'
     """
+    import pyvisa
+    
     if name is None:
-        pyvisa.__version__ # touch to force loading
+        import pyvisa.ctwrapper
         libs = pyvisa.ctwrapper.IVIVisaLibrary.get_library_paths()
         if len(libs) > 0:
             name = '@ivi'

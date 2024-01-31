@@ -23,11 +23,8 @@ import typing_extensions as typing
 from .. import util
 
 if typing.TYPE_CHECKING:
-    pass
     import pandas as pd
 else:
-    pass
-    # not executed: help coding tools recognize lazy_imports as imports
     pd = util.lazy_import('pandas')
 
 Undefined = inspect.Parameter.empty

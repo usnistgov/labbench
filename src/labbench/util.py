@@ -19,7 +19,6 @@ from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
 from typing import Union
-from warnings import simplefilter
 
 from typing_extensions import ParamSpec, TypeVar
 
@@ -28,7 +27,6 @@ __all__ = [  # "misc"
     'kill_by_name',
     'show_messages',
     'logger',
-    'LabbenchDeprecationWarning',
     'find_methods_in_mro',
     # concurrency and sequencing
     'concurrently',
@@ -68,14 +66,6 @@ _LOG_LEVEL_NAMES = {
     'error': logging.ERROR,
     'critical': logging.CRITICAL,
 }
-
-
-# show deprecation warnings only once
-class LabbenchDeprecationWarning(DeprecationWarning):
-    pass
-
-
-simplefilter('once', LabbenchDeprecationWarning)
 
 
 def show_messages(minimum_level, colors=True):

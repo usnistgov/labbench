@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `labbench.paramattr.adjusted`, due to type hinting bugs
 
 ### Removed
-- `labbench.HDFLogger`, which was not used and which was unable to store metadata in a portable way
+- `labbench.HDFLogger`, which was not used and which was unable to pass tests or store metadata in a portable way
+- `labbench.util.LabbenchDeprecationWarning`, an unused stub
 
 ## [0.34.0]
 ### Changed

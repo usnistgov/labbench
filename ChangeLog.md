@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Corrected bugs in the simplified display of tracebacks
 - Fixed a bug in network address string validation
 - Reduced module import time through better use of lazy loading
+- Fixed an argument passing bug in VISADevice.query_ascii_values
+- The default VISA resource manager is now '@ivi' if an underlying library is available
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs

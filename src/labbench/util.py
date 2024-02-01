@@ -18,9 +18,7 @@ from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
-from typing import Union
-
-from typing_extensions import ParamSpec, TypeVar
+from typing_extensions import ParamSpec, TypeVar, Union, Literal
 
 __all__ = [  # "misc"
     'hash_caller',
@@ -54,6 +52,7 @@ __all__ = [  # "misc"
     'Ownable',
 ]
 
+# the base object for labbench loggers
 logger = logging.LoggerAdapter(
     logging.getLogger('labbench'),
     dict(
@@ -69,8 +68,11 @@ _LOG_LEVEL_NAMES = {
     'critical': logging.CRITICAL,
 }
 
+_LogLevelType = Union[Literal['debug'], Literal['warning'], Literal['error'], Literal['info'], Literal['critical']]
 
-def show_messages(minimum_level, colors=True):
+def show_messages(
+        minimum_level: Union[_LogLevelType, Literal[False], None],
+        colors:bool=True):
     """filters logging messages displayed to the console by importance
 
     Arguments:
@@ -125,7 +127,9 @@ def show_messages(minimum_level, colors=True):
 show_messages('info')
 
 
-def logger_metadata(obj):
+def repr_as_log_dict(obj: typing.Any) -> dict[str, str]:
+    """summarize an object description for the labbench logger"""
+
     d = dict(
         object=repr(obj),
         origin=type(obj).__qualname__,
@@ -145,7 +149,8 @@ def logger_metadata(obj):
     return d
 
 
-def callable_logger(func):
+def callable_logger(func: callable) -> logging.Logger:
+    """return the most specialized available logger for the input object"""
     if isinstance(getattr(func, '__self__', None), Ownable):
         return func.__self__._logger
     else:
@@ -195,7 +200,7 @@ class Ownable:
     def __init__(self):
         self._logger = logging.LoggerAdapter(
             logger.logger,
-            extra=logger_metadata(self),
+            extra=repr_as_log_dict(self),
         )
 
     def __set_name__(self, owner_cls, name):
@@ -212,15 +217,11 @@ class Ownable:
         else:
             self._owned_name = owner._owned_name + '.' + self.__name__
 
-        # self._logger.extra.update(**logger_metadata(self))
-
     def __owner_subclass__(self, owner_cls):
         """Called after the owner class is instantiated; returns an object to be used in the Rack namespace"""
         # TODO: revisit whether there should be any assignment of _owned_name here
         if self._owned_name is None:
             self._owned_name = self.__name__
-
-        # self._logger.extra.update(**logger_metadata(self))
 
         return self
 
@@ -259,11 +260,17 @@ stop_request_event = Event()
 
 TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 
-T = TypeVar('T')
-P = ParamSpec('P')
+_T = TypeVar('_T')
+_Tfunc = Callable[...,typing.Any]
 
+class _ContextManagerType(typing.Protocol):
+    def __enter__(self):
+        pass
 
-def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
+    def __exit__(self, /, type, value, traceback):
+        pass
+
+def hide_in_traceback(func: _Tfunc) -> _Tfunc:
     """decorates a method or function to hide it from tracebacks.
 
     The intent is to remove clutter in the middle of deep stacks in object call stacks.
@@ -277,7 +284,7 @@ def hide_in_traceback(func: Callable[P, T]) -> Callable[P, T]:
         Callable[P, T]: _description_
     """
 
-    def adjust(f: Callable[P, T]) -> None:
+    def adjust(f: _Tfunc) -> None:
         code_obj = f.__code__
         f.__code__ = f.__code__.replace(
             co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,)
@@ -308,8 +315,9 @@ def _force_full_traceback(force: bool) -> None:
 
 
 class exc_info:
-    """a monkeypatch for sys.exc_info that removes functions from tracebacks
-    that are tagged with TRACEBACK_HIDE_TAG
+    """a duck-typed replacement for sys.exc_info that removes
+    functions from traceback printouts that are tagged with
+    TRACEBACK_HIDE_TAG
     """
 
     sys_exc_info = sys.exc_info
@@ -321,12 +329,11 @@ class exc_info:
         return cls.filter(etype, evalue, tb)
 
     @classmethod
-    def filter(cls, etype, evalue, tb):
+    def filter(cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType):
         if cls.debug or tb is None:
             return etype, evalue, tb
 
         prev_tb = tb
-
         this_tb = prev_tb.tb_next
 
         # step through the stack traces
@@ -355,7 +362,7 @@ class excepthook:
     sys_excepthook = sys.excepthook
 
     @classmethod
-    def __call__(cls, type, value, traceback):
+    def __call__(cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType):
         return cls.sys_excepthook(*exc_info.filter(type, value, traceback))
 
 
@@ -365,10 +372,10 @@ if not isinstance(sys.excepthook, excepthook):
 
 
 def copy_func(
-    func,
-    assigned=('__module__', '__name__', '__qualname__', '__doc__', '__annotations__'),
-    updated=('__dict__',),
-) -> callable:
+    func: _T,
+    assigned: tuple[str]=('__module__', '__name__', '__qualname__', '__doc__', '__annotations__'),
+    updated: tuple[str]=('__dict__',),
+) -> _T:
     """returns a copy of func with specified attributes (following the inspect.wraps arguments).
 
     This is similar to wrapping `func` with `lambda *args, **kws: func(*args, **kws)`, except
@@ -394,7 +401,7 @@ def copy_func(
     return new
 
 
-def sleep(seconds, tick=1.0):
+def sleep(seconds: float, tick=1.0):
     """Drop-in replacement for time.sleep that raises ConcurrentException
     if another thread requests that all threads stop.
     """
@@ -423,32 +430,32 @@ def check_hanging_thread():
 
 @hide_in_traceback
 def retry(
-    exception_or_exceptions,
+    exception_or_exceptions: Union[BaseException, typing.Iterable[BaseException]],
     tries: int = 4,
     *,
     delay: float = 0,
     backoff: float = 0,
     exception_func=lambda *args, **kws: None,
     log: bool = True,
-):
-    """Decorate a function to repeat calls, suppressing specified exception(s), until a
+) -> callable[_Tfunc, _Tfunc]:
+    """calls to the decorated function are repeated, suppressing specified exception(s), until a
     maximum number of retries has been attempted.
 
     If the function raises the exception the specified number of times, the underlying exception is raised.
     Otherwise, return the result of the function call.
 
-    :example:
-    The following retries the telnet connection 5 times on ConnectionRefusedError::
+    Example:
 
-        import telnetlib
+        The following retries the telnet connection 5 times on ConnectionRefusedError::
 
+            import telnetlib
 
-        # Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError
-        @retry(ConnectionRefusedError, tries=5)
-        def open(host, port):
-            t = telnetlib.Telnet()
-            t.open(host, port, 5)
-            return t
+            # Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError
+            @retry(ConnectionRefusedError, tries=5)
+            def open(host, port):
+                t = telnetlib.Telnet()
+                t.open(host, port, 5)
+                return t
 
 
     Inspired by https://github.com/saltycrane/retry-decorator which is released
@@ -501,39 +508,39 @@ def retry(
 
 @hide_in_traceback
 def until_timeout(
-    exception_or_exceptions, timeout, delay=0, backoff=0, exception_func=lambda: None
-):
-    """This decorator causes the function call to repeat, suppressing specified exception(s), until the
+    exception_or_exceptions: Union[BaseException, typing.Iterable[BaseException]],
+    timeout: float,
+    delay: float=0,
+    backoff: float=0,
+    exception_func: callable=lambda: None
+) -> callable[_Tfunc, _Tfunc]:
+    """calls to the decorated function are repeated, suppressing specified exception(s), until the
     specified timeout period has expired.
+
     - If the timeout expires, the underlying exception is raised.
     - Otherwise, return the result of the function call.
 
     Inspired by https://github.com/saltycrane/retry-decorator which is released
     under the BSD license.
 
+    Example:
+        The following retries the telnet connection for 5 seconds on ConnectionRefusedError::
 
-    :example:
-    The following retries the telnet connection for 5 seconds on ConnectionRefusedError::
-
-        import telnetlib
+            import telnetlib
 
 
-        @until_timeout(ConnectionRefusedError, 5)
-        def open(host, port):
-            t = telnetlib.Telnet()
-            t.open(host, port, 5)
-            return t
+            @until_timeout(ConnectionRefusedError, 5)
+            def open(host, port):
+                t = telnetlib.Telnet()
+                t.open(host, port, 5)
+                return t
 
     Arguments:
         exception_or_exceptions: Exception (sub)class (or tuple of exception classes) to watch for
         timeout: time in seconds to continue calling the decorated function while suppressing exception_or_exceptions
-    :type timeout: float
         delay: initial delay between retries in seconds
-    :type delay: float
         backoff: backoff to multiply to the delay for each retry
-    :type backoff: float
         exception_func: function to call on exception before the next retry
-    :type exception_func: callable
     """
 
     def decorator(f):
@@ -587,8 +594,8 @@ def timeout_iter(duration):
         elapsed = time.perf_counter() - t0
 
 
-def hash_caller(call_depth=1):
-    """Use introspection to return an SHA224 hex digest of the caller, which
+def hash_caller(call_depth: int =1):
+    """introspect the caller to return an SHA224 hex digest that
     is almost certainly unique to the combination of the caller source code
     and the arguments passed it.
     """
@@ -621,7 +628,7 @@ def hash_caller(call_depth=1):
 
 
 @contextmanager
-def stopwatch(desc: str = '', threshold: float = 0, logger_level='info'):
+def stopwatch(desc: str = '', threshold: float = 0, logger_level: _LogLevelType='info'):
     """Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
@@ -665,7 +672,7 @@ class Call:
     keep track of some call metadata during execution.
     """
 
-    def __init__(self, func, *args, **kws):
+    def __init__(self, func: callable, *args, **kws):
         if not callable(func):
             raise ValueError('`func` argument is not callable')
         self.func = func
@@ -706,7 +713,7 @@ class Call:
         self.queue = queue
 
     @classmethod
-    def wrap_list_to_dict(cls, name_func_pairs) -> dict[str, Call]:
+    def wrap_list_to_dict(cls, name_func_pairs: dict[str, callable]) -> dict[str, Call]:
         """adjusts naming and wraps callables with Call"""
         ret = {}
         # First, generate the list of callables
@@ -789,7 +796,7 @@ class MultipleContexts:
         self.exc = {}
 
     @hide_in_traceback
-    def enter(self, name, context):
+    def enter(self, name: str, context: object):
         """
         enter!
         """
@@ -890,7 +897,7 @@ def isdictducktype(cls):
     return set(dir(cls)).issuperset(DIR_DICT)
 
 
-def _select_enter_or_call(candidate_objs):
+def _select_enter_or_call(candidate_objs: typing.Iterable[Union[_ContextManagerType,callable]]) -> str:
     """ensure candidates are either (1) all context managers
     or (2) all callables. Decide what type of operation to proceed with.
     """
@@ -929,7 +936,7 @@ def _select_enter_or_call(candidate_objs):
 
 
 @hide_in_traceback
-def enter_or_call(flexible_caller, objs, kws):
+def enter_or_call(flexible_caller: callable, objs: typing.Iterable[Union[_ContextManagerType,callable]], kws: dict[str,typing.Any]):
     """Extract value traits from the keyword arguments flags, decide whether
     `objs` and `kws` should be treated as context managers or callables,
     and then either enter the contexts or call the callables.
@@ -1314,7 +1321,7 @@ class ThreadDelegate:
         return message(self._sandbox, OP_CALL, self._obj, None, args, kws)
 
     def __getattribute__(self, name):
-        if name in delegate_keys:
+        if name in _delegate_keys:
             return object.__getattribute__(self, name)
         else:
             return message(self._sandbox, OP_GET, self._obj, name, None, None)
@@ -1326,13 +1333,13 @@ class ThreadDelegate:
         return f'ThreadDelegate({self._repr})'
 
     def __setattr__(self, name, value):
-        if name in delegate_keys:
+        if name in _delegate_keys:
             return object.__setattr__(self, name, value)
         else:
             return message(self._sandbox, OP_SET, self._obj, name, value, None)
 
 
-delegate_keys = set(ThreadDelegate.__dict__.keys()).difference(object.__dict__.keys())
+_delegate_keys = ThreadDelegate.__dict__.keys() - object.__dict__.keys()
 
 
 @hide_in_traceback
@@ -1350,14 +1357,14 @@ def message(sandbox, *msg):
 
 
 class ThreadSandbox:
-    """Execute all calls in the class in a separate background thread. This
+    """Wraps accesses to object attributes in a separate background thread. This
     is intended to work around challenges in threading wrapped win32com APIs.
 
-    Use it as follows:
+    Example:
 
         obj = ThreadSandbox(MyClass(myclassarg, myclasskw=myclassvalue))
 
-    Then use `obj` as a normal MyClass instance.
+    Then, use `obj` as a normal MyClass instance.
     """
 
     __repr_root__ = 'uninitialized ThreadSandbox'
@@ -1396,7 +1403,7 @@ class ThreadSandbox:
                 sandbox_check_func = default_sandbox_check_func
 
             self.__repr_root__ = repr(root)
-            self.__dir_root__ = sorted(list(set(dir(root) + list(sandbox_keys))))
+            self.__dir_root__ = sorted(list(set(dir(root) + list(_sandbox_keys))))
             exc = None
         except Exception as e:
             exc = e
@@ -1442,14 +1449,14 @@ class ThreadSandbox:
 
     @hide_in_traceback
     def __getattr__(self, name):
-        if name in sandbox_keys:
+        if name in _sandbox_keys:
             return object.__getattribute__(self, name)
         else:
             return message(self, OP_GET, None, name, None, None)
 
     @hide_in_traceback
     def __setattr__(self, name, value):
-        if name in sandbox_keys:
+        if name in _sandbox_keys:
             return object.__setattr__(self, name, value)
         else:
             return message(self, OP_SET, None, name, value, None)
@@ -1483,11 +1490,13 @@ class ThreadSandbox:
         return self.__dir_root__
 
 
-sandbox_keys = set(ThreadSandbox.__dict__.keys()).difference(object.__dict__.keys())
-
+_sandbox_keys = ThreadSandbox.__dict__.keys() - object.__dict__.keys()
 
 class single_threaded_call_lock:
-    """decorates a function to ensure it is only executed by one thread at a time"""
+    """decorates a function to ensure executes in only one thread at a time.
+    
+    This is a low-performance way to ensure thread-safety.
+    """
 
     def __new__(cls, func):
         obj = super().__new__(cls)
@@ -1511,7 +1520,7 @@ class single_threaded_call_lock:
 
 # otherwise turns out not to be thread-safe
 @single_threaded_call_lock
-def lazy_import(name):
+def lazy_import(module_name: str):
     """postponed import of the module with the specified name.
 
     The import is not performed until the module is accessed in the code. This
@@ -1520,17 +1529,17 @@ def lazy_import(name):
     """
     # see https://docs.python.org/3/library/importlib.html#implementing-lazy-imports
     try:
-        ret = sys.modules[name]
+        ret = sys.modules[module_name]
         return ret
     except KeyError:
         pass
 
-    spec = importlib.util.find_spec(name)
+    spec = importlib.util.find_spec(module_name)
     if spec is None:
-        raise ImportError(f'no module found named "{name}"')
+        raise ImportError(f'no module found named "{module_name}"')
     spec.loader = importlib.util.LazyLoader(spec.loader)
     module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
+    sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -1541,7 +1550,7 @@ class ttl_cache:
         self.call_timestamp = None
         self.last_value = {}
 
-    def __call__(self, func):
+    def __call__(self, func: _Tfunc) -> _Tfunc:
         @wraps(func)
         @hide_in_traceback
         def wrapper_decorator(*args, **kws):
@@ -1563,7 +1572,7 @@ class ttl_cache:
         return wrapper_decorator
 
 
-def accessed_attributes(method):
+def accessed_attributes(method: _Tfunc) -> tuple[str]:
     """enumerate the attributes of the parent class accessed by `method`
 
     :method: callable that is a method or defined in a class
@@ -1605,6 +1614,7 @@ def accessed_attributes(method):
 
 
 if typing.TYPE_CHECKING:
+    # we have to delay this import until after lazy_import is defined
     import psutil
 else:
     psutil = lazy_import('psutil')
@@ -1617,15 +1627,15 @@ def kill_by_name(*names):
         names: list of names of processes to kill
     :type names: str
 
-    :example:
-    >>> # Kill any binaries called 'notepad.exe' or 'notepad2.exe'
-    >>> kill_by_name('notepad.exe', 'notepad2.exe')
+    Example:
+        >>> # Kill any binaries called 'notepad.exe' or 'notepad2.exe'
+        >>> kill_by_name('notepad.exe', 'notepad2.exe')
 
-    :Notes:
-    Looks for a case-insensitive match against the Process.name() in the
-    psutil library. Though psutil is cross-platform, the naming convention
-    returned by name() is platform-dependent. In windows, for example, name()
-    usually ends in '.exe'.
+    Notes:
+        Looks for a case-insensitive match against the Process.name() in the
+        psutil library. Though psutil is cross-platform, the naming convention
+        returned by name() is platform-dependent. In windows, for example, name()
+        usually ends in '.exe'.
     """
     for pid in psutil.pids():
         try:

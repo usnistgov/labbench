@@ -6,17 +6,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.35.0]
 ### Added
-- Paramattr now supports a new boolean keyword argument, `inherit`, which sets 
-  defaults for the other paramattr keyword arguments to be taken from the parent
-  of the owning class. This is meant to
-  replace the role of `labbench.paramattr.adjusted`, which did not update the type hints
-  properly for default values of Device constructors.
+- Paramattr now supports a new boolean keyword argument, `inherit`, which takes 
+  defaults for the other paramattr keyword arguments from the paramattr in the parent
+  of the owning class. This is meant to replace the role of `labbench.paramattr.adjusted`,
+  which did not update the type hints properly for default values of Device constructors.
 
 ### Changed
 - Corrected bugs in the simplified display of tracebacks
 - Fixed a bug in network address string validation
 - Reduced module import time through better use of lazy loading
-- Fixed an argument passing bug in VISADevice.query_ascii_values
+- Fixed an argument passing bug in `labbench.VISADevice.query_ascii_values`
 - The default VISA resource manager is now '@ivi' if an underlying library is available
 
 ### Deprecated

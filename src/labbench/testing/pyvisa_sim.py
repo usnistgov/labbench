@@ -66,6 +66,12 @@ class PowerSensor(VISADevice):
         else:
             return pd.Series([float(s) for s in response.split(',')], name='spectrum')
 
+    def fetch_ascii_values(self):
+        """acquire measurements as configured"""
+        s = self.query_ascii_values('FETC?', container=pd.Series)
+        s.name = 'spectrum'
+        return s
+
     def trigger(self):
         return self.write('TRIG')
 
@@ -109,6 +115,12 @@ class SpectrumAnalyzer(VISADevice):
         )
 
         return series
+
+    def fetch_ascii_values(self):
+        """acquire measurements as configured"""
+        s = self.query_ascii_values('FETC?', container=pd.Series)
+        s.name = 'spectrum'
+        return s
 
     def trigger(self):
         util.sleep(0.1)  # simulate slow response

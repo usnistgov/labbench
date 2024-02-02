@@ -1387,7 +1387,7 @@ def visa_default_resource_manager(name: str = None):
     """set the pyvisa resource manager used by labbench.
 
     Arguments:
-        name: the name of the resource manager, such as '@py', '@sim', or '@ivi'
+        name: the name of the resource manager, such as '@py', '@sim-labbench', or '@ivi'
     """
     import pyvisa
 
@@ -1403,7 +1403,7 @@ def visa_default_resource_manager(name: str = None):
             )
             name = '@py'
 
-    elif name == '@sim':
+    elif name == '@sim-labbench':
         from .testing import pyvisa_sim_resource as name
 
     if name == '@py':

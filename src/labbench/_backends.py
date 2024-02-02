@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import importlib
 import inspect
@@ -13,20 +15,19 @@ from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
 
+import serial
 import typing_extensions as typing
+from typing_extensions import Union, ClassVar
 
 from . import paramattr as attr
 from . import util
-from ._device import Device
+from ._device import Device, DisconnectedBackend
 
 if typing.TYPE_CHECKING:
     import telnetlib
-
     import psutil
     import pyvisa
-    import serial
 else:
-    serial = util.lazy_import('serial')
     telnetlib = util.lazy_import('telnetlib')
     psutil = util.lazy_import('psutil')
     pyvisa = util.lazy_import('pyvisa')
@@ -641,37 +642,47 @@ class SerialDevice(Device):
         - backend (serial.Serial): control object, after open
     """
 
+    backend: ClassVar[Union[DisconnectedBackend, serial.Serial]]
+
     resource = attr.value.str(
-        default=attr.Undefined, help='platform-dependent serial port address'
+        None,
+        help='platform-dependent serial port address or URL',
+        inherit=True
     )
 
     # Connection value traits
     timeout: float = attr.value.float(
-        default=2,
+        default=None,
         min=0,
-        help='Max time to wait for a connection before raising TimeoutError.',
+        label='s',
+        help='max wait time on reads before raising TimeoutError',
     )
-    write_termination: bytes = attr.value.bytes(
-        default=b'\n', help='Termination character to send after a write.'
+    write_timeout: float = attr.value.float(
+        default=None,
+        min=0,
+        label='s',
+        help='max wait time on writes before raising TimeoutError.',
     )
     baud_rate: int = attr.value.int(
-        default=9600, min=1, help='Data rate of the physical serial connection.'
+        default=9600, min=1, label='bytes/s', help='data rate of the physical serial connection.'
     )
-    parity: bytes = attr.value.bytes(
-        default=b'N', help='Parity in the physical serial connection.'
+    parity: bytes = attr.value.str(
+        default=serial.PARITY_NONE,
+        only=tuple(serial.PARITY_NAMES.keys()), help='parity in the physical serial connection.'
     )
     stopbits: float = attr.value.float(
-        default=1, only=[1, 1.5, 2], help='number of stop bits'
+        default=None, only=[1, 1.5, 2], label='bits',
     )
     xonxoff: bool = attr.value.bool(
-        default=False, help='`True` to enable software flow control.'
+        default=False, help='whether to enable software flow control on open'
     )
     rtscts: bool = attr.value.bool(
-        default=False, help='`True` to enable hardware (RTS/CTS) flow control.'
+        default=False, allow_none=True, help='whether to enable hardware (RTS/CTS) flow control on open'
     )
     dsrdtr: bool = attr.value.bool(
-        default=False, help='`True` to enable hardware (DSR/DTR) flow control.'
+        default=False, allow_none=True, help='whether to enable hardware (DSR/DTR) flow control on open'
     )
+    bytesize: int = attr.value.int(default=8, allow_none=True, only=(5,6,7,8), label='bits')
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):
@@ -679,8 +690,10 @@ class SerialDevice(Device):
         in self.resource
         """
         keys = 'timeout', 'parity', 'stopbits', 'xonxoff', 'rtscts', 'dsrdtr'
-        params = dict([(k, getattr(self, k)) for k in keys])
-        self.backend = serial.Serial(self.resource, self.baud_rate, **params)
+        with attr.hold_attr_notifications(self):
+            params = {k: getattr(self, k) for k in keys}
+            params = {k: v for k,v in params.items() if v is not None}
+        self.backend = serial.serial_for_url(self.resource, self.baud_rate, **params)
         self._logger.debug('opened')
 
     def close(self):
@@ -689,7 +702,7 @@ class SerialDevice(Device):
         self._logger.debug('closed')
 
     @classmethod
-    def from_hwid(cls, hwid=None, *args, **connection_params):
+    def from_hwid(cls, hwid=None, *args, **connection_params) -> SerialDevice:
         """Instantiate a new SerialDevice from a windows `hwid' string instead
         of a comport resource. A hwid string in windows might look something
         like:
@@ -701,6 +714,14 @@ class SerialDevice(Device):
         if hwid not in usb_map:
             raise Exception(f'Cannot find serial port with hwid {hwid!r}')
         return cls(usb_map[hwid], *args, **connection_params)
+    
+    @classmethod
+    def from_url(cls, url, **kws) -> SerialDevice:
+        defaults = dict(
+            baudrate=None, bytesize=None, parity=None, stopbits=None, timeout=None, xonxoff=None, rtscts=None, write_timeout=None, dsrdtr=None, inter_byte_timeout=None, exclusive=None
+        )
+        kws = dict(defaults, **kws)
+        return cls(url, **kws)
 
     @staticmethod
     def list_ports(hwid=None):
@@ -725,15 +746,14 @@ class SerialDevice(Device):
         return dict(ports)
 
     @staticmethod
-    def _map_serial_hwid_to_label():
+    def _map_serial_hwid_to_label() -> dict[str,str]:
         """Map of the comports and their names.
 
         Returns:
-            mapping {<comport name>: <comport ID>}
+            mapping {<serial port resource>: <serial port number>}
         """
         from serial.tools import list_ports
-
-        return OrderedDict([(port[2], port[1]) for port in list_ports.comports()])
+        return {port.hwid: port.name for port in list_ports.grep('')}
 
     @staticmethod
     def _map_serial_hwid_to_port():
@@ -748,8 +768,8 @@ class SerialDevice(Device):
 
 
 class SerialLoggingDevice(SerialDevice):
-    """Manage connection, acquisition, and data retreival on a single GPS device.
-    The goal is to make GPS devices controllable somewhat like instruments:
+    """Manage connection, acquisition, and data retreival on a device
+    that streams logs over serial in a background thread.
     maintaining their own threads, and blocking during setup or stop
     command execution.
 
@@ -769,15 +789,6 @@ class SerialLoggingDevice(SerialDevice):
         default=100000, min=1, help='bytes to allocate in the data retreival buffer'
     )
 
-    def configure(self):
-        """This is called at the beginning of the logging thread that runs
-        on a call to `start`.
-
-        This is a stub that does nothing --- it should be implemented by a
-        subclass for a specific serial logger device.
-        """
-        self._logger.debug(f'{self!r}: no device-specific configuration implemented')
-
     def start(self):
         """Start a background thread that acquires log data into a queue.
 
@@ -785,22 +796,36 @@ class SerialLoggingDevice(SerialDevice):
             None
         """
 
+        self._stdout = Queue()
+        self._stop_requested = Event()
+        self._finished = Event()
+
         def accumulate():
-            timeout, self.backend.timeout = self.backend.timeout, 0
             q = self._stdout
-            stop_event = self._stop
-            self._logger.debug(f'{self!r}: configuring log acquisition')
-            self.configure()
-            self._logger.debug(f'{self!r}: starting log acquisition')
+            timeout, self.backend.timeout = self.backend.timeout, 0
+            stop_event = self._stop_requested
+            finish_event = self._finished
+
+            self._logger.debug(f'{self!r}: started log acquisition')
+
             try:
-                while stop_event.wait(self.poll_rate) is not True:
-                    q.put(self.backend.read(10 * self.baud_rate * self.poll_rate))
-            except serial.SerialException as e:
-                self._stop.set()
-                self.close()
-                raise e
+                while self.isopen:
+                    buf = self.backend.read_all()
+                    if len(buf) > 0:
+                        q.put(buf)
+
+                    if stop_event.wait(self.poll_rate) is not True:
+                        # wait to check until here to guarantee >= 1 read
+                        break
+            except (ConnectionError, serial.serialutil.PortNotOpenError):
+                # swallow .close() race condition 
+                self._stop_requested.set()
+            except serial.SerialException:
+                self._stop_requested.set()
+                raise
             finally:
-                self._logger.debug(f'{self!r} ending log acquisition')
+                finish_event.set()
+                self._logger.debug(f'{self!r} stopped log acquisition')
                 try:
                     self.backend.timeout = timeout
                 except BaseException:
@@ -808,9 +833,7 @@ class SerialLoggingDevice(SerialDevice):
 
         if self.running():
             raise Exception('already running')
-
-        self._stdout = Queue()
-        self._stop = Event()
+        
         Thread(target=accumulate).start()
 
     def stop(self):
@@ -820,10 +843,8 @@ class SerialLoggingDevice(SerialDevice):
 
             None
         """
-        try:
-            self._stop.set()
-        except BaseException:
-            pass
+        self._stop_requested.set()
+        self._finished.wait(max(self.poll_rate, self.stop_timeout))
 
     def running(self):
         """Check whether the logger is running.
@@ -831,7 +852,7 @@ class SerialLoggingDevice(SerialDevice):
         Returns:
             `True` if the logger is running
         """
-        return hasattr(self, '_stop') and not self._stop.is_set()
+        return hasattr(self, '_stop') and not self._stop_requested.is_set()
 
     def fetch(self):
         """Retrieve and return any log data in the buffer.

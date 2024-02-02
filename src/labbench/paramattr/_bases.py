@@ -1453,7 +1453,7 @@ class Property(OwnerAccessAttr[T]):
 
 @contextmanager
 def hold_attr_notifications(owner: HasParamAttrs):
-    def skip_notify(name, value, type, cache):
+    def skip_notify(name, value, type, cache, kwargs={}):
         # old = owner._attr_store.cache.setdefault(name, Undefined)
         # msg = dict(new=value, old=old, owner=owner, name=name, type=type, cache=cache)
         owner._attr_store.cache[name] = value

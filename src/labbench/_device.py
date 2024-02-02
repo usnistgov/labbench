@@ -183,7 +183,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         # generate and apply the sequence of call signature parameters
         constructor_attrs = []
-        for name in cls.__annotations__.keys():
+        for name, hint in typing.get_type_hints(cls).items():
+            if typing.get_origin(hint) is typing.ClassVar:
+                continue
             attr_def = getattr(cls, name)
             constructor_attrs.append(attr_def)
 

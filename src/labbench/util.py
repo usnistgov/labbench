@@ -295,7 +295,7 @@ def hide_in_traceback(func: _Tfunc) -> _Tfunc:
 
     if hasattr(func, '__code__'):
         adjust(func)
-    if hasattr(func.__call__, '__code__'):
+    elif hasattr(func.__call__, '__code__'):
         adjust(func.__call__)
 
     return func
@@ -363,7 +363,7 @@ class excepthook:
 
     @classmethod
     def __call__(cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType):
-        return cls.sys_excepthook(*exc_info.filter(type, value, traceback))
+        return cls.sys_excepthook(*exc_info.filter(type, evalue, traceback))
 
 
 if not isinstance(sys.excepthook, excepthook):

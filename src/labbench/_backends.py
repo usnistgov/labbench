@@ -796,16 +796,12 @@ class SerialLoggingDevice(SerialDevice):
             None
         """
 
-        self._stdout = Queue()
-        self._stop_requested = Event()
-        self._finished = Event()
+        q = self._stdout = Queue()
+        stop_event = self._stop_requested = Event()
+        finish_event = self._finished = Event()
 
         def accumulate():
-            q = self._stdout
             timeout, self.backend.timeout = self.backend.timeout, 0
-            stop_event = self._stop_requested
-            finish_event = self._finished
-
             self._logger.debug(f'{self!r}: started log acquisition')
 
             try:
@@ -819,9 +815,9 @@ class SerialLoggingDevice(SerialDevice):
                         break
             except (ConnectionError, serial.serialutil.PortNotOpenError):
                 # swallow .close() race condition 
-                self._stop_requested.set()
+                stop_event.set()
             except serial.SerialException:
-                self._stop_requested.set()
+                stop_event.set()
                 raise
             finally:
                 finish_event.set()

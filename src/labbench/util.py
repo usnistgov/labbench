@@ -18,7 +18,9 @@ from contextlib import _GeneratorContextManager, contextmanager
 from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
-from typing_extensions import ParamSpec, TypeVar, Union, Literal
+from typing import Union
+
+from typing_extensions import Literal, TypeVar
 
 __all__ = [  # "misc"
     'hash_caller',
@@ -68,11 +70,18 @@ _LOG_LEVEL_NAMES = {
     'critical': logging.CRITICAL,
 }
 
-_LogLevelType = Union[Literal['debug'], Literal['warning'], Literal['error'], Literal['info'], Literal['critical']]
+_LogLevelType = Union[
+    Literal['debug'],
+    Literal['warning'],
+    Literal['error'],
+    Literal['info'],
+    Literal['critical'],
+]
+
 
 def show_messages(
-        minimum_level: Union[_LogLevelType, Literal[False], None],
-        colors:bool=True):
+    minimum_level: Union[_LogLevelType, Literal[False], None], colors: bool = True
+):
     """filters logging messages displayed to the console by importance
 
     Arguments:
@@ -261,7 +270,8 @@ stop_request_event = Event()
 TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 
 _T = TypeVar('_T')
-_Tfunc = Callable[...,typing.Any]
+_Tfunc = Callable[..., typing.Any]
+
 
 class _ContextManagerType(typing.Protocol):
     def __enter__(self):
@@ -269,6 +279,7 @@ class _ContextManagerType(typing.Protocol):
 
     def __exit__(self, /, type, value, traceback):
         pass
+
 
 def hide_in_traceback(func: _Tfunc) -> _Tfunc:
     """decorates a method or function to hide it from tracebacks.
@@ -329,7 +340,9 @@ class exc_info:
         return cls.filter(etype, evalue, tb)
 
     @classmethod
-    def filter(cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType):
+    def filter(
+        cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType
+    ):
         if cls.debug or tb is None:
             return etype, evalue, tb
 
@@ -362,7 +375,9 @@ class excepthook:
     sys_excepthook = sys.excepthook
 
     @classmethod
-    def __call__(cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType):
+    def __call__(
+        cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType
+    ):
         return cls.sys_excepthook(*exc_info.filter(type, evalue, traceback))
 
 
@@ -373,8 +388,14 @@ if not isinstance(sys.excepthook, excepthook):
 
 def copy_func(
     func: _T,
-    assigned: tuple[str]=('__module__', '__name__', '__qualname__', '__doc__', '__annotations__'),
-    updated: tuple[str]=('__dict__',),
+    assigned: tuple[str] = (
+        '__module__',
+        '__name__',
+        '__qualname__',
+        '__doc__',
+        '__annotations__',
+    ),
+    updated: tuple[str] = ('__dict__',),
 ) -> _T:
     """returns a copy of func with specified attributes (following the inspect.wraps arguments).
 
@@ -450,6 +471,7 @@ def retry(
 
             import telnetlib
 
+
             # Retry a telnet connection 5 times if the telnet library raises ConnectionRefusedError
             @retry(ConnectionRefusedError, tries=5)
             def open(host, port):
@@ -510,9 +532,9 @@ def retry(
 def until_timeout(
     exception_or_exceptions: Union[BaseException, typing.Iterable[BaseException]],
     timeout: float,
-    delay: float=0,
-    backoff: float=0,
-    exception_func: callable=lambda: None
+    delay: float = 0,
+    backoff: float = 0,
+    exception_func: callable = lambda: None,
 ) -> callable[_Tfunc, _Tfunc]:
     """calls to the decorated function are repeated, suppressing specified exception(s), until the
     specified timeout period has expired.
@@ -594,7 +616,7 @@ def timeout_iter(duration):
         elapsed = time.perf_counter() - t0
 
 
-def hash_caller(call_depth: int =1):
+def hash_caller(call_depth: int = 1):
     """introspect the caller to return an SHA224 hex digest that
     is almost certainly unique to the combination of the caller source code
     and the arguments passed it.
@@ -628,7 +650,9 @@ def hash_caller(call_depth: int =1):
 
 
 @contextmanager
-def stopwatch(desc: str = '', threshold: float = 0, logger_level: _LogLevelType='info'):
+def stopwatch(
+    desc: str = '', threshold: float = 0, logger_level: _LogLevelType = 'info'
+):
     """Time a block of code using a with statement like this:
 
     >>> with stopwatch('sleep statement'):
@@ -897,7 +921,9 @@ def isdictducktype(cls):
     return set(dir(cls)).issuperset(DIR_DICT)
 
 
-def _select_enter_or_call(candidate_objs: typing.Iterable[Union[_ContextManagerType,callable]]) -> str:
+def _select_enter_or_call(
+    candidate_objs: typing.Iterable[Union[_ContextManagerType, callable]],
+) -> str:
     """ensure candidates are either (1) all context managers
     or (2) all callables. Decide what type of operation to proceed with.
     """
@@ -936,7 +962,11 @@ def _select_enter_or_call(candidate_objs: typing.Iterable[Union[_ContextManagerT
 
 
 @hide_in_traceback
-def enter_or_call(flexible_caller: callable, objs: typing.Iterable[Union[_ContextManagerType,callable]], kws: dict[str,typing.Any]):
+def enter_or_call(
+    flexible_caller: callable,
+    objs: typing.Iterable[Union[_ContextManagerType, callable]],
+    kws: dict[str, typing.Any],
+):
     """Extract value traits from the keyword arguments flags, decide whether
     `objs` and `kws` should be treated as context managers or callables,
     and then either enter the contexts or call the callables.
@@ -1405,7 +1435,7 @@ class ThreadSandbox:
             self.__repr_root__ = repr(root)
             self.__dir_root__ = sorted(list(set(dir(root) + list(_sandbox_keys))))
             exc = None
-        except Exception as e:
+        except BaseException as e:
             exc = e
         finally:
             ready.put(exc, True)
@@ -1492,9 +1522,10 @@ class ThreadSandbox:
 
 _sandbox_keys = ThreadSandbox.__dict__.keys() - object.__dict__.keys()
 
+
 class single_threaded_call_lock:
     """decorates a function to ensure executes in only one thread at a time.
-    
+
     This is a low-performance way to ensure thread-safety.
     """
 

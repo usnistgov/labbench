@@ -14,10 +14,11 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
+from typing import ClassVar, Union
 
 import serial
 import typing_extensions as typing
-from typing_extensions import Union, ClassVar, Literal
+from typing_extensions import Literal
 
 from . import paramattr as attr
 from . import util
@@ -25,6 +26,7 @@ from ._device import Device, DisconnectedBackend
 
 if typing.TYPE_CHECKING:
     import telnetlib
+
     import psutil
     import pyvisa
 else:
@@ -39,18 +41,18 @@ def shell_options_from_keyed_values(
     hide_false: bool = False,
     join_str: Union[Literal[False], str] = False,
     remap: dict = {},
-    converter: callable=str
+    converter: callable = str,
 ) -> list[str]:
     """generate a list of command line argument strings based on
     :module:`labbench.paramattr.value` descriptors in `device`.
 
-    Each of these descriptors defined with `key` may be treated as a command  
+    Each of these descriptors defined with `key` may be treated as a command
     line option. Value descriptors are ignored when `key` is unset. The value
     for each option is determined by fetching the corresponding attribute from
     `device`.
 
     The returned list of strings can be used to build the `argv` needed to run
-    shell commands using :class:`ShellBackend` or the `subprocess` module. 
+    shell commands using :class:`ShellBackend` or the `subprocess` module.
 
     Arguments:
         device: the device containing values to broadcast into command-line arguments
@@ -74,7 +76,7 @@ def shell_options_from_keyed_values(
 
     Example:
         A non-boolean option:
-        
+
         >>> class DiskDuplicate(ShellBackend):
         ...     block_size: str = attr.value.str('1M', key='bs')
         >>> dd = DiskDuplicate()
@@ -87,7 +89,10 @@ def shell_options_from_keyed_values(
 
     argv = []
     for name, attr_def in attr.get_class_attrs(device).items():
-        if not isinstance(attr_def, attr.value.Value) or attr_def.key in (None, attr.Undefined):
+        if not isinstance(attr_def, attr.value.Value) or attr_def.key in (
+            None,
+            attr.Undefined,
+        ):
             continue
 
         py_value = getattr(device, name)
@@ -103,7 +108,9 @@ def shell_options_from_keyed_values(
             if skip_none:
                 continue
             else:
-                raise ValueError('None is an invalid flag argument value when skip_none is False')
+                raise ValueError(
+                    'None is an invalid flag argument value when skip_none is False'
+                )
 
         elif attr_def._type is bool:
             if hide_false:
@@ -111,18 +118,23 @@ def shell_options_from_keyed_values(
             elif py_value in remap:
                 str_args = [attr_def.key, remap[py_value]]
             else:
-                raise ValueError(f'specify hide_false=True or set remap[{py_value}] to enable boolean value mapping')
+                raise ValueError(
+                    f'specify hide_false=True or set remap[{py_value}] to enable boolean value mapping'
+                )
 
         else:
             py_value = remap.get(py_value, py_value)
             str_args = [attr_def.key, converter(py_value)]
 
         if join_str:
-            str_args = [join_str.join(str_args),]
+            str_args = [
+                join_str.join(str_args),
+            ]
 
         argv += str_args
 
     return argv
+
 
 class ShellBackend(Device):
     """Virtual device controlled by a shell command in another process.
@@ -209,7 +221,9 @@ class ShellBackend(Device):
 
             return self._run_simple(*argv, check_return=check_return, timeout=timeout)
 
-    def _run_simple(self, *argv: list[str], check_return:bool=False, timeout:bool=None):
+    def _run_simple(
+        self, *argv: list[str], check_return: bool = False, timeout: bool = None
+    ):
         """Blocking execution of the command line strings specified by `argv`. If check=True, raise an exception
         on non-zero return code.
 
@@ -230,7 +244,9 @@ class ShellBackend(Device):
 
         return sp.run(argv, check=check_return, timeout=timeout)
 
-    def _run_piped(self, *argv: list[str], check_return=False, check_stderr=False, timeout=None):
+    def _run_piped(
+        self, *argv: list[str], check_return=False, check_stderr=False, timeout=None
+    ):
         """Blocking execution of the specified command line, with a pipe to collect
         stdout.
 
@@ -640,9 +656,7 @@ class SerialDevice(Device):
     backend: ClassVar[Union[DisconnectedBackend, serial.Serial]]
 
     resource = attr.value.str(
-        None,
-        help='platform-dependent serial port address or URL',
-        inherit=True
+        None, help='platform-dependent serial port address or URL', inherit=True
     )
 
     # Connection value traits
@@ -659,25 +673,37 @@ class SerialDevice(Device):
         help='max wait time on writes before raising TimeoutError.',
     )
     baud_rate: int = attr.value.int(
-        default=9600, min=1, label='bytes/s', help='data rate of the physical serial connection.'
+        default=9600,
+        min=1,
+        label='bytes/s',
+        help='data rate of the physical serial connection.',
     )
     parity: bytes = attr.value.str(
         default=serial.PARITY_NONE,
-        only=tuple(serial.PARITY_NAMES.keys()), help='parity in the physical serial connection.'
+        only=tuple(serial.PARITY_NAMES.keys()),
+        help='parity in the physical serial connection.',
     )
     stopbits: float = attr.value.float(
-        default=None, only=[1, 1.5, 2], label='bits',
+        default=None,
+        only=[1, 1.5, 2],
+        label='bits',
     )
     xonxoff: bool = attr.value.bool(
         default=False, help='whether to enable software flow control on open'
     )
     rtscts: bool = attr.value.bool(
-        default=False, allow_none=True, help='whether to enable hardware (RTS/CTS) flow control on open'
+        default=False,
+        allow_none=True,
+        help='whether to enable hardware (RTS/CTS) flow control on open',
     )
     dsrdtr: bool = attr.value.bool(
-        default=False, allow_none=True, help='whether to enable hardware (DSR/DTR) flow control on open'
+        default=False,
+        allow_none=True,
+        help='whether to enable hardware (DSR/DTR) flow control on open',
     )
-    bytesize: int = attr.value.int(default=8, allow_none=True, only=(5,6,7,8), label='bits')
+    bytesize: int = attr.value.int(
+        default=8, allow_none=True, only=(5, 6, 7, 8), label='bits'
+    )
 
     # Overload methods as needed to implement the Device object protocol
     def open(self):
@@ -687,7 +713,7 @@ class SerialDevice(Device):
         keys = 'timeout', 'parity', 'stopbits', 'xonxoff', 'rtscts', 'dsrdtr'
         with attr.hold_attr_notifications(self):
             params = {k: getattr(self, k) for k in keys}
-            params = {k: v for k,v in params.items() if v is not None}
+            params = {k: v for k, v in params.items() if v is not None}
         self.backend = serial.serial_for_url(self.resource, self.baud_rate, **params)
         self._logger.debug('opened')
 
@@ -709,11 +735,21 @@ class SerialDevice(Device):
         if hwid not in usb_map:
             raise Exception(f'Cannot find serial port with hwid {hwid!r}')
         return cls(usb_map[hwid], *args, **connection_params)
-    
+
     @classmethod
     def from_url(cls, url, **kws) -> SerialDevice:
         defaults = dict(
-            baudrate=None, bytesize=None, parity=None, stopbits=None, timeout=None, xonxoff=None, rtscts=None, write_timeout=None, dsrdtr=None, inter_byte_timeout=None, exclusive=None
+            baudrate=None,
+            bytesize=None,
+            parity=None,
+            stopbits=None,
+            timeout=None,
+            xonxoff=None,
+            rtscts=None,
+            write_timeout=None,
+            dsrdtr=None,
+            inter_byte_timeout=None,
+            exclusive=None,
         )
         kws = dict(defaults, **kws)
         return cls(url, **kws)
@@ -741,13 +777,14 @@ class SerialDevice(Device):
         return dict(ports)
 
     @staticmethod
-    def _map_serial_hwid_to_label() -> dict[str,str]:
+    def _map_serial_hwid_to_label() -> dict[str, str]:
         """Map of the comports and their names.
 
         Returns:
             mapping {<serial port resource>: <serial port number>}
         """
         from serial.tools import list_ports
+
         return {port.hwid: port.name for port in list_ports.grep('')}
 
     @staticmethod
@@ -809,7 +846,7 @@ class SerialLoggingDevice(SerialDevice):
                         # wait to check until here to guarantee >= 1 read
                         break
             except (ConnectionError, serial.serialutil.PortNotOpenError):
-                # swallow .close() race condition 
+                # swallow .close() race condition
                 stop_event.set()
             except serial.SerialException:
                 stop_event.set()
@@ -824,7 +861,7 @@ class SerialLoggingDevice(SerialDevice):
 
         if self.running():
             raise Exception('already running')
-        
+
         Thread(target=accumulate).start()
 
     def stop(self):
@@ -1422,7 +1459,7 @@ def visa_default_resource_manager(name: str = None):
 
 @util.ttl_cache(10)  # a cache of recent resource parameters
 def _visa_probe_resource(
-    resource: str, open_timeout, timeout, encoding: 'ascii'
+    resource: str, open_timeout, timeout, encoding: ascii
 ) -> VISADevice:
     device = VISADevice(resource, open_timeout=open_timeout, timeout=timeout)
     device._logger = logging.getLogger()  # suppress the normal logger for probing

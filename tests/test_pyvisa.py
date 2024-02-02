@@ -1,6 +1,7 @@
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+
 import labbench as lb
 from labbench.testing import pyvisa_sim
 
@@ -23,7 +24,7 @@ def test_method_calls():
 
     with specan:
         specan.trigger()
-        
+
         values = specan.fetch().values
         assert np.allclose(values, SPECAN_TRACE)
 

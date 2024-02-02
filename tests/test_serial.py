@@ -1,5 +1,6 @@
+
 import labbench as lb
-import pytest
+
 
 def test_serial_device():
     TEST_STRING = b'hello'

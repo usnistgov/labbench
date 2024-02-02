@@ -155,4 +155,5 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401", "F403", "E402"]
+"**/*.py" = ["EM102","G004"]
 

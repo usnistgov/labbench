@@ -1,6 +1,7 @@
+import pytest
+
 import labbench as lb
 from labbench import paramattr as attr
-import pytest
 
 lb.util.force_full_traceback(True)
 
@@ -20,7 +21,6 @@ class Shell_Python(lb.ShellBackend):
 def test_shell_options_from_keyed_bool():
     REMAP = {True: 'yes', False: 'no'}
     class ShellCopy(lb.ShellBackend):
-        ...
         recursive: bool = attr.value.bool(False, key='-R')
 
     cp = ShellCopy(recursive=True)
@@ -29,14 +29,13 @@ def test_shell_options_from_keyed_bool():
 
 def test_shell_options_from_keyed_str():
     class DiskDuplicate(lb.ShellBackend):
-        ... # other options
         block_size: str = attr.value.str('1M', key='bs')
 
     dd = DiskDuplicate()
     dd.block_size = '1024k'
 
     assert tuple(lb.shell_options_from_keyed_values(dd, join_str='=')) == ('bs=1024k',)
-    assert tuple(lb.shell_options_from_keyed_values(dd)) == ('bs', '1024k',)    
+    assert tuple(lb.shell_options_from_keyed_values(dd)) == ('bs', '1024k',)
 
 def test_python_print():
     TEST_STRING = 'hello world'
@@ -46,7 +45,7 @@ def test_python_print():
     assert python() == f'{TEST_STRING}\n'.encode()
 
     python.command = f'import sys; print("{TEST_STRING}", file=sys.stderr)'
-    assert python() == ''.encode()
+    assert python() == b''
 
     python.command = f'import sys; print("{TEST_STRING}", file=sys.stderr)'
     with pytest.raises(ChildProcessError):

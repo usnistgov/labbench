@@ -1,40 +1,53 @@
 import labbench as lb
 from labbench import paramattr as attr
+import pytest
 
+lb.util.force_full_traceback(True)
 
 class Shell_Python(lb.ShellBackend):
-    FLAGS = {'command': '-c'}
-
-    binary_path = attr.value.Path('python', sets=False, inherit=True)
-    path: str = attr.value.Path(
-        None, must_exist=True, help='path to a python script file'
-    )
+    script_path: str = attr.value.Path(None, must_exist=True, help='path to a python script file')
     command: str = attr.value.str(None, key='-c', help='execute a python command')
 
-    def get_flags(self):
-        pass
+    # @attr.kwargs_to_self('script_path', 'command')
+    def __call__(self, **kwargs):
+        argv = ['python']
+        if self.script_path is not None:
+            argv += [self.script_path]
+        argv += lb.shell_options_from_keyed_values(self)
 
-    # def get_arg_list(self):
-    #     [for name in attr._bases.list_value_attrs(self)]
+        return self.run(*argv, **kwargs)
 
-    # def __call__(self, *arg_list, **flags):
+def test_shell_options_from_keyed_bool():
+    REMAP = {True: 'yes', False: 'no'}
+    class ShellCopy(lb.ShellBackend):
+        ...
+        recursive: bool = attr.value.bool(False, key='-R')
 
-    #     return self.run(
-    #         FLAGS,
-    #         **kwargs
-    #     )
+    cp = ShellCopy(recursive=True)
+    assert tuple(lb.shell_options_from_keyed_values(cp, hide_false=True)) == ('-R',)
+    assert tuple(lb.shell_options_from_keyed_values(cp, remap=REMAP)) == ('-R', 'yes')
 
+def test_shell_options_from_keyed_str():
+    class DiskDuplicate(lb.ShellBackend):
+        ... # other options
+        block_size: str = attr.value.str('1M', key='bs')
 
-# def test_python_print():
-#     TEST_STRING = 'hello world'
-#     python = Shell_Python()
+    dd = DiskDuplicate()
+    dd.block_size = '1024k'
 
-#     python.command = f'print("{TEST_STRING}")'
-#     assert python() == f'{TEST_STRING}\n'.encode()
+    assert tuple(lb.shell_options_from_keyed_values(dd, join_str='=')) == ('bs=1024k',)
+    assert tuple(lb.shell_options_from_keyed_values(dd)) == ('bs', '1024k',)    
 
-#     python.command = f'import sys; print("{TEST_STRING}", file=sys.stderr)'
-#     assert python.run() == ''.encode()
+def test_python_print():
+    TEST_STRING = 'hello world'
+    python = Shell_Python()
 
-#     python.command = f'import sys; print("{TEST_STRING}", file=sys.stderr)'
-#     with pytest.raises(ChildProcessError):
-#         python.run(check_stderr=True)
+    python.command = f'print("{TEST_STRING}")'
+    assert python() == f'{TEST_STRING}\n'.encode()
+
+    python.command = f'import sys; print("{TEST_STRING}", file=sys.stderr)'
+    assert python() == ''.encode()
+
+    python.command = f'import sys; print("{TEST_STRING}", file=sys.stderr)'
+    with pytest.raises(ChildProcessError):
+        python(check_stderr=True)

@@ -17,7 +17,7 @@ from threading import Event, Thread
 
 import serial
 import typing_extensions as typing
-from typing_extensions import Union, ClassVar
+from typing_extensions import Union, ClassVar, Literal
 
 from . import paramattr as attr
 from . import util
@@ -32,6 +32,97 @@ else:
     psutil = util.lazy_import('psutil')
     pyvisa = util.lazy_import('pyvisa')
 
+
+def shell_options_from_keyed_values(
+    device: Device,
+    skip_none=True,
+    hide_false: bool = False,
+    join_str: Union[Literal[False], str] = False,
+    remap: dict = {},
+    converter: callable=str
+) -> list[str]:
+    """generate a list of command line argument strings based on
+    :module:`labbench.paramattr.value` descriptors in `device`.
+
+    Each of these descriptors defined with `key` may be treated as a command  
+    line option. Value descriptors are ignored when `key` is unset. The value
+    for each option is determined by fetching the corresponding attribute from
+    `device`.
+
+    The returned list of strings can be used to build the `argv` needed to run
+    shell commands using :class:`ShellBackend` or the `subprocess` module. 
+
+    Arguments:
+        device: the device containing values to broadcast into command-line arguments
+        skip_none: if True, no command-line argument string is generated for values that are unset in devices
+        hide_false: if True, boolean options are treated as a flag (e.g., this triggers argument strings are omitted for False values)
+        join_str: a string to use to join option (name, value) pairs, or False to generate as separate strings
+        remap: a dictionary of {python_value: string_value} pairs to accommodate special cases in string conversion
+        converter: function to use to convert the values to strings
+
+    Example:
+        Simple boolean options and flags:
+
+        >>> import labbench as lb
+        >>> class ShellCopy(ShellBackend):
+        ...     recursive: bool = attr.value.bool(False, key='-R')
+        >>> cp = ShellCopy(recursive=True)
+        >>> print(shell_options_from_keyed_values(cp, hide_false=True))
+        ['-R']
+        >>> print(shell_options_from_keyed_values(cp, remap={True: 'yes', False: 'no'}))
+        ['-R', 'yes']
+
+    Example:
+        A non-boolean option:
+        
+        >>> class DiskDuplicate(ShellBackend):
+        ...     block_size: str = attr.value.str('1M', key='bs')
+        >>> dd = DiskDuplicate()
+        >>> dd.block_size = '1024k'
+        >>> print(shell_options_from_keyed_values(dd, join_str='='))
+        ['bs','1024k']
+        >>> print(shell_options_from_keyed_values(dd, join_str='='))
+        ['bs=1024k']
+    """
+
+    argv = []
+    for name, attr_def in attr.get_class_attrs(device).items():
+        if not isinstance(attr_def, attr.value.Value) or attr_def.key in (None, attr.Undefined):
+            continue
+
+        py_value = getattr(device, name)
+
+        if not isinstance(attr_def.key, str):
+            attr_desc = attr_def.__repr__(owner=device)
+            raise TypeError(
+                f'flags defined as keys must have type str, but {attr_desc}.key '
+                f'has type {type(attr_def.key).__qualname__}'
+            )
+
+        if py_value is None:
+            if skip_none:
+                continue
+            else:
+                raise ValueError('None is an invalid flag argument value when skip_none is False')
+
+        elif attr_def._type is bool:
+            if hide_false:
+                str_args = [attr_def.key if py_value else None]
+            elif py_value in remap:
+                str_args = [attr_def.key, remap[py_value]]
+            else:
+                raise ValueError(f'specify hide_false=True or set remap[{py_value}] to enable boolean value mapping')
+
+        else:
+            py_value = remap.get(py_value, py_value)
+            str_args = [attr_def.key, converter(py_value)]
+
+        if join_str:
+            str_args = [join_str.join(str_args),]
+
+        argv += str_args
+
+    return argv
 
 class ShellBackend(Device):
     """Virtual device controlled by a shell command in another process.
@@ -49,11 +140,7 @@ class ShellBackend(Device):
     queued stdout.
     """
 
-    binary_path: Path = attr.value.Path(
-        default=None, allow_none=True, help='shell command', cache=True
-    )
-
-    timeout: float = attr.value.float(
+    background_timeout: float = attr.value.float(
         default=1,
         min=0,
         help='wait time after close before killing background processes',
@@ -74,11 +161,6 @@ class ShellBackend(Device):
                     'cannot change command line property trait traits during execution'
                 )
 
-        if not os.path.exists(self.binary_path):
-            raise OSError(
-                f'executable does not exist at resource=r"{self.binary_path}"'
-            )
-
         # a Queue for stdout
         self.backend = None
 
@@ -86,7 +168,7 @@ class ShellBackend(Device):
         self._stderr = Queue()
 
         # Monitor property trait changes
-        values = set(attr.list_value_attrs(self)).difference(dir(ShellBackend))
+        values = set(attr.list_value_attrs(self)) - dir(ShellBackend)
 
         attr.observe(self, check_state_change, name=tuple(values))
 
@@ -127,8 +209,8 @@ class ShellBackend(Device):
 
             return self._run_simple(*argv, check_return=check_return, timeout=timeout)
 
-    def _run_simple(self, *argv, check_return=False, timeout=None):
-        """Blocking execution of the binary at `self.binary_path`. If check=True, raise an exception
+    def _run_simple(self, *argv: list[str], check_return:bool=False, timeout:bool=None):
+        """Blocking execution of the command line strings specified by `argv`. If check=True, raise an exception
         on non-zero return code.
 
         Each command line argument in argv is either
@@ -144,12 +226,12 @@ class ShellBackend(Device):
             None?
         """
         if timeout is None:
-            timeout = self.timeout
+            timeout = self.background_timeout
 
-        return sp.run(self._commandline(argv), check=check_return, timeout=timeout)
+        return sp.run(argv, check=check_return, timeout=timeout)
 
-    def _run_piped(self, *argv, check_return=False, check_stderr=False, timeout=None):
-        """Blocking execution of the binary at `self.binary_path`, with a pipe to collect
+    def _run_piped(self, *argv: list[str], check_return=False, check_stderr=False, timeout=None):
+        """Blocking execution of the specified command line, with a pipe to collect
         stdout.
 
         Each command line argument in argv is either
@@ -161,14 +243,12 @@ class ShellBackend(Device):
         (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
 
         Returns:
-
             stdout
         """
         if timeout is None:
-            timeout = self.timeout
+            timeout = self.background_timeout
 
-        cmdl = self._commandline(*argv)
-        path = cmdl[0]
+        path = argv[0]
         try:
             rel = os.path.relpath(path)
             if len(rel) < len(path):
@@ -176,9 +256,9 @@ class ShellBackend(Device):
         except ValueError:
             pass
 
-        self._logger.debug(f"shell execute {' '.join(cmdl)!r}")
+        self._logger.debug(f"shell execute {' '.join(argv)!r}")
         cp = sp.run(
-            cmdl, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return
+            argv, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return
         )
         ret = cp.stdout
 
@@ -300,94 +380,9 @@ class ShellBackend(Device):
             )
 
         # Generate the commandline and spawn
-        cmdl = self._commandline(*argv)
-        self._logger.debug(f"background execute: {' '.join(cmdl)!r}")
+        self._logger.debug(f"background execute: {' '.join(argv)!r}")
         self.__kill = False
-        spawn(cmdl)
-
-    def _flags_to_argv(self, flags):
-        # find keys in flags that do not exist as value traits
-        unsupported = flags.keys() - attr._bases.list_value_attrs(self)
-        if len(unsupported) > 1:
-            raise KeyError(
-                f'flags point to value traits {unsupported} that do not exist in {self}'
-            )
-
-        argv = []
-        for name, flag_str in flags.items():
-            attr_def = attr.get_class_attrs(self)[name]
-            value = getattr(self, name)
-
-            if not isinstance(flag_str, str) and flag_str is not None:
-                raise TypeError(
-                    f'keys defined in {self} must be str (for a flag) or None (for no flag'
-                )
-
-            if value is None:
-                continue
-
-            elif attr_def._type is bool:
-                if flag_str is None:
-                    # this would require a remap parameter in value traits, which are not supported (should they be?)
-                    # (better to use string?)
-                    raise ValueError(
-                        'cannot map a Bool onto a string argument specified by None mapping'
-                    )
-
-                elif value:
-                    # trait_value is truey
-                    argv += [flag_str]
-                    continue
-
-                else:
-                    # trait_value is falsey
-                    continue
-
-            elif flag_str is None:
-                # do not add a flag
-
-                if value is None:
-                    # when trait_value is 'None', don't include this flag
-                    continue
-                else:
-                    argv += [str(value)]
-
-            elif isinstance(flag_str, str):
-                argv += [flag_str, str(value)]
-
-            else:
-                raise ValueError(
-                    'unexpected error condition (this should not be possible)'
-                )
-
-        return argv
-
-    def _commandline(self, *argv_in):
-        """return a new argv list in which dict instances have been replaced by additional
-        strings based on the traits in `self`. these dict instances should map {trait_name: cmdline_flag},
-        for example dict(force='-f') to map a boolean `self.force` trait value to the -f switch, or
-        dict(extra_arg=None) to indicate that `self.extra_arg` will be inserted without a switch if
-        `self.extra_arg` is not None.
-
-        Returns:
-
-            tuple of string
-        """
-
-        argv = [
-            self.binary_path,
-        ]
-
-        # Update trait with the flags
-        for item in argv_in:
-            if isinstance(item, str):
-                argv += [item]
-            elif isinstance(item, dict):
-                argv += self._flags_to_argv(item)
-            else:
-                raise TypeError(f'command line list item {item} has unsupported type')
-
-        return argv
+        spawn(argv)
 
     def read_stdout(self, wait_for=0):
         """Pop any standard output that has been queued by a background run (see `run`).
@@ -407,7 +402,7 @@ class ShellBackend(Device):
         try:
             n = 0
             while True:
-                line = self._stdout.get(wait_for > 0, timeout=self.timeout)
+                line = self._stdout.get(wait_for > 0, timeout=self.background_timeout)
                 if isinstance(line, Exception):
                     raise line
 

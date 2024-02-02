@@ -14,7 +14,6 @@ from .util import (
 
 util.force_full_traceback(True)
 
-
 from ._backends import (
     DotNetDevice,
     LabviewSocketInterface,
@@ -24,6 +23,7 @@ from ._backends import (
     TelnetDevice,
     VISADevice,
     Win32ComDevice,
+    shell_options_from_keyed_values,
     visa_default_resource_manager,
     visa_list_resources,
     visa_probe_devices,

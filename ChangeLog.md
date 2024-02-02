@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   defaults for the other paramattr keyword arguments from the paramattr in the parent
   of the owning class. This is meant to replace the role of `labbench.paramattr.adjusted`,
   which did not update the type hints properly for default values of Device constructors.
+- `lb.shell_options_from_keyed_values` has been separated from its private implementation in
+  `lb.ShellBackend`, and given options to better generalize its applicability. It generates
+  lists of command line option strings based on descriptors defined with `key`.
 
 ### Changed
 - Corrected bugs in the simplified display of tracebacks
@@ -17,6 +20,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Reduced module import time through better use of lazy loading
 - Fixed an argument passing bug in `labbench.VISADevice.query_ascii_values`
 - The default VISA resource manager is now '@ivi' if an underlying library is available
+- `labbench.ShellBackend` no longer supports dict arguments. Instead, use `lb.shell_options_from_keyed_values`
+  to generate a list of strings.
+- `labbench.ShellBackend` no longer has a `binary_path` configuration value. Users of `labbench.ShellBackend` should
+  now explicitly pass the binary name (either path or object in the system PATH) to `labbench.ShellBackend.run()`.
+  `resource` could also be used for this purpose in order to store and validate the path.
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs

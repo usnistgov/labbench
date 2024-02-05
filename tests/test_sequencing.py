@@ -57,7 +57,6 @@ class MyRack2(lb.Rack):
     inst1 = LaggyInstrument('a', delay=0.12)
     inst2 = LaggyInstrument('b', delay=0.06)
 
-
 # Acceptable error in delay time meaurement
 
 

@@ -14,7 +14,7 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
-from typing import ClassVar, Union
+from typing import Union
 
 import serial
 import typing_extensions as typing
@@ -22,7 +22,7 @@ from typing_extensions import Literal
 
 from . import paramattr as attr
 from . import util
-from ._device import Device, DisconnectedBackend
+from ._device import Device
 
 if typing.TYPE_CHECKING:
     import telnetlib
@@ -137,10 +137,10 @@ def shell_options_from_keyed_values(
 
 
 class ShellBackend(Device):
-    """Virtual device controlled by a shell command in another process.
+    """A wrapper for running shell commands.
 
-    Data can be captured from standard output, and standard error pipes, and
-    optionally run as a background thread.
+    This is a thin wrapper around the subprocess module. Data can be captured from standard output,
+    and standard error pipes, and optionally run as a background thread.
 
     After opening, `backend` is `None`. On a call to run(background=True), `backend`
     becomes is a subprocess instance. When EOF is reached on the executable's
@@ -190,7 +190,7 @@ class ShellBackend(Device):
         pipe=True,
         background=False,
         check_return=True,
-        check_stderr=False,
+        raise_on_stderr=False,
         respawn=False,
         timeout=None,
     ):
@@ -198,7 +198,7 @@ class ShellBackend(Device):
             return self._background_piped(
                 *argv,
                 check_return=check_return,
-                check_stderr=check_stderr,
+                raise_on_stderr=raise_on_stderr,
                 timeout=timeout,
                 respawn=respawn,
             )
@@ -210,14 +210,14 @@ class ShellBackend(Device):
             return self._run_piped(
                 *argv,
                 check_return=check_return,
-                check_stderr=check_stderr,
+                raise_on_stderr=raise_on_stderr,
                 timeout=timeout,
             )
         else:
             if background:
                 raise ValueError('background argument requires pipe=True')
-            if check_stderr:
-                raise ValueError('check_stderr requires pipe=True')
+            if raise_on_stderr:
+                raise ValueError('raise_on_stderr requires pipe=True')
 
             return self._run_simple(*argv, check_return=check_return, timeout=timeout)
 
@@ -245,8 +245,8 @@ class ShellBackend(Device):
         return sp.run(argv, check=check_return, timeout=timeout)
 
     def _run_piped(
-        self, *argv: list[str], check_return=False, check_stderr=False, timeout=None
-    ):
+        self, *argv: list[str], check_return: bool=False, raise_on_stderr: bool = False, timeout: Union[float,None]=None
+    ) -> None:
         """Blocking execution of the specified command line, with a pipe to collect
         stdout.
 
@@ -279,7 +279,7 @@ class ShellBackend(Device):
         ret = cp.stdout
 
         err = cp.stderr.strip().rstrip().decode()
-        if check_stderr and len(err) > 0:
+        if raise_on_stderr and len(err) > 0:
             raise ChildProcessError(err)
 
         if ret:
@@ -296,7 +296,7 @@ class ShellBackend(Device):
         return ret
 
     def _background_piped(
-        self, *argv, check_return=False, check_stderr=False, respawn=False, timeout=None
+        self, *argv, check_return=False, raise_on_stderr=False, respawn=False, timeout=None
     ):
         """Run the executable in the background (returning immediately while
         the executable continues running).
@@ -318,10 +318,6 @@ class ShellBackend(Device):
         Flag arguments are converted into a sequence of strings by (1) identifying the command line flag
         for each name as `self.flags[name]` (e.g., "-f"), (2) retrieving the value as getattr(self, name), and
         (3) *if* the value is not None, appending the flag to the list of arguments as appropriate.
-
-        Returns:
-
-            None
         """
 
         def stdout_to_queue(fd, cmdl):
@@ -387,7 +383,7 @@ class ShellBackend(Device):
 
             self.backend = proc
             Thread(target=lambda: stdout_to_queue(proc.stdout, cmdl)).start()
-            if check_stderr:
+            if raise_on_stderr:
                 Thread(target=lambda: stderr_to_exception(proc.stderr, cmdl)).start()
 
         if not self.isopen:
@@ -571,7 +567,7 @@ class LabviewSocketInterface(Device):
     """
 
     resource: str = attr.value.NetworkAddress(
-        default='127.0.0.1', accept_port=False, help='LabView VI host address'
+        default='127.0.0.1', accept_port=False, kw_only=False, help='LabView VI host address'
     )
     tx_port: int = attr.value.int(
         default=61551, help='TX port to send to the LabView VI'
@@ -653,10 +649,10 @@ class SerialDevice(Device):
         - backend (serial.Serial): control object, after open
     """
 
-    backend: ClassVar[Union[DisconnectedBackend, serial.Serial]]
-
-    resource = attr.value.str(
-        None, help='platform-dependent serial port address or URL', inherit=True
+    resource: str = attr.value.str(
+        cache=True,
+        kw_only=False,
+        help='platform-dependent serial port address or URL',
     )
 
     # Connection value traits
@@ -813,7 +809,6 @@ class SerialLoggingDevice(SerialDevice):
     poll_rate: float = attr.value.float(
         default=0.1, min=0, help='Data retreival rate from the device (in seconds)'
     )
-    data_format: bytes = attr.value.bytes(default=b'', help='Data format metadata')
     stop_timeout: float = attr.value.float(
         default=0.5, min=0, help='delay after `stop` before terminating run thread'
     )
@@ -925,8 +920,11 @@ class TelnetDevice(Device):
 
     # Connection value traits
     resource: str = attr.value.NetworkAddress(
-        default='127.0.0.1:23', help='server host address'
-    )
+        cache=True,
+        kw_only=False,
+        accept_port=True,
+        help='server host address',
+    )    
     timeout: float = attr.value.float(
         default=2, min=0, label='s', help='connection timeout'
     )
@@ -956,12 +954,13 @@ _pyvisa_resource_managers = {}
     query_fmt='{key}?', write_fmt='{key} {value}', remap={True: 'ON', False: 'OFF'}
 )
 class VISADevice(Device):
-    r"""A basic VISA device wrapper.
+    r"""A wrapper for VISA device automation.
 
     This exposes `pyvisa` instrument automation capabilities in a `labbench`
-    object, and includes support for automatic connections based on make and model.
+    object. Automatic connection based on make and model is supported.
 
-    Customized operation for specific instruments can be implemented by subclassing `VISADevice`.
+    Customized operation for specific instruments should be implemented in
+    subclasses.
 
     Examples:
 
@@ -997,9 +996,15 @@ class VISADevice(Device):
         backend (pyvisa.Resource): instance of a pyvisa instrument object (when open)
     """
 
-    # Settings
+    resource: str = attr.value.str(
+        default=None,
+        cache=True,
+        kw_only=False,
+        help='VISA resource addressing string for device connection',
+    )
+
     read_termination: str = attr.value.str(
-        default='\n', cache=True, help='end of line string to expect in query replies'
+        default='\n', cache=True, help='end-of-line string to delineate the end of ascii query replies'
     )
 
     write_termination: str = attr.value.str(
@@ -1055,7 +1060,7 @@ class VISADevice(Device):
         help='identity string reported by the instrument',
     )
 
-    @attr.property.dict(sets=False)
+    @attr.property.dict(sets=False, log=False)
     def status_byte(self):
         """instrument status decoded from '*STB?'"""
         code = int(self.query('*STB?'))

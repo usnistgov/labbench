@@ -78,7 +78,7 @@ class Email(core.Device):
     """
 
     resource: str = attr.value.NetworkAddress(
-        default='smtp.nist.gov', help='smtp server to use', cache=True
+        default='smtp.nist.gov', kw_only=False, help='smtp server to use', cache=True
     )
     port: int = attr.value.int(default=25, min=1, help='TCP/IP port', cache=True)
     sender: str = attr.value.str(

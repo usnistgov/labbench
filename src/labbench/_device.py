@@ -112,6 +112,29 @@ def log_paramattr_events(msg):
         device._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
+def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
+    """build a signature.Parameter from a ParamAttr.value"""
+    if attr_def.only and sys.version_info > (3, 10):
+        # Union[*attr_def.only] is sooo close
+        annotation = typing.Union.__getitem__(tuple(attr_def.only))
+    else:
+        annotation = attr_def._type
+
+    if attr_def.allow_none:
+        annotation = typing.Union[annotation, None]
+
+    if attr_def.kw_only:
+        kind = inspect.Parameter.KEYWORD_ONLY
+    else:
+        kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
+
+    return inspect.Parameter(
+        attr_def.name,
+        kind=kind,
+        default=attr_def.default,
+        annotation=annotation,
+    )
+
 @typing.dataclass_transform(
     kw_only_default=True,
     eq_default=False,
@@ -119,19 +142,17 @@ def log_paramattr_events(msg):
 )
 class DeviceDataClass(HasParamAttrs, util.Ownable):
     @typing.overload
-    def __init__(self, **values):
+    def __init__(self, *args, **values):
         ...
 
-    def __init__(self, resource=Undefined, **values):
+    def __init__(self, *args, **kwargs):
         """Update default values with these arguments on instantiation."""
 
-        if resource is Undefined:
-            values['resource'] = type(self).resource.default
-        else:
-            values['resource'] = resource
-
-        # validate presence of required arguments
-        inspect.signature(self.__init__).bind(**values)
+        if hasattr(type(self), 'resource'):
+            print(type(self).resource.kw_only)
+        print(self.__init__.__signature__, args, kwargs)
+        # validate and apply args and kwargs into a single dict by argument name
+        values = inspect.signature(self.__init__).bind(*args, **kwargs).arguments
 
         super().__init__()
 
@@ -155,8 +176,8 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         self.backend = DisconnectedBackend(self)
 
-        # Instantiate property trait now. It needed to wait until this point, after values are fully
-        # instantiated, in case property trait implementation depends on values
+        # Instantiate property trait now. It needed to wait until after values are fully
+        # instantiated to support paramattr implementation that depends on values
         self.open = self.__open_wrapper__
         self.close = self.__close_wrapper__
 
@@ -165,29 +186,20 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
     def __init_subclass__(cls):
         super().__init_subclass__()
         cls.__annotations__ = typing.get_type_hints(cls)
-        cls.__update_signature__()
+        cls.__set_signature__()
 
     @classmethod
     @util.hide_in_traceback
-    def __update_signature__(cls):
+    def __set_signature__(cls):
         # Generate a signature for documentation and code autocomplete
-        params = [
-            inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),
-            inspect.Parameter(
-                'resource',
-                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                default=cls.resource.default,
-                annotation=cls.resource._type,
-            ),
-        ]
+        params = [inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD)]
 
-        # generate and apply the sequence of call signature parameters
-        constructor_attrs = []
-        for name, hint in typing.get_type_hints(cls).items():
-            if typing.get_origin(hint) is typing.ClassVar:
-                continue
+        non_kw_only_attrs = []
+        kw_only_attrs = []
+
+        # validate types and classify by kw_only
+        for name in typing.get_type_hints(cls).keys():
             attr_def = getattr(cls, name)
-            constructor_attrs.append(attr_def)
 
             if not isinstance(attr_def, attr.value.Value):
                 annot_desc = f'{name}: {cls.__annotations__[name].__name__}'
@@ -195,38 +207,28 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 raise TypeError(
                     f'only labbench.paramattr.value descriptors may be annotated in labbench Device classes, but "{annot_desc}" annotates {wrong_type!r}'
                 )
+            # TODO: validate compatibility of the type hint against the paramattr type?
 
-            elif name == 'resource':
-                # defined above for its POSITIONAL_OR_KEYWORD special casing
-                continue
-
+            if attr_def.kw_only:
+                kw_only_attrs.append(attr_def)
             else:
-                if attr_def.only and sys.version_info > (3, 10):
-                    # Union[*attr_def.only] is sooo close
-                    annotation = typing.Union.__getitem__(tuple(attr_def.only))
-                else:
-                    annotation = attr_def._type
+                non_kw_only_attrs.append(attr_def)
 
-                if attr_def.allow_none:
-                    annotation = typing.Union[annotation, None]
+        for attr_def in non_kw_only_attrs:
+            params.append(attr_def_to_parameter(attr_def))
 
-                params.append(
-                    inspect.Parameter(
-                        name,
-                        kind=inspect.Parameter.KEYWORD_ONLY,
-                        default=attr_def.default,
-                        annotation=annotation,
-                    )
-                )
+        for attr_def in kw_only_attrs:
+            params.append(attr_def_to_parameter(attr_def))
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
         cls.__init__ = util.copy_func(cls.__init__)
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = ''.join(
-            [f'    {t.name}: {t.doc(as_argument=True)}\n' for t in constructor_attrs]
-        )
+        value_docs = ''.join([
+            f'    {t.name}: {t.doc(as_argument=True)}\n'
+            for t in (non_kw_only_attrs + kw_only_attrs)
+        ])
         cls.__init__.__doc__ = f'\nArguments:\n{value_docs}'
 
 
@@ -257,43 +259,22 @@ class Device(DeviceDataClass):
 
     """
 
-    resource: str = attr.value.str(
-        default=None,
-        allow_none=True,
-        cache=True,
-        kw_only=False,
-        help='device address or URI',
-    )
-
-    """ Container for property trait traits in a Device. Getting or setting property trait traits
-        triggers live updates: communication with the device to get or set the
-        value on the Device. Therefore, getting or setting property trait traits
-        needs the device to be connected.
-
-        To set a property trait value inside the device, use normal python assigment::
-
-            device.parameter = value
-
-        To get a property trait value from the device, you can also use it as a normal python variable::
-
-            variable = device.parameter + 1
-    """
     backend = DisconnectedBackend(None)
-    """ .. this attribute is some reference to a controller for the device.
+    """ this attribute is some reference to a controller for the device.
         it is to be set in `connect` and `disconnect` by the subclass that implements the backend.
     """
 
-    # Backend classes may optionally overload these, and do not need to call the parents
-    # defined here
     def open(self):
-        """Backend implementations overload this to open a backend
-        connection to the resource.
+        """Backend implementations may overload this to open a backend
+        connection to the resource. This will be called *without*
+        super().open().
         """
         attr.observe(self, log_paramattr_events)
 
     def close(self):
         """Backend implementations must overload this to disconnect an
         existing connection to the resource encapsulated in the object.
+        This will be called *without* super().close().
         """
         self.backend = DisconnectedBackend(self)
         self.isopen

@@ -6,8 +6,8 @@ from labbench import paramattr as attr
 lb.util.force_full_traceback(True)
 
 class Shell_Python(lb.ShellBackend):
-    script_path: str = attr.value.Path(None, must_exist=True, help='path to a python script file')
-    command: str = attr.value.str(None, key='-c', help='execute a python command')
+    script_path: str = attr.value.Path(default=None, must_exist=True, help='path to a python script file')
+    command: str = attr.value.str(default=None, key='-c', help='execute a python command')
 
     # @attr.kwargs_to_self('script_path', 'command')
     def __call__(self, **kwargs):
@@ -24,6 +24,8 @@ def test_shell_options_from_keyed_bool():
         recursive: bool = attr.value.bool(False, key='-R')
 
     cp = ShellCopy(recursive=True)
+    Shell_Python()
+    
     assert tuple(lb.shell_options_from_keyed_values(cp, hide_false=True)) == ('-R',)
     assert tuple(lb.shell_options_from_keyed_values(cp, remap=REMAP)) == ('-R', 'yes')
 
@@ -49,4 +51,4 @@ def test_python_print():
 
     python.command = f'import sys; print("{TEST_STRING}", file=sys.stderr)'
     with pytest.raises(ChildProcessError):
-        python(check_stderr=True)
+        python(raise_on_stderr=True)

@@ -24,7 +24,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   to generate a list of strings.
 - `labbench.ShellBackend` no longer has a `binary_path` configuration value. Users of `labbench.ShellBackend` should
   now explicitly pass the binary name (either path or object in the system PATH) to `labbench.ShellBackend.run()`.
-  `resource` could also be used for this purpose in order to store and validate the path.
+- The existence of the `resource` value descriptor has been removed from `labbench.Device`, and is now only
+  included explicitly in subclasses that require connection information
+- All `labbench.paramattr.value` descriptors now support the `kw_only` argument. For descriptors that are annotated
+  in owning classes for use as constructor argument, this determines whether the argument should be treated as
+  keyword-only (as opposed to "keyword or positional" that allows positional arguments).
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs

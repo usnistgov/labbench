@@ -60,7 +60,7 @@ class MungerBase(core.Device):
     """
 
     resource: Path = attr.value.Path(
-        allow_none=True, help='base directory for all data'
+        allow_none=True, kw_only=False, help='base directory for all data'
     )
     text_relational_min: int = attr.value.int(
         default=1024,

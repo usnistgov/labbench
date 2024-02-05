@@ -203,13 +203,10 @@ def test_constructor():
     # check Device signature
     params = inspect.signature(Device).parameters
 
-    assert tuple(params.keys()) == (
-        'resource',
-        'number',
-    ), 'constructor keyword argument names'
+    assert tuple(params.keys()) == ('number',), 'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]
-    assert tuple(defaults) == (lb.Device.resource.default, DEFAULT_VALUE)
+    assert tuple(defaults) == (DEFAULT_VALUE,)
 
 
 def test_adjusted_constructor():
@@ -230,13 +227,10 @@ def test_adjusted_constructor():
     params = inspect.signature(Child).parameters
 
     print('***', inspect.signature(Child))
-    assert tuple(params.keys()) == (
-        'resource',
-        'number',
-    ), 'constructor keyword argument names'
+    assert tuple(params.keys()) == ('number',), 'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]
-    assert tuple(defaults) == (lb.Device.resource.default, NEW_DEFAULT)
+    assert tuple(defaults) == (NEW_DEFAULT,)
 
     d = Child()
     assert d.number == NEW_DEFAULT
@@ -259,14 +253,10 @@ def test_adjusted_constructor_posarg():
     # check Device signature
     params = inspect.signature(Child).parameters
 
-    print('***', inspect.signature(Child))
-    assert tuple(params.keys()) == (
-        'resource',
-        'number',
-    ), 'constructor keyword argument names'
+    assert tuple(params.keys()) == ('number',), 'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]
-    assert tuple(defaults) == (lb.Device.resource.default, NEW_DEFAULT)
+    assert tuple(defaults) == (NEW_DEFAULT,)
 
     d = Child()
     assert d.number == NEW_DEFAULT

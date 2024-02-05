@@ -555,6 +555,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             '_defaults',
             '_keywords',
             '_positional',
+            '__annotations__'
         ]
 
     # Descriptor methods (called automatically by the owning class or instance)
@@ -849,15 +850,33 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
 
 class Value(ParamAttr[T]):
+    """represent a single parameter attribute in instances of the owning class.
+
+    Compared to simple assignment of parameters, this implements type validation,
+    simple access control, and enables tracking/recording by UIs or automatic data loggers.
+
+    Arguments:
+        default: the initial value when the owning class is instantiated
+        key: specify automatic implementation with the Device (backend-specific)
+        help: the ParamAttr docstring
+        label: a label for the quantity, such as units
+        sets: True if the attribute supports writes
+        gets: True if the attribute supports reads
+        cache: if True, interact with the device only once, then return copies (state attribute only)
+        only: value allowlist; others raise ValueError
+        allow_none: permit None values in addition to the specified type
+        log: whether to emit logging/UI notifications when the value changes
+        inherit: if True, use the definition in a parent class as defaults
+        kw_only: whether to force keyword-only when annotated as a constructor argument in the owner
+    """
     default: T = field[T](Undefined, kw_only=False)  # type: ignore
     allow_none: Union[bool, None] = None
     key: Any = None
+    kw_only: bool = True
 
     ROLE = 'value'
 
     def __init__(self, *args, **kws):
-        # kw_only is for the type checker only
-        kws.pop('kw_only', None)
         super().__init__(*args, **kws)
 
         if self.inherit and not (len(args) > 0 or 'default' in kws):

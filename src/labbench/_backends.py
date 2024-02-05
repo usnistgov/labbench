@@ -5,6 +5,7 @@ import importlib
 import inspect
 import logging
 import os
+import platform
 import select
 import socket
 import subprocess as sp
@@ -370,15 +371,21 @@ class ShellBackend(Device):
             if self.running():
                 raise Exception('already running')
 
-            si = sp.STARTUPINFO()
-            si.dwFlags |= sp.STARTF_USESHOWWINDOW
+            if platform.system().lower() == 'windows':
+                si = sp.STARTUPINFO()
+                si.dwFlags |= sp.STARTF_USESHOWWINDOW
+                platform_flags = {
+                    'startupinfo': si,
+                    'creationflags': sp.CREATE_NEW_PROCESS_GROUP
+                }
+            else:
+                platform_flags = {}
 
             proc = sp.Popen(
                 list(cmdl),
                 stdout=sp.PIPE,
-                startupinfo=si,
-                creationflags=sp.CREATE_NEW_PROCESS_GROUP,
                 stderr=sp.PIPE,
+                **platform_flags
             )
 
             self.backend = proc

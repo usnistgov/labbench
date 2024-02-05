@@ -278,7 +278,10 @@ class Device(DeviceDataClass):
         """
         self.backend = DisconnectedBackend(self)
         self.isopen
-        attr.unobserve(self, log_paramattr_events)
+        try:
+            attr.unobserve(self, log_paramattr_events)
+        except KeyError:
+            pass
 
     @util.hide_in_traceback
     @wraps(open)

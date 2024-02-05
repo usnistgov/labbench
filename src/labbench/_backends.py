@@ -180,7 +180,7 @@ class ShellBackend(Device):
         self._stderr = Queue()
 
         # Monitor property trait changes
-        values = set(attr.list_value_attrs(self)) - dir(ShellBackend)
+        values = set(attr.list_value_attrs(self)) - set(dir(ShellBackend))
 
         attr.observe(self, check_state_change, name=tuple(values))
 

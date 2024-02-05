@@ -559,6 +559,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         ]
 
     # Descriptor methods (called automatically by the owning class or instance)
+    @util.hide_in_traceback
     def __set_name__(self, owner_cls, name):
         """Called on owner class instantiation (python object protocol)"""
 
@@ -578,7 +579,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
                 owner_name = owner_cls.__qualname__
                 raise TypeError(
                     f'cannot inherit defaults for {owner_name}.{name} '
-                    f'because {name} is not defined in any parent class'
+                    f'because {name} is not defined in any {owner_name} parent'
                 )
 
             # if the parent class defines this paramattr, and it

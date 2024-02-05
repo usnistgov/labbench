@@ -32,12 +32,23 @@ def test_shell_options_from_keyed_bool():
 def test_shell_options_from_keyed_str():
     class DiskDuplicate(lb.ShellBackend):
         block_size: str = attr.value.str('1M', key='bs')
-
+        
     dd = DiskDuplicate()
     dd.block_size = '1024k'
 
     assert tuple(lb.shell_options_from_keyed_values(dd, join_str='=')) == ('bs=1024k',)
     assert tuple(lb.shell_options_from_keyed_values(dd)) == ('bs', '1024k',)
+
+def test_shell_options_with_hidden_values():
+    class Command(lb.ShellBackend):
+        c1: str = attr.value.str(None, key='key1')
+        c2: str = attr.value.str('hi', key='key2')
+        c3: bool = attr.value.bool(False, key='key3')
+        
+    command = Command()
+    # dd.block_size = '1024k'
+
+    assert tuple(lb.shell_options_from_keyed_values(command, skip_none=True, hide_false=True)) == ('key2', 'hi')
 
 def test_python_print():
     TEST_STRING = 'hello world'

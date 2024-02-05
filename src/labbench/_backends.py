@@ -114,7 +114,7 @@ def shell_options_from_keyed_values(
 
         elif attr_def._type is bool:
             if hide_false:
-                str_args = [attr_def.key if py_value else None]
+                str_args = [attr_def.key] if py_value else []
             elif py_value in remap:
                 str_args = [attr_def.key, remap[py_value]]
             else:

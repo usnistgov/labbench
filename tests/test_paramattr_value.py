@@ -61,6 +61,8 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     uri = attr.value.NetworkAddress('127.0.0.1', accept_port=False)
     uri_port = attr.value.NetworkAddress('127.0.0.1')
 
+class MixIn(attr.HasParamAttrs):
+    extra = attr.value.int(default=5)
 
 class AdjustedTestDevice(StoreTestDevice):
     """adjusted values in inherited devices"""
@@ -121,6 +123,14 @@ def opened_device():
     yield device
     device.close()
 
+@pytest.fixture
+def opened_mixin_device():
+    class Device(StoreTestDevice, MixIn):
+        pass
+    device = Device()
+    device.open()
+    yield device
+    device.close()
 
 @pytest.fixture
 def opened_adjusted_device():
@@ -193,6 +203,36 @@ def test_default_values(opened_device, role_type):
                 attr_def.validate(attr_def.default) == value
             ), f'initial value type of {attr_def.name}'
 
+def test_mixin_default_types(opened_mixin_device, role_type):
+    for attr_def in opened_mixin_device.get_attr_defs().values():
+        if not isinstance(attr_def, role_type):
+            continue
+
+        value = getattr(opened_mixin_device, attr_def.name)
+
+        if attr_def.allow_none:
+            allow_types = (type(None), attr_def._type)
+        else:
+            allow_types = (attr_def._type,)
+
+        if issubclass(attr_def._type, Number):
+            allow_types = allow_types + (Number,)
+
+        assert issubclass(type(value), allow_types), f'pythonic type of {attr_def.name}'
+
+
+def test_mixin_default_values(opened_mixin_device, role_type):
+    for attr_def in opened_mixin_device.get_attr_defs().values():
+        if not isinstance(attr_def, role_type):
+            continue
+
+        value = getattr(opened_mixin_device, attr_def.name)
+        if value is None:
+            assert value == attr_def.default, f'default None value of {attr_def.name}'
+        else:
+            assert (
+                attr_def.validate(attr_def.default) == value
+            ), f'initial value type of {attr_def.name}'
 
 def test_constructor():
     DEFAULT_VALUE = 4

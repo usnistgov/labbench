@@ -297,9 +297,8 @@ class Device(DeviceDataClass):
         self.backend = None
 
         try:
-            for opener in util.find_methods_in_mro(self.__class__, 'open', Device)[
-                ::-1
-            ]:
+            methods = util.find_methods_in_mro(self.__class__, 'open', Device)
+            for opener in methods[::-1]:
                 opener(self)
         except BaseException:
             self.backend = DisconnectedBackend(self)
@@ -325,33 +324,34 @@ class Device(DeviceDataClass):
 
         methods = util.find_methods_in_mro(self.__class__, 'close', Device)
 
-        all_ex = []
+        all_exc_info = []
         for closer in methods:
             try:
                 closer(self)
             except BaseException:
-                all_ex.append(sys.exc_info())
+                all_exc_info.append(sys.exc_info())
 
         try:
             # Print tracebacks for any suppressed exceptions
-            for ex in all_ex[::-1]:
+            for exc_info in all_exc_info[::-1]:
                 # If ThreadEndedByMaster was raised, assume the error handling in
                 # util.concurrently will print the error message
-                if ex[0] is not util.ThreadEndedByMaster:
-                    depth = len(tuple(traceback.walk_tb(ex[2])))
-                    traceback.print_exception(*ex, limit=-(depth - 1))
-                    sys.stderr.write('(Exception suppressed to continue close)\n\n')
+                if exc_info[0] is util.ThreadEndedByMaster:
+                    continue
+                depth = len(tuple(traceback.walk_tb(exc_info[2])))
+                traceback.print_exception(*exc_info, limit=-(depth - 1))
+                sys.stderr.write('(Exception suppressed to continue close)\n\n')
 
             self.isopen
 
             self._logger.debug('closed')
         finally:
-            if len(all_ex) > 0:
-                ex = util.ConcurrentException(
+            if len(all_exc_info) > 0:
+                exc_info = util.ConcurrentException(
                     f'multiple exceptions while closing {self}'
                 )
-                ex.thread_exceptions = all_ex
-                raise ex
+                exc_info.thread_exceptions = all_exc_info
+                raise exc_info
 
     @util.hide_in_traceback
     def __enter__(self):

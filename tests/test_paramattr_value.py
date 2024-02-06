@@ -226,7 +226,6 @@ def test_adjusted_constructor():
     # check Device signature
     params = inspect.signature(Child).parameters
 
-    print('***', inspect.signature(Child))
     assert tuple(params.keys()) == ('number',), 'constructor keyword argument names'
 
     defaults = [p.default for p in params.values()]

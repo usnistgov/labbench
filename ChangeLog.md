@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - All `labbench.paramattr.value` descriptors now support the `kw_only` argument. For descriptors that are annotated
   in owning classes for use as constructor argument, this determines whether the argument should be treated as
   keyword-only (as opposed to "keyword or positional" that allows positional arguments).
+- multiple inheritance is now supported for paramattr descriptors in `labbench.Device` and `labbench.paramattr.HasParamAttrs` 
 
 ### Deprecated
 - `labbench.paramattr.adjusted`, due to type hinting bugs

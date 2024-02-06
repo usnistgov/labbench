@@ -69,6 +69,8 @@ def get_owner_store(obj: HasParamAttrs) -> HasParamAttrsInstInfo:
 def get_owner_meta(
     obj: Union[HasParamAttrs, type[HasParamAttrs]],
 ) -> HasParamAttrsClsInfo:
+    if not issubclass(type(obj), (HasParamAttrsMeta,HasParamAttrs)):
+        return None
     return obj._attr_defs
 
 
@@ -403,7 +405,7 @@ class HasParamAttrsClsInfo:
         return [k for k, v in self.attrs.items() if isinstance(v, Property)]
 
     @classmethod
-    def _copy_from(cls, owner_cls: type[HasParamAttrs]):
+    def copy_from(cls, owner_cls: type[HasParamAttrs]):
         obj = cls(
             attrs={},
             key_adapter=get_owner_meta(owner_cls).key_adapter,
@@ -420,12 +422,23 @@ class HasParamAttrsMeta(type):
         definitions in subclasses.
         """
         ns = dict()
+
         if len(bases) >= 1:
-            cls_info = ns['_attr_defs'] = HasParamAttrsClsInfo._copy_from(bases[0])
-            ns.update(cls_info.attrs)
+            attrs = {}
+
+            # multiple inheritance: pull in other paramattr definitions
+            for base in bases[::-1]:
+                if issubclass(base, HasParamAttrs):
+                    cls_info = HasParamAttrsClsInfo.copy_from(base)
+                    attrs.update(cls_info.attrs)
+
+            cls_info.attrs = attrs
+            ns['_attr_defs'] = cls_info
+            #ns.update(attrs, _attr_defs=cls_info)
             return ns
         else:
             ns['_attr_defs'] = HasParamAttrsClsInfo(key_adapter=KeyAdapterBase())
+
         return ns
 
 
@@ -1737,7 +1750,7 @@ def unobserve(obj, handler):
         else:
             ex = None
         if ex:
-            raise ValueError(f'{handler} was not registered to observe {obj}')
+            raise KeyError(f'{handler} was not registered to observe {obj}')
     else:
         raise TypeError('object to unobserve must be an instance of Device')
 

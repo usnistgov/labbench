@@ -377,7 +377,7 @@ class excepthook:
     def __call__(
         cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType
     ):
-        return cls.sys_excepthook(*exc_info.filter(type, evalue, traceback))
+        return cls.sys_excepthook(*exc_info.filter(type, evalue, tb))
 
 
 if not isinstance(sys.excepthook, excepthook):

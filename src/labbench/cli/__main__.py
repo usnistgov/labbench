@@ -351,14 +351,14 @@ def open(config_dir, verbose=False):
     help="""Probe available VISA device connections.
 
     The pyvisa resource manager will be RESOURCE_MANAGER. This should be one of
-    @ivi, @sim, or @py. If unspecified, the default is @py.
+    @ivi, @sim-labbench, or @py. If unspecified, the default is @py.
     """,
 )
 @click.argument(
     'resource_manager',
     default=None,
     required=False,
-    type=str,  # , help="name of the pyvisa resource manager (@ivi, @sim, or @py)", default='@py'
+    type=str,  # , help="name of the pyvisa resource manager (@ivi, @sim-labbench, or @py)", default='@py'
 )
 @click.option(
     '--stubs',

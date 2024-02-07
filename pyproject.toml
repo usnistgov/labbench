@@ -102,6 +102,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/labbench"]
 
+[tool.hatch.build.targets.sdist]
+packages = ["src/labbench"]
+
 [tool.hatch.version]
 path = "src/labbench/_version.py"
 

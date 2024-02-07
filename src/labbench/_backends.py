@@ -1505,7 +1505,10 @@ def _visa_probe_resource(
 
         try:
             identity, read_termination = probe_read_termination()
-            make, model, serial, rev = _visa_parse_identity(identity)
+            try:
+                make, model, serial, *rev = _visa_parse_identity(identity)
+            except ValueError:
+                continue
 
             device.read_termination = read_termination
             device.make = make

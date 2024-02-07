@@ -44,7 +44,7 @@ This annotation notation gives users the ability to configure the device attribu
 To connect the device in this container together, the first step is to instantiate an object from the `Measuerement` class. Like all {py:class}`labbench.Device` objects, Rack objects all have `open` and `close` methods, which are called automatically by use of the `with` context manager block.
 
 ```{code-cell} ipython3
-lb.visa_default_resource_manager('@sim') # the simulated backend for these instruments
+lb.visa_default_resource_manager('@sim-labbench') # the simulated backend for these instruments
 lb.show_messages('debug')
 
 meas = Measurement(power_sensor=PowerSensor())

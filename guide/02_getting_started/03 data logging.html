@@ -8,7 +8,7 @@
     <title>Data Logging &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <script src="../../_static/documentation_options.js?v=5273b9ac"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
@@ -87,7 +87,7 @@
 <li><p>Automatic logging of simple scalar parameters of <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> objects that are defined with <a class="reference internal" href="../../labbench.paramattr.html#module-labbench.paramattr" title="labbench.paramattr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.paramattr</span></code></a></p></li>
 <li><p>Manual logging through simple dictionary mapping</p></li>
 <li><p>Consistent and automatic mapping from non-scalar types (<code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">numpy.array()</span></code>, long strings, files generated outside the data tree, etc.)</p></li>
-<li><p>Support for several output data types: <a class="reference internal" href="../../labbench.html#labbench.CSVLogger" title="labbench.CSVLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.CSVLogger</span></code></a>, <a class="reference internal" href="../../labbench.html#labbench.HDFLogger" title="labbench.HDFLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.HDFLogger</span></code></a>, and <a class="reference internal" href="../../labbench.html#labbench.SQLiteLogger" title="labbench.SQLiteLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.SQLiteLogger</span></code></a></p></li>
+<li><p>Support for several output data types: <a class="reference internal" href="../../labbench.html#labbench.CSVLogger" title="labbench.CSVLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.CSVLogger</span></code></a> and <a class="reference internal" href="../../labbench.html#labbench.SQLiteLogger" title="labbench.SQLiteLogger"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.SQLiteLogger</span></code></a></p></li>
 </ul>
 <section id="example-logging-device-objects">
 <h2>Example: Logging <code class="docutils literal notranslate"><span class="pre">Device</span></code> objects<a class="headerlink" href="#example-logging-device-objects" title="Link to this heading">¶</a></h2>
@@ -125,9 +125,217 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-22 14:36:44,260.260</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-22 14:36:44,260.260</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-01-22 14:36:46,172.172</span> • <span class=" -Color -Color-Blue">aggregator:</span> CSVLogger(&#39;d908ee6979c1792a&#39;) named &#39;db&#39; by introspection
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\r\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
+(self, *, git_commit_in: Optional[str] = None) () {&#39;git_commit_in&#39;: None}
+False
+(self, resource: Optional[pathlib.Path], *, text_relational_min: int = 1024, force_relational: list = [], relational_name_fmt: str = &#39;{id}&#39;, nonscalar_file_type: str = &#39;csv&#39;) (&#39;./23b60e148c4e0b3d&#39;,) {&#39;text_relational_min&#39;: 1024, &#39;force_relational&#39;: [&#39;host_log&#39;], &#39;nonscalar_file_type&#39;: &#39;csv&#39;}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL1::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::8::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL2::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x2468::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:2222::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::9::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL3::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x3692::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:3333::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::10::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x4444::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:4444::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+False
+(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:12,038.039</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:12,039.040</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 1)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
+    make, model, serial, rev = _visa_parse_identity(identity)
+ValueError: not enough values to unpack (expected 4, got 3)
+</pre></div>
+</div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ConcurrentException</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">14</span>
+<span class="g g-Whitespace">     </span><span class="mi">11</span> <span class="n">db</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">CSVLogger</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;./</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">bytes</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">12</span> <span class="n">db</span><span class="o">.</span><span class="n">observe_paramattr</span><span class="p">([</span><span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">])</span>
+<span class="ne">---&gt; </span><span class="mi">14</span> <span class="k">with</span> <span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span>
+<span class="g g-Whitespace">     </span><span class="mi">15</span>     <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">5.8e9</span><span class="p">,</span> <span class="mf">5.85e9</span><span class="p">,</span> <span class="mf">5.9e9</span><span class="p">):</span>
+<span class="g g-Whitespace">     </span><span class="mi">16</span>         <span class="n">analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">freq</span>
+
+<span class="nn">File ~/Documents/src/labbench/src/labbench/_backends.py:1125,</span> in <span class="ni">VISADevice.open</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1116</span> <span class="c1"># match the supplied (make, model) and/or treat self.resource as a serial number to match</span>
+<span class="g g-Whitespace">   </span><span class="mi">1117</span> <span class="n">search_desc</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">1118</span>     <span class="p">[</span>
+<span class="g g-Whitespace">   </span><span class="mi">1119</span>         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="si">!r}</span><span class="s1">&#39;</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1122</span>     <span class="p">]</span>
+<span class="g g-Whitespace">   </span><span class="mi">1123</span> <span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;resource&#39;</span><span class="p">,</span> <span class="s1">&#39;serial number&#39;</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1125</span> <span class="n">matches</span> <span class="o">=</span> <span class="n">visa_probe_devices</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1127</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="g g-Whitespace">   </span><span class="mi">1128</span>     <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">1129</span>         <span class="sa">f</span><span class="s1">&#39;could not open VISA device </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">!r}</span><span class="s1">: resource not specified, &#39;</span>
+<span class="g g-Whitespace">   </span><span class="mi">1130</span>         <span class="sa">f</span><span class="s1">&#39;and no devices were discovered matching </span><span class="si">{</span><span class="n">search_desc</span><span class="si">}</span><span class="s1">&#39;</span>
+<span class="g g-Whitespace">   </span><span class="mi">1131</span>     <span class="p">)</span>
+
+<span class="nn">File ~/Documents/src/labbench/src/labbench/_backends.py:1606,</span> in <span class="ni">visa_probe_devices</span><span class="nt">(target, skip_interfaces, open_timeout, timeout)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1598</span>     <span class="k">return</span> <span class="kc">True</span>
+<span class="g g-Whitespace">   </span><span class="mi">1600</span> <span class="n">calls</span> <span class="o">=</span> <span class="p">{</span>
+<span class="g g-Whitespace">   </span><span class="mi">1601</span>     <span class="n">res</span><span class="p">:</span> <span class="n">util</span><span class="o">.</span><span class="n">Call</span><span class="p">(</span><span class="n">_visa_probe_resource</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">open_timeout</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="s1">&#39;ascii&#39;</span><span class="p">)</span>
+<span class="nn">   1602     for res</span> in <span class="ni">visa_list_resources</span><span class="nt">()</span>
+<span class="g g-Whitespace">   </span><span class="mi">1603</span>     <span class="k">if</span> <span class="n">keep_interface</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1604</span> <span class="p">}</span>
+<span class="ne">-&gt; </span><span class="mi">1606</span> <span class="n">devices</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">concurrently</span><span class="p">(</span><span class="o">**</span><span class="n">calls</span><span class="p">,</span> <span class="n">catch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1608</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">devices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="g g-Whitespace">   </span><span class="mi">1609</span>     <span class="k">return</span> <span class="p">[]</span>
+
+<span class="ne">ConcurrentException</span>: PowerSensor(): 16 call(s) raised exceptions
 </pre></div>
 </div>
 </div>
@@ -146,68 +354,6 @@
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>analyzer_trace</th>
-      <th>sensor_reading</th>
-      <th>analyzer_center_frequency</th>
-      <th>sensor_frequency</th>
-      <th>sensor_trigger_count</th>
-      <th>db_host_time</th>
-      <th>db_host_log</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0/analyzer_trace.csv</td>
-      <td>-52.617</td>
-      <td>5.800000e+09</td>
-      <td>5.800000e+09</td>
-      <td>200</td>
-      <td>2024-01-22 14:36:46.285057</td>
-      <td>0/db_host_log.json</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>1/analyzer_trace.csv</td>
-      <td>-52.617</td>
-      <td>5.850000e+09</td>
-      <td>5.850000e+09</td>
-      <td>200</td>
-      <td>2024-01-22 14:36:46.396226</td>
-      <td>1/db_host_log.json</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>2/analyzer_trace.csv</td>
-      <td>-52.617</td>
-      <td>5.900000e+09</td>
-      <td>5.900000e+09</td>
-      <td>200</td>
-      <td>2024-01-22 14:36:46.512491</td>
-      <td>2/db_host_log.json</td>
-    </tr>
-  </tbody>
-</table>
-</div></div></div>
 </div>
 <p>This points us at scalar test conditions and results, and paths to paths to files containing for non-scalar data (arrays, tables, etc.) and long text strings. Examples here include the measurement trace from the spectrum analyzer (column <code class="docutils literal notranslate"><span class="pre">'analyzer_trace.csv'</span></code>), and the host log JSON file (<code class="docutils literal notranslate"><span class="pre">'host_log'</span></code>). For example:</p>
 <div class="cell docutils container">
@@ -216,89 +362,6 @@
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>frequency</th>
-      <th>power_spectral_density</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>5.795000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>5.795050e+09</td>
-      <td>-52.373</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>5.795101e+09</td>
-      <td>-52.724</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>5.795151e+09</td>
-      <td>-51.893</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>5.795201e+09</td>
-      <td>-52.270</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>195</th>
-      <td>5.804799e+09</td>
-      <td>-51.752</td>
-    </tr>
-    <tr>
-      <th>196</th>
-      <td>5.804849e+09</td>
-      <td>-53.065</td>
-    </tr>
-    <tr>
-      <th>197</th>
-      <td>5.804899e+09</td>
-      <td>-52.585</td>
-    </tr>
-    <tr>
-      <th>198</th>
-      <td>5.804950e+09</td>
-      <td>-51.861</td>
-    </tr>
-    <tr>
-      <th>199</th>
-      <td>5.805000e+09</td>
-      <td>-51.596</td>
-    </tr>
-  </tbody>
-</table>
-<p>200 rows × 2 columns</p>
-</div></div></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -309,215 +372,6 @@
 
 <span class="c1"># metadata[&#39;device_objects&#39;]</span>
 <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;field_name_sources&#39;</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;sensor_isopen&#39;: {&#39;object&#39;: &#39;sensor.isopen&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
-  &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor_resource&#39;: {&#39;object&#39;: &#39;sensor.resource&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as resource&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device address or URI&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_isopen&#39;: {&#39;object&#39;: &#39;analyzer.isopen&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
-  &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_resource&#39;: {&#39;object&#39;: &#39;analyzer.resource&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as resource&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device address or URI&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_log&#39;: {&#39;object&#39;: &#39;db.host.log&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.list() as log&gt;&#39;,
-  &#39;type&#39;: &#39;list&#39;,
-  &#39;help&#39;: &#39;\n\nGet the current host log contents.&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_munge_force_relational&#39;: {&#39;object&#39;: &#39;db.munge.force_relational&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.list(allow_none=False, default=[]) as force_relational&gt;&#39;,
-  &#39;type&#39;: &#39;list&#39;,
-  &#39;help&#39;: &#39;list of column names to always save as relational data&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_center_frequency&#39;: {&#39;object&#39;: &#39;analyzer.center_frequency&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.float(None) as center_frequency&gt;&#39;,
-  &#39;type&#39;: &#39;float&#39;,
-  &#39;help&#39;: &#39;input signal center frequency&#39;,
-  &#39;label&#39;: &#39;Hz&#39;},
- &#39;sensor_frequency&#39;: {&#39;object&#39;: &#39;sensor.frequency&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.float(None) as frequency&gt;&#39;,
-  &#39;type&#39;: &#39;float&#39;,
-  &#39;help&#39;: &#39;calibration frequency&#39;,
-  &#39;label&#39;: &#39;Hz&#39;},
- &#39;sensor_trigger_count&#39;: {&#39;object&#39;: &#39;sensor.trigger_count&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.int(None) as trigger_count&gt;&#39;,
-  &#39;type&#39;: &#39;int&#39;,
-  &#39;help&#39;: &#39;acquisition count&#39;,
-  &#39;label&#39;: &#39;samples&#39;},
- &#39;db_host_time&#39;: {&#39;object&#39;: &#39;db.host.time&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as time&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;\n\nGet a timestamp of the current time&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_isopen&#39;: {&#39;object&#39;: &#39;db.host.isopen&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
-  &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_munge_resource&#39;: {&#39;object&#39;: &#39;db.munge.resource&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.Path(None) as resource&gt;&#39;,
-  &#39;type&#39;: &#39;pathlib.Path&#39;,
-  &#39;help&#39;: &#39;base directory for all data&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_munge_isopen&#39;: {&#39;object&#39;: &#39;db.munge.isopen&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.bool() as isopen&gt;&#39;,
-  &#39;type&#39;: &#39;bool&#39;,
-  &#39;help&#39;: &#39;\n\n`True` if the backend is ready for use&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_munge_text_relational_min&#39;: {&#39;object&#39;: &#39;db.munge.text_relational_min&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.int(None) as text_relational_min&gt;&#39;,
-  &#39;type&#39;: &#39;int&#39;,
-  &#39;help&#39;: &#39;minimum size threshold that triggers storing text in a relational file&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_munge_relational_name_fmt&#39;: {&#39;object&#39;: &#39;db.munge.relational_name_fmt&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as relational_name_fmt&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;directory name format for data in each row keyed on column&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_munge_nonscalar_file_type&#39;: {&#39;object&#39;: &#39;db.munge.nonscalar_file_type&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as nonscalar_file_type&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;file format for non-scalar numerical data&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor_read_termination&#39;: {&#39;object&#39;: &#39;sensor.read_termination&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as read_termination&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;end of line string to expect in query replies&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor_write_termination&#39;: {&#39;object&#39;: &#39;sensor.write_termination&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as write_termination&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;end-of-line string to send after writes&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor_open_timeout&#39;: {&#39;object&#39;: &#39;sensor.open_timeout&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as open_timeout&gt;&#39;,
-  &#39;type&#39;: &#39;float&#39;,
-  &#39;help&#39;: &#39;timeout for opening a connection to the instrument&#39;,
-  &#39;label&#39;: &#39;s&#39;},
- &#39;sensor_timeout&#39;: {&#39;object&#39;: &#39;sensor.timeout&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as timeout&gt;&#39;,
-  &#39;type&#39;: &#39;float&#39;,
-  &#39;help&#39;: &#39;message response timeout&#39;,
-  &#39;label&#39;: &#39;s&#39;},
- &#39;sensor_make&#39;: {&#39;object&#39;: &#39;sensor.make&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as make&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device manufacturer name used to autodetect resource string&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor_model&#39;: {&#39;object&#39;: &#39;sensor.model&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as model&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device model used to autodetect resource string&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor_serial&#39;: {&#39;object&#39;: &#39;sensor.serial&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as serial&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;\n\ndevice-reported serial number&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor__revision&#39;: {&#39;object&#39;: &#39;sensor._revision&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _revision&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device revision information\n\ndevice-reported revision&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;sensor__identity&#39;: {&#39;object&#39;: &#39;sensor._identity&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _identity&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;identity string reported by the instrument&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_read_termination&#39;: {&#39;object&#39;: &#39;analyzer.read_termination&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as read_termination&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;end of line string to expect in query replies&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_write_termination&#39;: {&#39;object&#39;: &#39;analyzer.write_termination&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as write_termination&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;end-of-line string to send after writes&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_open_timeout&#39;: {&#39;object&#39;: &#39;analyzer.open_timeout&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as open_timeout&gt;&#39;,
-  &#39;type&#39;: &#39;float&#39;,
-  &#39;help&#39;: &#39;timeout for opening a connection to the instrument&#39;,
-  &#39;label&#39;: &#39;s&#39;},
- &#39;analyzer_timeout&#39;: {&#39;object&#39;: &#39;analyzer.timeout&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.float(None) as timeout&gt;&#39;,
-  &#39;type&#39;: &#39;float&#39;,
-  &#39;help&#39;: &#39;message response timeout&#39;,
-  &#39;label&#39;: &#39;s&#39;},
- &#39;analyzer_make&#39;: {&#39;object&#39;: &#39;analyzer.make&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as make&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device manufacturer name used to autodetect resource string&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_model&#39;: {&#39;object&#39;: &#39;analyzer.model&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as model&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device model used to autodetect resource string&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer_serial&#39;: {&#39;object&#39;: &#39;analyzer.serial&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as serial&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;\n\ndevice-reported serial number&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer__revision&#39;: {&#39;object&#39;: &#39;analyzer._revision&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _revision&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device revision information\n\ndevice-reported revision&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;analyzer__identity&#39;: {&#39;object&#39;: &#39;analyzer._identity&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as _identity&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;identity string reported by the instrument&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_resource&#39;: {&#39;object&#39;: &#39;db.host.resource&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as resource&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;device address or URI&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_commit_in&#39;: {&#39;object&#39;: &#39;db.host.git_commit_in&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.value.str(None) as git_commit_in&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;git commit on open() if run inside a git repo with this branch name&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_commit_id&#39;: {&#39;object&#39;: &#39;db.host.git_commit_id&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_commit_id&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;\n\nTry to determine the current commit hash of the current git repo&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_remote_url&#39;: {&#39;object&#39;: &#39;db.host.git_remote_url&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_remote_url&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;\n\nTry to identify the remote URL of the repository of the current git repo&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_hostname&#39;: {&#39;object&#39;: &#39;db.host.hostname&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as hostname&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;\n\nGet the name of the current host&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_browse_url&#39;: {&#39;object&#39;: &#39;db.host.git_browse_url&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_browse_url&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;\n\nURL for browsing the current git repository&#39;,
-  &#39;label&#39;: &#39;&#39;},
- &#39;db_host_git_pending_changes&#39;: {&#39;object&#39;: &#39;db.host.git_pending_changes&#39;,
-  &#39;paramattr&#39;: &#39;&lt;labbench.paramattr.property.str(None) as git_pending_changes&gt;&#39;,
-  &#39;type&#39;: &#39;str&#39;,
-  &#39;help&#39;: &#39;&#39;,
-  &#39;label&#39;: &#39;&#39;}}
 </pre></div>
 </div>
 </div>
@@ -538,149 +392,6 @@
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>analyzer_trace</th>
-      <th>analyzer_trace_frequency</th>
-      <th>analyzer_trace_id</th>
-      <th>analyzer_trace_power_spectral_density</th>
-      <th>root_index</th>
-      <th>sensor_frequency</th>
-      <th>sensor_reading</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0/analyzer_trace.csv</td>
-      <td>5.795000e+09</td>
-      <td>0</td>
-      <td>-52.617</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>0/analyzer_trace.csv</td>
-      <td>5.795050e+09</td>
-      <td>1</td>
-      <td>-52.373</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>0/analyzer_trace.csv</td>
-      <td>5.795101e+09</td>
-      <td>2</td>
-      <td>-52.724</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>0/analyzer_trace.csv</td>
-      <td>5.795151e+09</td>
-      <td>3</td>
-      <td>-51.893</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>0/analyzer_trace.csv</td>
-      <td>5.795201e+09</td>
-      <td>4</td>
-      <td>-52.270</td>
-      <td>0</td>
-      <td>5.800000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>595</th>
-      <td>2/analyzer_trace.csv</td>
-      <td>5.904799e+09</td>
-      <td>195</td>
-      <td>-51.752</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>596</th>
-      <td>2/analyzer_trace.csv</td>
-      <td>5.904849e+09</td>
-      <td>196</td>
-      <td>-53.065</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>597</th>
-      <td>2/analyzer_trace.csv</td>
-      <td>5.904899e+09</td>
-      <td>197</td>
-      <td>-52.585</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>598</th>
-      <td>2/analyzer_trace.csv</td>
-      <td>5.904950e+09</td>
-      <td>198</td>
-      <td>-51.861</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>-52.617</td>
-    </tr>
-    <tr>
-      <th>599</th>
-      <td>2/analyzer_trace.csv</td>
-      <td>5.905000e+09</td>
-      <td>199</td>
-      <td>-51.596</td>
-      <td>2</td>
-      <td>5.900000e+09</td>
-      <td>-52.617</td>
-    </tr>
-  </tbody>
-</table>
-<p>600 rows × 7 columns</p>
-</div></div></div>
 </div>
 <p>For each row in the root table, the expanded table is expanded with a copy of the contents of the relational data table in its file path ending in <code class="docutils literal notranslate"><span class="pre">'analyzer_trace.csv'</span></code>.</p>
 <div class="cell docutils container">

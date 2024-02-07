@@ -8,7 +8,7 @@
     <title>labbench &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <script src="_static/documentation_options.js?v=5273b9ac"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
@@ -84,8 +84,8 @@
 <span id="labbench"></span><h1>labbench<a class="headerlink" href="#module-labbench" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.CSVLogger">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">CSVLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">git_commit_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.CSVLogger" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TabularLoggerBase</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">CSVLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">git_commit_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.CSVLogger" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ParamAttrLogger</span></code></p>
 <p>Manage logging of experimental data and methods into CSV files.</p>
 <p>Explicit save methods are exposed for arbitrary custom data. Automatic logging is performed for</p>
 <ol class="arabic simple">
@@ -162,7 +162,7 @@ is an exception.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.Call">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">Call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.Call" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">Call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.Call" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Wrap a function to apply arguments for threaded calls to <cite>concurrently</cite>.
 This can be passed in directly by a user in order to provide arguments;
@@ -181,7 +181,7 @@ keep track of some call metadata during execution.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="labbench.Call.wrap_list_to_dict">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wrap_list_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_func_pairs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.Call" title="labbench.Call"><span class="pre">Call</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.Call.wrap_list_to_dict" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wrap_list_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_func_pairs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">callable</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#labbench.Call" title="labbench.Call"><span class="pre">Call</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.Call.wrap_list_to_dict" title="Link to this definition">¶</a></dt>
 <dd><p>adjusts naming and wraps callables with Call</p>
 </dd></dl>
 
@@ -189,7 +189,7 @@ keep track of some call metadata during execution.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.Device">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">Device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.Device" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">Device</span></span><a class="headerlink" href="#labbench.Device" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceDataClass</span></code></p>
 <p>base class for labbench device wrappers.</p>
 <p>Drivers that subclass <cite>Device</cite> share</p>
@@ -220,7 +220,8 @@ these backends, inherit from the corresponding class above, not
 <dt class="sig sig-object py" id="labbench.Device.close">
 <span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#labbench.Device.close" title="Link to this definition">¶</a></dt>
 <dd><p>Backend implementations must overload this to disconnect an
-existing connection to the resource encapsulated in the object.</p>
+existing connection to the resource encapsulated in the object.
+This will be called <em>without</em> super().close().</p>
 </dd></dl>
 
 <dl class="py property">
@@ -235,25 +236,16 @@ existing connection to the resource encapsulated in the object.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="labbench.Device.open">
 <span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#labbench.Device.open" title="Link to this definition">¶</a></dt>
-<dd><p>Backend implementations overload this to open a backend
-connection to the resource.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.Device.resource">
-<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.Device.resource" title="Link to this definition">¶</a></dt>
-<dd><p>device address or URI</p>
-<ul class="simple">
-<li><p>Logging event stored in metadata log after first access</p></li>
-<li><p>Case sensitive</p></li>
-</ul>
+<dd><p>Backend implementations may overload this to open a backend
+connection to the resource. This will be called <em>without</em>
+super().open().</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.DotNetDevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">DotNetDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.DotNetDevice" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">DotNetDevice</span></span><a class="headerlink" href="#labbench.DotNetDevice" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
 <p>Base class for .NET library wrappers based on pythonnet.</p>
 <p>To implement a DotNetDevice subclass:</p>
@@ -302,16 +294,6 @@ and dll_name.</p>
 <dt class="sig sig-object py" id="labbench.DotNetDevice.open">
 <span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#labbench.DotNetDevice.open" title="Link to this definition">¶</a></dt>
 <dd><p>dynamically import a .net CLR as a python module at self.dll</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.DotNetDevice.resource">
-<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.DotNetDevice.resource" title="Link to this definition">¶</a></dt>
-<dd><p>device address or URI</p>
-<ul class="simple">
-<li><p>Logging event stored in metadata log after first access</p></li>
-<li><p>Case sensitive</p></li>
-</ul>
 </dd></dl>
 
 </dd></dl>
@@ -406,67 +388,6 @@ subject line. Stderr is also sent.</p>
 <li><p>Logging event stored in metadata log after first access</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="labbench.HDFLogger">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">HDFLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'{id}</span> <span class="pre">{host_time}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">git_commit_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.HDFLogger" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TabularLoggerBase</span></code></p>
-<p>Store data and activity from value and property sets and gets to disk
-into a root database formatted as an HDF file.</p>
-<p>This extends <code class="xref py py-class docutils literal notranslate"><span class="pre">Aggregator</span></code> to support</p>
-<ol class="arabic simple">
-<li><p>queuing aggregate property trait of devices by lists of dictionaries;</p></li>
-<li><p>custom metadata in each queued aggregate property trait entry; and</p></li>
-<li><p>custom response to non-scalar data (such as relational databasing).</p></li>
-</ol>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> – Base path to use for the root database</p></li>
-<li><p><strong>append</strong> – Whether to append to the root database if it already exists (otherwise, raise IOError)</p></li>
-<li><p><strong>key_fmt</strong> – format to use for keys in the h5</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.HDFLogger.KEY_INPUT">
-<span class="sig-name descname"><span class="pre">KEY_INPUT</span></span><a class="headerlink" href="#labbench.HDFLogger.KEY_INPUT" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.HDFLogger.KEY_OUTPUT">
-<span class="sig-name descname"><span class="pre">KEY_OUTPUT</span></span><a class="headerlink" href="#labbench.HDFLogger.KEY_OUTPUT" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="labbench.HDFLogger.close">
-<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#labbench.HDFLogger.close" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.HDFLogger.nonscalar_file_type">
-<span class="sig-name descname"><span class="pre">nonscalar_file_type</span></span><a class="headerlink" href="#labbench.HDFLogger.nonscalar_file_type" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="labbench.HDFLogger.open">
-<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#labbench.HDFLogger.open" title="Link to this definition">¶</a></dt>
-<dd><p>Instead of calling <cite>open</cite> directly, consider using
-<cite>with</cite> statements to guarantee proper disconnection
-if there is an error. For example, the following
-sets up a connected instance:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">HDFLogger</span><span class="p">(</span><span class="s1">&#39;my.csv&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">db</span><span class="p">:</span>
-    <span class="c1">### do the data acquisition here</span>
-    <span class="k">pass</span>
-</pre></div>
-</div>
-<p>would instantiate a <cite>CSVLogger</cite> instance, and also guarantee
-a final attempt to write unwritten data is written, and that
-the file is closed when exiting the <cite>with</cite> block, even if there
-is an exception.</p>
 </dd></dl>
 
 </dd></dl>
@@ -620,8 +541,8 @@ sa = MySpectrumAnalyzer()</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.SQLiteLogger">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SQLiteLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">git_commit_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SQLiteLogger" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TabularLoggerBase</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SQLiteLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">git_commit_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SQLiteLogger" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ParamAttrLogger</span></code></p>
 <p>Store data and property traits to disk into an an sqlite database.</p>
 <p>This extends <code class="xref py py-class docutils literal notranslate"><span class="pre">Aggregator</span></code> to support</p>
 <ol class="arabic simple">
@@ -739,7 +660,7 @@ an additional ‘exception’ key indicating the type of the exception that occu
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.SerialDevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SerialDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_termination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">b'\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baud_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">b'N'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopbits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="m"><span class="pre">1</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">1.5</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="m"><span class="pre">2</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xonxoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtscts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dsrdtr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SerialDevice" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SerialDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baud_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'N'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopbits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xonxoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtscts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dsrdtr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bytesize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SerialDevice" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
 <p>Base class for wrappers that communicate via pyserial.</p>
 <p>This implementation is very sparse because there is in general
@@ -758,10 +679,20 @@ no messaging string format for serial devices.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.baud_rate">
 <span class="sig-name descname"><span class="pre">baud_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9600</span></em><a class="headerlink" href="#labbench.SerialDevice.baud_rate" title="Link to this definition">¶</a></dt>
-<dd><p>Data rate of the physical serial connection.</p>
+<dd><p>data rate of the physical serial connection. (bytes/s)</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
-<li><p>Minimum: 1</p></li>
+<li><p>Minimum: 1 bytes/s</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.SerialDevice.bytesize">
+<span class="sig-name descname"><span class="pre">bytesize</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#labbench.SerialDevice.bytesize" title="Link to this definition">¶</a></dt>
+<dd><p>(bits)</p>
+<ul class="simple">
+<li><p>Allowed values are {None, 5, 6, 8, 7}</p></li>
+<li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
 
@@ -773,8 +704,8 @@ no messaging string format for serial devices.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.dsrdtr">
-<span class="sig-name descname"><span class="pre">dsrdtr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialDevice.dsrdtr" title="Link to this definition">¶</a></dt>
-<dd><p><cite>True</cite> to enable hardware (DSR/DTR) flow control.</p>
+<span class="sig-name descname"><span class="pre">dsrdtr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialDevice.dsrdtr" title="Link to this definition">¶</a></dt>
+<dd><p>whether to enable hardware (DSR/DTR) flow control on open</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
@@ -782,12 +713,17 @@ no messaging string format for serial devices.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="labbench.SerialDevice.from_hwid">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_hwid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hwid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">connection_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SerialDevice.from_hwid" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_hwid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hwid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">connection_params</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#labbench.SerialDevice" title="labbench.SerialDevice"><span class="pre">SerialDevice</span></a></span></span><a class="headerlink" href="#labbench.SerialDevice.from_hwid" title="Link to this definition">¶</a></dt>
 <dd><p>Instantiate a new SerialDevice from a windows <a href="#id1"><span class="problematic" id="id2">`</span></a>hwid’ string instead
 of a comport resource. A hwid string in windows might look something
 like:</p>
 <p>r’PCIVEN_8086&amp;DEV_9D3D&amp;SUBSYS_06DC1028&amp;REV_213&amp;11583659&amp;1&amp;B3’</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="labbench.SerialDevice.from_url">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#labbench.SerialDevice" title="labbench.SerialDevice"><span class="pre">SerialDevice</span></a></span></span><a class="headerlink" href="#labbench.SerialDevice.from_url" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="labbench.SerialDevice.isopen">
@@ -818,9 +754,10 @@ in self.resource</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.parity">
-<span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bytes</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'N'</span></em><a class="headerlink" href="#labbench.SerialDevice.parity" title="Link to this definition">¶</a></dt>
-<dd><p>Parity in the physical serial connection.</p>
+<span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'N'</span></em><a class="headerlink" href="#labbench.SerialDevice.parity" title="Link to this definition">¶</a></dt>
+<dd><p>parity in the physical serial connection.</p>
 <ul class="simple">
+<li><p>Allowed values are {‘S’, ‘O’, ‘N’, ‘E’, ‘M’}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
@@ -828,8 +765,8 @@ in self.resource</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.resource">
-<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialDevice.resource" title="Link to this definition">¶</a></dt>
-<dd><p>platform-dependent serial port address</p>
+<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#labbench.SerialDevice.resource" title="Link to this definition">¶</a></dt>
+<dd><p>platform-dependent serial port address or URL</p>
 <ul class="simple">
 <li><p>Logging event stored in metadata log after first access</p></li>
 <li><p>Case sensitive</p></li>
@@ -838,8 +775,8 @@ in self.resource</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.rtscts">
-<span class="sig-name descname"><span class="pre">rtscts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialDevice.rtscts" title="Link to this definition">¶</a></dt>
-<dd><p><cite>True</cite> to enable hardware (RTS/CTS) flow control.</p>
+<span class="sig-name descname"><span class="pre">rtscts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialDevice.rtscts" title="Link to this definition">¶</a></dt>
+<dd><p>whether to enable hardware (RTS/CTS) flow control on open</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
@@ -847,38 +784,38 @@ in self.resource</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.stopbits">
-<span class="sig-name descname"><span class="pre">stopbits</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#labbench.SerialDevice.stopbits" title="Link to this definition">¶</a></dt>
-<dd><p>number of stop bits</p>
+<span class="sig-name descname"><span class="pre">stopbits</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialDevice.stopbits" title="Link to this definition">¶</a></dt>
+<dd><p>(bits)</p>
 <ul class="simple">
-<li><p>Allowed values are {1, 2, 1.5}</p></li>
+<li><p>Allowed values are {1, 2, None, 1.5}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.timeout">
-<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#labbench.SerialDevice.timeout" title="Link to this definition">¶</a></dt>
-<dd><p>Max time to wait for a connection before raising TimeoutError.</p>
+<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialDevice.timeout" title="Link to this definition">¶</a></dt>
+<dd><p>max wait time on reads before raising TimeoutError (s)</p>
 <ul class="simple">
-<li><p>Minimum: 0</p></li>
+<li><p>Minimum: 0 s</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.SerialDevice.write_termination">
-<span class="sig-name descname"><span class="pre">write_termination</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bytes</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'\n'</span></em><a class="headerlink" href="#labbench.SerialDevice.write_termination" title="Link to this definition">¶</a></dt>
-<dd><p>Termination character to send after a write.</p>
+<dt class="sig sig-object py" id="labbench.SerialDevice.write_timeout">
+<span class="sig-name descname"><span class="pre">write_timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialDevice.write_timeout" title="Link to this definition">¶</a></dt>
+<dd><p>max wait time on writes before raising TimeoutError. (s)</p>
 <ul class="simple">
+<li><p>Minimum: 0 s</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
-<li><p>Case sensitive</p></li>
 </ul>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialDevice.xonxoff">
 <span class="sig-name descname"><span class="pre">xonxoff</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialDevice.xonxoff" title="Link to this definition">¶</a></dt>
-<dd><p><cite>True</cite> to enable software flow control.</p>
+<dd><p>whether to enable software flow control on open</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
@@ -888,10 +825,10 @@ in self.resource</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SerialLoggingDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_termination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">b'\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baud_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">b'N'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopbits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="m"><span class="pre">1</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">1.5</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="m"><span class="pre">2</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xonxoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtscts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dsrdtr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poll_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_queue_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SerialLoggingDevice" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SerialLoggingDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baud_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'N'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopbits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xonxoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtscts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dsrdtr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bytesize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poll_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_queue_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SerialLoggingDevice" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#labbench.SerialDevice" title="labbench.SerialDevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">SerialDevice</span></code></a></p>
-<p>Manage connection, acquisition, and data retreival on a single GPS device.
-The goal is to make GPS devices controllable somewhat like instruments:
+<p>Manage connection, acquisition, and data retreival on a device
+that streams logs over serial in a background thread.
 maintaining their own threads, and blocking during setup or stop
 command execution.</p>
 <p>Listener objects must implement an attach method with one argument
@@ -900,10 +837,20 @@ from the serial port.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.baud_rate">
 <span class="sig-name descname"><span class="pre">baud_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9600</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.baud_rate" title="Link to this definition">¶</a></dt>
-<dd><p>Data rate of the physical serial connection.</p>
+<dd><p>data rate of the physical serial connection. (bytes/s)</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
-<li><p>Minimum: 1</p></li>
+<li><p>Minimum: 1 bytes/s</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="labbench.SerialLoggingDevice.bytesize">
+<span class="sig-name descname"><span class="pre">bytesize</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.bytesize" title="Link to this definition">¶</a></dt>
+<dd><p>(bits)</p>
+<ul class="simple">
+<li><p>Allowed values are {None, 5, 6, 8, 7}</p></li>
+<li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
 
@@ -918,29 +865,10 @@ from the serial port.</p>
 <span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SerialLoggingDevice.close" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="labbench.SerialLoggingDevice.configure">
-<span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SerialLoggingDevice.configure" title="Link to this definition">¶</a></dt>
-<dd><p>This is called at the beginning of the logging thread that runs
-on a call to <cite>start</cite>.</p>
-<p>This is a stub that does nothing — it should be implemented by a
-subclass for a specific serial logger device.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.SerialLoggingDevice.data_format">
-<span class="sig-name descname"><span class="pre">data_format</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bytes</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b''</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.data_format" title="Link to this definition">¶</a></dt>
-<dd><p>Data format metadata</p>
-<ul class="simple">
-<li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
-<li><p>Case sensitive</p></li>
-</ul>
-</dd></dl>
-
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.dsrdtr">
-<span class="sig-name descname"><span class="pre">dsrdtr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.dsrdtr" title="Link to this definition">¶</a></dt>
-<dd><p><cite>True</cite> to enable hardware (DSR/DTR) flow control.</p>
+<span class="sig-name descname"><span class="pre">dsrdtr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.dsrdtr" title="Link to this definition">¶</a></dt>
+<dd><p>whether to enable hardware (DSR/DTR) flow control on open</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
@@ -978,9 +906,10 @@ subclass for a specific serial logger device.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.parity">
-<span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bytes</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'N'</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.parity" title="Link to this definition">¶</a></dt>
-<dd><p>Parity in the physical serial connection.</p>
+<span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'N'</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.parity" title="Link to this definition">¶</a></dt>
+<dd><p>parity in the physical serial connection.</p>
 <ul class="simple">
+<li><p>Allowed values are {‘S’, ‘O’, ‘N’, ‘E’, ‘M’}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
@@ -998,8 +927,8 @@ subclass for a specific serial logger device.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.resource">
-<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.resource" title="Link to this definition">¶</a></dt>
-<dd><p>device address or URI</p>
+<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.resource" title="Link to this definition">¶</a></dt>
+<dd><p>platform-dependent serial port address or URL</p>
 <ul class="simple">
 <li><p>Logging event stored in metadata log after first access</p></li>
 <li><p>Case sensitive</p></li>
@@ -1008,8 +937,8 @@ subclass for a specific serial logger device.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.rtscts">
-<span class="sig-name descname"><span class="pre">rtscts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.rtscts" title="Link to this definition">¶</a></dt>
-<dd><p><cite>True</cite> to enable hardware (RTS/CTS) flow control.</p>
+<span class="sig-name descname"><span class="pre">rtscts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.rtscts" title="Link to this definition">¶</a></dt>
+<dd><p>whether to enable hardware (RTS/CTS) flow control on open</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
@@ -1060,38 +989,38 @@ subclass for a specific serial logger device.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.stopbits">
-<span class="sig-name descname"><span class="pre">stopbits</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.stopbits" title="Link to this definition">¶</a></dt>
-<dd><p>number of stop bits</p>
+<span class="sig-name descname"><span class="pre">stopbits</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.stopbits" title="Link to this definition">¶</a></dt>
+<dd><p>(bits)</p>
 <ul class="simple">
-<li><p>Allowed values are {1, 2, 1.5}</p></li>
+<li><p>Allowed values are {1, 2, None, 1.5}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.timeout">
-<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.timeout" title="Link to this definition">¶</a></dt>
-<dd><p>Max time to wait for a connection before raising TimeoutError.</p>
+<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.timeout" title="Link to this definition">¶</a></dt>
+<dd><p>max wait time on reads before raising TimeoutError (s)</p>
 <ul class="simple">
-<li><p>Minimum: 0</p></li>
+<li><p>Minimum: 0 s</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.SerialLoggingDevice.write_termination">
-<span class="sig-name descname"><span class="pre">write_termination</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bytes</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'\n'</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.write_termination" title="Link to this definition">¶</a></dt>
-<dd><p>Termination character to send after a write.</p>
+<dt class="sig sig-object py" id="labbench.SerialLoggingDevice.write_timeout">
+<span class="sig-name descname"><span class="pre">write_timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.write_timeout" title="Link to this definition">¶</a></dt>
+<dd><p>max wait time on writes before raising TimeoutError. (s)</p>
 <ul class="simple">
+<li><p>Minimum: 0 s</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
-<li><p>Case sensitive</p></li>
 </ul>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.SerialLoggingDevice.xonxoff">
 <span class="sig-name descname"><span class="pre">xonxoff</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.xonxoff" title="Link to this definition">¶</a></dt>
-<dd><p><cite>True</cite> to enable software flow control.</p>
+<dd><p>whether to enable software flow control on open</p>
 <ul class="simple">
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
@@ -1101,11 +1030,11 @@ subclass for a specific serial logger device.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.ShellBackend">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">ShellBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.ShellBackend" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">ShellBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.ShellBackend" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
-<p>Virtual device controlled by a shell command in another process.</p>
-<p>Data can be captured from standard output, and standard error pipes, and
-optionally run as a background thread.</p>
+<p>A wrapper for running shell commands.</p>
+<p>This is a thin wrapper around the subprocess module. Data can be captured from standard output,
+and standard error pipes, and optionally run as a background thread.</p>
 <p>After opening, <cite>backend</cite> is <cite>None</cite>. On a call to run(background=True), <cite>backend</cite>
 becomes is a subprocess instance. When EOF is reached on the executable’s
 stdout, the backend resets to None.</p>
@@ -1114,10 +1043,11 @@ The output piped to the command line standard output is queued in a
 background thread. Call read_stdout() to retreive (and clear) this
 queued stdout.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.ShellBackend.binary_path">
-<span class="sig-name descname"><span class="pre">binary_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.ShellBackend.binary_path" title="Link to this definition">¶</a></dt>
-<dd><p>path to the file to run</p>
+<dt class="sig sig-object py" id="labbench.ShellBackend.background_timeout">
+<span class="sig-name descname"><span class="pre">background_timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#labbench.ShellBackend.background_timeout" title="Link to this definition">¶</a></dt>
+<dd><p>wait time after close before killing background processes (s)</p>
 <ul class="simple">
+<li><p>Minimum: 0 s</p></li>
 <li><p>Logging event stored in metadata log after first access</p></li>
 </ul>
 </dd></dl>
@@ -1171,19 +1101,9 @@ Afterward, the queue is cleared. Starting another background run also clears the
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.ShellBackend.resource">
-<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.ShellBackend.resource" title="Link to this definition">¶</a></dt>
-<dd><p>device address or URI</p>
-<ul class="simple">
-<li><p>Logging event stored in metadata log after first access</p></li>
-<li><p>Case sensitive</p></li>
-</ul>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="labbench.ShellBackend.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pipe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_return</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_stderr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">respawn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.ShellBackend.run" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pipe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_return</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raise_on_stderr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">respawn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.ShellBackend.run" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1197,16 +1117,6 @@ Afterward, the queue is cleared. Starting another background run also clears the
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.ShellBackend.timeout">
-<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#labbench.ShellBackend.timeout" title="Link to this definition">¶</a></dt>
-<dd><p>wait time after close before killing background processes (s)</p>
-<ul class="simple">
-<li><p>Minimum: 0 s</p></li>
-<li><p>Logging event stored in metadata log after first access</p></li>
-</ul>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="labbench.ShellBackend.write_stdin">
 <span class="sig-name descname"><span class="pre">write_stdin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.ShellBackend.write_stdin" title="Link to this definition">¶</a></dt>
@@ -1218,7 +1128,7 @@ Exception if no background process is running.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.TelnetDevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">TelnetDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'127.0.0.1:23'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.TelnetDevice" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">TelnetDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.TelnetDevice" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
 <p>A general base class for communication devices via telnet.
 Unlike (for example) VISA instruments, there is no
@@ -1257,10 +1167,10 @@ by the string in self.resource</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.TelnetDevice.resource">
-<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'127.0.0.1:23'</span></em><a class="headerlink" href="#labbench.TelnetDevice.resource" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#labbench.TelnetDevice.resource" title="Link to this definition">¶</a></dt>
 <dd><p>server host address</p>
 <ul class="simple">
-<li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
+<li><p>Logging event stored in metadata log after first access</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
 </dd></dl>
@@ -1285,12 +1195,13 @@ by the string in self.resource</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.VISADevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">VISADevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_termination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_termination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.VISADevice" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">VISADevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_termination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_termination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.VISADevice" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
-<p>A basic VISA device wrapper.</p>
+<p>A wrapper for VISA device automation.</p>
 <p>This exposes <cite>pyvisa</cite> instrument automation capabilities in a <cite>labbench</cite>
-object, and includes support for automatic connections based on make and model.</p>
-<p>Customized operation for specific instruments can be implemented by subclassing <cite>VISADevice</cite>.</p>
+object. Automatic connection based on make and model is supported.</p>
+<p>Customized operation for specific instruments should be implemented in
+subclasses.</p>
 <p class="rubric">Examples</p>
 <p>Connect to a VISA device using a known resource string:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">VISADevice</span><span class="p">(</span><span class="s1">&#39;USB0::0x2A8D::0x1E01::SG56360004::INSTR&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">instr</span><span class="p">:</span>
@@ -1446,13 +1357,13 @@ contexts as appropriate.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="labbench.VISADevice.query_ascii_values">
-<span class="sig-name descname"><span class="pre">query_ascii_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator='</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container=&lt;class</span> <span class="pre">'list'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.VISADevice.query_ascii_values" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">query_ascii_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converter='f'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator='</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container=&lt;class</span> <span class="pre">'list'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.VISADevice.query_ascii_values" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.VISADevice.read_termination">
 <span class="sig-name descname"><span class="pre">read_termination</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n'</span></em><a class="headerlink" href="#labbench.VISADevice.read_termination" title="Link to this definition">¶</a></dt>
-<dd><p>end of line string to expect in query replies</p>
+<dd><p>end-of-line string to delineate the end of ascii query replies</p>
 <ul class="simple">
 <li><p>Logging event stored in metadata log after first access</p></li>
 <li><p>Case sensitive</p></li>
@@ -1462,7 +1373,7 @@ contexts as appropriate.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="labbench.VISADevice.resource">
 <span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.VISADevice.resource" title="Link to this definition">¶</a></dt>
-<dd><p>device address or URI</p>
+<dd><p>VISA resource addressing string for device connection</p>
 <ul class="simple">
 <li><p>Logging event stored in metadata log after first access</p></li>
 <li><p>Case sensitive</p></li>
@@ -1553,7 +1464,7 @@ contexts as appropriate.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.Win32ComDevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">Win32ComDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.Win32ComDevice" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">Win32ComDevice</span></span><a class="headerlink" href="#labbench.Win32ComDevice" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
 <p>Basic support for calling win32 COM APIs.</p>
 <p>a dedicated background thread. Set concurrency=True to decide whether
@@ -1594,16 +1505,6 @@ this thread support wrapper is applied to the dispatched Win32Com object.</p>
 <dd><p>Connect to the win32 com object</p>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="labbench.Win32ComDevice.resource">
-<span class="sig-name descname"><span class="pre">resource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#labbench.Win32ComDevice.resource" title="Link to this definition">¶</a></dt>
-<dd><p>device address or URI</p>
-<ul class="simple">
-<li><p>Logging event stored in metadata log after first access</p></li>
-<li><p>Case sensitive</p></li>
-</ul>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py function">
@@ -1625,6 +1526,7 @@ arguments may be callables, in which case they are executed (and each flag value
 <li><p><strong>nones</strong> – if not callable and evalues as True, includes entries for calls that return None (default is False)</p></li>
 <li><p><strong>flatten</strong> – if <cite>True</cite>, results of callables that returns a dictionary are merged into the return dictionary with update (instead of passed through as dictionaries)</p></li>
 <li><p><strong>traceback_delay</strong> – if <cite>False</cite>, immediately show traceback information on a thread exception; if <cite>True</cite> (the default), wait until all threads finish</p></li>
+<li><p><strong>operation</strong> – if ‘auto’ (default), try to determine automatically; otherwise, ‘context’ or ‘call’</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1673,7 +1575,7 @@ this should be used for IO-bound functions (not CPU-intensive functions).</p></l
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.dump_rack">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">dump_rack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.Rack" title="labbench.Rack"><span class="pre">Rack</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourcepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pythonpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exist_ok</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_tables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.dump_rack" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">dump_rack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.Rack" title="labbench.Rack"><span class="pre">Rack</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourcepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pythonpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exist_ok</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_tables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.dump_rack" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -1685,7 +1587,7 @@ not exactly 1 for <cite>target_type</cite>, TypeError is raised.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.import_as_rack">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">import_as_rack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">import_string:</span> <span class="pre">str,</span> <span class="pre">*,</span> <span class="pre">cls_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">append_path:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">[],</span> <span class="pre">base_cls:</span> <span class="pre">type</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'labbench.Rack'&gt;,</span> <span class="pre">replace_attrs:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">['__doc__',</span> <span class="pre">'__module__']</span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.import_as_rack" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">import_as_rack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">import_string:</span> <span class="pre">str,</span> <span class="pre">*,</span> <span class="pre">cls_name:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">append_path:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">[],</span> <span class="pre">base_cls:</span> <span class="pre">type</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'labbench.Rack'&gt;,</span> <span class="pre">replace_attrs:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">['__doc__',</span> <span class="pre">'__module__']</span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.import_as_rack" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a Rack subclass with the specified module’s contents. Ownable objects are annotated
 by type, allowing the resulting class to be instantiated.</p>
 <dl class="field-list simple">
@@ -1759,7 +1661,7 @@ new subclass with the module contents)</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.rack_kwargs_template">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">rack_kwargs_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.rack_kwargs_template" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">rack_kwargs_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.rack_kwargs_template" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MethodTaggerDataclass</span></code></p>
 <p>tag a method defined in a Rack to replace a <a href="#id21"><span class="problematic" id="id22">**</span></a>kwargs argument using the signature of the specified callable.</p>
 <p>In practice, this often means a very long argument list.</p>
@@ -1780,7 +1682,7 @@ new subclass with the module contents)</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.read">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_or_buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nrows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.read" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_or_buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nrows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.read" title="Link to this definition">¶</a></dt>
 <dd><p>Read tabular data from a file in one of various formats
 using pandas.</p>
 <dl class="field-list simple">
@@ -1801,7 +1703,7 @@ using pandas.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.read_relational">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">read_relational</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expand_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_nrows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend_column_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.read_relational" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">read_relational</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expand_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_nrows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend_column_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#labbench.read_relational" title="Link to this definition">¶</a></dt>
 <dd><p>Flatten a relational database table by loading the table located each row of
 <cite>root[expand_col]</cite>. The value of each column in this row
 is copied to the loaded table. The columns in the resulting table generated
@@ -1812,12 +1714,13 @@ is concatenated and returned.</p>
 necessity in some scenarios.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>root</strong> (<em>pandas.DataFrame</em>) – the root database, consisting of columns containing data and columns containing paths to data files
-expand_col: the column in the root database containing paths to    data files that should be expanded
-root_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) pass all columns from <cite>root</cite>
-target_cols: a column (or array-like iterable of multiple columns) listing the root columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each root[expand_col]
-root_path: a string containing the full path to the root database (to help find the relational files)
-prepend_column_name: whether to prepend the name of the expanded column from the root database</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – file location of the root data table</p></li>
+<li><p><strong>expand_col</strong> – name of the columns of the root data file to expand with relational data</p></li>
+<li><p><strong>root_cols</strong> – the root columns to include in the expanded dataframe, or None (the default) pass all columns from <cite>root</cite></p></li>
+<li><p><strong>target_cols</strong> – the root columns to include in the expanded dataframe, or None (the default) to pass all columns loaded from each root[expand_col]</p></li>
+<li><p><strong>prepend_column_name</strong> – whether to prepend the name of the expanded column from the root table</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the expanded dataframe</p>
@@ -1827,15 +1730,12 @@ prepend_column_name: whether to prepend the name of the expanded column from the
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.retry">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">retry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exception_or_exceptions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tries:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backoff:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exception_func=&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.retry" title="Link to this definition">¶</a></dt>
-<dd><p>Decorate a function to repeat calls, suppressing specified exception(s), until a
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">retry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">exception_or_exceptions:</span> <span class="pre">Union[BaseException,</span> <span class="pre">typing.Iterable[BaseException]],</span> <span class="pre">tries:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">4,</span> <span class="pre">*,</span> <span class="pre">delay:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">backoff:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">exception_func=&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;,</span> <span class="pre">log:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">callable</span><span class="p"><span class="pre">[</span></span><span class="pre">_Tfunc</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_Tfunc</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.retry" title="Link to this definition">¶</a></dt>
+<dd><p>calls to the decorated function are repeated, suppressing specified exception(s), until a
 maximum number of retries has been attempted.</p>
 <p>If the function raises the exception the specified number of times, the underlying exception is raised.
 Otherwise, return the result of the function call.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Example<span class="colon">:</span></dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
+<p class="rubric">Example</p>
 <p>The following retries the telnet connection 5 times on ConnectionRefusedError:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">telnetlib</span>
 
@@ -1932,8 +1832,57 @@ means that any remaining context managers will not be entered.</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="labbench.shell_options_from_keyed_values">
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">shell_options_from_keyed_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device:</span> <span class="pre">~labbench.Device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_none=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hide_false:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_str:</span> <span class="pre">typing_extensions.Literal[False]</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remap:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converter:</span> <span class="pre">callable</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'str'&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.shell_options_from_keyed_values" title="Link to this definition">¶</a></dt>
+<dd><p>generate a list of command line argument strings based on
+<a href="#id25"><span class="problematic" id="id26">:module:`labbench.paramattr.value`</span></a> descriptors in <cite>device</cite>.</p>
+<p>Each of these descriptors defined with <cite>key</cite> may be treated as a command
+line option. Value descriptors are ignored when <cite>key</cite> is unset. The value
+for each option is determined by fetching the corresponding attribute from
+<cite>device</cite>.</p>
+<p>The returned list of strings can be used to build the <cite>argv</cite> needed to run
+shell commands using <a class="reference internal" href="#labbench.ShellBackend" title="labbench.ShellBackend"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellBackend</span></code></a> or the <cite>subprocess</cite> module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> – the device containing values to broadcast into command-line arguments</p></li>
+<li><p><strong>skip_none</strong> – if True, no command-line argument string is generated for values that are unset in devices</p></li>
+<li><p><strong>hide_false</strong> – if True, boolean options are treated as a flag (e.g., this triggers argument strings are omitted for False values)</p></li>
+<li><p><strong>join_str</strong> – a string to use to join option (name, value) pairs, or False to generate as separate strings</p></li>
+<li><p><strong>remap</strong> – a dictionary of {python_value: string_value} pairs to accommodate special cases in string conversion</p></li>
+<li><p><strong>converter</strong> – function to use to convert the values to strings</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>Simple boolean options and flags:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">ShellCopy</span><span class="p">(</span><span class="n">ShellBackend</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;-R&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cp</span> <span class="o">=</span> <span class="n">ShellCopy</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">shell_options_from_keyed_values</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">hide_false</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="go">[&#39;-R&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">shell_options_from_keyed_values</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s1">&#39;yes&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}))</span>
+<span class="go">[&#39;-R&#39;, &#39;yes&#39;]</span>
+</pre></div>
+</div>
+<p class="rubric">Example</p>
+<p>A non-boolean option:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">DiskDuplicate</span><span class="p">(</span><span class="n">ShellBackend</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">block_size</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">str</span><span class="p">(</span><span class="s1">&#39;1M&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;bs&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span> <span class="o">=</span> <span class="n">DiskDuplicate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="s1">&#39;1024k&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">shell_options_from_keyed_values</span><span class="p">(</span><span class="n">dd</span><span class="p">,</span> <span class="n">join_str</span><span class="o">=</span><span class="s1">&#39;=&#39;</span><span class="p">))</span>
+<span class="go">[&#39;bs&#39;,&#39;1024k&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">shell_options_from_keyed_values</span><span class="p">(</span><span class="n">dd</span><span class="p">,</span> <span class="n">join_str</span><span class="o">=</span><span class="s1">&#39;=&#39;</span><span class="p">))</span>
+<span class="go">[&#39;bs=1024k&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="labbench.show_messages">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">show_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.show_messages" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">show_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">debug</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">warning</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">error</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">info</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">critical</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">False</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.show_messages" title="Link to this definition">¶</a></dt>
 <dd><p>filters logging messages displayed to the console by importance</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1947,14 +1896,14 @@ means that any remaining context managers will not be entered.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.sleep">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">sleep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seconds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tick</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.sleep" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">sleep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tick</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.sleep" title="Link to this definition">¶</a></dt>
 <dd><p>Drop-in replacement for time.sleep that raises ConcurrentException
 if another thread requests that all threads stop.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.stopwatch">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">stopwatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'info'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.stopwatch" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">stopwatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">debug</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">warning</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">error</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">info</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">typing_extensions.Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">critical</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'info'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.stopwatch" title="Link to this definition">¶</a></dt>
 <dd><p>Time a block of code using a with statement like this:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">stopwatch</span><span class="p">(</span><span class="s1">&#39;sleep statement&#39;</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
@@ -1981,17 +1930,16 @@ if another thread requests that all threads stop.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.until_timeout">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">until_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exception_or_exceptions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backoff=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exception_func=&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.until_timeout" title="Link to this definition">¶</a></dt>
-<dd><p>This decorator causes the function call to repeat, suppressing specified exception(s), until the
-specified timeout period has expired.
-- If the timeout expires, the underlying exception is raised.
-- Otherwise, return the result of the function call.</p>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">until_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">exception_or_exceptions:</span> <span class="pre">Union[BaseException,</span> <span class="pre">typing.Iterable[BaseException]],</span> <span class="pre">timeout:</span> <span class="pre">float,</span> <span class="pre">delay:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">backoff:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">exception_func:</span> <span class="pre">callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">callable</span><span class="p"><span class="pre">[</span></span><span class="pre">_Tfunc</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_Tfunc</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.until_timeout" title="Link to this definition">¶</a></dt>
+<dd><p>calls to the decorated function are repeated, suppressing specified exception(s), until the
+specified timeout period has expired.</p>
+<ul class="simple">
+<li><p>If the timeout expires, the underlying exception is raised.</p></li>
+<li><p>Otherwise, return the result of the function call.</p></li>
+</ul>
 <p>Inspired by <a class="reference external" href="https://github.com/saltycrane/retry-decorator">https://github.com/saltycrane/retry-decorator</a> which is released
 under the BSD license.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Example<span class="colon">:</span></dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
+<p class="rubric">Example</p>
 <p>The following retries the telnet connection for 5 seconds on ConnectionRefusedError:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">telnetlib</span>
 
@@ -2007,8 +1955,10 @@ under the BSD license.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>exception_or_exceptions</strong> – Exception (sub)class (or tuple of exception classes) to watch for</p></li>
-<li><p><strong>timeout</strong> (<em>float
-delay: initial delay between retries in seconds</em>) – time in seconds to continue calling the decorated function while suppressing exception_or_exceptions</p></li>
+<li><p><strong>timeout</strong> – time in seconds to continue calling the decorated function while suppressing exception_or_exceptions</p></li>
+<li><p><strong>delay</strong> – initial delay between retries in seconds</p></li>
+<li><p><strong>backoff</strong> – backoff to multiply to the delay for each retry</p></li>
+<li><p><strong>exception_func</strong> – function to call on exception before the next retry</p></li>
 </ul>
 </dd>
 </dl>
@@ -2016,31 +1966,31 @@ delay: initial delay between retries in seconds</em>) – time in seconds to con
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.visa_default_resource_manager">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">visa_default_resource_manager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.visa_default_resource_manager" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">visa_default_resource_manager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.visa_default_resource_manager" title="Link to this definition">¶</a></dt>
 <dd><p>set the pyvisa resource manager used by labbench.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> – the name of the resource manager, such as <a class="reference external" href="mailto:'&#37;&#52;&#48;py">‘<span>&#64;</span>py</a>’, <a class="reference external" href="mailto:'&#37;&#52;&#48;sim">‘<span>&#64;</span>sim</a>’, or <a class="reference external" href="mailto:'&#37;&#52;&#48;ivi">‘<span>&#64;</span>ivi</a>’</p>
+<dd class="field-odd"><p><strong>name</strong> – the name of the resource manager, such as <a class="reference external" href="mailto:'&#37;&#52;&#48;py">‘<span>&#64;</span>py</a>’, <a class="reference external" href="mailto:'&#37;&#52;&#48;sim-labbench">‘<span>&#64;</span>sim-labbench</a>’, or <a class="reference external" href="mailto:'&#37;&#52;&#48;ivi">‘<span>&#64;</span>ivi</a>’</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.visa_list_resources">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">visa_list_resources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcemanager</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.visa_list_resources" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">visa_list_resources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcemanager</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.visa_list_resources" title="Link to this definition">¶</a></dt>
 <dd><p>autodetects and returns a list of valid VISADevice resource strings</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="labbench.visa_probe_devices">
-<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">visa_probe_devices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.VISADevice" title="labbench.VISADevice"><span class="pre">VISADevice</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_interfaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#labbench.VISADevice" title="labbench.VISADevice"><span class="pre">VISADevice</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.visa_probe_devices" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">visa_probe_devices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#labbench.VISADevice" title="labbench.VISADevice"><span class="pre">VISADevice</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_interfaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#labbench.VISADevice" title="labbench.VISADevice"><span class="pre">VISADevice</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#labbench.visa_probe_devices" title="Link to this definition">¶</a></dt>
 <dd><p>discover devices available for communication and their required connection settings.</p>
 <p>Each returned <cite>VISADevice</cite> is and set with a combination of <cite>resource</cite>,
 <cite>read_termination</cite>, and <cite>write_termination</cite> that establishes communication, and the
 <cite>make</cite> and <cite>model</cite> reported by the instrument. The <cite>pyvisa</cite> resource manager is set
 by the most recent call to <cite>visa_default_resource_manager</cite>.</p>
 <p>The probe mechanism is to open a connection to each available resource, and
-if successful, query the instrument identity (’<a href="#id25"><span class="problematic" id="id26">*</span></a>IDN?’). Discovery will fail for
+if successful, query the instrument identity (’<a href="#id27"><span class="problematic" id="id28">*</span></a>IDN?’). Discovery will fail for
 devices that do not support this message.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2087,7 +2037,6 @@ devices that do not support this message.</p>
 <li><a class="reference internal" href="#labbench.Device.close"><code class="docutils literal notranslate"><span class="pre">Device.close()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.Device.isopen"><code class="docutils literal notranslate"><span class="pre">Device.isopen</span></code></a></li>
 <li><a class="reference internal" href="#labbench.Device.open"><code class="docutils literal notranslate"><span class="pre">Device.open()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.Device.resource"><code class="docutils literal notranslate"><span class="pre">Device.resource</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#labbench.DotNetDevice"><code class="docutils literal notranslate"><span class="pre">DotNetDevice</span></code></a><ul>
@@ -2095,7 +2044,6 @@ devices that do not support this message.</p>
 <li><a class="reference internal" href="#labbench.DotNetDevice.isopen"><code class="docutils literal notranslate"><span class="pre">DotNetDevice.isopen</span></code></a></li>
 <li><a class="reference internal" href="#labbench.DotNetDevice.library"><code class="docutils literal notranslate"><span class="pre">DotNetDevice.library</span></code></a></li>
 <li><a class="reference internal" href="#labbench.DotNetDevice.open"><code class="docutils literal notranslate"><span class="pre">DotNetDevice.open()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.DotNetDevice.resource"><code class="docutils literal notranslate"><span class="pre">DotNetDevice.resource</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#labbench.Email"><code class="docutils literal notranslate"><span class="pre">Email</span></code></a><ul>
@@ -2109,14 +2057,6 @@ devices that do not support this message.</p>
 <li><a class="reference internal" href="#labbench.Email.send_summary"><code class="docutils literal notranslate"><span class="pre">Email.send_summary()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.Email.sender"><code class="docutils literal notranslate"><span class="pre">Email.sender</span></code></a></li>
 <li><a class="reference internal" href="#labbench.Email.success_message"><code class="docutils literal notranslate"><span class="pre">Email.success_message</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#labbench.HDFLogger"><code class="docutils literal notranslate"><span class="pre">HDFLogger</span></code></a><ul>
-<li><a class="reference internal" href="#labbench.HDFLogger.KEY_INPUT"><code class="docutils literal notranslate"><span class="pre">HDFLogger.KEY_INPUT</span></code></a></li>
-<li><a class="reference internal" href="#labbench.HDFLogger.KEY_OUTPUT"><code class="docutils literal notranslate"><span class="pre">HDFLogger.KEY_OUTPUT</span></code></a></li>
-<li><a class="reference internal" href="#labbench.HDFLogger.close"><code class="docutils literal notranslate"><span class="pre">HDFLogger.close()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.HDFLogger.nonscalar_file_type"><code class="docutils literal notranslate"><span class="pre">HDFLogger.nonscalar_file_type</span></code></a></li>
-<li><a class="reference internal" href="#labbench.HDFLogger.open"><code class="docutils literal notranslate"><span class="pre">HDFLogger.open()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#labbench.LabviewSocketInterface"><code class="docutils literal notranslate"><span class="pre">LabviewSocketInterface</span></code></a><ul>
@@ -2156,9 +2096,11 @@ devices that do not support this message.</p>
 </li>
 <li><a class="reference internal" href="#labbench.SerialDevice"><code class="docutils literal notranslate"><span class="pre">SerialDevice</span></code></a><ul>
 <li><a class="reference internal" href="#labbench.SerialDevice.baud_rate"><code class="docutils literal notranslate"><span class="pre">SerialDevice.baud_rate</span></code></a></li>
+<li><a class="reference internal" href="#labbench.SerialDevice.bytesize"><code class="docutils literal notranslate"><span class="pre">SerialDevice.bytesize</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.close"><code class="docutils literal notranslate"><span class="pre">SerialDevice.close()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.dsrdtr"><code class="docutils literal notranslate"><span class="pre">SerialDevice.dsrdtr</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.from_hwid"><code class="docutils literal notranslate"><span class="pre">SerialDevice.from_hwid()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.SerialDevice.from_url"><code class="docutils literal notranslate"><span class="pre">SerialDevice.from_url()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.isopen"><code class="docutils literal notranslate"><span class="pre">SerialDevice.isopen</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.list_ports"><code class="docutils literal notranslate"><span class="pre">SerialDevice.list_ports()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.open"><code class="docutils literal notranslate"><span class="pre">SerialDevice.open()</span></code></a></li>
@@ -2167,16 +2109,15 @@ devices that do not support this message.</p>
 <li><a class="reference internal" href="#labbench.SerialDevice.rtscts"><code class="docutils literal notranslate"><span class="pre">SerialDevice.rtscts</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.stopbits"><code class="docutils literal notranslate"><span class="pre">SerialDevice.stopbits</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.timeout"><code class="docutils literal notranslate"><span class="pre">SerialDevice.timeout</span></code></a></li>
-<li><a class="reference internal" href="#labbench.SerialDevice.write_termination"><code class="docutils literal notranslate"><span class="pre">SerialDevice.write_termination</span></code></a></li>
+<li><a class="reference internal" href="#labbench.SerialDevice.write_timeout"><code class="docutils literal notranslate"><span class="pre">SerialDevice.write_timeout</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialDevice.xonxoff"><code class="docutils literal notranslate"><span class="pre">SerialDevice.xonxoff</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice</span></code></a><ul>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.baud_rate"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.baud_rate</span></code></a></li>
+<li><a class="reference internal" href="#labbench.SerialLoggingDevice.bytesize"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.bytesize</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.clear"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.clear()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.close"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.close()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.SerialLoggingDevice.configure"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.configure()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.SerialLoggingDevice.data_format"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.data_format</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.dsrdtr"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.dsrdtr</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.fetch"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.fetch()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.isopen"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.isopen</span></code></a></li>
@@ -2191,22 +2132,20 @@ devices that do not support this message.</p>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.stop_timeout"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.stop_timeout</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.stopbits"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.stopbits</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.timeout"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.timeout</span></code></a></li>
-<li><a class="reference internal" href="#labbench.SerialLoggingDevice.write_termination"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.write_termination</span></code></a></li>
+<li><a class="reference internal" href="#labbench.SerialLoggingDevice.write_timeout"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.write_timeout</span></code></a></li>
 <li><a class="reference internal" href="#labbench.SerialLoggingDevice.xonxoff"><code class="docutils literal notranslate"><span class="pre">SerialLoggingDevice.xonxoff</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#labbench.ShellBackend"><code class="docutils literal notranslate"><span class="pre">ShellBackend</span></code></a><ul>
-<li><a class="reference internal" href="#labbench.ShellBackend.binary_path"><code class="docutils literal notranslate"><span class="pre">ShellBackend.binary_path</span></code></a></li>
+<li><a class="reference internal" href="#labbench.ShellBackend.background_timeout"><code class="docutils literal notranslate"><span class="pre">ShellBackend.background_timeout</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.clear_stdout"><code class="docutils literal notranslate"><span class="pre">ShellBackend.clear_stdout()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.close"><code class="docutils literal notranslate"><span class="pre">ShellBackend.close()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.isopen"><code class="docutils literal notranslate"><span class="pre">ShellBackend.isopen</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.kill"><code class="docutils literal notranslate"><span class="pre">ShellBackend.kill()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.open"><code class="docutils literal notranslate"><span class="pre">ShellBackend.open()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.read_stdout"><code class="docutils literal notranslate"><span class="pre">ShellBackend.read_stdout()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.ShellBackend.resource"><code class="docutils literal notranslate"><span class="pre">ShellBackend.resource</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.run"><code class="docutils literal notranslate"><span class="pre">ShellBackend.run()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.running"><code class="docutils literal notranslate"><span class="pre">ShellBackend.running()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.ShellBackend.timeout"><code class="docutils literal notranslate"><span class="pre">ShellBackend.timeout</span></code></a></li>
 <li><a class="reference internal" href="#labbench.ShellBackend.write_stdin"><code class="docutils literal notranslate"><span class="pre">ShellBackend.write_stdin()</span></code></a></li>
 </ul>
 </li>
@@ -2247,7 +2186,6 @@ devices that do not support this message.</p>
 <li><a class="reference internal" href="#labbench.Win32ComDevice.concurrency"><code class="docutils literal notranslate"><span class="pre">Win32ComDevice.concurrency</span></code></a></li>
 <li><a class="reference internal" href="#labbench.Win32ComDevice.isopen"><code class="docutils literal notranslate"><span class="pre">Win32ComDevice.isopen</span></code></a></li>
 <li><a class="reference internal" href="#labbench.Win32ComDevice.open"><code class="docutils literal notranslate"><span class="pre">Win32ComDevice.open()</span></code></a></li>
-<li><a class="reference internal" href="#labbench.Win32ComDevice.resource"><code class="docutils literal notranslate"><span class="pre">Win32ComDevice.resource</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#labbench.concurrently"><code class="docutils literal notranslate"><span class="pre">concurrently()</span></code></a></li>
@@ -2271,6 +2209,7 @@ devices that do not support this message.</p>
 <li><a class="reference internal" href="#labbench.read_relational"><code class="docutils literal notranslate"><span class="pre">read_relational()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.retry"><code class="docutils literal notranslate"><span class="pre">retry()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.sequentially"><code class="docutils literal notranslate"><span class="pre">sequentially()</span></code></a></li>
+<li><a class="reference internal" href="#labbench.shell_options_from_keyed_values"><code class="docutils literal notranslate"><span class="pre">shell_options_from_keyed_values()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.show_messages"><code class="docutils literal notranslate"><span class="pre">show_messages()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.sleep"><code class="docutils literal notranslate"><span class="pre">sleep()</span></code></a></li>
 <li><a class="reference internal" href="#labbench.stopwatch"><code class="docutils literal notranslate"><span class="pre">stopwatch()</span></code></a></li>

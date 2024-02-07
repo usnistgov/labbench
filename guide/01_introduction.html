@@ -8,7 +8,7 @@
     <title>Introduction &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <script src="../_static/documentation_options.js?v=5273b9ac"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
@@ -94,7 +94,7 @@ These characteristics are necessary to scale up the complexity of large testbeds
 <ul class="simple">
 <li><p>Expedited development of python device wrappers, including specialized backends for <a class="reference external" href="https://github.com/pythonnet/pythonnet/wiki">pythonnet</a>, <a class="reference external" href="https://pyvisa.readthedocs.io/">pyvisa</a>, <a class="reference external" href="https://pyserial.readthedocs.io/en/latest/">pyserial</a>, <a class="reference external" href="https://docs.python.org/3/library/subprocess.html">subprocess</a>, <a class="reference external" href="https://docs.python.org/3/library/telnetlib.html">telnetlib</a></p></li>
 <li><p>Descriptor-driven development: minimize the distance between programming manuals and python wrappers and apply calibrations transparently</p></li>
-<li><p>Automated tracking of simple device parameters into CSV, HDF, or sqlite based on introspection</p></li>
+<li><p>Automated logging of simple device parameters into root CSV or sqlite root tables, pointing to relational data and metadata in json and plain-text</p></li>
 <li><p>Simplified multi-threaded concurrency tools for lab applications</p></li>
 <li><p>Container objects for nesting device wrappers and snippets of test procedures</p></li>
 <li><p>Support for running experiments based on tables of test conditions</p></li>

@@ -1,6 +1,6 @@
 [project]
 name = "labbench"
-version = "0.35.0"
+version = "0.35.1"
 
 description = """\
     The `labbench` module provides API tools to support python scripting for laboratory automation.\
@@ -109,6 +109,10 @@ path = "src/labbench/_version.py"
 [tool.hatch.envs.default]
 features = ["dev"]
 path = ".venv"
+python = "3.12"
+
+[tool.hatch.envs.build]
+features = ["dev"]
 python = "3.12"
 
 # test environment

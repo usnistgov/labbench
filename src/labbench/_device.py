@@ -90,7 +90,6 @@ def log_paramattr_events(msg):
     try:
         attr_def = attr.get_class_attrs(device)[attr_name]
     except KeyError:
-        print('attr name: ', msg, attr_name)
         raise
 
     label = ' '
@@ -148,9 +147,6 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
     def __init__(self, *args, **kwargs):
         """Update default values with these arguments on instantiation."""
 
-        if hasattr(type(self), 'resource'):
-            print(type(self).resource.kw_only)
-        print(self.__init__.__signature__, args, kwargs)
         # validate and apply args and kwargs into a single dict by argument name
         values = inspect.signature(self.__init__).bind(*args, **kwargs).arguments
 

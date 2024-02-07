@@ -354,13 +354,3 @@ class Host(core.Device):
             return str(tuple(diff.b_path for diff in diffs))[1:-1]
         else:
             return ''
-
-
-if __name__ == '__main__':
-    #    core.show_messages('DEBUG')
-    #
-    #    with Host() as pc:
-    #        print(pc.time)
-
-    with Email(recipients=['daniel.kuester@nist.gov']) as mail:
-        pass

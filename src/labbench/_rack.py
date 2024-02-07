@@ -756,7 +756,6 @@ def package_owned_contexts(top):
         if isinstance(obj, core.Device)
     }
     devices_desc = f"({', '.join([str(c) for c in devices.values()])})"
-    print(devices)
     devices = util.concurrently(name='', which='context', **devices)
 
     # what remain are instances of Rack and other Owner types

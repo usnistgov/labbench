@@ -133,6 +133,7 @@ all = [
 omit = ["src/labbench/testing/*", "src/labbench/cli/*", "src/labbench/notebooks.py"]
 
 # documentation
+
 [tool.hatch.envs.doc]
 features = ["doc"]
 env-vars = {TEXINPUTS="doc/latex"}

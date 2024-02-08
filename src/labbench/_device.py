@@ -394,7 +394,7 @@ class Device(DeviceDataClass):
             # In case an exception has occurred before __init__
             return f'{name}()'
 
-    @attr.property.bool(sets=False)
+    @attr.property.bool()
     def isopen(self):
         """`True` if the backend is ready for use"""
         try:

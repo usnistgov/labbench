@@ -92,6 +92,10 @@ def instantiated_device():
 def test_basic_get(opened_device):
     _ = opened_device.any
 
+def test_isopen_read_only():
+    # tests that StoreTestDevice.isopen.sets has been set False
+    # due to no setter being implemented
+    assert StoreTestDevice.isopen.sets is False
 
 def test_basic_set(opened_device):
     opened_device.any = 5

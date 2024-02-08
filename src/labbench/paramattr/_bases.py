@@ -969,9 +969,6 @@ class Value(ParamAttr[T]):
         owner._attr_store.cache[self.name] = value
         owner.__notify__(self.name, value, 'set', cache=self.cache)
 
-    def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
-        pass
-
     def __init_owner_instance__(self, owner: HasParamAttrs):
         super().__init_owner_instance__(owner)
 
@@ -1064,15 +1061,23 @@ class OwnerAccessAttr(ParamAttr[T]):
             if func_name != self.name and getattr(owner_cls, func_name, None) is self:
                 delattr(owner_cls, func_name)
 
-        if self.key is Undefined:
-            if 'sets' in self.kws and self.sets and not self._setter:
-                raise TypeError(
-                    f'a setter is needed to implement {self.ROLE} "{self.name}" {self.kws}'
-                )
-            if 'gets' in self.kws and self.gets and not self._getter:
-                raise TypeError(
-                    f'a getter is needed to implement {self.ROLE} "{self.name}"'
-                )
+        missing_set = self.key is Undefined and not self._setter
+        if 'sets' in self.kws:
+            # for an explicit sets=True, ensure it's implemented
+            if self.sets and missing_set:
+                raise TypeError(f'decorate @{self}.setter or define with a key to implement sets=True')
+        elif missing_set:
+            # otherwise if a set implementation is missing, set sets=False
+            self.sets = False
+
+        missing_get = self.key is Undefined and not self._getter
+        if 'gets' in self.kws:
+            # for an explicit gets=True, ensure it's implemented
+            if self.gets and missing_get:
+                raise TypeError(f'decorate @{self}.getter or define with a key to implement gets=True')
+        elif missing_get:
+            # otherwise if a get implementation is missing, set gets=False
+            self.gets = False
 
     @util.hide_in_traceback
     def get_from_owner(self, owner: HasParamAttrs, kwargs: dict[str, Any] = {}):

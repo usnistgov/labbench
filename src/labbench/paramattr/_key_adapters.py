@@ -1,9 +1,10 @@
 import builtins
 import string
 from typing import Any, Union
+from numbers import Number
 
-from ._bases import HasParamAttrs, KeyAdapterBase, ParamAttr, T
-
+from ._bases import HasParamAttrs, KeyAdapterBase, ParamAttr, T, BoundedNumber
+from ._types import Bool
 
 class message_keying(KeyAdapterBase):
     """Base class for decorators configure wrapper access to a backend API in of a
@@ -98,8 +99,21 @@ class message_keying(KeyAdapterBase):
     def from_message(self, msg):
         return self.message_map.get(msg, msg)
 
-    def to_message(self, value):
-        return self.value_map.get(value, value)
+    def to_message(self, value, attr_def: ParamAttr):
+        matches = tuple({value} & self.value_map.keys())
+        if len(matches) == 0:
+            return value
+                       
+        # gymnastics caused by the python quirk that (True == 1) but not (True is 1):
+        # we don't want to remap 1 using self.value_map[True]
+        # TODO: change the definition of remap to fix this problem
+        key_type = type(self.message_map[self.value_map[matches[0]]])
+        if key_type is bool and isinstance(attr_def, BoundedNumber):
+            return value
+        elif issubclass(key_type, Number) and not key_type is not bool and isinstance(attr_def, Bool):
+            return value
+        
+        return self.value_map[value]
 
     def get(
         self,
@@ -163,7 +177,7 @@ class message_keying(KeyAdapterBase):
         if self.write_func is None:
             raise ValueError('write_func needs to be set for key set operations')
 
-        value_msg = self.to_message(value)
+        value_msg = self.to_message(value, paramattr)
         expanded_scpi_key = scpi_key.format(**kwargs)
         write_func = getattr(owner, self.write_func)
         write_func(self.write_fmt.format(key=expanded_scpi_key, value=value_msg))

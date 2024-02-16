@@ -63,8 +63,8 @@ Establishing basic control over an instrument often needs some trial and error. 
 3. Refer to the instrument programming manual to add one command at a time, testing each by verifying on the instrument itself
 ```
 
-## Comparison against direct implementation with pyvisa
-As a point of comparison, suppose we implement our example by writing our own class from scratch, without labbench. It might look like this:
+## Comparison: direct pyvisa implementation
+To help understand the example above, here is a similar class written from scratch, written in a more typical python class style:
 
 ```{code-cell} ipython3
 import pyvisa
@@ -76,14 +76,15 @@ class PowerSensor:
         self.rm = rm
         self.resource_name = resource_name
 
-    def open():
+    def __enter__(self):
         self.backend = rm.open_resource(resource_name)
+        return self
 
-    def close():
+    def __exit__(self, *args):
         self.backend.close()
 
-    def frequency(self, set_value=None):
-        """get or set the instrument calibration frequency"""
+    def frequency(self, set_value: float = None):
+        """get or set the instrument calibration frequency (in Hz)"""
         command = 'SENS:FREQ'
         
         if set_value is None:
@@ -102,10 +103,11 @@ class PowerSensor:
         return float(self.query)
 ```
 
-This is a functional way to leverage pyvisa to communicate with the power sensor. Yet, if we scale up to more parameters, substantial parts of this become repetitive boilerplate:
-* The line count doubles the labbench implementation
+This shows the boilerplate operations implemented behind the scenes by {py:class}`labbench.VISADevice` and {py:mod}`labbench.paramattr` (without any of the callback capabilities). This is functional, but imagine if we scale up to more parameters: we would have to copy and paste similar blocks of code, creating a file mostly consisting of repetitive code. This leads to several disadvantages:
 * Maintenance of the basic algorithm becomes difficult
-* Key hard-coded constants are buried, making them harder to find and risking copy/paste transcription mistakes when implementing other parameters
+* The hard-coded constants specific to `frequency` are buried in the center of the code blocks.
+  This makes them harder to find and read, and risks transcription mistakes when copying from other parameters
+* The line count is doubled compared to the labbench implementation
 
 
 ## Further Reading

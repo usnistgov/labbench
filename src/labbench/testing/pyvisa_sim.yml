@@ -61,7 +61,7 @@ devices:
 
       # fixed since we can't dynamically generate FETC?
       trigger_count:
-        default: 200
+        default: 1
         getter:
           q: "TRIG:COUN?"
           r: "{}"
@@ -69,7 +69,7 @@ devices:
           q: "TRIG:COUN {}"
           # r: OK
         specs:
-          min: 200
+          min: 1
           max: 200
           type: int
 

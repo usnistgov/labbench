@@ -30,6 +30,18 @@ def test_method_calls():
 
         values = specan.fetch_ascii_values().values
         assert np.allclose(values, SPECAN_TRACE)
+
+def test_remap_typing():
+    """checks for boolean typing bugs relating to remap={True: ''}"""
+    sensor = pyvisa_sim.PowerSensor()
+
+    with sensor:
+        sensor.trigger_count = 50
+        assert sensor.trigger_count == 50
+
+        sensor.trigger_count = 1
+        assert sensor.trigger_count == 1
+
 def test_visadevice_no_resource():
     inst = lb.VISADevice()
 

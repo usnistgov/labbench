@@ -18,8 +18,9 @@ class key_adapter(attr.visa_keying):
         self,
         *,
         defaults: dict[str, Any] = {},
+        remap: dict[Any, str] = {}
     ):
-        super().__init__()
+        super().__init__(remap=remap)
         self.defaults = defaults
 
     def get_kwarg_names(self, key_def: Union[str, tuple[str]]) -> tuple[str]:

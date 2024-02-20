@@ -1016,7 +1016,6 @@ class ParamAttrLogger(
         force_relational: list[str] = ['host_log'],
         nonscalar_file_type: str = 'csv',
         tar: bool = False,
-        git_commit_in: str = None,
     ):
         self.path = Path(path)
         self.last_row = 0
@@ -1029,7 +1028,7 @@ class ParamAttrLogger(
         # log host introspection
         # TODO: smarter
 
-        self.host = _host.Host(git_commit_in=git_commit_in)
+        self.host = _host.Host()
 
         # select the backend that dumps relational data
         munge_cls = MungeToTar if tar else MungeToDirectory

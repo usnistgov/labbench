@@ -9,24 +9,41 @@ import time
 import typing
 from traceback import format_exc, format_exception_only, format_tb
 
+from dulwich.repo import Repo, NotGitRepository
+from dulwich import porcelain
+from pathlib import Path
+
 from . import _device as core
 from . import paramattr as attr
 from . import util
 
 if typing.TYPE_CHECKING:
     import smtplib
-
-    import git
     import pandas as pd
     import pip
 else:
-    git = util.lazy_import('git')
     pd = util.lazy_import('pandas')
     pip = util.lazy_import('pip')
     smtplib = util.lazy_import('smtplib')
 
 __all__ = ['Host', 'Email']
 
+
+def find_repo_in_parents(path: Path) -> Repo:
+    """find a git repository in path, or in the first parent to contain one"""
+    path = Path(path).absolute()
+
+    try:
+        return Repo(str(path))
+    except NotGitRepository as ex:
+        if not path.is_dir() or path.parent is path:
+            raise
+
+        try:
+            return find_repo_in_parents(path.parent)
+        except NotGitRepository:
+            ex.args = (ex.args[0] + ' (and parent directories)')
+            raise ex
 
 class LogStreamBuffer:
     def __init__(self):
@@ -218,21 +235,9 @@ class JSONFormatter(logging.Formatter):
 
 
 class Host(core.Device):
-    # Settings
-    git_commit_in: str = attr.value.str(
-        default=None,
-        allow_none=True,
-        help='git commit on open() if run inside a git repo with this branch name',
-    )
-
     time_format = '%Y-%m-%d %H:%M:%S'
 
     def open(self):
-        """The host setup method tries to commit current changes to the tree"""
-
-        # touch git to ensure completed import
-        git.__version__
-
         log_formatter = JSONFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
@@ -246,15 +251,9 @@ class Host(core.Device):
 
         # git repository information
         try:
-            repo = git.Repo('.', search_parent_directories=True)
-            self._logger.debug('running in git repository')
-            if (
-                self.git_commit_in is not None
-                and repo.active_branch == self.git_commit_in
-            ):
-                repo.index.commit('start of measurement')
-                self._logger.debug('git commit finished')
-        except git.NoSuchPathError:
+            repo = find_repo_in_parents('.')
+            self._logger.debug(f'running in git repository at {repo.path}')
+        except NotGitRepository:
             repo = None
             self._logger.info('not running in a git repository')
 
@@ -319,23 +318,23 @@ class Host(core.Device):
         else:
             return {}
 
-    @attr.property.str(cache=True)
+    @attr.property.str(cache=True, allow_none=True)
     def git_commit_id(self):
-        """Try to determine the current commit hash of the current git repo"""
+        """the unique identifier hash that can be used to access the current commit in the git repo"""
+        repo = self.backend['repo']
+        if repo is None:
+            return None
+        else:
+            return repo.head().decode()
 
-        try:
-            commit = self.backend['repo'].commit()
-            return commit.hexsha
-        except git.NoSuchPathError:
-            return ''
-
-    @attr.property.str(cache=True)
+    @attr.property.str(cache=True, allow_none=True)
     def git_remote_url(self):
-        """Try to identify the remote URL of the repository of the current git repo"""
-        try:
-            return next(self.backend['repo'].remote().urls)
-        except BaseException:
-            return ''
+        """the remote URL of the repository of the current git repo"""
+        repo = self.backend['repo']
+        if repo is None:
+            return None
+        else:
+            return repo.get_config().get(('remote', 'origin'), 'url').decode()
 
     @attr.property.str(cache=True)
     def hostname(self):
@@ -347,10 +346,12 @@ class Host(core.Device):
         """URL for browsing the current git repository"""
         return f'{self.git_remote_url}/tree/{self.git_commit_id}'
 
-    @attr.property.str(cache=True)
+    @attr.property.list(cache=True)
     def git_pending_changes(self):
-        if self.backend['repo'] is not None:
-            diffs = self.backend['repo'].index.diff(None)
-            return str(tuple(diff.b_path for diff in diffs))[1:-1]
+        """unstaged changes to files in the repository"""
+        repo = self.backend['repo']
+        if repo is None:
+            return []
         else:
-            return ''
+            names = porcelain.status(repo, untracked_files='no').unstaged
+            return [n.decode() for n in names]

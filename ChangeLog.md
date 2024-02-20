@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.36.0]
+### Changed
+- Replaced `GitPython` dependency with pure-python `dulwich` to simplify packaging and avoid a
+   separate (and undocumented) `git` installation requirement
+
 ## [0.35.3]
 ### Changed
 - Fix a bug where visa_adapter with remap={True...} could insert the remapped value for True when given numeric values of 1

@@ -103,16 +103,16 @@ class message_keying(KeyAdapterBase):
         matches = tuple({value} & self.value_map.keys())
         if len(matches) == 0:
             return value
-                       
+
         # gymnastics caused by the python quirk that (True == 1) but not (True is 1):
         # we don't want to remap 1 using self.value_map[True]
         # TODO: change the definition of remap to fix this problem
         key_type = type(self.message_map[self.value_map[matches[0]]])
         if key_type is bool and isinstance(attr_def, BoundedNumber):
             return value
-        elif issubclass(key_type, Number) and not key_type is not bool and isinstance(attr_def, Bool):
+        elif issubclass(key_type, Number) and not issubclass(key_type, bool) and isinstance(attr_def, Bool):
             return value
-        
+
         return self.value_map[value]
 
     def get(

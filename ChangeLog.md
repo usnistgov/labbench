@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Replaced `GitPython` dependency with pure-python `dulwich` to simplify packaging and avoid a
    separate (and undocumented) `git` installation requirement
+- Corrected another remapping bug
 
 ## [0.35.3]
 ### Changed

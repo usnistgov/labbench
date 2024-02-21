@@ -35,17 +35,17 @@ When available, other more specialized classes (subclasses) can tailor `VISADevi
 Labbench supports the use of any `pyvisa` [resource manager backend](https://pyvisa.readthedocs.io/en/1.14.1/introduction/configuring.html).
 
 * The default is {py:module}`pyvisa-py` (`"@py"``), which is installed as a dependency
-* A special case driver for demonstration and testing is `@sim`.
+* A special case driver for demonstration and testing is `@sim-labbench`.
   Specialized `VISADevice` objects for the simulated instruments are provided in {py:module}`labbench.testing.pyvisa_sim`
 
-The following examples use some pre-defined simulated VISA instruments to illustrate workflow. These are exposed through the {py:mod}`pyvisa` "@sim" resource manager.
+The following examples use some pre-defined simulated VISA instruments to illustrate workflow. These are exposed through the {py:mod}`pyvisa` "@sim-labbench" resource manager.
 
 ## Discover connected instruments 
 The labbench command line tool provides device discovery based on {py:function}`labbench.visa_probe_devices`. The following 
 
 ```{code-cell} ipython3
 # remove the ! when running in a command prompt
-!labbench visa-probe @sim 
+!labbench visa-probe @sim-labbench 
 ```
 
 This probes instruments by attempting `*IDN?` queries on the resource strings discovered by the resource manager. The resulting responses are used to determine valid connection parameters (`read_termination` and `write_termination`). When successful, identifying characteristics (make, model, serial number, and revision) are shown, together with explicit syntax to create a generic instrument control object.

@@ -84,7 +84,7 @@
 <span id="labbench"></span><h1>labbench<a class="headerlink" href="#module-labbench" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.CSVLogger">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">CSVLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">git_commit_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.CSVLogger" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">CSVLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.CSVLogger" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ParamAttrLogger</span></code></p>
 <p>Manage logging of experimental data and methods into CSV files.</p>
 <p>Explicit save methods are exposed for arbitrary custom data. Automatic logging is performed for</p>
@@ -229,6 +229,7 @@ This will be called <em>without</em> super().close().</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.Device.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -277,6 +278,7 @@ and dll_name.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.DotNetDevice.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -326,6 +328,7 @@ subject line. Stderr is also sent.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.Email.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -433,6 +436,7 @@ assigning the commands implemented in the corresponding labview VI.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.LabviewSocketInterface.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -541,7 +545,7 @@ sa = MySpectrumAnalyzer()</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="labbench.SQLiteLogger">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SQLiteLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">git_commit_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SQLiteLogger" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">labbench.</span></span><span class="sig-name descname"><span class="pre">SQLiteLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_relational_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_relational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['host_log']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonscalar_file_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.SQLiteLogger" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ParamAttrLogger</span></code></p>
 <p>Store data and property traits to disk into an an sqlite database.</p>
 <p>This extends <code class="xref py py-class docutils literal notranslate"><span class="pre">Aggregator</span></code> to support</p>
@@ -730,6 +734,7 @@ like:</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.SerialDevice.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -757,7 +762,7 @@ in self.resource</p>
 <span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'N'</span></em><a class="headerlink" href="#labbench.SerialDevice.parity" title="Link to this definition">¶</a></dt>
 <dd><p>parity in the physical serial connection.</p>
 <ul class="simple">
-<li><p>Allowed values are {‘S’, ‘O’, ‘N’, ‘E’, ‘M’}</p></li>
+<li><p>Allowed values are {‘E’, ‘N’, ‘O’, ‘M’, ‘S’}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
@@ -890,6 +895,7 @@ from the serial port.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -909,7 +915,7 @@ from the serial port.</p>
 <span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'N'</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.parity" title="Link to this definition">¶</a></dt>
 <dd><p>parity in the physical serial connection.</p>
 <ul class="simple">
-<li><p>Allowed values are {‘S’, ‘O’, ‘N’, ‘E’, ‘M’}</p></li>
+<li><p>Allowed values are {‘E’, ‘N’, ‘O’, ‘M’, ‘S’}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
@@ -1069,6 +1075,7 @@ queued stdout.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.ShellBackend.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -1154,6 +1161,7 @@ the property trait set and get operations (as appropriate).</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.TelnetDevice.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -1266,6 +1274,7 @@ to be invoked.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.VISADevice.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>
@@ -1495,6 +1504,7 @@ this thread support wrapper is applied to the dispatched Win32Com object.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isopen</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#labbench.Win32ComDevice.isopen" title="Link to this definition">¶</a></dt>
 <dd><p><cite>True</cite> if the backend is ready for use</p>
 <ul class="simple">
+<li><p>Cannot be set after device creation</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 </ul>
 </dd></dl>

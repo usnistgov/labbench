@@ -110,9 +110,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-<span class=" -Color -Color-Red">Class constructor information:</span>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Red">Class constructor information:</span>
  Measurement<span class=" -Color -Color-Blue">(</span>
     <span class=" -Color -Color-Blue">*,</span>
     spectrum_analyzer<span class=" -Color -Color-Blue">:</span> labbench<span class=" -Color -Color-Blue">.</span>testing<span class=" -Color -Color-Blue">.</span>pyvisa_sim<span class=" -Color -Color-Blue">.</span>SpectrumAnalyzer <span class=" -Color -Color-Blue">=</span> SpectrumAnalyzer<span class=" -Color -Color-Blue">(),</span>
@@ -127,7 +125,7 @@
 <p>To connect the device in this container together, the first step is to instantiate an object from the <code class="docutils literal notranslate"><span class="pre">Measuerement</span></code> class. Like all <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> objects, Rack objects all have <code class="docutils literal notranslate"><span class="pre">open</span></code> and <code class="docutils literal notranslate"><span class="pre">close</span></code> methods, which are called automatically by use of the <code class="docutils literal notranslate"><span class="pre">with</span></code> context manager block.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim&#39;</span><span class="p">)</span> <span class="c1"># the simulated backend for these instruments</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim-labbench&#39;</span><span class="p">)</span> <span class="c1"># the simulated backend for these instruments</span>
 <span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;debug&#39;</span><span class="p">)</span>
 
 <span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">power_sensor</span><span class="o">=</span><span class="n">PowerSensor</span><span class="p">())</span>
@@ -137,398 +135,25 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\r\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-{&#39;spectrum_analyzer&#39;: SpectrumAnalyzer(), &#39;power_sensor&#39;: PowerSensor()}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL1::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL1::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::8::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::8::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL2::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL2::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x2468::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:2222::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x2468::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::9::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:2222::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL3::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::9::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x3692::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL3::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x3692::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:3333::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:3333::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::10::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::10::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x4444::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x4444::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:4444::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:4444::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Spectrum analyzer center frequency:  10000000.0
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-07 12:08:08,854.854</span> • <span class=" -Color -Color-Blue">labbench:</span> context order: (spectrum_analyzer, power_sensor)-&gt;(&lt;__main__.Measurement object at 0x10c36cbb0&gt;)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1125, in open
-    matches = visa_probe_devices(self)
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1606, in visa_probe_devices
-    devices = util.concurrently(**calls, catch=False, flatten=False)
-labbench.util.ConcurrentException: PowerSensor(): 16 call(s) raised exceptions
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1125, in open
-    matches = visa_probe_devices(self)
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1606, in visa_probe_devices
-    devices = util.concurrently(**calls, catch=False, flatten=False)
-labbench.util.ConcurrentException: SpectrumAnalyzer(): 16 call(s) raised exceptions
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1125, in open
-    matches = visa_probe_devices(self)
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1606, in visa_probe_devices
-    devices = util.concurrently(**calls, catch=False, flatten=False)
-labbench.util.ConcurrentException: PowerSensor(): 16 call(s) raised exceptions
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1125, in open
-    matches = visa_probe_devices(self)
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1606, in visa_probe_devices
-    devices = util.concurrently(**calls, catch=False, flatten=False)
-labbench.util.ConcurrentException: SpectrumAnalyzer(): 16 call(s) raised exceptions
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-07 12:08:10,690.691</span> • <span class=" -Color -Color-Blue">labbench:</span> entry into context for  1.833 s elapsed before exception 2 call(s) raised exceptions
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-07 12:08:10,691.691</span> • <span class=" -Color -Color-Blue">labbench:</span> entry into context for &lt;__main__.Measurement object at 0x10c36cbb0&gt; 1.834 s elapsed before exception 2 call(s) raised exceptions
-<span class=" -Color -Color-Bold -Color-Bold-Black">WARNING</span> <span class=" -Color -Color-Green">2024-02-07 12:08:10,691.692</span> • <span class=" -Color -Color-Blue">labbench:</span> enter_MultipleContexts_0x10c36cd90.__exit__ raised exceptions raised in 2 contexts are printed inline in cleanup attempt after another exception in enter_MultipleContexts_0x10c36cd90.__enter__
-</pre></div>
-</div>
-<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">ConcurrentException</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
-<span class="nn">File ~/Documents/src/labbench/src/labbench/util.py:850,</span> in <span class="ni">MultipleContexts.__enter__</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">    </span><span class="mi">849</span> <span class="k">try</span><span class="p">:</span>
-<span class="ne">--&gt; </span><span class="mi">850</span>     <span class="bp">self</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># exit any open contexts before raise</span>
-<span class="g g-Whitespace">    </span><span class="mi">851</span> <span class="k">finally</span><span class="p">:</span>
-
-<span class="nn">File ~/Documents/src/labbench/src/labbench/util.py:898,</span> in <span class="ni">MultipleContexts.__exit__</span><span class="nt">(self, *exc)</span>
-<span class="g g-Whitespace">    </span><span class="mi">897</span>     <span class="n">ex</span><span class="o">.</span><span class="n">thread_exceptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exc</span>
-<span class="ne">--&gt; </span><span class="mi">898</span>     <span class="k">raise</span> <span class="n">ex</span>
-<span class="g g-Whitespace">    </span><span class="mi">899</span> <span class="k">if</span> <span class="n">exc</span> <span class="o">!=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-<span class="g g-Whitespace">    </span><span class="mi">900</span>     <span class="c1"># sys.exc_info() may have been</span>
-<span class="g g-Whitespace">    </span><span class="mi">901</span>     <span class="c1"># changed by one of the exit methods</span>
-<span class="g g-Whitespace">    </span><span class="mi">902</span>     <span class="c1"># so provide explicit exception info</span>
-
-<span class="ne">ConcurrentException</span>: exceptions raised in 2 contexts are printed inline
-
-<span class="n">During</span> <span class="n">handling</span> <span class="n">of</span> <span class="n">the</span> <span class="n">above</span> <span class="n">exception</span><span class="p">,</span> <span class="n">another</span> <span class="n">exception</span> <span class="n">occurred</span><span class="p">:</span>
-
-<span class="ne">ConcurrentException</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">5</span>
-<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;debug&#39;</span><span class="p">)</span>
-<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">power_sensor</span><span class="o">=</span><span class="n">PowerSensor</span><span class="p">())</span>
-<span class="ne">----&gt; </span><span class="mi">5</span> <span class="k">with</span> <span class="n">meas</span><span class="p">:</span>
-<span class="g g-Whitespace">      </span><span class="mi">6</span>     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Spectrum analyzer center frequency: &#39;</span><span class="p">,</span> <span class="n">meas</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">center_frequency</span><span class="p">)</span>
-
-<span class="nn">File ~/Documents/src/labbench/src/labbench/_rack.py:977,</span> in <span class="ni">Owner.__enter__.&lt;locals&gt;.__enter__</span><span class="nt">()</span>
-<span class="g g-Whitespace">    </span><span class="mi">975</span> <span class="nd">@wraps</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__enter__</span><span class="o">.</span><span class="n">fget</span><span class="p">)</span>
-<span class="g g-Whitespace">    </span><span class="mi">976</span> <span class="k">def</span> <span class="fm">__enter__</span><span class="p">():</span>
-<span class="ne">--&gt; </span><span class="mi">977</span>     <span class="n">context</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
-<span class="g g-Whitespace">    </span><span class="mi">979</span>     <span class="k">return</span> <span class="bp">self</span>
-
-<span class="ne">ConcurrentException</span>: 2 call(s) raised exceptions
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:46,278.278</span> • <span class=" -Color -Color-Blue">labbench:</span> context order: (spectrum_analyzer, power_sensor)-&gt;(&lt;__main__.Measurement object at 0x118910220&gt;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:47,834.834</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Spectrum Analyzer #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:47,835.836</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:47,836.836</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,089.089</span> • <span class=" -Color -Color-Blue">power_sensor:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,091.091</span> • <span class=" -Color -Color-Blue">power_sensor:</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,092.093</span> • <span class=" -Color -Color-Blue">power_sensor:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,093.094</span> • <span class=" -Color -Color-Blue">labbench:</span> entry into context for  1.813 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,094.094</span> • <span class=" -Color -Color-Blue">labbench:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,094.095</span> • <span class=" -Color -Color-Blue">labbench:</span> entry into context for &lt;__main__.Measurement object at 0x118910220&gt; 1.814 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,095.095</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> query(&#39;SENS:FREQ?&#39;):
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,095.096</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span>     → &#39;10000000.000000&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,096.097</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> center_frequency → 10000000.0  (Hz)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,097.097</span> • <span class=" -Color -Color-Blue">labbench:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,098.098</span> • <span class=" -Color -Color-Blue">power_sensor:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,098.099</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> closed
 </pre></div>
 </div>
 </div>
@@ -552,6 +177,35 @@ labbench.util.ConcurrentException: SpectrumAnalyzer(): 16 call(s) raised excepti
 <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">sweep</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Spectrum analyzer center frequency: &#39;</span><span class="p">,</span> <span class="n">sweep</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">center_frequency</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Signal generator center frequency: &#39;</span><span class="p">,</span> <span class="n">sweep</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">center_frequency</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Spectrum analyzer center frequency:  10000000.0
+Signal generator center frequency:  10000000.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,110.110</span> • <span class=" -Color -Color-Blue">labbench:</span> context order: (generator, spectrum_analyzer, power_sensor)-&gt;(measurement,&lt;__main__.Testbed object at 0x11893a160&gt;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,137.137</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,138.138</span> • <span class=" -Color -Color-Blue">generator:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Signal Generator #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,139.139</span> • <span class=" -Color -Color-Blue">power_sensor:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,139.139</span> • <span class=" -Color -Color-Blue">generator:</span> &#39;TCPIP0::localhost:10001::inst0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,139.140</span> • <span class=" -Color -Color-Blue">power_sensor:</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,140.140</span> • <span class=" -Color -Color-Blue">generator:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,140.140</span> • <span class=" -Color -Color-Blue">power_sensor:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,141.141</span> • <span class=" -Color -Color-Blue">measurement:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,141.141</span> • <span class=" -Color -Color-Blue">labbench:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,141.142</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> query(&#39;SENS:FREQ?&#39;):
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,141.142</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span>     → &#39;10000000.000000&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,142.142</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> center_frequency → 10000000.0  (Hz)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,142.142</span> • <span class=" -Color -Color-Blue">generator:</span> query(&#39;SENS:FREQ?&#39;):
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,142.143</span> • <span class=" -Color -Color-Blue">generator:</span>     → &#39;10000000.000000&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,143.143</span> • <span class=" -Color -Color-Blue">generator:</span> center_frequency → 10000000.0  (Hz)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,143.143</span> • <span class=" -Color -Color-Blue">labbench:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,143.144</span> • <span class=" -Color -Color-Blue">measurement:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,143.144</span> • <span class=" -Color -Color-Blue">power_sensor:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,144.144</span> • <span class=" -Color -Color-Blue">generator:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,144.144</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> closed
 </pre></div>
 </div>
 </div>
@@ -591,6 +245,33 @@ labbench.util.ConcurrentException: SpectrumAnalyzer(): 16 call(s) raised excepti
 
 <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">sweep</span><span class="p">:</span>
     <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,153.153</span> • <span class=" -Color -Color-Blue">labbench:</span> context order: (generator, spectrum_analyzer, power_sensor)-&gt;(measurement,&lt;__main__.Testbed object at 0x1188fe4c0&gt;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,155.155</span> • <span class=" -Color -Color-Blue">power_sensor:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,155.156</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Spectrum Analyzer #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,155.156</span> • <span class=" -Color -Color-Blue">generator:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Signal Generator #1234&#39;
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,155.156</span> • <span class=" -Color -Color-Blue">power_sensor:</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,156.156</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,156.156</span> • <span class=" -Color -Color-Blue">generator:</span> &#39;TCPIP0::localhost:10001::inst0::INSTR&#39;  → resource
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,156.157</span> • <span class=" -Color -Color-Blue">power_sensor:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,157.157</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,157.157</span> • <span class=" -Color -Color-Blue">generator:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,158.158</span> • <span class=" -Color -Color-Blue">labbench:</span> Measurement open()
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,158.159</span> • <span class=" -Color -Color-Blue">power_sensor:</span> write(&#39;SYST:PRES&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,158.159</span> • <span class=" -Color -Color-Blue">measurement:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,159.159</span> • <span class=" -Color -Color-Blue">labbench:</span> Sweep open()
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,159.159</span> • <span class=" -Color -Color-Blue">generator:</span> write(&#39;*RST&#39;)
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,159.159</span> • <span class=" -Color -Color-Blue">labbench:</span> opened
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,159.160</span> • <span class=" -Color -Color-Blue">labbench:</span> Sweep close()
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,159.160</span> • <span class=" -Color -Color-Blue">labbench:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,160.160</span> • <span class=" -Color -Color-Blue">labbench:</span> Measurement close()
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,160.160</span> • <span class=" -Color -Color-Blue">measurement:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,160.161</span> • <span class=" -Color -Color-Blue">generator:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,160.161</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> closed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,161.161</span> • <span class=" -Color -Color-Blue">power_sensor:</span> closed
 </pre></div>
 </div>
 </div>
@@ -658,6 +339,54 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
 
 <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">testbed</span><span class="p">:</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">testbed</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,174.174</span> • <span class=" -Color -Color-Blue">labbench:</span> starting frequency sweep across 3 points
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:48,174.174</span> • <span class=" -Color -Color-Blue">labbench:</span> single frequency test at 2400.000 MHz
+</pre></div>
+</div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ValueError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">line</span> <span class="mi">52</span>
+<span class="g g-Whitespace">     </span><span class="mi">49</span> <span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;info&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">51</span> <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">testbed</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">52</span>     <span class="n">data</span> <span class="o">=</span> <span class="n">testbed</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">])</span>
+
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">line</span> <span class="mi">52</span>
+<span class="g g-Whitespace">     </span><span class="mi">49</span> <span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;info&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">51</span> <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">testbed</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">52</span>     <span class="n">data</span> <span class="o">=</span> <span class="n">testbed</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">])</span>
+
+<span class="nn">Cell In[5], line 45,</span> in <span class="ni">Testbed.sweep</span><span class="nt">(self, frequencies)</span>
+<span class="g g-Whitespace">     </span><span class="mi">42</span> <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="g g-Whitespace">     </span><span class="mi">44</span> <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">frequencies</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">45</span>     <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">single_frequency</span><span class="p">(</span><span class="n">center_frequency</span><span class="o">=</span><span class="n">freq</span><span class="p">))</span>
+<span class="g g-Whitespace">     </span><span class="mi">47</span> <span class="k">return</span> <span class="n">ret</span>
+
+<span class="nn">Cell In[5], line 38,</span> in <span class="ni">Testbed.single_frequency</span><span class="nt">(self, center_frequency)</span>
+<span class="g g-Whitespace">     </span><span class="mi">36</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">37</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">output_enabled</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="ne">---&gt; </span><span class="mi">38</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+
+<span class="nn">Cell In[5], line 18,</span> in <span class="ni">Measurement.fetch</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">     </span><span class="mi">16</span> <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="g g-Whitespace">     </span><span class="mi">17</span>     <span class="n">spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+<span class="ne">---&gt; </span><span class="mi">18</span>     <span class="n">pvt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">19</span>     <span class="k">return</span> <span class="p">{</span>
+<span class="g g-Whitespace">     </span><span class="mi">20</span>         <span class="s1">&#39;spectrum&#39;</span><span class="p">:</span> <span class="n">spectrum</span><span class="p">,</span>
+<span class="g g-Whitespace">     </span><span class="mi">21</span>         <span class="s1">&#39;power&#39;</span><span class="p">:</span> <span class="n">pvt</span>
+<span class="g g-Whitespace">     </span><span class="mi">22</span>     <span class="p">}</span>
+
+<span class="nn">File ~/Documents/src/labbench/src/labbench/testing/pyvisa_sim.py:64,</span> in <span class="ni">PowerSensor.fetch</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">     </span><span class="mi">61</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FETC?&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">63</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">64</span>     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">65</span> <span class="k">else</span><span class="p">:</span>
+<span class="nn">     66     return pd.Series([float(s) for s</span> in <span class="ni">response.split</span><span class="nt">(&#39;,&#39;)], name=&#39;spectrum&#39;)</span>
+
+<span class="ne">ValueError</span>: could not convert string to float: &#39;-52.617,-52.373,-52.724,-51.893,-52.27,-52.047,-53.059,-52.053,-52.426,-52.343,-52.228,-52.976,-52.186,-53.0,-51.894,-53.18,-51.96,-52.326,-52.492,-52.871,-52.41,-53.111,-53.199,-52.907,-52.791,-52.68,-51.63,-51.679,-51.743,-52.613,-52.108,-53.138,-52.014,-52.289,-52.235,-52.26,-53.135,-52.503,-52.201,-51.633,-51.933,-52.82,-52.287,-52.594,-51.89,-52.371,-52.068,-51.888,-53.145,-53.085,-52.392,-52.064,-51.688,-52.188,-52.211,-52.226,-52.841,-51.951,-51.573,-51.521,-52.115,-52.302,-52.958,-52.503,-52.32,-52.81,-52.357,-51.729,-52.956,-52.849,-51.883,-51.505,-52.027,-52.234,-52.092,-51.446,-52.798,-51.601,-52.14,-51.477,-52.614,-52.291,-52.532,-52.861,-51.814,-51.821,-52.997,-53.184,-51.761,-53.052,-51.612,-52.876,-52.013,-52.252,-52.059,-52.806,-52.474,-51.689,-52.606,-51.924,-51.964,-51.601,-52.815,-53.172,-52.183,-53.071,-52.763,-52.999,-52.595,-52.463,-52.48,-52.701,-52.337,-51.778,-52.039,-51.493,-51.591,-51.654,-51.525,-52.925,-51.531,-53.169,-52.997,-52.519,-52.298,-52.078,-52.547,-51.518,-51.589,-51.567,-51.502,-51.984,-52.215,-52.681,-51.468,-53.197,-53.007,-51.929,-52.465,-53.132,-52.073,-51.75,-52.8,-52.054,-52.493,-51.605,-53.026,-52.28,-52.331,-52.109,-51.889,-52.878,-51.874,-51.801,-52.031,-52.625,-51.84,-53.029,-52.431,-51.655,-52.51,-52.431,-52.165,-52.009,-51.973,-53.042,-52.632,-51.754,-52.637,-51.757,-51.9,-52.775,-52.49,-52.022,-52.151,-52.05,-51.867,-52.494,-53.014,-52.14,-53.036,-51.799,-51.848,-51.996,-52.254,-52.75,-51.492,-51.755,-52.494,-53.193,-53.114,-53.028,-52.898,-52.992,-53.127,-51.752,-53.065,-52.585,-51.861,-51.596&#39;
 </pre></div>
 </div>
 </div>

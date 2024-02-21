@@ -89,7 +89,7 @@ This type of exploration is a good way to learn the capabilities of a device int
 
 ### Automating with open devices
 
-Python's introspection tools give more opportunities to discover the API exposed by a device object. This is important because the methods and other attributes vary from one type of Device class to another. The below uses `dir` to show the list of all _public_ attributes (those that don't start with `'_'`).
+Python's introspection tools give more opportunities to discover the API exposed by a device object. The below uses `dir` to show the list of all _public_ attributes (those that don't start with `'_'`).
 
 ```{code-cell} ipython3
 # filter by name

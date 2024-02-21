@@ -73,162 +73,134 @@
             
   <section id="device-wrappers">
 <h1>Device Wrappers<a class="headerlink" href="#device-wrappers" title="Link to this heading">¶</a></h1>
-<p><a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> is the root object used to define and implement automation with a lower-level driver. Its purpose is to encapsulate all python data and methods for a specific laboratory device or software.</p>
-<p>This section demonstrates usage through a lean working example. The <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> design pattern for a specific device starts by defining a subclass, often from one of the backend subclasses that has been specialized for a low-level driver module (<a class="reference external" href="http://pyvisa.readthedocs.org/"><code class="docutils literal notranslate"><span class="pre">pyvisa</span></code></a>, shell commands, etc.). Doing this has several advantages:</p>
-<ul class="simple">
-<li><p>hooks into the <a class="reference internal" href="#./03%20data%20logging.md"><span class="xref myst">data logging subsystem</span></a> for automatic logging of parameters and acquired data</p></li>
-<li><p>automatic coercion between python types and low-level/over-the-wire data types</p></li>
-<li><p>constraints on instrument parameters</p></li>
-<li><p>multi-threaded connection management</p></li>
-</ul>
-<section id="example-implementation-a-visa-instrument">
-<h2>Example Implementation: A VISA Instrument<a class="headerlink" href="#example-implementation-a-visa-instrument" title="Link to this heading">¶</a></h2>
-<p>Let’s start by a simple demonstration with <a class="reference external" href="https://en.wikipedia.org/wiki/Virtual_instrument_software_architecture">VISA</a> instrument automation. The example below gives a simplified working example modeled on <a class="reference external" href="https://github.com/usnistgov/ssmdevices/blob/main/ssmdevices/instruments/power_sensors.py">an actual commercial RF power sensor</a>:</p>
+<p>The <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> class is the root type used to define data and methods that provide control and logging for lab software and equipment. Use of this class as a base for implementing source automation provides many conveniences toward reducing visual noise in the source code that can obscure the experimental procedure being implemented in automation scripts. This development pattern focuses on short descriptor declarations that replace repetitive code for logging data validation, calibration corrections, type conversion, and string operations.</p>
+<section id="automatic-method-generation">
+<h2>Automatic method generation<a class="headerlink" href="#automatic-method-generation" title="Link to this heading">¶</a></h2>
+<p>The example below gives a minimal working example of a <a class="reference external" href="https://en.wikipedia.org/wiki/Virtual_instrument_software_architecture">VISA</a> instrument wrapper taken from <a class="reference external" href="https://github.com/usnistgov/ssmdevices/blob/main/ssmdevices/instruments/power_sensors.py">[1]</a>:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># sim_instrument1.py</span>
-<span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
 <span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">paramattr</span> <span class="k">as</span> <span class="n">attr</span>
 
-<span class="nd">@attr</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span>
-    <span class="c1"># the default SCPI query and write formats</span>
-    <span class="n">query_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">?&quot;</span><span class="p">,</span>
-    <span class="n">write_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> </span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="c1"># map python True and False values to these SCPI strings</span>
-    <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">},</span>
-<span class="p">)</span>
-<span class="c1"># set the automatic connection filters</span>
-<span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;make&quot;</span><span class="p">,</span> <span class="s2">&quot;pyvisa_sim&quot;</span><span class="p">)</span>
-<span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;Power Sensor model 1234&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">VISADevice</span><span class="p">):</span>
-    <span class="n">RATES</span> <span class="o">=</span> <span class="s2">&quot;NORM&quot;</span><span class="p">,</span> <span class="s2">&quot;DOUB&quot;</span><span class="p">,</span> <span class="s2">&quot;FAST&quot;</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim-labbench&#39;</span><span class="p">)</span>
 
-    <span class="c1"># SCPI string keys and bounds on the parameter values,</span>
-    <span class="c1"># taken from the instrument programming manual</span>
-    <span class="n">initiate_continuous</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;INIT:CONT&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;trigger continuously if True&quot;</span><span class="p">)</span>
-    <span class="n">trigger_count</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">int</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;TRIG:COUN&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;acquisition count&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;samples&quot;</span><span class="p">,</span>
-        <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">200</span>
+<span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;acquire a power reading&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">)</span>
+
+    <span class="n">frequency</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:FREQ&quot;</span><span class="p">,</span>
+        <span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span>
+        <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span>
+        <span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;calibration frequency&quot;</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">measurement_rate</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">str</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:MRAT&quot;</span><span class="p">,</span> <span class="n">only</span><span class="o">=</span><span class="n">RATES</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">sweep_aperture</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SWE:APER&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;measurement duration&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
-        <span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span>
-    <span class="p">)</span>
-    <span class="n">frequency</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">float</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;SENS:FREQ&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;calibration frequency&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
-        <span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">preset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;revert to instrument default presets&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;SYST:PRES&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;acquire measurements as configured&quot;&quot;&quot;</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;FETC?&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;spectrum&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;TRIG&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Usage in test automation looks like this:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">PowerSensor</span><span class="p">()</span> <span class="k">as</span> <span class="n">sensor</span><span class="p">:</span>
+    <span class="n">sensor</span><span class="o">.</span><span class="n">frequency</span><span class="p">(</span><span class="mf">6e9</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_8626/2451725258.py:13: DeprecationWarning: labbench.paramattr.adjusted(&quot;param_name&quot;) has been deprecated in favor of the labbench.paramattr.copy(DeviceName.param_name), to improve type hinting compatibility
-  @attr.adjust(&quot;make&quot;, &quot;pyvisa_sim&quot;)
-/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_8626/2451725258.py:14: DeprecationWarning: labbench.paramattr.adjusted(&quot;param_name&quot;) has been deprecated in favor of the labbench.paramattr.copy(DeviceName.param_name), to improve type hinting compatibility
-  @attr.adjust(&quot;model&quot;, &quot;Power Sensor model 1234&quot;)
-</pre></div>
-</div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">NameError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">15</span>
-<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
-<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">paramattr</span> <span class="k">as</span> <span class="n">attr</span>
-<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="nd">@attr</span><span class="o">.</span><span class="n">visa_keying</span><span class="p">(</span>
-<span class="g g-Whitespace">      </span><span class="mi">6</span>     <span class="c1"># the default SCPI query and write formats</span>
-<span class="g g-Whitespace">      </span><span class="mi">7</span>     <span class="n">query_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">?&quot;</span><span class="p">,</span>
-<span class="g g-Whitespace">      </span><span class="mi">8</span>     <span class="n">write_fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> </span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">,</span>
-<span class="g g-Whitespace">      </span><span class="mi">9</span>     <span class="c1"># map python True and False values to these SCPI strings</span>
-<span class="g g-Whitespace">     </span><span class="mi">10</span>     <span class="n">remap</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">},</span>
-<span class="g g-Whitespace">     </span><span class="mi">11</span> <span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">12</span> <span class="c1"># set the automatic connection filters</span>
-<span class="g g-Whitespace">     </span><span class="mi">13</span> <span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;make&quot;</span><span class="p">,</span> <span class="s2">&quot;pyvisa_sim&quot;</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">14</span> <span class="nd">@attr</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;Power Sensor model 1234&quot;</span><span class="p">)</span>
-<span class="ne">---&gt; </span><span class="mi">15</span> <span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">(</span><span class="n">VISADevice</span><span class="p">):</span>
-<span class="g g-Whitespace">     </span><span class="mi">16</span>     <span class="n">RATES</span> <span class="o">=</span> <span class="s2">&quot;NORM&quot;</span><span class="p">,</span> <span class="s2">&quot;DOUB&quot;</span><span class="p">,</span> <span class="s2">&quot;FAST&quot;</span>
-<span class="g g-Whitespace">     </span><span class="mi">18</span>     <span class="c1"># SCPI string keys and bounds on the parameter values,</span>
-<span class="g g-Whitespace">     </span><span class="mi">19</span>     <span class="c1"># taken from the instrument programming manual</span>
+<span class="ne">ConnectionError</span><span class="g g-Whitespace">                           </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">1</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="k">with</span> <span class="n">PowerSensor</span><span class="p">()</span> <span class="k">as</span> <span class="n">sensor</span><span class="p">:</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span>     <span class="n">sensor</span><span class="o">.</span><span class="n">frequency</span><span class="p">(</span><span class="mf">6e9</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span>     <span class="n">data</span> <span class="o">=</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
 
-<span class="ne">NameError</span>: name &#39;VISADevice&#39; is not defined
+<span class="nn">File ~/Documents/src/labbench/src/labbench/_backends.py:1143,</span> in <span class="ni">VISADevice.open</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1141</span>         <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1142</span> <span class="k">else</span><span class="p">:</span>
+<span class="ne">-&gt; </span><span class="mi">1143</span>     <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">1144</span>         <span class="sa">f</span><span class="s1">&#39;must specify a pyvisa resource name, an instrument serial number, or define </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">!r}</span><span class="s1"> with default make and model&#39;</span>
+<span class="g g-Whitespace">   </span><span class="mi">1145</span>     <span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1147</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="g g-Whitespace">   </span><span class="mi">1148</span>     <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+
+<span class="ne">ConnectionError</span>: PowerSensor(): must specify a pyvisa resource name, an instrument serial number, or define &lt;class &#39;__main__.PowerSensor&#39;&gt; with default make and model
 </pre></div>
 </div>
 </div>
 </div>
-<p>Automation capabilities for this instrument are fully encapsulated by the <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> object. Subclassing from <a class="reference internal" href="../../labbench.html#labbench.VISADevice" title="labbench.VISADevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISADevice</span></code></a> seeds <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> with all of its <a class="reference external" href="https://pyvisa.readthedocs.io/"><code class="docutils literal notranslate"><span class="pre">pyvisa</span></code></a>, including connection management and access to its <a class="reference external" href="https://pyvisa.readthedocs.io/en/latest/introduction/communication.html">pyvisa instrument object</a> as its <code class="docutils literal notranslate"><span class="pre">backend</span></code> attribute. The method functions (<code class="docutils literal notranslate"><span class="pre">fetch</span></code> and <code class="docutils literal notranslate"><span class="pre">preset</span></code>) represent examples of scripting SCPI commands through explicit code</p>
-<p>The various <code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.property</span></code> definitions are shortcuts for <a class="reference external" href="https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments">SCPI</a>. In usage of objects derived from <code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISABackend</span></code>, getting or setting these properties will trigger SCPI query and commands based on each property’s <code class="docutils literal notranslate"><span class="pre">key</span></code>.</p>
+<p>The <a class="reference internal" href="../../labbench.html#labbench.VISADevice" title="labbench.VISADevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISADevice</span></code></a> class is a specialized <code class="docutils literal notranslate"><span class="pre">Device</span></code>. It seeds our <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> object with pyvisa-specific methods and context managers. As an exmple of this, the <code class="docutils literal notranslate"><span class="pre">fetch</span></code> method calls <code class="docutils literal notranslate"><span class="pre">self.query</span></code>, which follows the pyvisa <a class="reference external" href="https://pyvisa.readthedocs.io/en/latest/introduction/communication.html">resource</a> object. Under the hood, this calls the query method in <code class="docutils literal notranslate"><span class="pre">pyvisa</span></code>, which can be accessed at <code class="docutils literal notranslate"><span class="pre">self.backend.query</span></code>.</p>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">attr.method.float</span></code> descriptor shows what is special about <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> objects: automatic implementation of parameter get/set methods with parameters copied from a programming manual.</p>
 <ul class="simple">
-<li><p>The property type (<code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.property.float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.property.str</span></code>, etc.) sets the python type to use for the parameter</p></li>
-<li><p>The keyword arguments, which define the SCPI command, validation constraints and documentation metadata, would be  filled in based on the instrument programming manual.
-These properties are class <em>descriptors</em> that exist only as definition until we <em>instantiate</em> <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> in order to <em>use</em> it.</p></li>
-</ul>
-</section>
-<section id="example-usage">
-<h2>Example Usage<a class="headerlink" href="#example-usage" title="Link to this heading">¶</a></h2>
-<p>The implementation of <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> is already enough for us to perform a simple measurement. Automation starts with making an instance and then connecting it. The methods and traits can be discovered through tab completion in most IDEs.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># use a pyvisa-sim simulated VISA instrument for the demo</span>
-<span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">testing</span>
-<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="n">testing</span><span class="o">.</span><span class="n">pyvisa_sim_resource</span><span class="p">)</span>
-
-<span class="c1"># print the low-level actions of the code</span>
-<span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;debug&#39;</span><span class="p">)</span>
-
-<span class="c1"># specify the VISA address to use the power sensor</span>
-<span class="n">sensor</span> <span class="o">=</span> <span class="n">PowerSensor</span><span class="p">()</span>
-
-<span class="c1"># the sensor attempts to connect to the hardware on entering a `with` block</span>
-<span class="k">with</span> <span class="n">sensor</span><span class="p">:</span>   
-    <span class="c1"># apply the instrument preset state</span>
-    <span class="n">sensor</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
-
-    <span class="c1"># set acquisition parameters on the power sensor</span>
-    <span class="n">sensor</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="mf">1e9</span>
-    <span class="n">sensor</span><span class="o">.</span><span class="n">measurement_rate</span> <span class="o">=</span> <span class="s2">&quot;FAST&quot;</span>
-    <span class="n">sensor</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">=</span> <span class="mi">200</span>
-    <span class="n">sensor</span><span class="o">.</span><span class="n">sweep_aperture</span> <span class="o">=</span> <span class="mf">20e-6</span>
-    <span class="n">sensor</span><span class="o">.</span><span class="n">initiate_continuous</span> <span class="o">=</span> <span class="kc">True</span>
-
-    <span class="c1"># retreive the 200 measurement samples</span>
-    <span class="n">power</span> <span class="o">=</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
-
-    <span class="c1"># the instrument connection closes on leaving the with block</span>
-</pre></div>
-</div>
-</div>
-</div>
-<p>Creating the <code class="docutils literal notranslate"><span class="pre">sensor</span></code> instance brings the <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> class definition to life. This means:</p>
-<ul class="simple">
-<li><p>The connection remains open for VISA communication inside the <code class="docutils literal notranslate"><span class="pre">with</span></code> block</p></li>
-<li><p>Attributes that were defined with <code class="docutils literal notranslate"><span class="pre">attr.property</span></code> in <code class="docutils literal notranslate"><span class="pre">PowerSensor</span></code> become interactive for instrument automation in <code class="docutils literal notranslate"><span class="pre">sensor</span></code>. This means that assigning to <code class="docutils literal notranslate"><span class="pre">sensor.frequency</span></code>, <code class="docutils literal notranslate"><span class="pre">sensor.measurement_rate</span></code> trigger VISA writes to set these parameters on the instrument. Similarly, <em>getting</em> each these attributes of sensor triggers VISA queries. The specific SCPI commands are visible here in the debug messages.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key</span></code> sets the <a class="reference external" href="https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments">SCPI</a> command string used to set the parameter on the instrument</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min</span></code> and <code class="docutils literal notranslate"><span class="pre">max</span></code> define bounds that trigger <code class="docutils literal notranslate"><span class="pre">ValueError</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step</span></code> defines resolution step size. python values are rounded to this resolution before sending to the</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">help</span></code> and <code class="docutils literal notranslate"><span class="pre">label</span></code> metadata are used to auto-generate documentation and label units
+Other examples of data types and additional configuration arguments are available in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">attr.method</span></code> reference.</p></li>
 </ul>
 <div class="admonition-getting-started-with-a-new-instrument admonition">
 <p class="admonition-title">Getting started with a new instrument</p>
-<p>Some trial and error is often needed, and it is best to iterate in small steps:</p>
+<p>Establishing basic control over an instrument often needs some trial and error. A recommended procedure is as follows:</p>
 <ol class="arabic simple">
-<li><p>Establish a connection to the instrument, referring to the documentation for the backend (for example, the <a class="reference external" href="https://pyvisa.readthedocs.io/en/latest/introduction/communication.html">pyvisa communication documentation</a>)</p></li>
+<li><p>Establish a connection to the instrument, referring to the <a class="reference external" href="https://pyvisa.readthedocs.io/en/latest/introduction/communication.html">pyvisa communication documentation</a></p></li>
 <li><p>Verify basic communication with the instrument using very simple commands</p></li>
 <li><p>Refer to the instrument programming manual to add one command at a time, testing each by verifying on the instrument itself</p></li>
 </ol>
 </div>
+</section>
+<section id="comparison-direct-pyvisa-implementation">
+<h2>Comparison: direct pyvisa implementation<a class="headerlink" href="#comparison-direct-pyvisa-implementation" title="Link to this heading">¶</a></h2>
+<p>To help understand the example above, here is a similar class written from scratch, written in a more typical python class style:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyvisa</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">PowerSensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rm</span><span class="p">:</span> <span class="n">pyvisa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">,</span> <span class="n">resource_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rm</span> <span class="o">=</span> <span class="n">rm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resource_name</span> <span class="o">=</span> <span class="n">resource_name</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">resource_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get or set the instrument calibration frequency (in Hz)&quot;&quot;&quot;</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;SENS:FREQ&#39;</span>
+        
+        <span class="k">if</span> <span class="n">set_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s1">?&#39;</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;got frequency </span><span class="si">{</span><span class="n">ret</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ret</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">set_value</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">set_value</span> <span class="o">&gt;</span> <span class="mf">18e9</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;set_value is out of bounds&#39;</span><span class="p">)</span>
+            <span class="n">set_value</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">set_value</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;set frequency </span><span class="si">{</span><span class="n">set_value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">set_value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;acquire a power reading&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This shows the boilerplate operations implemented behind the scenes by <a class="reference internal" href="../../labbench.html#labbench.VISADevice" title="labbench.VISADevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.VISADevice</span></code></a> and <a class="reference internal" href="../../labbench.paramattr.html#module-labbench.paramattr" title="labbench.paramattr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labbench.paramattr</span></code></a> (without any of the callback capabilities). This is functional, but imagine if we scale up to more parameters: we would have to copy and paste similar blocks of code, creating a file mostly consisting of repetitive code. This leads to several disadvantages:</p>
+<ul class="simple">
+<li><p>Maintenance of the basic algorithm becomes difficult</p></li>
+<li><p>The hard-coded constants specific to <code class="docutils literal notranslate"><span class="pre">frequency</span></code> are buried in the center of the code blocks.
+This makes them harder to find and read, and risks transcription mistakes when copying from other parameters</p></li>
+<li><p>The line count is doubled compared to the labbench implementation</p></li>
+</ul>
 </section>
 <section id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">¶</a></h2>
@@ -246,8 +218,8 @@ These properties are class <em>descriptors</em> that exist only as definition un
     <h3><a href="../../index.html">Table of Contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">Device Wrappers</a><ul>
-<li><a class="reference internal" href="#example-implementation-a-visa-instrument">Example Implementation: A VISA Instrument</a></li>
-<li><a class="reference internal" href="#example-usage">Example Usage</a></li>
+<li><a class="reference internal" href="#automatic-method-generation">Automatic method generation</a></li>
+<li><a class="reference internal" href="#comparison-direct-pyvisa-implementation">Comparison: direct pyvisa implementation</a></li>
 <li><a class="reference internal" href="#further-reading">Further Reading</a></li>
 </ul>
 </li>

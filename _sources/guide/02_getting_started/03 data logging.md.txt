@@ -26,7 +26,7 @@ import numpy as np
 import labbench as lb
 from labbench.testing.pyvisa_sim import SpectrumAnalyzer, PowerSensor
 
-lb.visa_default_resource_manager('@sim')
+lb.visa_default_resource_manager('@sim-labbench')
 lb.show_messages('info')
 
 sensor = PowerSensor()
@@ -110,7 +110,7 @@ DATA_PATH = './data'
 
 
 # the labbench.testing devices support simulated pyvisa operations
-lb.visa_default_resource_manager('@sim')
+lb.visa_default_resource_manager('@sim-labbench')
 
 class Testbed(lb.Rack):
     sensor: PowerSensor = PowerSensor()

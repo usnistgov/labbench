@@ -15,85 +15,27 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-# sim_instrument1.py
-import labbench as lb
-from labbench import paramattr as attr
-
-@attr.visa_keying(
-    # the default SCPI query and write formats
-    query_fmt="{key}?",
-    write_fmt="{key} {value}",
-    # map python True and False values to these SCPI strings
-    remap={True: "ON", False: "OFF"},
-)
-# set the automatic connection filters
-@attr.adjust("make", "pyvisa_sim")
-@attr.adjust("model", "Power Sensor model 1234")
-class PowerSensor(VISADevice):
-    RATES = "NORM", "DOUB", "FAST"
-
-    # SCPI string keys and bounds on the parameter values,
-    # taken from the instrument programming manual
-    initiate_continuous = attr.property.bool(key="INIT:CONT", help="trigger continuously if True")
-    trigger_count = attr.property.int(
-        key="TRIG:COUN", help="acquisition count", label="samples",
-        min=1, max=200
-    )
-    measurement_rate = attr.property.str(
-        key="SENS:MRAT", only=RATES, case=False,
-    )
-    sweep_aperture = attr.property.float(
-        key="SWE:APER", help="measurement duration", label="s",
-        min=20e-6, max=200e-3
-    )
-    frequency = attr.property.float(
-        key="SENS:FREQ", help="calibration frequency", label="Hz",
-        min=10e6, max=18e9, step=1e-3,
-    )
-
-    def preset(self):
-        """revert to instrument default presets"""
-        self.write("SYST:PRES")
-
-    def fetch(self):
-        """acquire measurements as configured"""
-        response = self.query("FETC?")
-
-        if self.trigger_count == 1:
-            return float(response)
-        else:
-            return pd.Series([float(s) for s in response.split(",")], name="spectrum")
-
-    def trigger(self):
-        return self.write("TRIG")
+with PowerSensor() as sensor:
+    sensor.frequency(6e9)
+    data = sensor.fetch()
 ------------------
 
------ stderr -----
-/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_8626/2451725258.py:13: DeprecationWarning: labbench.paramattr.adjusted("param_name") has been deprecated in favor of the labbench.paramattr.copy(DeviceName.param_name), to improve type hinting compatibility
-  @attr.adjust("make", "pyvisa_sim")
-/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_8626/2451725258.py:14: DeprecationWarning: labbench.paramattr.adjusted("param_name") has been deprecated in favor of the labbench.paramattr.copy(DeviceName.param_name), to improve type hinting compatibility
-  @attr.adjust("model", "Power Sensor model 1234")
-------------------
 
 [0;31m---------------------------------------------------------------------------[0m
-[0;31mNameError[0m                                 Traceback (most recent call last)
-Cell [0;32mIn[1], line 15[0m
-[1;32m      2[0m [38;5;28;01mimport[39;00m [38;5;21;01mlabbench[39;00m [38;5;28;01mas[39;00m [38;5;21;01mlb[39;00m
-[1;32m      3[0m [38;5;28;01mfrom[39;00m [38;5;21;01mlabbench[39;00m [38;5;28;01mimport[39;00m paramattr [38;5;28;01mas[39;00m attr
-[1;32m      5[0m [38;5;129m@attr[39m[38;5;241m.[39mvisa_keying(
-[1;32m      6[0m     [38;5;66;03m# the default SCPI query and write formats[39;00m
-[1;32m      7[0m     query_fmt[38;5;241m=[39m[38;5;124m"[39m[38;5;132;01m{key}[39;00m[38;5;124m?[39m[38;5;124m"[39m,
-[1;32m      8[0m     write_fmt[38;5;241m=[39m[38;5;124m"[39m[38;5;132;01m{key}[39;00m[38;5;124m [39m[38;5;132;01m{value}[39;00m[38;5;124m"[39m,
-[1;32m      9[0m     [38;5;66;03m# map python True and False values to these SCPI strings[39;00m
-[1;32m     10[0m     remap[38;5;241m=[39m{[38;5;28;01mTrue[39;00m: [38;5;124m"[39m[38;5;124mON[39m[38;5;124m"[39m, [38;5;28;01mFalse[39;00m: [38;5;124m"[39m[38;5;124mOFF[39m[38;5;124m"[39m},
-[1;32m     11[0m )
-[1;32m     12[0m [38;5;66;03m# set the automatic connection filters[39;00m
-[1;32m     13[0m [38;5;129m@attr[39m[38;5;241m.[39madjust([38;5;124m"[39m[38;5;124mmake[39m[38;5;124m"[39m, [38;5;124m"[39m[38;5;124mpyvisa_sim[39m[38;5;124m"[39m)
-[1;32m     14[0m [38;5;129m@attr[39m[38;5;241m.[39madjust([38;5;124m"[39m[38;5;124mmodel[39m[38;5;124m"[39m, [38;5;124m"[39m[38;5;124mPower Sensor model 1234[39m[38;5;124m"[39m)
-[0;32m---> 15[0m [38;5;28;01mclass[39;00m [38;5;21;01mPowerSensor[39;00m([43mVISADevice[49m):
-[1;32m     16[0m     RATES [38;5;241m=[39m [38;5;124m"[39m[38;5;124mNORM[39m[38;5;124m"[39m, [38;5;124m"[39m[38;5;124mDOUB[39m[38;5;124m"[39m, [38;5;124m"[39m[38;5;124mFAST[39m[38;5;124m"[39m
-[1;32m     18[0m     [38;5;66;03m# SCPI string keys and bounds on the parameter values,[39;00m
-[1;32m     19[0m     [38;5;66;03m# taken from the instrument programming manual[39;00m
+[0;31mConnectionError[0m                           Traceback (most recent call last)
+Cell [0;32mIn[2], line 1[0m
+[0;32m----> 1[0m [38;5;28;01mwith[39;00m PowerSensor() [38;5;28;01mas[39;00m sensor:
+[1;32m      2[0m     sensor[38;5;241m.[39mfrequency([38;5;241m6e9[39m)
+[1;32m      3[0m     data [38;5;241m=[39m sensor[38;5;241m.[39mfetch()
 
-[0;31mNameError[0m: name 'VISADevice' is not defined
+File [0;32m~/Documents/src/labbench/src/labbench/_backends.py:1143[0m, in [0;36mVISADevice.open[0;34m(self)[0m
+[1;32m   1141[0m         [38;5;28;01mraise[39;00m [38;5;167;01mOSError[39;00m(msg)
+[1;32m   1142[0m [38;5;28;01melse[39;00m:
+[0;32m-> 1143[0m     [38;5;28;01mraise[39;00m [38;5;167;01mConnectionError[39;00m(
+[1;32m   1144[0m         [38;5;124mf[39m[38;5;124m'[39m[38;5;124mmust specify a pyvisa resource name, an instrument serial number, or define [39m[38;5;132;01m{[39;00m[38;5;28mtype[39m([38;5;28mself[39m)[38;5;132;01m!r}[39;00m[38;5;124m with default make and model[39m[38;5;124m'[39m
+[1;32m   1145[0m     )
+[1;32m   1147[0m [38;5;28;01mif[39;00m [38;5;28mself[39m[38;5;241m.[39mtimeout [38;5;129;01mis[39;00m [38;5;129;01mnot[39;00m [38;5;28;01mNone[39;00m:
+[1;32m   1148[0m     kwargs[[38;5;124m'[39m[38;5;124mtimeout[39m[38;5;124m'[39m] [38;5;241m=[39m [38;5;28mint[39m([38;5;28mself[39m[38;5;241m.[39mtimeout [38;5;241m*[39m [38;5;241m1000[39m)
+
+[0;31mConnectionError[0m: PowerSensor(): must specify a pyvisa resource name, an instrument serial number, or define <class '__main__.PowerSensor'> with default make and model
 

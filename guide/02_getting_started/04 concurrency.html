@@ -138,18 +138,14 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP::localhost::INSTR&#39;,) {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;,) {}
-connect both (total time): 3.0 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>connect both (total time): 3.0 s
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:16,196.197</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:18,206.207</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:19,214.214</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:21,222.222</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:21,224.224</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 3.014 s elapsed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:53,939.940</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:55,945.945</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.003 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:56,953.953</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:58,958.958</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.003 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:58,960.960</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 3.012 s elapsed
 </pre></div>
 </div>
 </div>
@@ -178,19 +174,15 @@ connect both (total time): 3.0 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP::localhost::INSTR&#39;,) {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB::0x1111::0x2222::0x1234::INSTR&#39;,) {}
-connect both (total time): 2.0 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>connect both (total time): 2.0 s
 Return value:  {&#39;fetch&#39;: 5}
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:22,240.241</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.004 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:23,241.241</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.004 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:24,250.250</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:25,250.251</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:25,252.253</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 2.008 s elapsed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:59,982.983</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:57:00,980.980</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.001 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:57:01,989.989</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:57:02,989.990</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.005 s elapsed
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:57:02,991.992</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 2.008 s elapsed
 </pre></div>
 </div>
 </div>

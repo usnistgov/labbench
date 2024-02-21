@@ -38,179 +38,9 @@ with PowerSensor() as sensor:
     power = sensor.fetch()
 ------------------
 
------ stdout -----
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\r\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('ASRL1::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('USB0::0x1111::0x2222::0x1234::0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('TCPIP0::localhost::inst0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('GPIB0::8::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('ASRL2::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('USB0::0x1111::0x2222::0x2468::0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('TCPIP0::localhost:2222::inst0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('GPIB0::9::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('ASRL3::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('USB0::0x1111::0x2222::0x3692::0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('TCPIP0::localhost:3333::inst0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('GPIB0::10::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('ASRL4::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('USB0::0x1111::0x2222::0x4444::0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('TCPIP0::localhost:4444::inst0::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = '\n', write_termination: str = '\n', open_timeout: Optional[float] = None, timeout: Optional[float] = None) ('GPIB0::4::INSTR',) {'open_timeout': 0.5, 'timeout': 0.25}
------ stderr -----
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
------ stderr -----
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
------ stderr -----
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
------ stderr -----
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py", line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-------------------
 
 [0;31m---------------------------------------------------------------------------[0m
-[0;31mConcurrentException[0m                       Traceback (most recent call last)
+[0;31mOSError[0m                                   Traceback (most recent call last)
 Cell [0;32mIn[3], line 9[0m
 [1;32m      6[0m lb[38;5;241m.[39mshow_messages([38;5;124m'[39m[38;5;124mdebug[39m[38;5;124m'[39m)
 [1;32m      8[0m [38;5;66;03m# No resource name required if it's the only connected match for its make and model[39;00m
@@ -219,31 +49,15 @@ Cell [0;32mIn[3], line 9[0m
 [1;32m     11[0m     sensor[38;5;241m.[39mpreset()
 [1;32m     13[0m     [38;5;66;03m# set acquisition parameters on the power sensor[39;00m
 
-File [0;32m~/Documents/src/labbench/src/labbench/_backends.py:1125[0m, in [0;36mVISADevice.open[0;34m(self)[0m
-[1;32m   1116[0m [38;5;66;03m# match the supplied (make, model) and/or treat self.resource as a serial number to match[39;00m
-[1;32m   1117[0m search_desc [38;5;241m=[39m [38;5;124m'[39m[38;5;124m, [39m[38;5;124m'[39m[38;5;241m.[39mjoin(
-[1;32m   1118[0m     [
-[1;32m   1119[0m         [38;5;124mf[39m[38;5;124m'[39m[38;5;132;01m{[39;00mname[38;5;132;01m}[39;00m[38;5;124m [39m[38;5;132;01m{[39;00m[38;5;28mgetattr[39m([38;5;28mself[39m,[38;5;250m [39mname)[38;5;132;01m!r}[39;00m[38;5;124m'[39m
-[0;32m   (...)[0m
-[1;32m   1122[0m     ]
-[1;32m   1123[0m )[38;5;241m.[39mreplace([38;5;124m'[39m[38;5;124mresource[39m[38;5;124m'[39m, [38;5;124m'[39m[38;5;124mserial number[39m[38;5;124m'[39m)
-[0;32m-> 1125[0m matches [38;5;241m=[39m [43mvisa_probe_devices[49m[43m([49m[38;5;28;43mself[39;49m[43m)[49m
+File [0;32m~/Documents/src/labbench/src/labbench/_backends.py:1132[0m, in [0;36mVISADevice.open[0;34m(self)[0m
 [1;32m   1127[0m [38;5;28;01mif[39;00m [38;5;28mlen[39m(matches) [38;5;241m==[39m [38;5;241m0[39m:
 [1;32m   1128[0m     msg [38;5;241m=[39m (
 [1;32m   1129[0m         [38;5;124mf[39m[38;5;124m'[39m[38;5;124mcould not open VISA device [39m[38;5;132;01m{[39;00m[38;5;28mtype[39m([38;5;28mself[39m)[38;5;132;01m!r}[39;00m[38;5;124m: resource not specified, [39m[38;5;124m'[39m
 [1;32m   1130[0m         [38;5;124mf[39m[38;5;124m'[39m[38;5;124mand no devices were discovered matching [39m[38;5;132;01m{[39;00msearch_desc[38;5;132;01m}[39;00m[38;5;124m'[39m
 [1;32m   1131[0m     )
+[0;32m-> 1132[0m     [38;5;28;01mraise[39;00m [38;5;167;01mOSError[39;00m(msg)
+[1;32m   1133[0m [38;5;28;01melif[39;00m [38;5;28mlen[39m(matches) [38;5;241m==[39m [38;5;241m1[39m:
+[1;32m   1134[0m     [38;5;28mself[39m[38;5;241m.[39m_logger[38;5;241m.[39mdebug([38;5;124mf[39m[38;5;124m'[39m[38;5;124mprobed resource by matching [39m[38;5;132;01m{[39;00msearch_desc[38;5;132;01m}[39;00m[38;5;124m'[39m)
 
-File [0;32m~/Documents/src/labbench/src/labbench/_backends.py:1606[0m, in [0;36mvisa_probe_devices[0;34m(target, skip_interfaces, open_timeout, timeout)[0m
-[1;32m   1598[0m     [38;5;28;01mreturn[39;00m [38;5;28;01mTrue[39;00m
-[1;32m   1600[0m calls [38;5;241m=[39m {
-[1;32m   1601[0m     res: util[38;5;241m.[39mCall(_visa_probe_resource, res, open_timeout, timeout, [38;5;124m'[39m[38;5;124mascii[39m[38;5;124m'[39m)
-[1;32m   1602[0m     [38;5;28;01mfor[39;00m res [38;5;129;01min[39;00m visa_list_resources()
-[1;32m   1603[0m     [38;5;28;01mif[39;00m keep_interface(res)
-[1;32m   1604[0m }
-[0;32m-> 1606[0m devices [38;5;241m=[39m [43mutil[49m[38;5;241;43m.[39;49m[43mconcurrently[49m[43m([49m[38;5;241;43m*[39;49m[38;5;241;43m*[39;49m[43mcalls[49m[43m,[49m[43m [49m[43mcatch[49m[38;5;241;43m=[39;49m[38;5;28;43;01mFalse[39;49;00m[43m,[49m[43m [49m[43mflatten[49m[38;5;241;43m=[39;49m[38;5;28;43;01mFalse[39;49;00m[43m)[49m
-[1;32m   1608[0m [38;5;28;01mif[39;00m [38;5;28mlen[39m(devices) [38;5;241m==[39m [38;5;241m0[39m:
-[1;32m   1609[0m     [38;5;28;01mreturn[39;00m []
-
-[0;31mConcurrentException[0m: PowerSensor(): 16 call(s) raised exceptions
+[0;31mOSError[0m: PowerSensor(): could not open VISA device <class 'labbench.testing.pyvisa_sim.PowerSensor'>: resource not specified, and no devices were discovered matching make 'FakeTech', model 'Power Sensor #1234'
 

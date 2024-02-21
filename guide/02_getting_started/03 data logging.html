@@ -98,7 +98,7 @@
 <span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
 <span class="kn">from</span> <span class="nn">labbench.testing.pyvisa_sim</span> <span class="kn">import</span> <span class="n">SpectrumAnalyzer</span><span class="p">,</span> <span class="n">PowerSensor</span>
 
-<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim&#39;</span><span class="p">)</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim-labbench&#39;</span><span class="p">)</span>
 <span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;info&#39;</span><span class="p">)</span>
 
 <span class="n">sensor</span> <span class="o">=</span> <span class="n">PowerSensor</span><span class="p">()</span>
@@ -125,217 +125,38 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\r\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-(self, *, git_commit_in: Optional[str] = None) () {&#39;git_commit_in&#39;: None}
-False
-(self, resource: Optional[pathlib.Path], *, text_relational_min: int = 1024, force_relational: list = [], relational_name_fmt: str = &#39;{id}&#39;, nonscalar_file_type: str = &#39;csv&#39;) (&#39;./23b60e148c4e0b3d&#39;,) {&#39;text_relational_min&#39;: 1024, &#39;force_relational&#39;: [&#39;host_log&#39;], &#39;nonscalar_file_type&#39;: &#39;csv&#39;}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) () {}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL1::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::8::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL2::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x2468::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:2222::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::9::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL3::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x3692::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:3333::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::10::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;ASRL4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;USB0::0x1111::0x2222::0x4444::0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;TCPIP0::localhost:4444::inst0::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-False
-(self, resource: Optional[str] = None, *, read_termination: str = &#39;\n&#39;, write_termination: str = &#39;\n&#39;, open_timeout: Optional[float] = None, timeout: Optional[float] = None) (&#39;GPIB0::4::INSTR&#39;,) {&#39;open_timeout&#39;: 0.5, &#39;timeout&#39;: 0.25}
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:12,038.039</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-07 12:08:12,039.040</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 1)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
-Traceback (most recent call last):
-  File &quot;/Users/dkuester/Documents/src/labbench/src/labbench/_backends.py&quot;, line 1508, in _visa_probe_resource
-    make, model, serial, rev = _visa_parse_identity(identity)
-ValueError: not enough values to unpack (expected 4, got 3)
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:49,641.642</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:49,644.644</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:51,641.642</span> • <span class=" -Color -Color-Blue">aggregator:</span> CSVLogger(&#39;6c03b9e2019bc827&#39;) named &#39;db&#39; by introspection
 </pre></div>
 </div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">ConcurrentException</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">14</span>
-<span class="g g-Whitespace">     </span><span class="mi">11</span> <span class="n">db</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">CSVLogger</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;./</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">bytes</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">12</span> <span class="n">db</span><span class="o">.</span><span class="n">observe_paramattr</span><span class="p">([</span><span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">])</span>
-<span class="ne">---&gt; </span><span class="mi">14</span> <span class="k">with</span> <span class="n">sensor</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span>
-<span class="g g-Whitespace">     </span><span class="mi">15</span>     <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">5.8e9</span><span class="p">,</span> <span class="mf">5.85e9</span><span class="p">,</span> <span class="mf">5.9e9</span><span class="p">):</span>
-<span class="g g-Whitespace">     </span><span class="mi">16</span>         <span class="n">analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">freq</span>
+<span class="ne">ValueError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">27</span>
+<span class="g g-Whitespace">     </span><span class="mi">20</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">22</span> <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+<span class="g g-Whitespace">     </span><span class="mi">23</span>     <span class="s1">&#39;analyzer_trace&#39;</span><span class="p">:</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">(),</span>
+<span class="g g-Whitespace">     </span><span class="mi">24</span>     <span class="s1">&#39;sensor_reading&#39;</span><span class="p">:</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+<span class="g g-Whitespace">     </span><span class="mi">25</span> <span class="p">}</span>
+<span class="ne">---&gt; </span><span class="mi">27</span> <span class="n">db</span><span class="o">.</span><span class="n">new_row</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-<span class="nn">File ~/Documents/src/labbench/src/labbench/_backends.py:1125,</span> in <span class="ni">VISADevice.open</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1116</span> <span class="c1"># match the supplied (make, model) and/or treat self.resource as a serial number to match</span>
-<span class="g g-Whitespace">   </span><span class="mi">1117</span> <span class="n">search_desc</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-<span class="g g-Whitespace">   </span><span class="mi">1118</span>     <span class="p">[</span>
-<span class="g g-Whitespace">   </span><span class="mi">1119</span>         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="si">!r}</span><span class="s1">&#39;</span>
-   <span class="p">(</span><span class="o">...</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1122</span>     <span class="p">]</span>
-<span class="g g-Whitespace">   </span><span class="mi">1123</span> <span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;resource&#39;</span><span class="p">,</span> <span class="s1">&#39;serial number&#39;</span><span class="p">)</span>
-<span class="ne">-&gt; </span><span class="mi">1125</span> <span class="n">matches</span> <span class="o">=</span> <span class="n">visa_probe_devices</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1127</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<span class="g g-Whitespace">   </span><span class="mi">1128</span>     <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-<span class="g g-Whitespace">   </span><span class="mi">1129</span>         <span class="sa">f</span><span class="s1">&#39;could not open VISA device </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">!r}</span><span class="s1">: resource not specified, &#39;</span>
-<span class="g g-Whitespace">   </span><span class="mi">1130</span>         <span class="sa">f</span><span class="s1">&#39;and no devices were discovered matching </span><span class="si">{</span><span class="n">search_desc</span><span class="si">}</span><span class="s1">&#39;</span>
-<span class="g g-Whitespace">   </span><span class="mi">1131</span>     <span class="p">)</span>
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">24</span>
+<span class="g g-Whitespace">     </span><span class="mi">19</span> <span class="n">sensor</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">20</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">22</span> <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+<span class="g g-Whitespace">     </span><span class="mi">23</span>     <span class="s1">&#39;analyzer_trace&#39;</span><span class="p">:</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">(),</span>
+<span class="ne">---&gt; </span><span class="mi">24</span>     <span class="s1">&#39;sensor_reading&#39;</span><span class="p">:</span> <span class="n">sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+<span class="g g-Whitespace">     </span><span class="mi">25</span> <span class="p">}</span>
+<span class="g g-Whitespace">     </span><span class="mi">27</span> <span class="n">db</span><span class="o">.</span><span class="n">new_row</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-<span class="nn">File ~/Documents/src/labbench/src/labbench/_backends.py:1606,</span> in <span class="ni">visa_probe_devices</span><span class="nt">(target, skip_interfaces, open_timeout, timeout)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1598</span>     <span class="k">return</span> <span class="kc">True</span>
-<span class="g g-Whitespace">   </span><span class="mi">1600</span> <span class="n">calls</span> <span class="o">=</span> <span class="p">{</span>
-<span class="g g-Whitespace">   </span><span class="mi">1601</span>     <span class="n">res</span><span class="p">:</span> <span class="n">util</span><span class="o">.</span><span class="n">Call</span><span class="p">(</span><span class="n">_visa_probe_resource</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">open_timeout</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="s1">&#39;ascii&#39;</span><span class="p">)</span>
-<span class="nn">   1602     for res</span> in <span class="ni">visa_list_resources</span><span class="nt">()</span>
-<span class="g g-Whitespace">   </span><span class="mi">1603</span>     <span class="k">if</span> <span class="n">keep_interface</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1604</span> <span class="p">}</span>
-<span class="ne">-&gt; </span><span class="mi">1606</span> <span class="n">devices</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">concurrently</span><span class="p">(</span><span class="o">**</span><span class="n">calls</span><span class="p">,</span> <span class="n">catch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1608</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">devices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<span class="g g-Whitespace">   </span><span class="mi">1609</span>     <span class="k">return</span> <span class="p">[]</span>
+<span class="nn">File ~/Documents/src/labbench/src/labbench/testing/pyvisa_sim.py:64,</span> in <span class="ni">PowerSensor.fetch</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">     </span><span class="mi">61</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FETC?&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">63</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">64</span>     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">65</span> <span class="k">else</span><span class="p">:</span>
+<span class="nn">     66     return pd.Series([float(s) for s</span> in <span class="ni">response.split</span><span class="nt">(&#39;,&#39;)], name=&#39;spectrum&#39;)</span>
 
-<span class="ne">ConcurrentException</span>: PowerSensor(): 16 call(s) raised exceptions
+<span class="ne">ValueError</span>: could not convert string to float: &#39;-52.617,-52.373,-52.724,-51.893,-52.27,-52.047,-53.059,-52.053,-52.426,-52.343,-52.228,-52.976,-52.186,-53.0,-51.894,-53.18,-51.96,-52.326,-52.492,-52.871,-52.41,-53.111,-53.199,-52.907,-52.791,-52.68,-51.63,-51.679,-51.743,-52.613,-52.108,-53.138,-52.014,-52.289,-52.235,-52.26,-53.135,-52.503,-52.201,-51.633,-51.933,-52.82,-52.287,-52.594,-51.89,-52.371,-52.068,-51.888,-53.145,-53.085,-52.392,-52.064,-51.688,-52.188,-52.211,-52.226,-52.841,-51.951,-51.573,-51.521,-52.115,-52.302,-52.958,-52.503,-52.32,-52.81,-52.357,-51.729,-52.956,-52.849,-51.883,-51.505,-52.027,-52.234,-52.092,-51.446,-52.798,-51.601,-52.14,-51.477,-52.614,-52.291,-52.532,-52.861,-51.814,-51.821,-52.997,-53.184,-51.761,-53.052,-51.612,-52.876,-52.013,-52.252,-52.059,-52.806,-52.474,-51.689,-52.606,-51.924,-51.964,-51.601,-52.815,-53.172,-52.183,-53.071,-52.763,-52.999,-52.595,-52.463,-52.48,-52.701,-52.337,-51.778,-52.039,-51.493,-51.591,-51.654,-51.525,-52.925,-51.531,-53.169,-52.997,-52.519,-52.298,-52.078,-52.547,-51.518,-51.589,-51.567,-51.502,-51.984,-52.215,-52.681,-51.468,-53.197,-53.007,-51.929,-52.465,-53.132,-52.073,-51.75,-52.8,-52.054,-52.493,-51.605,-53.026,-52.28,-52.331,-52.109,-51.889,-52.878,-51.874,-51.801,-52.031,-52.625,-51.84,-53.029,-52.431,-51.655,-52.51,-52.431,-52.165,-52.009,-51.973,-53.042,-52.632,-51.754,-52.637,-51.757,-51.9,-52.775,-52.49,-52.022,-52.151,-52.05,-51.867,-52.494,-53.014,-52.14,-53.036,-51.799,-51.848,-51.996,-52.254,-52.75,-51.492,-51.755,-52.494,-53.193,-53.114,-53.028,-52.898,-52.992,-53.127,-51.752,-53.065,-52.585,-51.861,-51.596&#39;
 </pre></div>
 </div>
 </div>
@@ -407,7 +228,7 @@ ValueError: not enough values to unpack (expected 4, got 3)
 
 
 <span class="c1"># the labbench.testing devices support simulated pyvisa operations</span>
-<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim&#39;</span><span class="p">)</span>
+<span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim-labbench&#39;</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="n">sensor</span><span class="p">:</span> <span class="n">PowerSensor</span> <span class="o">=</span> <span class="n">PowerSensor</span><span class="p">()</span>

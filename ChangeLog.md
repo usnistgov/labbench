@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `labbench.VISADevice.overlap_and_add` now supports an additional argument to use
   an alternative query for the end of an overlap-and-add block
 
+### Removed
+- `labbench.notebook` module, which was bitrotten and unsupported
+
 ## [0.36.0]
 ### Changed
 - Replaced `GitPython` dependency with pure-python `dulwich` to simplify packaging and avoid a

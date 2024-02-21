@@ -1,11 +1,12 @@
 [project]
 name = "labbench"
-version = "0.36.0"
 
 description = """\
     The `labbench` module provides API tools to support python scripting for laboratory automation.\
     The goal is to simplify the process of developing an experimental procedure into clear, concise, explainable, and reusable code.\
 """
+
+dynamic = ["version"]
 
 authors = [
     {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},

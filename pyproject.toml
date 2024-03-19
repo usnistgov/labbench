@@ -67,8 +67,6 @@ dev = [
     "astor>=0.8.1",
     # publishing
     "twine",
-    "conda-build",
-    "hatch-conda-build"
 ]
 doc = [
     # documentation
@@ -99,7 +97,7 @@ include = '\.pyi?$'
 # hatch project and build configuration
 # 
 [build-system]
-requires = ["hatchling", "hatch-conda-build"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
@@ -107,11 +105,6 @@ packages = ["src/labbench"]
 
 [tool.hatch.build.targets.sdist]
 packages = ["src/labbench"]
-
-[tool.hatch.build.targets.conda]
-packages = ["src/labbench"]
-channels = ['conda-forge']
-default_numpy_version = "1.22"
 
 [tool.hatch.version]
 path = "src/labbench/_version.py"

@@ -113,7 +113,7 @@ def log_paramattr_events(msg):
 
 def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
     """build a signature.Parameter from a ParamAttr.value"""
-    if attr_def.only and sys.version_info > (3, 10):
+    if attr_def.only and sys.version_info >= (3, 11):
         # Union[*attr_def.only] is sooo close
         annotation = typing.Union.__getitem__(tuple(attr_def.only))
     else:

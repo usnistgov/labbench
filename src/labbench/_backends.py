@@ -1305,7 +1305,7 @@ class VISADevice(Device):
         self.write('*RST')
 
     @contextlib.contextmanager
-    def overlap_and_block(self, timeout=None, quiet=False):
+    def overlap_and_block(self, timeout: float=None, quiet: bool=False, query_func: callable=None):
         """context manager that sends '*OPC' on entry, and performs
         a blocking '*OPC?' query on exit.
 
@@ -1330,7 +1330,11 @@ class VISADevice(Device):
         self._opc = True
         yield
         self._opc = False
-        self.query('*OPC?', timeout=timeout)
+
+        if query_func is not None:
+            query_func(self, timeout=timeout)
+        else:
+            self.query('*OPC?', timeout=timeout)
 
     class suppress_timeout(contextlib.suppress):
         """context manager that suppresses timeout exceptions on `write` or `query`.

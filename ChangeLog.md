@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - `labbench.VISADevice.overlap_and_add` now supports an additional argument to use
   an alternative query for the end of an overlap-and-add block
+- Fixed a type hinting bug specific to python 3.10
 
 ### Removed
 - `labbench.notebook` module, which was bitrotten and unsupported

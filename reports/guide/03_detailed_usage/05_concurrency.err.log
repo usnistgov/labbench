@@ -22,24 +22,25 @@ results
 ------------------
 
 ----- stdout -----
-start 4start 5
+start 4
+start 5
 ----- stderr -----
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_83547/3738405091.py", line 24, in do_something_4
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 ----- stderr -----
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_83547/3738405091.py", line 31, in do_something_5
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ----- stderr -----
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_83547/3738405091.py", line 24, in do_something_4
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_83547/3738405091.py", line 31, in do_something_5
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ------------------

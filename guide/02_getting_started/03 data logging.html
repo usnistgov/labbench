@@ -8,8 +8,8 @@
     <title>Data Logging &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
-    <script src="../../_static/documentation_options.js?v=5273b9ac"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="../../_static/documentation_options.js?v=29b1acb9"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
@@ -125,9 +125,9 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:49,641.642</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:49,644.644</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-02-21 08:56:51,641.642</span> • <span class=" -Color -Color-Blue">aggregator:</span> CSVLogger(&#39;6c03b9e2019bc827&#39;) named &#39;db&#39; by introspection
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:59,454.454</span> • <span class=" -Color -Color-Blue">aggregator:</span> PowerSensor() named &#39;sensor&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:59,455.456</span> • <span class=" -Color -Color-Blue">aggregator:</span> SpectrumAnalyzer() named &#39;analyzer&#39; by introspection
+<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:01,419.420</span> • <span class=" -Color -Color-Blue">aggregator:</span> CSVLogger(&#39;a32eef75fd02e9b3&#39;) named &#39;db&#39; by introspection
 </pre></div>
 </div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
@@ -149,12 +149,12 @@
 <span class="g g-Whitespace">     </span><span class="mi">25</span> <span class="p">}</span>
 <span class="g g-Whitespace">     </span><span class="mi">27</span> <span class="n">db</span><span class="o">.</span><span class="n">new_row</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-<span class="nn">File ~/Documents/src/labbench/src/labbench/testing/pyvisa_sim.py:64,</span> in <span class="ni">PowerSensor.fetch</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">     </span><span class="mi">61</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FETC?&#39;</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">63</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-<span class="ne">---&gt; </span><span class="mi">64</span>     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">65</span> <span class="k">else</span><span class="p">:</span>
-<span class="nn">     66     return pd.Series([float(s) for s</span> in <span class="ni">response.split</span><span class="nt">(&#39;,&#39;)], name=&#39;spectrum&#39;)</span>
+<span class="nn">File ~/Documents/src/labbench/src/labbench/testing/pyvisa_sim.py:65,</span> in <span class="ni">PowerSensor.fetch</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">     </span><span class="mi">62</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FETC?&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">64</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">65</span>     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">66</span> <span class="k">else</span><span class="p">:</span>
+<span class="nn">     67     return pd.Series([float(s) for s</span> in <span class="ni">response.split</span><span class="nt">(&#39;,&#39;)], name=&#39;spectrum&#39;)</span>
 
 <span class="ne">ValueError</span>: could not convert string to float: &#39;-52.617,-52.373,-52.724,-51.893,-52.27,-52.047,-53.059,-52.053,-52.426,-52.343,-52.228,-52.976,-52.186,-53.0,-51.894,-53.18,-51.96,-52.326,-52.492,-52.871,-52.41,-53.111,-53.199,-52.907,-52.791,-52.68,-51.63,-51.679,-51.743,-52.613,-52.108,-53.138,-52.014,-52.289,-52.235,-52.26,-53.135,-52.503,-52.201,-51.633,-51.933,-52.82,-52.287,-52.594,-51.89,-52.371,-52.068,-51.888,-53.145,-53.085,-52.392,-52.064,-51.688,-52.188,-52.211,-52.226,-52.841,-51.951,-51.573,-51.521,-52.115,-52.302,-52.958,-52.503,-52.32,-52.81,-52.357,-51.729,-52.956,-52.849,-51.883,-51.505,-52.027,-52.234,-52.092,-51.446,-52.798,-51.601,-52.14,-51.477,-52.614,-52.291,-52.532,-52.861,-51.814,-51.821,-52.997,-53.184,-51.761,-53.052,-51.612,-52.876,-52.013,-52.252,-52.059,-52.806,-52.474,-51.689,-52.606,-51.924,-51.964,-51.601,-52.815,-53.172,-52.183,-53.071,-52.763,-52.999,-52.595,-52.463,-52.48,-52.701,-52.337,-51.778,-52.039,-51.493,-51.591,-51.654,-51.525,-52.925,-51.531,-53.169,-52.997,-52.519,-52.298,-52.078,-52.547,-51.518,-51.589,-51.567,-51.502,-51.984,-52.215,-52.681,-51.468,-53.197,-53.007,-51.929,-52.465,-53.132,-52.073,-51.75,-52.8,-52.054,-52.493,-51.605,-53.026,-52.28,-52.331,-52.109,-51.889,-52.878,-51.874,-51.801,-52.031,-52.625,-51.84,-53.029,-52.431,-51.655,-52.51,-52.431,-52.165,-52.009,-51.973,-53.042,-52.632,-51.754,-52.637,-51.757,-51.9,-52.775,-52.49,-52.022,-52.151,-52.05,-51.867,-52.494,-53.014,-52.14,-53.036,-51.799,-51.848,-51.996,-52.254,-52.75,-51.492,-51.755,-52.494,-53.193,-53.114,-53.028,-52.898,-52.992,-53.127,-51.752,-53.065,-52.585,-51.861,-51.596&#39;
 </pre></div>

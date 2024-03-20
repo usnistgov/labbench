@@ -8,8 +8,8 @@
     <title>labbench &#8212; labbench</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
     <link rel="stylesheet" type="text/css" href="_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
-    <script src="_static/documentation_options.js?v=5273b9ac"></script>
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <script src="_static/documentation_options.js?v=29b1acb9"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="search.html" />
@@ -762,7 +762,7 @@ in self.resource</p>
 <span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'N'</span></em><a class="headerlink" href="#labbench.SerialDevice.parity" title="Link to this definition">¶</a></dt>
 <dd><p>parity in the physical serial connection.</p>
 <ul class="simple">
-<li><p>Allowed values are {‘E’, ‘N’, ‘O’, ‘M’, ‘S’}</p></li>
+<li><p>Allowed values are {‘E’, ‘M’, ‘O’, ‘S’, ‘N’}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
@@ -915,7 +915,7 @@ from the serial port.</p>
 <span class="sig-name descname"><span class="pre">parity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'N'</span></em><a class="headerlink" href="#labbench.SerialLoggingDevice.parity" title="Link to this definition">¶</a></dt>
 <dd><p>parity in the physical serial connection.</p>
 <ul class="simple">
-<li><p>Allowed values are {‘E’, ‘N’, ‘O’, ‘M’, ‘S’}</p></li>
+<li><p>Allowed values are {‘E’, ‘M’, ‘O’, ‘S’, ‘N’}</p></li>
 <li><p>Logging events are triggered on each access, and are stored as a key or column</p></li>
 <li><p>Case sensitive</p></li>
 </ul>
@@ -1319,7 +1319,7 @@ to be invoked.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="labbench.VISADevice.overlap_and_block">
-<span class="sig-name descname"><span class="pre">overlap_and_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.VISADevice.overlap_and_block" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">overlap_and_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#labbench.VISADevice.overlap_and_block" title="Link to this definition">¶</a></dt>
 <dd><p>context manager that sends ‘<a href="#id3"><span class="problematic" id="id4">*</span></a>OPC’ on entry, and performs
 a blocking ‘<a href="#id5"><span class="problematic" id="id6">*</span></a>OPC?’ query on exit.</p>
 <p>By convention, these SCPI commands give a hint to the instrument

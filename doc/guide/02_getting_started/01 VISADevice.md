@@ -65,7 +65,7 @@ At its simplest, a `VISADevice` object exposes the [communication capabilities o
 
 ```{code-cell} ipython3
 import labbench as lb
-lb.visa_default_resource_manager('@sim')
+lb.visa_default_resource_manager('@sim-labbench')
 
 inst = lb.VISADevice('USB0::0x1111::0x2222::0x1234::0::INSTR', write_termination='\r\n')
 
@@ -83,7 +83,7 @@ simulated instrument in `labbench`. However, many more are available in external
 ```{code-cell} ipython3
 # use a pyvisa-sim simulated VISA instrument for the demo
 from labbench.testing.pyvisa_sim import PowerSensor
-lb.visa_default_resource_manager('@sim')
+lb.visa_default_resource_manager('@sim-labbench')
 
 # watch the low-level write and query actions
 lb.show_messages('debug')

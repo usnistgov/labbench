@@ -41,7 +41,6 @@ dependencies = [
     "pyarrow>=14",
     # Device backend support
     "pyserial>=3.0",
-    "pyvicp",
     "pyvisa>=1.8",
     "pyvisa-py[usb,gpib-ctypes,serial,psutil]>=0.6",
     "pyvisa-sim>=0.5.1",
@@ -55,6 +54,7 @@ dependencies = [
 dotnet = ["pythonnet"]
 jupyter = ["notebook", "jupyter", "ipywidgets", "ipython"]
 pyvisa-py-extras = ["zeroconf"]
+pyvicp = ["pyvicp"]
 dev = [
     # python kernel bells and whistles
     "ipykernel",

@@ -13,7 +13,7 @@ lb.util.force_full_traceback(False)
 
 # load and validate the project definition from pyproject.toml
 project_info = toml.load('../pyproject.toml')
-missing_fields = {'name', 'version'} - set(project_info['project'].keys())
+missing_fields = {'name'} - set(project_info['project'].keys())
 if len(missing_fields) > 0:
     raise ValueError(
         f'fields {missing_fields} missing from [project] in pyproject.toml'

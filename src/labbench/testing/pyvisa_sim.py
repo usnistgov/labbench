@@ -12,6 +12,7 @@ else:
 
 __all__ = ['PowerSensor', 'Oscilloscope', 'SignalGenerator']
 
+
 @attr.visa_keying(
     # the default SCPI query and write formats
     query_fmt='{key}?',

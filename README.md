@@ -35,12 +35,12 @@ The project is under ongoing development
 1. Ensure prerequisites are installed:
     * python (3.9-3.12)
     * [`pip`](https://pypi.org/project/pip/) for package management
-2. Recommended module installation:
-    * For python distributions based on anaconda:
+2. Command line installation:
+    * For python distributions based on anaconda, a conda-forge package is available:
       ```sh
-      pip --upgrade-strategy only-if-needed install labbench
+      conda install conda-forge::labbench
       ```
-    * For other python installations:
+    * For other python installations, a pypi package is available:
       ```sh
       pip install labbench
       ```

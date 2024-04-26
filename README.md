@@ -32,10 +32,10 @@ The project is under ongoing development
 * Parts of the documentation are in need of updates, and others have not yet been written
 
 ## Installation
-1. Ensure prerequisites are installed:
+1. Prerequisites:
     * python (3.9-3.12)
-    * [`pip`](https://pypi.org/project/pip/) for package management
-2. Command line installation:
+    * an installer for python packages ([`pip`](https://pypi.org/project/pip/), `conda`, etc.)
+2. Package installation:
     * For python distributions based on anaconda, a conda-forge package is available:
       ```sh
       conda install conda-forge::labbench

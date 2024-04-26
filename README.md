@@ -36,12 +36,13 @@ The project is under ongoing development
     * python (3.9-3.12)
     * an installer for python packages ([`pip`](https://pypi.org/project/pip/), `conda`, etc.)
 2. Package installation:
-    * For python distributions based on anaconda, a conda-forge package is available:
+    * Options for line install from online packages:
       ```sh
+      # option 1: anaconda based distributions
       conda install conda-forge::labbench
       ```
-    * For other python installations, a pypi package is available:
       ```sh
+      # option 2: other distributions
       pip install labbench
       ```
 

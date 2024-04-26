@@ -35,16 +35,15 @@ The project is under ongoing development
 1. Prerequisites:
     * python (3.9-3.12)
     * an installer for python packages ([`pip`](https://pypi.org/project/pip/), `conda`, etc.)
-2. Package installation:
-    * Options for line install from online packages:
-      ```sh
-      # option 1: anaconda based distributions
-      conda install conda-forge::labbench
-      ```
-      ```sh
-      # option 2: other distributions
-      pip install labbench
-      ```
+2. Command-line package install options
+    ```sh
+    # option 1: preferred option in anaconda based distributions
+    conda install conda-forge::labbench
+    ```
+    ```sh
+    # option 2: preferred in other distributions
+    pip install labbench
+    ```
 
 ## Resources
 * [Source code](http://github.com/usnistgov/labbench)

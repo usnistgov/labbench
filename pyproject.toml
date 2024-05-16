@@ -47,7 +47,8 @@ dependencies = [
     "pywin32; sys_platform == 'win32'",
     "comtypes; sys_platform == 'win32'",
     "libusb1>=3.1.0",
-    "libusb-package; sys_platform == 'win32'"
+    "libusb-package; sys_platform == 'win32'",
+    "standard-telnetlib>=3.12.2",
 ]
 
 [project.optional-dependencies]
@@ -96,6 +97,8 @@ include = '\.pyi?$'
 #
 # hatch project and build configuration
 # 
+
+[tool.pdm]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -141,6 +144,7 @@ all = [
 omit = ["src/labbench/testing/*", "src/labbench/cli/*", "src/labbench/notebooks.py"]
 
 # documentation
+
 
 [tool.hatch.envs.doc]
 features = ["doc"]

@@ -35,6 +35,11 @@ else:
     psutil = util.lazy_import('psutil')
     pyvisa = util.lazy_import('pyvisa')
 
+    if sys.version_info[2:] == (3, 12):
+        warnings.filterwarnings(
+            "ignore", category=DeprecationWarning, message=r".*\'telnetlib\'.*"
+        )
+
 
 def shell_options_from_keyed_values(
     device: Device,

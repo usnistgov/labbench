@@ -161,10 +161,14 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 attr_def = attr_defs[name]
                 if isinstance(attr_def, attr.value.Value):
                     if attr_def.default is Undefined:
-                        attr_desc = attr.__repr__(owner_inst=self)
+                        try:
+                            attr_desc = attr.__repr__(owner_inst=self)
+                        except TypeError:
+                            # if the object isn't a proper object
+                            attr_desc = attr.__repr__()
 
                         raise TypeError(
-                            f'{attr_desc} is undefined - define it with a default, or '
+                            f'{name} ({attr_desc}) is undefined - define it with a default, or '
                             f'instantiate with {attr_def.name} keyword argument'
                         )
 

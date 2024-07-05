@@ -124,7 +124,7 @@ def default_arguments(func: callable) -> tuple[str]:
         hasattr(func, '__code__')
         and not func.__code__.co_flags & inspect.CO_VARKEYWORDS
     ):
-        return (func.__defaults__ or ()) + (func.__kwdefaults__ or ())
+        return tuple(func.__defaults__ or ()) + tuple(func.__kwdefaults__ or ())
     else:
         func.__signature__ = inspect.signature(func)
         return tuple(

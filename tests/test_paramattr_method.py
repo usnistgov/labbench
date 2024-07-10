@@ -157,6 +157,13 @@ def test_get_on_set_decorated(opened_device: StoreTestDevice):
     assert access['set_count'] == 1, 'verify 1 set operation'
 
 
+def test_disabled_setattr(opened_device: StoreTestDevice):
+    with pytest.raises(AttributeError):
+        # protections against treating methods as property descriptors
+        # opened_device.bool_keyed = False
+        opened_device.int_decorated_get_on_set = False
+
+
 def test_disabled_get(opened_device: StoreTestDevice):
     opened_device.int_decorated_low_bound_setonly(10)
 
@@ -164,7 +171,7 @@ def test_disabled_get(opened_device: StoreTestDevice):
         opened_device.int_decorated_low_bound_setonly()
 
 
-def test_disabled_get(opened_device: StoreTestDevice):
+def test_disabled_set(opened_device: StoreTestDevice):
     # the decorated function does not include a new_value, so we don't test it
     opened_device.int_decorated_low_bound_getonly()
 

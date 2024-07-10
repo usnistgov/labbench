@@ -830,7 +830,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
         if get_class_attrs(owner).get(self.name, None) is None:
             raise AttributeError(f'{self} is not owned by {owner}')
-        if declaration:
+        if with_declaration:
             return f'<{declaration} as {self._owned_name(owner)}>'
         else:
             return self._owned_name(owner)
@@ -1244,6 +1244,41 @@ class _MethodUnknownSignature(typing.Protocol[T_co]):
             """get the parameter according to the scope specified by `kwargs`."""
 
 
+class _MethodDescriptor:
+    __slots__ = ('method', 'owner', '__signature__')
+
+    def __init__(self, method: Method, owner: HasParamAttrs, /):
+        self.method = method
+        self.owner = owner
+        self.__signature__ = build_method_signature(
+            type(owner), method, method.get_kwarg_names()
+        )
+
+    @util.hide_in_traceback
+    def __call__(
+        self,
+        new_value: Union[T, None, type[Undefined]] = Undefined,
+        /,
+        **kwargs,
+    ) -> Union[T, None, Undefined]:
+        for name in self.method._kwargs.keys() & kwargs.keys():
+            # apply keyword argument validation to incoming keyword arguments
+            kwargs[name] = self.method._kwargs[name]._finalize_get_value(
+                self.owner, kwargs[name]
+            )
+
+        if new_value is not Undefined:
+            self.method.set_in_owner(self.owner, new_value, kwargs)
+            if self.method.get_on_set:
+                value = self.method.get_from_owner(self.owner, kwargs)
+            else:
+                value = None
+        else:
+            value = self.method.get_from_owner(self.owner, kwargs)
+
+        return value
+
+
 class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
     # this structure seems to trick some type checkers into honoring the @overloads in
     # _MethodMeta
@@ -1257,43 +1292,26 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
 
     _kwargs: dict[Union[ParamAttr, callable]] = {}
 
-    def __init_owner_instance__(self, owner_inst: HasParamAttrs):
-        """bind a callable method in the owner, and fill in registered KeywordArguments"""
+    def __init_owner_instance__(self, owner: HasParamAttrs):
+        """bind a callable method in the owner"""
 
-        super().__init_owner_instance__(owner_inst)
+        super().__init_owner_instance__(owner)
+        owner._attr_store.methods[self.name] = _MethodDescriptor(self, owner)
 
-        @util.hide_in_traceback
-        def call_in_owner(
-            owner: HasParamAttrs,
-            new_value: Union[T, None, type[Undefined]] = Undefined,
-            /,
-            **kwargs,
-        ) -> Union[T, None, Undefined]:
-            for name in self._kwargs.keys() & kwargs.keys():
-                # apply keyword argument validation to incoming keyword arguments
-                kwargs[name] = self._kwargs[name]._finalize_get_value(
-                    owner, kwargs[name]
-                )
-
-            if new_value is not Undefined:
-                self.set_in_owner(owner, new_value, kwargs)
-                if self.get_on_set:
-                    value = self.get_from_owner(owner, kwargs)
-                else:
-                    value = None
-            else:
-                value = self.get_from_owner(owner, kwargs)
-
-            return value
-
-        call_in_owner.__signature__ = build_method_signature(
-            type(owner_inst), self, self.get_kwarg_names()
+    def __set__(self, owner, value):
+        # more informative exception in case of use as a property descriptor
+        call_name = self.__repr__(owner=owner, with_declaration=False)
+        raise AttributeError(
+            f'set {self.name} with the function call {call_name}(new_value, ...), by assignment'
         )
 
-        # bind to the owner instance
-        unbound_method = call_in_owner.__get__(owner_inst, type(owner_inst))
-        setattr(owner_inst, self.name, unbound_method)  # type: ignore
-        self.__set__ = self._raise_on_setattr
+    def __get__(self, owner: HasParamAttrs|None, owner_cls=None):
+        if owner is None:
+            # __init_owner_instance__ has not yet been called
+            return self
+        else:
+            # __init_owner_instance__ has already been called
+            return owner._attr_store.methods[self.name]
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         super().__init_owner_subclass__(owner_cls)
@@ -1505,13 +1523,15 @@ class HasParamAttrsInstInfo:
     handlers: dict[str, callable]
     calibrations: dict[Union[None, str], Any]
     cache: dict[Union[None, str], Any]
+    methods: dict[str, _MethodDescriptor]
 
-    __slots__ = 'handlers', 'calibrations', 'cache'
+    __slots__ = 'handlers', 'calibrations', 'cache', 'methods'
 
     def __init__(self, owner: HasParamAttrs):
         self.handlers = {}
         self.cache = {}
         self.calibrations = {}
+        self.methods = {}
 
 
 def get_key_adapter(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> KeyAdapterBase:

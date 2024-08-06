@@ -123,10 +123,11 @@ def show_messages(
     logger._screen_handler.setLevel(level)
 
     if colors:
-        log_fmt = '\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}.{msecs:03.0f}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}'
+        log_fmt = '\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}'
     else:
-        log_fmt = '{levelname:^7s} {asctime}.{msecs:03.0f} • {label}: {message}'
+        log_fmt = '{levelname:^7s} {asctime} • {label}: {message}'
     formatter = logging.Formatter(log_fmt, style='{')
+    formatter.default_msec_format = '%s.%03d'
 
     logger._screen_handler.setFormatter(formatter)
     logger.logger.addHandler(logger._screen_handler)

@@ -11,7 +11,7 @@ import warnings
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, TypeVar, TYPE_CHECKING, Union
 
 from typing_extensions import TypeAlias
 
@@ -22,20 +22,20 @@ from ._device import Device
 from ._rack import Owner
 from .paramattr import observe
 
-try:
-    np = util.lazy_import('numpy')
-    pd = util.lazy_import('pandas')
-    sqlalchemy = util.lazy_import('sqlalchemy')
-    feather = util.lazy_import('pyarrow.feather')
-except RuntimeWarning:
+if TYPE_CHECKING:
     # not executed: help static code analysis recognize lazy_imports
     import numpy as np
     import pandas as pd
     import sqlalchemy
-    from pyarrow import feather
+    import pyarrow
+else:
+    np = util.lazy_import('numpy')
+    pd = util.lazy_import('pandas')
+    sqlalchemy = util.lazy_import('sqlalchemy')
+    pyarrow = util.lazy_import('pyarrow')
 
 # define this alias type to avoid a forced import
-DataFrameType: TypeAlias = 'pd.DataFrame'
+DataFrameType = TypeVar('DataFrameType', bound='pd.DataFrame')
 
 EMPTY = inspect._empty
 
@@ -1668,6 +1668,8 @@ def read(
         'json': pd.read_json,
         'csv': pd.read_csv,
     }
+
+    from pyarrow import feather
 
     try:
         reader_guess.update(

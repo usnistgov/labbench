@@ -1176,6 +1176,7 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         raise parent_exception
 
     elif len(tracebacks) > 0 and not catch:
+        # exception(s) raised
         for h in logger.logger.handlers:
             h.flush()
         if len(tracebacks) == 1:

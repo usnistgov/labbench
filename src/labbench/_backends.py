@@ -27,7 +27,6 @@ from ._device import Device
 
 if typing.TYPE_CHECKING:
     import telnetlib
-
     import psutil
     import pyvisa
 else:

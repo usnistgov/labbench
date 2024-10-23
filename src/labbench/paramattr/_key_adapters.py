@@ -6,6 +6,7 @@ from numbers import Number
 from ._bases import HasParamAttrs, KeyAdapterBase, ParamAttr, T, BoundedNumber
 from ._types import Bool
 
+
 class message_keying(KeyAdapterBase):
     """Base class for decorators configure wrapper access to a backend API in of a
     :class:labbench.Device` class through string `key` arguments.
@@ -110,7 +111,11 @@ class message_keying(KeyAdapterBase):
         key_type = type(self.message_map[self.value_map[matches[0]]])
         if key_type is bool and isinstance(attr_def, BoundedNumber):
             return value
-        elif issubclass(key_type, Number) and not issubclass(key_type, bool) and isinstance(attr_def, Bool):
+        elif (
+            issubclass(key_type, Number)
+            and not issubclass(key_type, bool)
+            and isinstance(attr_def, Bool)
+        ):
             return value
 
         return self.value_map[value]

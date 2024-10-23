@@ -42,8 +42,9 @@ def find_repo_in_parents(path: Path) -> Repo:
         try:
             return find_repo_in_parents(path.parent)
         except NotGitRepository:
-            ex.args = (ex.args[0] + ' (and parent directories)')
+            ex.args = ex.args[0] + ' (and parent directories)'
             raise ex
+
 
 class LogStreamBuffer:
     def __init__(self):

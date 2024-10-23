@@ -14,12 +14,7 @@ T = typing.TypeVar('T')
 
 
 class key_adapter(attr.visa_keying):
-    def __init__(
-        self,
-        *,
-        defaults: dict[str, Any] = {},
-        remap: dict[Any, str] = {}
-    ):
+    def __init__(self, *, defaults: dict[str, Any] = {}, remap: dict[Any, str] = {}):
         super().__init__(remap=remap)
         self.defaults = defaults
 

@@ -69,7 +69,7 @@ def get_owner_store(obj: HasParamAttrs) -> HasParamAttrsInstInfo:
 def get_owner_meta(
     obj: Union[HasParamAttrs, type[HasParamAttrs]],
 ) -> HasParamAttrsClsInfo:
-    if not issubclass(type(obj), (HasParamAttrsMeta,HasParamAttrs)):
+    if not issubclass(type(obj), (HasParamAttrsMeta, HasParamAttrs)):
         return None
     return obj._attr_defs
 
@@ -434,7 +434,7 @@ class HasParamAttrsMeta(type):
 
             cls_info.attrs = attrs
             ns['_attr_defs'] = cls_info
-            #ns.update(attrs, _attr_defs=cls_info)
+            # ns.update(attrs, _attr_defs=cls_info)
             return ns
         else:
             ns['_attr_defs'] = HasParamAttrsClsInfo(key_adapter=KeyAdapterBase())
@@ -568,7 +568,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             '_defaults',
             '_keywords',
             '_positional',
-            '__annotations__'
+            '__annotations__',
         ]
 
     # Descriptor methods (called automatically by the owning class or instance)
@@ -883,6 +883,7 @@ class Value(ParamAttr[T]):
         inherit: if True, use the definition in a parent class as defaults
         kw_only: whether to force keyword-only when annotated as a constructor argument in the owner
     """
+
     default: T = field[T](Undefined, kw_only=False)  # type: ignore
     allow_none: Union[bool, None] = None
     key: Any = None
@@ -908,12 +909,10 @@ class Value(ParamAttr[T]):
             raise TypeError('cannot set default=None with allow_none=True')
 
     @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> T:
-        ...
+    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> T: ...
 
     @typing.overload
-    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self:
-        ...
+    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self: ...
 
     @util.hide_in_traceback
     def __get__(
@@ -999,16 +998,13 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co, _P]):
         return self.__repr__()
 
     @typing.overload
-    def __call__(self, decorated: _GetterType[T_co, _P]) -> _GetterType[T_co, _P]:
-        ...
+    def __call__(self, decorated: _GetterType[T_co, _P]) -> _GetterType[T_co, _P]: ...
 
     @typing.overload
-    def __call__(self, decorated: _SetterType[T_co, _P]) -> _SetterType[T_co, _P]:
-        ...
+    def __call__(self, decorated: _SetterType[T_co, _P]) -> _SetterType[T_co, _P]: ...
 
     @typing.overload
-    def __call__(self, decorated: THasParamAttrs) -> THasParamAttrs:
-        ...
+    def __call__(self, decorated: THasParamAttrs) -> THasParamAttrs: ...
 
     def __call__(
         self,
@@ -1065,7 +1061,9 @@ class OwnerAccessAttr(ParamAttr[T]):
         if 'sets' in self.kws:
             # for an explicit sets=True, ensure it's implemented
             if self.sets and missing_set:
-                raise TypeError(f'decorate @{self}.setter or define with a key to implement sets=True')
+                raise TypeError(
+                    f'decorate @{self}.setter or define with a key to implement sets=True'
+                )
         elif missing_set:
             # otherwise if a set implementation is missing, set sets=False
             self.sets = False
@@ -1074,7 +1072,9 @@ class OwnerAccessAttr(ParamAttr[T]):
         if 'gets' in self.kws:
             # for an explicit gets=True, ensure it's implemented
             if self.gets and missing_get:
-                raise TypeError(f'decorate @{self}.getter or define with a key to implement gets=True')
+                raise TypeError(
+                    f'decorate @{self}.getter or define with a key to implement gets=True'
+                )
         elif missing_get:
             # otherwise if a get implementation is missing, set gets=False
             self.gets = False
@@ -1193,8 +1193,9 @@ class _GetterType(typing.Protocol[T_co, _P]):
     if typing.TYPE_CHECKING:
 
         @staticmethod
-        def __call__(owner: HasParamAttrs, *args: _P.args, **kwargs: _P.kwargs) -> T_co:
-            ...
+        def __call__(
+            owner: HasParamAttrs, *args: _P.args, **kwargs: _P.kwargs
+        ) -> T_co: ...
 
 
 class _SetterType(typing.Protocol[T_co, _P]):
@@ -1209,8 +1210,7 @@ class _SetterType(typing.Protocol[T_co, _P]):
             new_value: T_co,
             *args: _P.args,
             **kwargs: _P.kwargs,
-        ) -> None:
-            ...
+        ) -> None: ...
 
 
 class _MethodKnownSignature(typing.Protocol[T_co], typing.Generic[T_co, _P]):
@@ -1220,13 +1220,11 @@ class _MethodKnownSignature(typing.Protocol[T_co], typing.Generic[T_co, _P]):
 
         @typing.overload
         @staticmethod
-        def __call__(new_value: T_co, *args: _P.args, **kwargs: _P.kwargs) -> None:
-            ...
+        def __call__(new_value: T_co, *args: _P.args, **kwargs: _P.kwargs) -> None: ...
 
         @typing.overload
         @staticmethod
-        def __call__(*args: _P.args, **kwargs: _P.kwargs) -> T_co:
-            ...
+        def __call__(*args: _P.args, **kwargs: _P.kwargs) -> T_co: ...
 
 
 class _MethodUnknownSignature(typing.Protocol[T_co]):
@@ -1305,7 +1303,7 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
             f'set {self.name} with the function call {call_name}(new_value, ...), by assignment'
         )
 
-    def __get__(self, owner: HasParamAttrs|None, owner_cls=None):
+    def __get__(self, owner: HasParamAttrs | None, owner_cls=None):
         if owner is None:
             # __init_owner_instance__ has not yet been called
             return self
@@ -1434,18 +1432,17 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
     if typing.TYPE_CHECKING:
         # call signatures hints for IDEs
 
-        def __new__(cls, *args, **kwargs) -> Method[T, _MethodUnknownSignature[T]]:
-            ...
+        def __new__(cls, *args, **kwargs) -> Method[T, _MethodUnknownSignature[T]]: ...
 
         @typing.overload
         def __get__(
             self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]
-        ) -> SignatureType:
-            ...
+        ) -> SignatureType: ...
 
         @typing.overload
-        def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self:
-            ...
+        def __get__(
+            self, owner: None, owner_cls: type[HasParamAttrs]
+        ) -> typing.Self: ...
 
 
 class Property(OwnerAccessAttr[T]):
@@ -1459,12 +1456,10 @@ class Property(OwnerAccessAttr[T]):
     ROLE = 'property'
 
     @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> T:
-        ...
+    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> T: ...
 
     @typing.overload
-    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self:
-        ...
+    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self: ...
 
     @util.hide_in_traceback
     def __get__(

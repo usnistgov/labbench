@@ -245,7 +245,11 @@ class ShellBackend(Device):
         return sp.run(argv, check=check_return, timeout=timeout)
 
     def _run_piped(
-        self, *argv: list[str], check_return: bool=False, raise_on_stderr: bool = False, timeout: Union[float,None]=None
+        self,
+        *argv: list[str],
+        check_return: bool = False,
+        raise_on_stderr: bool = False,
+        timeout: Union[float, None] = None,
     ) -> None:
         """Blocking execution of the specified command line, with a pipe to collect
         stdout.
@@ -296,7 +300,12 @@ class ShellBackend(Device):
         return ret
 
     def _background_piped(
-        self, *argv, check_return=False, raise_on_stderr=False, respawn=False, timeout=None
+        self,
+        *argv,
+        check_return=False,
+        raise_on_stderr=False,
+        respawn=False,
+        timeout=None,
     ):
         """Run the executable in the background (returning immediately while
         the executable continues running).
@@ -375,16 +384,13 @@ class ShellBackend(Device):
                 si.dwFlags |= sp.STARTF_USESHOWWINDOW
                 platform_flags = {
                     'startupinfo': si,
-                    'creationflags': sp.CREATE_NEW_PROCESS_GROUP
+                    'creationflags': sp.CREATE_NEW_PROCESS_GROUP,
                 }
             else:
                 platform_flags = {}
 
             proc = sp.Popen(
-                list(cmdl),
-                stdout=sp.PIPE,
-                stderr=sp.PIPE,
-                **platform_flags
+                list(cmdl), stdout=sp.PIPE, stderr=sp.PIPE, **platform_flags
             )
 
             self.backend = proc
@@ -573,7 +579,10 @@ class LabviewSocketInterface(Device):
     """
 
     resource: str = attr.value.NetworkAddress(
-        default='127.0.0.1', accept_port=False, kw_only=False, help='LabView VI host address'
+        default='127.0.0.1',
+        accept_port=False,
+        kw_only=False,
+        help='LabView VI host address',
     )
     tx_port: int = attr.value.int(
         default=61551, help='TX port to send to the LabView VI'
@@ -930,7 +939,7 @@ class TelnetDevice(Device):
         kw_only=False,
         accept_port=True,
         help='server host address',
-    )    
+    )
     timeout: float = attr.value.float(
         default=2, min=0, label='s', help='connection timeout'
     )
@@ -1010,7 +1019,9 @@ class VISADevice(Device):
     )
 
     read_termination: str = attr.value.str(
-        default='\n', cache=True, help='end-of-line string to delineate the end of ascii query replies'
+        default='\n',
+        cache=True,
+        help='end-of-line string to delineate the end of ascii query replies',
     )
 
     write_termination: str = attr.value.str(
@@ -1304,7 +1315,9 @@ class VISADevice(Device):
         self.write('*RST')
 
     @contextlib.contextmanager
-    def overlap_and_block(self, timeout: float=None, quiet: bool=False, query_func: callable=None):
+    def overlap_and_block(
+        self, timeout: float = None, quiet: bool = False, query_func: callable = None
+    ):
         """context manager that sends '*OPC' on entry, and performs
         a blocking '*OPC?' query on exit.
 

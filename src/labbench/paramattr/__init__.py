@@ -11,7 +11,7 @@ from ._bases import (
     unobserve,
     list_method_attrs,
     list_property_attrs,
-    list_value_attrs
+    list_value_attrs,
 )
 from ._key_adapters import message_keying, visa_keying
 

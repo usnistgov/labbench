@@ -1021,9 +1021,9 @@ def enter_or_call(
     if params['name'] is None:
         # come up with a gobbledigook name that is at least unique
         frame = inspect.currentframe().f_back.f_back
-        params[
-            'name'
-        ] = f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
+        params['name'] = (
+            f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
+        )
 
     # Combine the position and keyword arguments, and assign labels
     allobjs = list(objs) + list(kws.values())

@@ -134,6 +134,7 @@ def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
         annotation=annotation,
     )
 
+
 @typing.dataclass_transform(
     kw_only_default=True,
     eq_default=False,
@@ -141,8 +142,7 @@ def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
 )
 class DeviceDataClass(HasParamAttrs, util.Ownable):
     @typing.overload
-    def __init__(self, *args, **values):
-        ...
+    def __init__(self, *args, **values): ...
 
     def __init__(self, *args, **kwargs):
         """Update default values with these arguments on instantiation."""
@@ -192,7 +192,9 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
     @util.hide_in_traceback
     def __set_signature__(cls):
         # Generate a signature for documentation and code autocomplete
-        params = [inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD)]
+        params = [
+            inspect.Parameter('self', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        ]
 
         non_kw_only_attrs = []
         kw_only_attrs = []
@@ -225,10 +227,12 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = ''.join([
-            f'    {t.name}: {t.doc(as_argument=True)}\n'
-            for t in (non_kw_only_attrs + kw_only_attrs)
-        ])
+        value_docs = ''.join(
+            [
+                f'    {t.name}: {t.doc(as_argument=True)}\n'
+                for t in (non_kw_only_attrs + kw_only_attrs)
+            ]
+        )
         cls.__init__.__doc__ = f'\nArguments:\n{value_docs}'
 
 

@@ -19,7 +19,7 @@ maintainers = [
     {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
 ]
 
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 
@@ -113,11 +113,11 @@ path = "src/labbench/_version.py"
 [tool.hatch.envs.default]
 features = ["dev"]
 path = ".venv"
-python = "3.12"
+python = "3.13"
 
 [tool.hatch.envs.build]
 features = ["dev"]
-python = "3.12"
+python = "3.13"
 
 # test environment
 [tool.hatch.envs.test]
@@ -129,7 +129,7 @@ dependencies = [
 ]
 
 [[tool.hatch.envs.test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12"]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
 [tool.hatch.envs.test.scripts]
 all = [

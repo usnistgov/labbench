@@ -26,11 +26,9 @@ from . import util
 from ._device import Device
 
 if typing.TYPE_CHECKING:
-    import telnetlib
     import psutil
     import pyvisa
 else:
-    telnetlib = util.lazy_import('telnetlib')
     psutil = util.lazy_import('psutil')
     pyvisa = util.lazy_import('pyvisa')
 
@@ -954,6 +952,12 @@ class TelnetDevice(Device):
             port = int(port[0])
         else:
             port = 23
+
+        # TODO: find an alternative to allow python 3.13 support
+        try:
+            import telnetlib
+        except ImportError:
+            raise ImportError('telnet support requires python < 3.13')
 
         self.backend = telnetlib.Telnet(self.resource, port=port, timeout=self.timeout)
 

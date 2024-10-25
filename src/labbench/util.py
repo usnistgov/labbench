@@ -1,20 +1,20 @@
 from __future__ import annotations
 import importlib.util
 from threading import Event, RLock, Thread, ThreadError
-import inspect # noqa: E402
-import logging # noqa: E402
-import pickle # noqa: E402
-import re # noqa: E402
-import sys # noqa: E402
-import time # noqa: E402
-import types # noqa: E402
-import typing # noqa: E402
-from collections.abc import Callable # noqa: E402
-from contextlib import _GeneratorContextManager, contextmanager # noqa: E402
-from functools import wraps # noqa: E402
-from queue import Empty, Queue # noqa: E402
-from typing import Union # noqa: E402
-from typing_extensions import Literal, TypeVar # noqa: E402
+import inspect  # noqa: E402
+import logging  # noqa: E402
+import pickle  # noqa: E402
+import re  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+import types  # noqa: E402
+import typing  # noqa: E402
+from collections.abc import Callable  # noqa: E402
+from contextlib import _GeneratorContextManager, contextmanager  # noqa: E402
+from functools import wraps  # noqa: E402
+from queue import Empty, Queue  # noqa: E402
+from typing import Union  # noqa: E402
+from typing_extensions import Literal, TypeVar  # noqa: E402
 
 
 __all__ = [  # "misc"
@@ -51,6 +51,7 @@ __all__ = [  # "misc"
 
 
 TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
+
 
 def hide_in_traceback(func: _Tfunc) -> _Tfunc:
     """decorates a method or function to hide it from tracebacks.
@@ -137,11 +138,11 @@ def lazy_import(module_name: str):
 # we have to delay lazy imports until after lazy_import is defined
 if typing.TYPE_CHECKING:
     # not executed: help static code analysis recognize lazy_imports
-    import ast # noqa: E402
-    import hashlib # noqa: E402
+    import ast  # noqa: E402
+    import hashlib  # noqa: E402
     import psutil
     import textwrap
-    import traceback # noqa: E402
+    import traceback  # noqa: E402
 else:
     ast = lazy_import('ast')
     hashlib = lazy_import('hashlib')

@@ -1,11 +1,14 @@
+from .. import util
+from . import _bases
+
 import numbers
 import typing
 from pathlib import Path as _Path
 
-import validators as _val
-
-from .. import util
-from . import _bases
+if typing.TYPE_CHECKING:
+    import validators as _val
+else:
+    _val = util.lazy_import('validators')
 
 
 class Any(_bases.ParamAttr[typing.Any], type=object):

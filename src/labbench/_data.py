@@ -1,19 +1,14 @@
 import copy
 import inspect
 import io
-import json
 import os
 import pickle
 import re
-import shutil
-import tarfile
 import warnings
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any, TypeVar, TYPE_CHECKING, Union
-
-from typing_extensions import TypeAlias
 
 from . import _device, _host, _rack, util
 from . import _device as core
@@ -24,15 +19,21 @@ from .paramattr import observe
 
 if TYPE_CHECKING:
     # not executed: help static code analysis recognize lazy_imports
+    import json
     import numpy as np
     import pandas as pd
     import sqlalchemy
     import pyarrow
+    import shutil
+    import tarfile
 else:
+    json = util.lazy_import('json')
     np = util.lazy_import('numpy')
     pd = util.lazy_import('pandas')
     sqlalchemy = util.lazy_import('sqlalchemy')
     pyarrow = util.lazy_import('pyarrow')
+    shutil = util.lazy_import('shutil')
+    tarfile = util.lazy_import('tarfile')
 
 # define this alias type to avoid a forced import
 DataFrameType = TypeVar('DataFrameType', bound='pd.DataFrame')

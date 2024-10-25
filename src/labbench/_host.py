@@ -7,10 +7,7 @@ import socket
 import sys
 import time
 import typing
-from traceback import format_exc, format_exception_only, format_tb
 
-from dulwich.repo import Repo, NotGitRepository
-from dulwich import porcelain
 from pathlib import Path
 
 from . import _device as core
@@ -18,30 +15,35 @@ from . import paramattr as attr
 from . import util
 
 if typing.TYPE_CHECKING:
-    import smtplib
+    from dulwich import porcelain, repo
     import pandas as pd
     import pip
+    import smtplib
+    import traceback
 else:
+    porcelain = util.lazy_import('dulwich.porcelain')
+    repo = util.lazy_import('dulwich.repo')
     pd = util.lazy_import('pandas')
     pip = util.lazy_import('pip')
     smtplib = util.lazy_import('smtplib')
+    traceback = util.lazy_import('traceback')
 
 __all__ = ['Host', 'Email']
 
 
-def find_repo_in_parents(path: Path) -> Repo:
+def find_repo_in_parents(path: Path) -> 'repo.Repo':
     """find a git repository in path, or in the first parent to contain one"""
     path = Path(path).absolute()
 
     try:
-        return Repo(str(path))
-    except NotGitRepository as ex:
+        return repo.Repo(str(path))
+    except repo.NotGitRepository as ex:
         if not path.is_dir() or path.parent is path:
             raise
 
         try:
             return find_repo_in_parents(path.parent)
-        except NotGitRepository:
+        except repo.NotGitRepository:
             ex.args = ex.args[0] + ' (and parent directories)'
             raise ex
 
@@ -161,7 +163,7 @@ class Email(core.Device):
             message = (
                 '<b>Exception</b>\n'
                 + '<font face="Courier New, Courier, monospace">'
-                + format_exc()
+                + traceback.format_exc()
                 + '</font>'
             )
         else:
@@ -227,8 +229,8 @@ class JSONFormatter(logging.Formatter):
 
         etype, einst, exc_tb = sys.exc_info()
         if etype is not None:
-            msg['exception'] = format_exception_only(etype, einst)[0].rstrip()
-            msg['traceback'] = ''.join(format_tb(exc_tb)).splitlines()
+            msg['exception'] = traceback.format_exception_only(etype, einst)[0].rstrip()
+            msg['traceback'] = ''.join(traceback.format_tb(exc_tb)).splitlines()
 
         self._last.append((rec, msg))
 
@@ -254,7 +256,7 @@ class Host(core.Device):
         try:
             repo = find_repo_in_parents('.')
             self._logger.debug(f'running in git repository at {repo.path}')
-        except NotGitRepository:
+        except repo.NotGitRepository:
             repo = None
             self._logger.info('not running in a git repository')
 

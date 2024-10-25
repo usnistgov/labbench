@@ -8,7 +8,6 @@ import os
 import platform
 import select
 import socket
-import subprocess as sp
 import sys
 import warnings
 from collections import OrderedDict
@@ -17,7 +16,6 @@ from queue import Empty, Queue
 from threading import Event, Thread
 from typing import Union
 
-import serial
 import typing_extensions as typing
 from typing_extensions import Literal
 
@@ -28,9 +26,13 @@ from ._device import Device
 if typing.TYPE_CHECKING:
     import psutil
     import pyvisa
+    import serial
+    import subprocess as sp
 else:
     psutil = util.lazy_import('psutil')
     pyvisa = util.lazy_import('pyvisa')
+    serial = util.lazy_import('serial')
+    sp = util.lazy_import('subprocess')
 
 
 def shell_options_from_keyed_values(

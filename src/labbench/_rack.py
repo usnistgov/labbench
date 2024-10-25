@@ -5,10 +5,7 @@ import importlib
 import inspect
 import sys
 import time
-import traceback
 from copy import deepcopy
-from ctypes import ArgumentError
-from dataclasses import dataclass
 from functools import wraps
 
 import typing_extensions as typing
@@ -17,9 +14,13 @@ from . import _device as core
 from . import util as util
 
 if typing.TYPE_CHECKING:
+    import ctypes
     import pandas as pd
+    import traceback
 else:
+    ctypes = util.lazy_import('ctypes')
     pd = util.lazy_import('pandas')
+    traceback = util.lazy_import('traceback')
 
 EMPTY = inspect.Parameter.empty
 
@@ -190,7 +191,7 @@ class CallSignatureTemplate:
 
 
 class MethodTaggerDataclass:
-    """subclasses decorated with @dataclass will operate as decorators that stash annotated keywords here into the pending attribute dict"""
+    """subclasses with annotated attributes will operate as decorators that stash annotated keywords here into the pending attribute dict"""
 
     pending = {}
 
@@ -202,7 +203,6 @@ class MethodTaggerDataclass:
         return func
 
 
-@dataclass
 class rack_input_table(MethodTaggerDataclass):
     """tag a method defined in a Rack to support execution from a flat table.
 
@@ -214,8 +214,10 @@ class rack_input_table(MethodTaggerDataclass):
 
     table_path: str
 
+    def __init__(self, table_path: str):
+        self.table_path = table_path
 
-@dataclass
+
 class rack_kwargs_template(MethodTaggerDataclass):
     """tag a method defined in a Rack to replace a **kwargs argument using the signature of the specified callable.
 
@@ -227,7 +229,10 @@ class rack_kwargs_template(MethodTaggerDataclass):
         skip: list of column names to omit
     """
 
-    template: callable = None
+    template: callable
+
+    def __init__(self, template: callable):
+        self.template = template
 
 
 class rack_kwargs_skip(MethodTaggerDataclass):
@@ -353,7 +358,7 @@ class RackMethod(util.Ownable):
                 if param.kind is param.VAR_KEYWORD:
                     break
             else:
-                raise ArgumentError(
+                raise ctypes.ArgumentError(
                     f'cannot apply keyword arguments template to "{self._owned_name or self.__name__}", which does not accept keyword arguments'
                 )
 

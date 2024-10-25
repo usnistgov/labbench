@@ -1,5 +1,6 @@
 """functions and CLI tools for mapping labbench objects onto config directories"""
 
+import functools
 import inspect
 import os
 from numbers import Number
@@ -12,14 +13,6 @@ from ._rack import Rack, import_as_rack, update_parameter_dict
 # some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
 # using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
 
-try:
-    import ruamel.yaml as ruamel_yaml
-except ModuleNotFoundError:
-    import ruamel_yaml
-
-_yaml = ruamel_yaml.YAML()
-_yaml.indent(mapping=4, sequence=4)
-
 RACK_CONFIG_FILENAME = 'config.yaml'
 EMPTY = inspect.Parameter.empty
 
@@ -31,20 +24,38 @@ _FIELD_DEVICES = 'devices'
 _FIELD_KEYWORD_DEFAULTS = 'default_arguments'
 
 
+@functools.cache
+def _get_yaml():
+    try:
+        import ruamel.yaml as ruamel_yaml
+    except ModuleNotFoundError:
+        import ruamel_yaml
+
+    yaml = ruamel_yaml.YAML()
+    yaml.indent(mapping=4, sequence=4)
+    return yaml
+
+
 def _yaml_comment_out(cm, key):
     """comment out the line containing the item with the specified key"""
-
-    from ruamel_yaml.error import CommentMark
-    from ruamel_yaml.tokens import CommentToken
+    try:
+        import ruamel.yaml as ruamel_yaml
+    except ModuleNotFoundError:
+        import ruamel_yaml
 
     cm.ca.items.setdefault(key, [None, [], None, None])
-    cm.ca.items[key][1] = [CommentToken('# ', CommentMark(0), None)]
+    cm.ca.items[key][1] = [
+        ruamel_yaml.tokens.CommentToken('# ', ruamel_yaml.error.CommentMark(0), None)
+    ]
 
 
 def _quote_strings_recursive(cm):
     """apply quotes to dict values that have str type"""
 
-    from ruamel_yaml.scalarstring import DoubleQuotedScalarString as quote
+    try:
+        from ruamel.yaml.scalarstring import DoubleQuotedScalarString as quote
+    except ModuleNotFoundError:
+        from ruamel_yaml.scalarstring import DoubleQuotedScalarString as quote
 
     ret = dict()
 
@@ -189,6 +200,11 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
 
 
 def _map_method_defaults(rack_cls):
+    try:
+        import ruamel.yaml as ruamel_yaml
+    except ModuleNotFoundError:
+        import ruamel_yaml
+
     params, _ = _search_method_parameters(rack_cls)
     cm = ruamel_yaml.comments.CommentedMap(
         {
@@ -211,6 +227,11 @@ def _map_method_defaults(rack_cls):
 
 
 def _map_devices(cls):
+    try:
+        import ruamel.yaml as ruamel_yaml
+    except ModuleNotFoundError:
+        import ruamel_yaml
+
     cm = ruamel_yaml.comments.CommentedMap()
 
     for dev_name, dev in cls._devices.items():
@@ -256,6 +277,11 @@ def dump_rack(
     with_defaults: bool = False,
     skip_tables: bool = False,
 ):
+    try:
+        import ruamel.yaml as ruamel_yaml
+    except ModuleNotFoundError:
+        import ruamel_yaml
+
     if not isinstance(rack, Rack):
         raise TypeError("'rack' argument must be an instance of labbench.Rack")
 
@@ -294,7 +320,7 @@ def dump_rack(
 
         # cm = _quote_strings_recursive(cm)
 
-        _yaml.dump(cm, stream)
+        _get_yaml().dump(cm, stream)
 
     if not skip_tables:
         for name, obj in rack.__dict__.items():
@@ -316,7 +342,7 @@ def dump_rack(
 
 def read_yaml_config(config_path: str):
     with open(config_path) as f:
-        config = _yaml.load(f)
+        config = _get_yaml().load(f)
         util.logger.debug(f'loaded configuration from "{config_path!s}"')
     return config
 

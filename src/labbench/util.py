@@ -1,26 +1,21 @@
 from __future__ import annotations
-
-import ast
-import hashlib
 import importlib.util
-import inspect
-import logging
-import pickle
-import re
-import sys
-import textwrap
-import time
-import traceback
-import types
-import typing
-from collections.abc import Callable
-from contextlib import _GeneratorContextManager, contextmanager
-from functools import wraps
-from queue import Empty, Queue
 from threading import Event, RLock, Thread, ThreadError
-from typing import Union
+import inspect # noqa: E402
+import logging # noqa: E402
+import pickle # noqa: E402
+import re # noqa: E402
+import sys # noqa: E402
+import time # noqa: E402
+import types # noqa: E402
+import typing # noqa: E402
+from collections.abc import Callable # noqa: E402
+from contextlib import _GeneratorContextManager, contextmanager # noqa: E402
+from functools import wraps # noqa: E402
+from queue import Empty, Queue # noqa: E402
+from typing import Union # noqa: E402
+from typing_extensions import Literal, TypeVar # noqa: E402
 
-from typing_extensions import Literal, TypeVar
 
 __all__ = [  # "misc"
     'hash_caller',
@@ -53,6 +48,106 @@ __all__ = [  # "misc"
     # helper objects
     'Ownable',
 ]
+
+
+TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
+
+def hide_in_traceback(func: _Tfunc) -> _Tfunc:
+    """decorates a method or function to hide it from tracebacks.
+
+    The intent is to remove clutter in the middle of deep stacks in object call stacks.
+
+    To disable this behavior in all methods, call `force_full_traceback(True)`.
+
+    Args:
+        func: The function to skip in
+
+    Returns:
+        Callable[P, T]: _description_
+    """
+
+    def adjust(f: _Tfunc) -> None:
+        code_obj = f.__code__
+        f.__code__ = f.__code__.replace(
+            co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,)
+        )
+
+    if not callable(func):
+        raise TypeError(f'{func} is not callable')
+
+    if hasattr(func, '__code__'):
+        adjust(func)
+    elif hasattr(func.__call__, '__code__'):
+        adjust(func.__call__)
+
+    return func
+
+
+class single_threaded_call_lock:
+    """decorates a function to ensure executes in only one thread at a time.
+
+    This is a low-performance way to ensure thread-safety.
+    """
+
+    def __new__(cls, func):
+        obj = super().__new__(cls)
+        obj.func = func
+        obj.lock = RLock()
+        obj = wraps(func)(obj)
+        return obj
+
+    @hide_in_traceback
+    def __call__(self, *args, **kws):
+        self.lock.acquire()
+
+        # no other threads are running self.func; invoke it in this one
+        try:
+            ret = self.func(*args, **kws)
+        finally:
+            self.lock.release()
+
+        return ret
+
+
+@single_threaded_call_lock
+def lazy_import(module_name: str):
+    """postponed import of the module with the specified name.
+
+    The import is not performed until the module is accessed in the code. This
+    reduces the total time to import labbench by waiting to import the module
+    until it is used.
+    """
+    # see https://docs.python.org/3/library/importlib.html#implementing-lazy-imports
+    try:
+        ret = sys.modules[module_name]
+        return ret
+    except KeyError:
+        pass
+
+    spec = importlib.util.find_spec(module_name)
+    if spec is None:
+        raise ImportError(f'no module found named "{module_name}"')
+    spec.loader = importlib.util.LazyLoader(spec.loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# we have to delay lazy imports until after lazy_import is defined
+if typing.TYPE_CHECKING:
+    # not executed: help static code analysis recognize lazy_imports
+    import ast # noqa: E402
+    import hashlib # noqa: E402
+    import psutil
+    import textwrap
+    import traceback # noqa: E402
+else:
+    ast = lazy_import('ast')
+    hashlib = lazy_import('hashlib')
+    psutil = lazy_import('psutil')
+    textwrap = lazy_import('textwrap')
+    traceback = lazy_import('traceback')
 
 # the base object for labbench loggers
 logger = logging.LoggerAdapter(
@@ -267,8 +362,6 @@ class ThreadEndedByMaster(ThreadError):
 concurrency_count = 0
 stop_request_event = Event()
 
-TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
-
 _T = TypeVar('_T')
 _Tfunc = Callable[..., typing.Any]
 
@@ -279,37 +372,6 @@ class _ContextManagerType(typing.Protocol):
 
     def __exit__(self, /, type, value, traceback):
         pass
-
-
-def hide_in_traceback(func: _Tfunc) -> _Tfunc:
-    """decorates a method or function to hide it from tracebacks.
-
-    The intent is to remove clutter in the middle of deep stacks in object call stacks.
-
-    To disable this behavior in all methods, call `force_full_traceback(True)`.
-
-    Args:
-        func: The function to skip in
-
-    Returns:
-        Callable[P, T]: _description_
-    """
-
-    def adjust(f: _Tfunc) -> None:
-        code_obj = f.__code__
-        f.__code__ = f.__code__.replace(
-            co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,)
-        )
-
-    if not callable(func):
-        raise TypeError(f'{func} is not callable')
-
-    if hasattr(func, '__code__'):
-        adjust(func)
-    elif hasattr(func.__call__, '__code__'):
-        adjust(func.__call__)
-
-    return func
 
 
 def force_full_traceback(force: bool) -> None:
@@ -341,7 +403,7 @@ class exc_info:
 
     @classmethod
     def filter(
-        cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType
+        cls, etype: type[BaseException], evalue: BaseException, tb: types.TracebackType
     ):
         if cls.debug or tb is None:
             return etype, evalue, tb
@@ -376,7 +438,7 @@ class excepthook:
 
     @classmethod
     def __call__(
-        cls, etype: type(BaseException), evalue: BaseException, tb: types.TracebackType
+        cls, etype: type[BaseException], evalue: BaseException, tb: types.TracebackType
     ):
         return cls.sys_excepthook(*exc_info.filter(type, evalue, tb))
 
@@ -1524,58 +1586,6 @@ class ThreadSandbox:
 _sandbox_keys = ThreadSandbox.__dict__.keys() - object.__dict__.keys()
 
 
-class single_threaded_call_lock:
-    """decorates a function to ensure executes in only one thread at a time.
-
-    This is a low-performance way to ensure thread-safety.
-    """
-
-    def __new__(cls, func):
-        obj = super().__new__(cls)
-        obj.func = func
-        obj.lock = RLock()
-        obj = wraps(func)(obj)
-        return obj
-
-    @hide_in_traceback
-    def __call__(self, *args, **kws):
-        self.lock.acquire()
-
-        # no other threads are running self.func; invoke it in this one
-        try:
-            ret = self.func(*args, **kws)
-        finally:
-            self.lock.release()
-
-        return ret
-
-
-# otherwise turns out not to be thread-safe
-@single_threaded_call_lock
-def lazy_import(module_name: str):
-    """postponed import of the module with the specified name.
-
-    The import is not performed until the module is accessed in the code. This
-    reduces the total time to import labbench by waiting to import the module
-    until it is used.
-    """
-    # see https://docs.python.org/3/library/importlib.html#implementing-lazy-imports
-    try:
-        ret = sys.modules[module_name]
-        return ret
-    except KeyError:
-        pass
-
-    spec = importlib.util.find_spec(module_name)
-    if spec is None:
-        raise ImportError(f'no module found named "{module_name}"')
-    spec.loader = importlib.util.LazyLoader(spec.loader)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
 class ttl_cache:
     def __init__(self, timeout):
         self.timeout = timeout
@@ -1643,13 +1653,6 @@ def accessed_attributes(method: _Tfunc) -> tuple[str]:
         )
 
     return tuple({node.attr for node in ast.walk(func) if isselfattr(node)})
-
-
-if typing.TYPE_CHECKING:
-    # we have to delay this import until after lazy_import is defined
-    import psutil
-else:
-    psutil = lazy_import('psutil')
 
 
 def kill_by_name(*names):

@@ -741,15 +741,16 @@ def stopwatch(
             exc_info = sys.exc_info()
             if exc_info != (None, None, None):
                 msg += f' before exception {exc_info[1]}'
+                logger_level = 'error'
 
             try:
-                level = _LOG_LEVEL_NAMES[logger_level]
+                level_code = _LOG_LEVEL_NAMES[logger_level]
             except KeyError:
                 raise ValueError(
                     f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
                 )
 
-            logger.log(level, msg.lstrip())
+            logger.log(level_code, msg.lstrip())
 
 
 class Call:

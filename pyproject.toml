@@ -33,7 +33,7 @@ dependencies = [
     "dulwich>=0.20",
     # numerical
     "numpy>=1.19",
-    "pandas>=1.2.0,<2.2",
+    "pandas>=1.2.0,<3",
     # data formats
     "ruamel-yaml>=0.17.21",
     "feather-format>=0.4.0",

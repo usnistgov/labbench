@@ -1230,12 +1230,13 @@ def concurrently_call(params: dict, name_func_pairs: list) -> dict:
         for h in logger.logger.handlers:
             h.flush()
 
-        for tb in tracebacks:
-            try:
-                traceback.print_exception(*tb)
-            except BaseException:
-                sys.stderr.write('\nthread error (fixme to print message)')
-                sys.stderr.write('\n')
+        if len(tracebacks) > 1:
+            for tb in tracebacks:
+                try:
+                    traceback.print_exception(*tb)
+                except BaseException:
+                    sys.stderr.write('\nthread error (fixme to print message)')
+                    sys.stderr.write('\n')
 
         raise parent_exception
 

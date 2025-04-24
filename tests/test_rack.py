@@ -93,6 +93,9 @@ class Rack2(lb.Rack):
     dev: LaggyInstrument = LaggyInstrument()
 
     def setup(self):
+        self._logger.debug('setup')
+        self._logger.info('setup')
+        self._logger.warning('setup')
         return 'rack 2 - setup'
         return self.dev.dict()
 

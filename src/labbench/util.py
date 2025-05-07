@@ -778,8 +778,11 @@ class Call:
             [repr(v) for v in self.args]
             + [(k + '=' + repr(v)) for k, v in self.kws.items()]
         )
-        qualname = self.func.__module__ + '.' + self.func.__qualname__
-        return f'Call({qualname},{args})'
+        if hasattr(self.func, '__qualname__'):
+            name = self.func.__module__ + '.' + self.func.__qualname__
+        else:
+            name = self.name
+        return f'Call({name},{args})'
 
     @hide_in_traceback
     def __call__(self):
@@ -1590,10 +1593,14 @@ _sandbox_keys = ThreadSandbox.__dict__.keys() - object.__dict__.keys()
 
 
 class ttl_cache:
-    def __init__(self, timeout):
+    def __init__(self, timeout, lock=False):
         self.timeout = timeout
         self.call_timestamp = None
         self.last_value = {}
+        if lock:
+            self._locks: dict[typing.Any, RLock] = {}
+        else:
+            self._locks = None
 
     def __call__(self, func: _Tfunc) -> _Tfunc:
         @wraps(func)
@@ -1607,7 +1614,17 @@ class ttl_cache:
                 or time_elapsed > self.timeout
                 or key not in self.last_value
             ):
-                ret = self.last_value[key] = func(*args, **kws)
+                if self._locks is not None:
+                    lock = self._locks.setdefault(key, RLock())
+                    lock.acquire()
+                else:
+                    lock = None
+
+                try:
+                    ret = self.last_value[key] = func(*args, **kws)
+                finally:
+                    if lock is not None:
+                        lock.release()
                 self.call_timestamp = time.perf_counter()
             else:
                 ret = self.last_value[key]

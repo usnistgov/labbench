@@ -13,7 +13,7 @@ import warnings
 from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
-from threading import Event, Thread
+from threading import Event, RLock, Thread
 from typing import Union
 
 import typing_extensions as typing
@@ -1375,6 +1375,9 @@ class VISADevice(Device):
             return exctype == EXC and excinst.error_code == CODE
 
     def _get_rm(self):
+        if self._rm is None:
+            visa_default_resource_manager()
+
         backend_name = self._rm
 
         if backend_name in ('@ivi', '@ni'):
@@ -1491,7 +1494,7 @@ def visa_default_resource_manager(name: str = None):
     VISADevice._rm = name
 
 
-@util.ttl_cache(10)  # a cache of recent resource parameters
+@util.ttl_cache(10, lock=True)  # a cache of recent resource parameters
 def _visa_probe_resource(
     resource: str, open_timeout, timeout, encoding: ascii
 ) -> VISADevice:
@@ -1634,7 +1637,11 @@ def visa_probe_devices(
         return []
 
     if target is not None:
-        if not isinstance(target, Device) and issubclass(target, Device):
+        try:
+            is_subclass = issubclass(target, Device)
+        except TypeError:
+            is_subclass = False
+        if is_subclass:
             target = target()
 
         devices = {

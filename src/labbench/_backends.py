@@ -1494,7 +1494,8 @@ def visa_default_resource_manager(name: str = None):
     VISADevice._rm = name
 
 
-@util.ttl_cache(10, lock=True)  # a cache of recent resource parameters
+@util.locked_calls
+@util.ttl_cache(10)  # a cache of recent resource parameters
 def _visa_probe_resource(
     resource: str, open_timeout, timeout, encoding: ascii
 ) -> VISADevice:

@@ -1592,15 +1592,23 @@ class ThreadSandbox:
 _sandbox_keys = ThreadSandbox.__dict__.keys() - object.__dict__.keys()
 
 
+def locked_calls(func):
+    lock = RLock()
+
+    @wraps(func)
+    @hide_in_traceback
+    def wrapper(*args, **kws):
+        with lock:
+            return func(*args, **kws)
+
+    return wrapper
+
+
 class ttl_cache:
-    def __init__(self, timeout, lock=False):
+    def __init__(self, timeout):
         self.timeout = timeout
         self.call_timestamp = None
         self.last_value = {}
-        if lock:
-            self._locks: dict[typing.Any, RLock] = {}
-        else:
-            self._locks = None
 
     def __call__(self, func: _Tfunc) -> _Tfunc:
         @wraps(func)
@@ -1614,17 +1622,7 @@ class ttl_cache:
                 or time_elapsed > self.timeout
                 or key not in self.last_value
             ):
-                if self._locks is not None:
-                    lock = self._locks.setdefault(key, RLock())
-                    lock.acquire()
-                else:
-                    lock = None
-
-                try:
-                    ret = self.last_value[key] = func(*args, **kws)
-                finally:
-                    if lock is not None:
-                        lock.release()
+                ret = self.last_value[key] = func(*args, **kws)
                 self.call_timestamp = time.perf_counter()
             else:
                 ret = self.last_value[key]

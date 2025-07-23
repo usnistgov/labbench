@@ -176,12 +176,15 @@ _LogLevelType = Union[
 
 
 def show_messages(
-    minimum_level: Union[_LogLevelType, Literal[False], None], colors: bool = True
+    minimum_level: Union[_LogLevelType, Literal[False], None],
+    colors: Union[bool, None] = None,
 ):
     """filters logging messages displayed to the console by importance
 
     Arguments:
-        minimum_level: 'debug', 'warning', 'error', or None (to disable all output)
+        minimum_level: logging level threshold for display (or None to disable)
+        colors: whether to colorize the message output, or None to select automatically
+
     Returns:
         None
     """
@@ -208,7 +211,7 @@ def show_messages(
 
     logger.setLevel(level)
 
-    # Clear out any stale handlers
+    # clear any stale handlers
     if hasattr(logger, '_screen_handler'):
         logger.logger.removeHandler(logger._screen_handler)
 
@@ -218,8 +221,11 @@ def show_messages(
     logger._screen_handler = logging.StreamHandler()
     logger._screen_handler.setLevel(level)
 
-    if colors:
-        log_fmt = '\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}'
+    if colors or (colors is None and sys.stderr.isatty()):
+        log_fmt = (
+            '\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}\x1b[0m • '
+            '\x1b[34m{label}:\x1b[0m {message}'
+        )
     else:
         log_fmt = '{levelname:^7s} {asctime} • {label}: {message}'
     formatter = logging.Formatter(log_fmt, style='{')

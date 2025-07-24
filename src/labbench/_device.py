@@ -4,6 +4,12 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
+import inspect
+import sys
+from functools import wraps
+import typing_extensions as typing
+
+
 from . import paramattr as attr
 from . import util
 from .paramattr._bases import (
@@ -11,11 +17,6 @@ from .paramattr._bases import (
     Undefined,
     hold_attr_notifications,
 )
-
-import inspect
-import sys
-from functools import wraps
-import typing_extensions as typing
 
 if typing.TYPE_CHECKING:
     # not executed: help static code analysis recognize lazy_imports

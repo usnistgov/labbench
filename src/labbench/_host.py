@@ -1,6 +1,5 @@
 import datetime
 import io
-import json
 import logging
 import socket
 import sys
@@ -15,19 +14,21 @@ from . import util
 
 if typing.TYPE_CHECKING:
     from dulwich import porcelain, repo
+    import json
     import pandas as pd
     import pip
     import smtplib
     import traceback
     import email.mime.text as mime_text
 else:
-    porcelain = util.lazy_import('dulwich.porcelain')
-    repo = util.lazy_import('dulwich.repo')
+    json = util.lazy_import('json')
+    mime_text = util.lazy_import('email.mime.text')
     pd = util.lazy_import('pandas')
     pip = util.lazy_import('pip')
+    porcelain = util.lazy_import('dulwich.porcelain')
+    repo = util.lazy_import('dulwich.repo')
     smtplib = util.lazy_import('smtplib')
     traceback = util.lazy_import('traceback')
-    mime_text = util.lazy_import('email.mime.text')
 
 __all__ = ['Host', 'Email']
 

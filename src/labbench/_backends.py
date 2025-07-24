@@ -13,7 +13,7 @@ import warnings
 from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
-from threading import Event, RLock, Thread
+from threading import Event, Thread
 from typing import Union
 
 import typing_extensions as typing

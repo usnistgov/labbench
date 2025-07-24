@@ -1359,7 +1359,7 @@ class CSVLogger(ParamAttrLogger):
         the preexisting file; subsequent calls append.
         """
 
-        def append_csv(path: Path, df: pd.DataFrame):
+        def append_csv(path: Path, df: 'pd.DataFrame'):
             if len(df) == 0:
                 return
 

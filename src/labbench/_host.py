@@ -1,5 +1,4 @@
 import datetime
-import email.mime.text
 import io
 import json
 import logging
@@ -20,6 +19,7 @@ if typing.TYPE_CHECKING:
     import pip
     import smtplib
     import traceback
+    import email.mime.text as mime_text
 else:
     porcelain = util.lazy_import('dulwich.porcelain')
     repo = util.lazy_import('dulwich.repo')
@@ -27,6 +27,7 @@ else:
     pip = util.lazy_import('pip')
     smtplib = util.lazy_import('smtplib')
     traceback = util.lazy_import('traceback')
+    mime_text = util.lazy_import('email.mime.text')
 
 __all__ = ['Host', 'Email']
 
@@ -128,7 +129,7 @@ class Email(core.Device):
         sys.stderr.flush()
         self.backend.flush()
 
-        msg = email.mime.text.MIMEText(body, 'html')
+        msg = mime_text.MIMEText(body, 'html')
         msg['From'] = self.sender
         msg['Subject'] = subject
         msg['To'] = ', '.join(self.recipients)
@@ -203,13 +204,6 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, rec):
         """Return a YAML string for each logger record"""
-
-        # if isinstance(rec, core.Device):
-        #     log_prefix = rec._owned_name.replace(".", ",")
-        # else:
-        #     log_prefix = ''
-
-        # object = getattr(rec, 'object', None)
 
         msg = dict(
             message=rec.msg,

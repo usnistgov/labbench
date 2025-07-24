@@ -13,8 +13,7 @@ from collections.abc import Callable  # noqa: E402
 from contextlib import _GeneratorContextManager, contextmanager  # noqa: E402
 from functools import wraps  # noqa: E402
 from queue import Empty, Queue  # noqa: E402
-from typing import Union  # noqa: E402
-from typing_extensions import Literal, TypeVar  # noqa: E402
+from typing import Union, Literal, TypeVar  # noqa: E402
 
 
 __all__ = [  # "misc"

@@ -14,10 +14,8 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
-from typing import Union
-
-import typing_extensions as typing
-from typing_extensions import Literal
+from typing import Union, Literal
+import typing
 
 from . import paramattr as attr
 from . import util

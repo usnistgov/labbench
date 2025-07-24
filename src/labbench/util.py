@@ -174,6 +174,13 @@ _LogLevelType = Union[
 ]
 
 
+class _Formatter(logging.Formatter):
+    def format(self, rec: logging.LogRecord):
+        if len(rec.args) > 0:
+            rec.args = tuple()
+        return super().format(rec)
+
+
 def show_messages(
     minimum_level: Union[_LogLevelType, Literal[False], None],
     colors: Union[bool, None] = None,
@@ -208,7 +215,7 @@ def show_messages(
         else minimum_level
     )
 
-    logger.setLevel(level)
+    logger.setLevel(logging.DEBUG)
 
     # clear any stale handlers
     if hasattr(logger, '_screen_handler'):
@@ -227,7 +234,7 @@ def show_messages(
         )
     else:
         log_fmt = '{levelname:^7s} {asctime} • {label}: {message}'
-    formatter = logging.Formatter(log_fmt, style='{')
+    formatter = _Formatter(log_fmt, style='{')
     formatter.default_msec_format = '%s.%03d'
 
     logger._screen_handler.setFormatter(formatter)
@@ -738,16 +745,17 @@ def stopwatch(
     try:
         yield
     finally:
+        elapsed = time.perf_counter() - t0
+
         msg = str(desc) + ' ' if len(desc) else ''
         msg += f'{elapsed:0.3f} s elapsed'
 
-        elapsed = time.perf_counter() - t0
         exc_info = sys.exc_info()
         if exc_info != (None, None, None):
             msg += f' before exception {exc_info[1]}'
             logger_level = 'error'
 
-        if elapsed >= threshold:
+        if elapsed < threshold:
             level_code = logging.DEBUG
         elif logger_level in _LOG_LEVEL_NAMES:
             level_code = _LOG_LEVEL_NAMES[logger_level]
@@ -756,7 +764,8 @@ def stopwatch(
                 f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
             )
 
-        logger.log(level_code, msg.lstrip())
+        extra = {'stopwatch_name': desc, 'stopwatch_time': elapsed}
+        logger.log(level_code, msg.strip().lstrip(), extra)
 
 
 class Call:

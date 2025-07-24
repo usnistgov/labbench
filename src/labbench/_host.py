@@ -191,8 +191,8 @@ class Email(core.Device):
 class JSONFormatter(logging.Formatter):
     _last = []
 
-    def __init__(self, *args, **kws):
-        super().__init__(*args, **kws)
+    def __init__(self):
+        super().__init__(style='{')
         self.t0 = time.time()
 
     @staticmethod
@@ -203,8 +203,13 @@ class JSONFormatter(logging.Formatter):
             return obj.isoformat()
         raise TypeError(f'Type {type(obj).__qualname__} not serializable')
 
-    def format(self, rec):
+    def format(self, rec: logging.LogRecord, *args, **kws):
         """Return a YAML string for each logger record"""
+
+        if isinstance(rec.args, dict):
+            kwargs = rec.args
+        else:
+            kwargs = {}
 
         msg = dict(
             message=rec.msg,
@@ -217,6 +222,7 @@ class JSONFormatter(logging.Formatter):
             source_line=rec.lineno,
             process=rec.process,
             thread=rec.threadName,
+            **kwargs
         )
 
         if rec.threadName != 'MainThread':

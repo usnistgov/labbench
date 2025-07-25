@@ -969,6 +969,34 @@ class TelnetDevice(Device):
 _pyvisa_resource_managers = {}
 
 
+@contextlib.contextmanager
+def visa_timeout_context(resource, timeout: float | None = None):
+    """a context with a temporary timeout for the given VISA resource"""
+
+    if timeout is None:
+        yield
+        return
+
+    if isinstance(resource, VISADevice):
+        resource = resource.backend
+
+    prev_timeout = resource.get_visa_attribute(
+        pyvisa.constants.ResourceAttribute.timeout_value,
+    )
+
+    resource.set_visa_attribute(
+        pyvisa.constants.ResourceAttribute.timeout_value,
+        round(timeout * 1000),
+    )
+
+    yield
+
+    resource.set_visa_attribute(
+        pyvisa.constants.ResourceAttribute.timeout_value,
+        prev_timeout,
+    )
+
+
 @attr.visa_keying(
     query_fmt='{key}?', write_fmt='{key} {value}', remap={True: 'ON', False: 'OFF'}
 )
@@ -1034,13 +1062,15 @@ class VISADevice(Device):
 
     open_timeout: float = attr.value.float(
         default=5,
+        sets=False,
         allow_none=True,
         help='timeout for opening a connection to the instrument',
         label='s',
     )
 
     timeout: float = attr.value.float(
-        default=5,
+        default=None,
+        sets=False,
         cache=True,
         allow_none=True,
         help='message response timeout',
@@ -1242,15 +1272,6 @@ class VISADevice(Device):
         Arguments:
             msg: the SCPI message to send
         """
-        if timeout is not None:
-            restore_timeout = self.backend.set_visa_attribute(
-                pyvisa.constants.ResourceAttribute.timeout_value,
-            )
- 
-            self.backend.set_visa_attribute(
-                pyvisa.constants.ResourceAttribute.timeout_value,
-                round(timeout * 1000),
-            )
 
         # substitute message based on remap() in self._keying
         kws = {k: self._keying.to_message(v) for k, v in kws.items()}
@@ -1260,14 +1281,8 @@ class VISADevice(Device):
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'query({msg_out}):')
 
-        try:
+        with visa_timeout_context(self.backend, timeout):
             ret = self.backend.query(msg)
-        finally:
-            if timeout is not None:
-                self.backend.set_visa_attribute(
-                    pyvisa.constants.ResourceAttribute.timeout_value,
-                    restore_timeout,
-                )
 
         # inbound response as truncated event log entry
         msg_out = repr(ret) if len(ret) < 80 else f'({len(ret)} bytes)'
@@ -1287,14 +1302,10 @@ class VISADevice(Device):
         delay=None,
         timeout=None,
     ):
-        # pre debug
-        if timeout is not None:
-            _to, self.backend.timeout = self.backend.timeout, timeout
-
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'query_ascii_values({msg_out}):')
 
-        try:
+        with visa_timeout_context(self.backend, timeout):
             ret = self.backend.query_ascii_values(
                 msg,
                 converter=converter,
@@ -1302,9 +1313,6 @@ class VISADevice(Device):
                 container=container,
                 delay=delay,
             )
-        finally:
-            if timeout is not None:
-                self.backend.timeout = _to
 
         # post debug
         if len(ret) < 80 and len(repr(ret)) < 80:

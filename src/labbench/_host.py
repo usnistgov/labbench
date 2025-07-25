@@ -224,7 +224,7 @@ class JSONFormatter(logging.Formatter):
             source_line=rec.lineno,
             process=rec.process,
             thread=rec.threadName,
-            **kwargs
+            **kwargs,
         )
 
         if rec.threadName != 'MainThread':
@@ -261,10 +261,10 @@ class RotatingJSONFileHandler(logging.handlers.RotatingFileHandler):
             super().close()
             return
 
-        self.stream.write('[\n')        
+        self.stream.write('[\n')
         if not self.empty:
             self.stream.write(',\n')
-        
+
         for rec in self.cached_recs:
             super().emit(rec)
             if rec is not self.cached_recs[-1]:

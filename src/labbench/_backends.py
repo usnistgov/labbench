@@ -1062,7 +1062,6 @@ class VISADevice(Device):
 
     open_timeout: float = attr.value.float(
         default=5,
-        sets=False,
         allow_none=True,
         help='timeout for opening a connection to the instrument',
         label='s',
@@ -1070,10 +1069,9 @@ class VISADevice(Device):
 
     timeout: float = attr.value.float(
         default=None,
-        sets=False,
         cache=True,
         allow_none=True,
-        help='message response timeout',
+        help='message response timeout to set on connection',
         label='s',
     )
 

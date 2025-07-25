@@ -1,6 +1,7 @@
 import datetime
 import io
 import logging
+import logging.handlers
 import socket
 import sys
 import time
@@ -194,6 +195,7 @@ class JSONFormatter(logging.Formatter):
     def __init__(self):
         super().__init__(style='{')
         self.t0 = time.time()
+        self.first = True
 
     @staticmethod
     def json_serialize_dates(obj):
@@ -203,7 +205,7 @@ class JSONFormatter(logging.Formatter):
             return obj.isoformat()
         raise TypeError(f'Type {type(obj).__qualname__} not serializable')
 
-    def format(self, rec: logging.LogRecord, *args, **kws):
+    def format(self, rec: logging.LogRecord):
         """Return a YAML string for each logger record"""
 
         if isinstance(rec.args, dict):
@@ -235,7 +237,40 @@ class JSONFormatter(logging.Formatter):
 
         self._last.append((rec, msg))
 
-        return json.dumps(msg, indent=True, default=self.json_serialize_dates) + ','
+        return json.dumps(msg, indent=True, default=self.json_serialize_dates)
+
+
+class RotatingJSONFileHandler(logging.handlers.RotatingFileHandler):
+    def __init__(self, path, *args, **kws):
+        path = Path(path)
+        if path.exists() and path.stat().st_size > 2:
+            self.empty = False
+        else:
+            self.empty = True
+
+        self.terminator = ''
+        self.cached_recs = []
+
+        super().__init__(path, *args, **kws)
+
+    def emit(self, rec):
+        self.cached_recs.append(rec)
+
+    def close(self):
+        if len(self.cached_recs) == 0:
+            super().close()
+            return
+
+        self.stream.write('[\n')        
+        if not self.empty:
+            self.stream.write(',\n')
+        
+        for rec in self.cached_recs:
+            super().emit(rec)
+            if rec is not self.cached_recs[-1]:
+                self.stream.write(',\n')
+        self.stream.write('\n]')
+        super().close()
 
 
 class Host(core.Device):

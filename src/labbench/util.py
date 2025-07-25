@@ -747,6 +747,9 @@ def stopwatch(
     finally:
         elapsed = time.perf_counter() - t0
 
+        if elapsed < threshold:
+            return
+
         msg = str(desc) + ' ' if len(desc) else ''
         msg += f'{elapsed:0.3f} s elapsed'
 
@@ -755,9 +758,7 @@ def stopwatch(
             msg += f' before exception {exc_info[1]}'
             logger_level = 'error'
 
-        if elapsed < threshold:
-            level_code = logging.DEBUG
-        elif logger_level in _LOG_LEVEL_NAMES:
+        if logger_level in _LOG_LEVEL_NAMES:
             level_code = _LOG_LEVEL_NAMES[logger_level]
         else:
             raise ValueError(

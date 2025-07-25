@@ -1243,7 +1243,7 @@ class VISADevice(Device):
             msg: the SCPI message to send
         """
         if timeout is not None:
-            _to, self.backend.timeout = self.backend.timeout, timeout
+            self.backend.timeout = round(timeout * 1000)
 
         # substitute message based on remap() in self._keying
         kws = {k: self._keying.to_message(v) for k, v in kws.items()}
@@ -1257,7 +1257,7 @@ class VISADevice(Device):
             ret = self.backend.query(msg)
         finally:
             if timeout is not None:
-                self.backend.timeout = _to
+                self.backend.timeout = round(self.timeout * 1000)
 
         # inbound response as truncated event log entry
         msg_out = repr(ret) if len(ret) < 80 else f'({len(ret)} bytes)'

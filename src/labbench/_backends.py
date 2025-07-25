@@ -9,6 +9,7 @@ import platform
 import select
 import socket
 import sys
+import time
 import warnings
 from collections import OrderedDict
 from pathlib import Path
@@ -1260,6 +1261,7 @@ class VISADevice(Device):
         msg: str,
         timeout=None,
         remap: bool = False,
+        retry: bool = False,
         kws: dict[str, typing.Any] = {},
     ) -> str:
         """queries the device with an SCPI message and returns its reply.
@@ -1269,6 +1271,8 @@ class VISADevice(Device):
 
         Arguments:
             msg: the SCPI message to send
+            timeout: overrides `self.timeout`
+            retry: if True, allow retries if a buggy backend raises timeout early
         """
 
         # substitute message based on remap() in self._keying
@@ -1280,7 +1284,24 @@ class VISADevice(Device):
         self._logger.debug(f'query({msg_out}):')
 
         with visa_timeout_context(self.backend, timeout):
-            ret = self.backend.query(msg)
+            t0 = time.perf_counter()
+
+            # work around backends that don't respect timeout,
+            # if retry=True
+            while True:
+                try:
+                    ret = self.backend.query(msg)
+                except Exception as ex:
+                    if not retry:
+                        raise
+                    elif time.perf_counter() - t0 >= timeout-.1:
+                        raise
+                    elif 'timeout' or 'timed out' in str(ex):
+                        continue
+                    else:
+                        raise
+                else:
+                    break
 
         # inbound response as truncated event log entry
         msg_out = repr(ret) if len(ret) < 80 else f'({len(ret)} bytes)'
@@ -1366,7 +1387,7 @@ class VISADevice(Device):
         if query_func is not None:
             query_func(self, timeout=timeout)
         else:
-            self.query('*OPC?', timeout=timeout)
+            self.query('*OPC?', timeout=timeout, retry=True)
 
     class suppress_timeout(contextlib.suppress):
         """context manager that suppresses timeout exceptions on `write` or `query`.

@@ -1292,7 +1292,7 @@ class VISADevice(Device):
                 try:
                     ret = self.backend.query(msg)
                 except Exception as ex:
-                    if not retry:
+                    if not retry or timeout is None:
                         raise
                     elif time.perf_counter() - t0 >= timeout-.1:
                         raise

@@ -1283,6 +1283,9 @@ class VISADevice(Device):
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'query({msg_out}):')
 
+        if timeout is None and self.backend.timeout < 1_000_000:
+            timeout = self.backend.timeout
+
         with visa_timeout_context(self.backend, timeout):
             t0 = time.perf_counter()
 

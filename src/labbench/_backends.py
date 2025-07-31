@@ -9,15 +9,14 @@ import platform
 import select
 import socket
 import sys
+import time
 import warnings
 from collections import OrderedDict
 from pathlib import Path
 from queue import Empty, Queue
-from threading import Event, RLock, Thread
-from typing import Union
-
-import typing_extensions as typing
-from typing_extensions import Literal
+from threading import Event, Thread
+from typing import Union, Literal
+import typing
 
 from . import paramattr as attr
 from . import util
@@ -971,6 +970,34 @@ class TelnetDevice(Device):
 _pyvisa_resource_managers = {}
 
 
+@contextlib.contextmanager
+def visa_timeout_context(resource, timeout: float | None = None):
+    """a context with a temporary timeout for the given VISA resource"""
+
+    if timeout is None:
+        yield
+        return
+
+    if isinstance(resource, VISADevice):
+        resource = resource.backend
+
+    prev_timeout = resource.get_visa_attribute(
+        pyvisa.constants.ResourceAttribute.timeout_value,
+    )
+
+    resource.set_visa_attribute(
+        pyvisa.constants.ResourceAttribute.timeout_value,
+        round(timeout * 1000),
+    )
+
+    yield
+
+    resource.set_visa_attribute(
+        pyvisa.constants.ResourceAttribute.timeout_value,
+        prev_timeout,
+    )
+
+
 @attr.visa_keying(
     query_fmt='{key}?', write_fmt='{key} {value}', remap={True: 'ON', False: 'OFF'}
 )
@@ -1035,7 +1062,7 @@ class VISADevice(Device):
     )
 
     open_timeout: float = attr.value.float(
-        default=None,
+        default=5,
         allow_none=True,
         help='timeout for opening a connection to the instrument',
         label='s',
@@ -1045,7 +1072,7 @@ class VISADevice(Device):
         default=None,
         cache=True,
         allow_none=True,
-        help='message response timeout',
+        help='message response timeout to set on connection',
         label='s',
     )
 
@@ -1161,9 +1188,9 @@ class VISADevice(Device):
             )
 
         if self.timeout is not None:
-            kwargs['timeout'] = int(self.timeout * 1000)
+            kwargs['timeout'] = round(self.timeout * 1000)
         if self.open_timeout is not None:
-            kwargs['open_timeout'] = int(self.open_timeout * 1000)
+            kwargs['open_timeout'] = round(self.open_timeout * 1000)
 
         rm = self._get_rm()
         self.backend = rm.open_resource(self.resource, **kwargs)
@@ -1171,7 +1198,7 @@ class VISADevice(Device):
         if self.timeout is not None:
             self.backend.set_visa_attribute(
                 pyvisa.constants.ResourceAttribute.timeout_value,
-                int(self.timeout * 1000),
+                round(self.timeout * 1000),
             )
 
     def close(self):
@@ -1234,6 +1261,7 @@ class VISADevice(Device):
         msg: str,
         timeout=None,
         remap: bool = False,
+        retry: bool = False,
         kws: dict[str, typing.Any] = {},
     ) -> str:
         """queries the device with an SCPI message and returns its reply.
@@ -1243,9 +1271,9 @@ class VISADevice(Device):
 
         Arguments:
             msg: the SCPI message to send
+            timeout: overrides `self.timeout`
+            retry: if True, allow retries if a buggy backend raises timeout early
         """
-        if timeout is not None:
-            _to, self.backend.timeout = self.backend.timeout, timeout
 
         # substitute message based on remap() in self._keying
         kws = {k: self._keying.to_message(v) for k, v in kws.items()}
@@ -1255,11 +1283,28 @@ class VISADevice(Device):
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'query({msg_out}):')
 
-        try:
-            ret = self.backend.query(msg)
-        finally:
-            if timeout is not None:
-                self.backend.timeout = _to
+        if timeout is None and self.backend.timeout < 1_000_000:
+            timeout = self.backend.timeout
+
+        with visa_timeout_context(self.backend, timeout):
+            t0 = time.perf_counter()
+
+            # work around backends that don't respect timeout,
+            # if retry=True
+            while True:
+                try:
+                    ret = self.backend.query(msg)
+                except Exception as ex:
+                    if not retry or timeout is None:
+                        raise
+                    elif time.perf_counter() - t0 >= timeout-.1:
+                        raise
+                    elif 'timeout' or 'timed out' in str(ex):
+                        continue
+                    else:
+                        raise
+                else:
+                    break
 
         # inbound response as truncated event log entry
         msg_out = repr(ret) if len(ret) < 80 else f'({len(ret)} bytes)'
@@ -1279,14 +1324,10 @@ class VISADevice(Device):
         delay=None,
         timeout=None,
     ):
-        # pre debug
-        if timeout is not None:
-            _to, self.backend.timeout = self.backend.timeout, timeout
-
         msg_out = repr(msg) if len(msg) < 80 else f'({len(msg)} bytes)'
         self._logger.debug(f'query_ascii_values({msg_out}):')
 
-        try:
+        with visa_timeout_context(self.backend, timeout):
             ret = self.backend.query_ascii_values(
                 msg,
                 converter=converter,
@@ -1294,9 +1335,6 @@ class VISADevice(Device):
                 container=container,
                 delay=delay,
             )
-        finally:
-            if timeout is not None:
-                self.backend.timeout = _to
 
         # post debug
         if len(ret) < 80 and len(repr(ret)) < 80:
@@ -1352,7 +1390,7 @@ class VISADevice(Device):
         if query_func is not None:
             query_func(self, timeout=timeout)
         else:
-            self.query('*OPC?', timeout=timeout)
+            self.query('*OPC?', timeout=timeout, retry=True)
 
     class suppress_timeout(contextlib.suppress):
         """context manager that suppresses timeout exceptions on `write` or `query`.
@@ -1494,7 +1532,8 @@ def visa_default_resource_manager(name: str = None):
     VISADevice._rm = name
 
 
-@util.ttl_cache(10, lock=True)  # a cache of recent resource parameters
+@util.locked_calls
+@util.ttl_cache(10)  # a cache of recent resource parameters
 def _visa_probe_resource(
     resource: str, open_timeout, timeout, encoding: ascii
 ) -> VISADevice:

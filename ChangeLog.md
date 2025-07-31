@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - fixed visa probe bugs
 - fixed a typing bug
 - implement locking to minimize VISA probe race conditions
+- fix the application of timeouts in `VISAInstrument.query` and `VISAInstrument.overlap_and_block`
 
 ## [0.39.0]
 ### Changed

@@ -1,8 +1,7 @@
 import datetime
-import email.mime.text
 import io
-import json
 import logging
+import logging.handlers
 import socket
 import sys
 import time
@@ -16,15 +15,19 @@ from . import util
 
 if typing.TYPE_CHECKING:
     from dulwich import porcelain, repo
+    import json
     import pandas as pd
     import pip
     import smtplib
     import traceback
+    import email.mime.text as mime_text
 else:
-    porcelain = util.lazy_import('dulwich.porcelain')
-    repo = util.lazy_import('dulwich.repo')
+    json = util.lazy_import('json')
+    mime_text = util.lazy_import('email.mime.text')
     pd = util.lazy_import('pandas')
     pip = util.lazy_import('pip')
+    porcelain = util.lazy_import('dulwich.porcelain')
+    repo = util.lazy_import('dulwich.repo')
     smtplib = util.lazy_import('smtplib')
     traceback = util.lazy_import('traceback')
 
@@ -128,7 +131,7 @@ class Email(core.Device):
         sys.stderr.flush()
         self.backend.flush()
 
-        msg = email.mime.text.MIMEText(body, 'html')
+        msg = mime_text.MIMEText(body, 'html')
         msg['From'] = self.sender
         msg['Subject'] = subject
         msg['To'] = ', '.join(self.recipients)
@@ -189,9 +192,10 @@ class Email(core.Device):
 class JSONFormatter(logging.Formatter):
     _last = []
 
-    def __init__(self, *args, **kws):
-        super().__init__(*args, **kws)
+    def __init__(self):
+        super().__init__(style='{')
         self.t0 = time.time()
+        self.first = True
 
     @staticmethod
     def json_serialize_dates(obj):
@@ -201,15 +205,13 @@ class JSONFormatter(logging.Formatter):
             return obj.isoformat()
         raise TypeError(f'Type {type(obj).__qualname__} not serializable')
 
-    def format(self, rec):
+    def format(self, rec: logging.LogRecord):
         """Return a YAML string for each logger record"""
 
-        # if isinstance(rec, core.Device):
-        #     log_prefix = rec._owned_name.replace(".", ",")
-        # else:
-        #     log_prefix = ''
-
-        # object = getattr(rec, 'object', None)
+        if isinstance(rec.args, dict):
+            kwargs = rec.args
+        else:
+            kwargs = {}
 
         msg = dict(
             message=rec.msg,
@@ -222,6 +224,7 @@ class JSONFormatter(logging.Formatter):
             source_line=rec.lineno,
             process=rec.process,
             thread=rec.threadName,
+            **kwargs,
         )
 
         if rec.threadName != 'MainThread':
@@ -234,7 +237,40 @@ class JSONFormatter(logging.Formatter):
 
         self._last.append((rec, msg))
 
-        return json.dumps(msg, indent=True, default=self.json_serialize_dates) + ','
+        return json.dumps(msg, indent=True, default=self.json_serialize_dates)
+
+
+class RotatingJSONFileHandler(logging.handlers.RotatingFileHandler):
+    def __init__(self, path, *args, **kws):
+        path = Path(path)
+        if path.exists() and path.stat().st_size > 2:
+            self.empty = False
+        else:
+            self.empty = True
+
+        self.terminator = ''
+        self.cached_recs = []
+
+        super().__init__(path, *args, **kws)
+
+    def emit(self, rec):
+        self.cached_recs.append(rec)
+
+    def close(self):
+        if len(self.cached_recs) == 0:
+            super().close()
+            return
+
+        self.stream.write('[\n')
+        if not self.empty:
+            self.stream.write(',\n')
+
+        for rec in self.cached_recs:
+            super().emit(rec)
+            if rec is not self.cached_recs[-1]:
+                self.stream.write(',\n')
+        self.stream.write('\n]')
+        super().close()
 
 
 class Host(core.Device):

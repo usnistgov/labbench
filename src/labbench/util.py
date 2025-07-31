@@ -13,8 +13,7 @@ from collections.abc import Callable  # noqa: E402
 from contextlib import _GeneratorContextManager, contextmanager  # noqa: E402
 from functools import wraps  # noqa: E402
 from queue import Empty, Queue  # noqa: E402
-from typing import Union  # noqa: E402
-from typing_extensions import Literal, TypeVar  # noqa: E402
+from typing import Union, Literal, TypeVar  # noqa: E402
 
 
 __all__ = [  # "misc"
@@ -175,13 +174,23 @@ _LogLevelType = Union[
 ]
 
 
+class _Formatter(logging.Formatter):
+    def format(self, rec: logging.LogRecord):
+        if len(rec.args) > 0:
+            rec.args = tuple()
+        return super().format(rec)
+
+
 def show_messages(
-    minimum_level: Union[_LogLevelType, Literal[False], None], colors: bool = True
+    minimum_level: Union[_LogLevelType, Literal[False], None],
+    colors: Union[bool, None] = None,
 ):
     """filters logging messages displayed to the console by importance
 
     Arguments:
-        minimum_level: 'debug', 'warning', 'error', or None (to disable all output)
+        minimum_level: logging level threshold for display (or None to disable)
+        colors: whether to colorize the message output, or None to select automatically
+
     Returns:
         None
     """
@@ -206,9 +215,9 @@ def show_messages(
         else minimum_level
     )
 
-    logger.setLevel(level)
+    logger.setLevel(logging.DEBUG)
 
-    # Clear out any stale handlers
+    # clear any stale handlers
     if hasattr(logger, '_screen_handler'):
         logger.logger.removeHandler(logger._screen_handler)
 
@@ -218,11 +227,14 @@ def show_messages(
     logger._screen_handler = logging.StreamHandler()
     logger._screen_handler.setLevel(level)
 
-    if colors:
-        log_fmt = '\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}\x1b[0m • \x1b[34m{label}:\x1b[0m {message}'
+    if colors or (colors is None and sys.stderr.isatty()):
+        log_fmt = (
+            '\x1b[1;30m{levelname:^7s}\x1b[0m \x1b[32m{asctime}\x1b[0m • '
+            '\x1b[34m{label}:\x1b[0m {message}'
+        )
     else:
         log_fmt = '{levelname:^7s} {asctime} • {label}: {message}'
-    formatter = logging.Formatter(log_fmt, style='{')
+    formatter = _Formatter(log_fmt, style='{')
     formatter.default_msec_format = '%s.%03d'
 
     logger._screen_handler.setFormatter(formatter)
@@ -734,23 +746,27 @@ def stopwatch(
         yield
     finally:
         elapsed = time.perf_counter() - t0
-        if elapsed >= threshold:
-            msg = str(desc) + ' ' if len(desc) else ''
-            msg += f'{elapsed:0.3f} s elapsed'
 
-            exc_info = sys.exc_info()
-            if exc_info != (None, None, None):
-                msg += f' before exception {exc_info[1]}'
-                logger_level = 'error'
+        if elapsed < threshold:
+            return
 
-            try:
-                level_code = _LOG_LEVEL_NAMES[logger_level]
-            except KeyError:
-                raise ValueError(
-                    f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
-                )
+        msg = str(desc) + ' ' if len(desc) else ''
+        msg += f'{elapsed:0.3f} s elapsed'
 
-            logger.log(level_code, msg.lstrip())
+        exc_info = sys.exc_info()
+        if exc_info != (None, None, None):
+            msg += f' before exception {exc_info[1]}'
+            logger_level = 'error'
+
+        if logger_level in _LOG_LEVEL_NAMES:
+            level_code = _LOG_LEVEL_NAMES[logger_level]
+        else:
+            raise ValueError(
+                f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
+            )
+
+        extra = {'stopwatch_name': desc, 'stopwatch_time': elapsed}
+        logger.log(level_code, msg.strip().lstrip(), extra)
 
 
 class Call:
@@ -1592,15 +1608,23 @@ class ThreadSandbox:
 _sandbox_keys = ThreadSandbox.__dict__.keys() - object.__dict__.keys()
 
 
+def locked_calls(func):
+    lock = RLock()
+
+    @wraps(func)
+    @hide_in_traceback
+    def wrapper(*args, **kws):
+        with lock:
+            return func(*args, **kws)
+
+    return wrapper
+
+
 class ttl_cache:
-    def __init__(self, timeout, lock=False):
+    def __init__(self, timeout):
         self.timeout = timeout
         self.call_timestamp = None
         self.last_value = {}
-        if lock:
-            self._locks: dict[typing.Any, RLock] = {}
-        else:
-            self._locks = None
 
     def __call__(self, func: _Tfunc) -> _Tfunc:
         @wraps(func)
@@ -1614,17 +1638,7 @@ class ttl_cache:
                 or time_elapsed > self.timeout
                 or key not in self.last_value
             ):
-                if self._locks is not None:
-                    lock = self._locks.setdefault(key, RLock())
-                    lock.acquire()
-                else:
-                    lock = None
-
-                try:
-                    ret = self.last_value[key] = func(*args, **kws)
-                finally:
-                    if lock is not None:
-                        lock.release()
+                ret = self.last_value[key] = func(*args, **kws)
                 self.call_timestamp = time.perf_counter()
             else:
                 ret = self.last_value[key]

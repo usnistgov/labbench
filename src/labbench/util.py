@@ -726,7 +726,7 @@ def hash_caller(call_depth: int = 1):
 
 @contextmanager
 def stopwatch(
-    desc: str = '', threshold: float = 0, logger_level: _LogLevelType = 'info'
+    desc: str = '', threshold: float = 0, logger_level: _LogLevelType|None = 'info'
 ):
     """Time a block of code using a with statement like this:
 
@@ -757,15 +757,19 @@ def stopwatch(
     if exc is not None:
         msg += f' before exception {exc}'
         logger_level = 'error'
+    elif elapsed < threshold:
+        logger_level = None
 
-    if logger_level in _LOG_LEVEL_NAMES:
+    if logger_level is None:
+        pass
+    elif logger_level in _LOG_LEVEL_NAMES:
         level_code = _LOG_LEVEL_NAMES[logger_level]
     else:
         raise ValueError(
             f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
         )
 
-    if elapsed >= threshold or exc is not None:
+    if logger_level is not None:
         extra = {'stopwatch_name': desc, 'stopwatch_time': elapsed}
         logger.log(level_code, msg.strip().lstrip(), extra)
 

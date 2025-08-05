@@ -761,7 +761,7 @@ def stopwatch(
         logger_level = None
 
     if logger_level is None:
-        pass
+        level_code = None
     elif logger_level in _LOG_LEVEL_NAMES:
         level_code = _LOG_LEVEL_NAMES[logger_level]
     else:
@@ -769,7 +769,7 @@ def stopwatch(
             f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
         )
 
-    if logger_level is not None:
+    if level_code is not None:
         extra = {'stopwatch_name': desc, 'stopwatch_time': elapsed}
         logger.log(level_code, msg.strip().lstrip(), extra)
 

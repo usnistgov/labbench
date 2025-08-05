@@ -742,6 +742,7 @@ def stopwatch(
         context manager
     """
     t0 = time.perf_counter()
+
     try:
         yield
     except BaseException as ex:
@@ -749,29 +750,33 @@ def stopwatch(
     else:
         exc = None
 
-    elapsed = time.perf_counter() - t0
+    try:
+        elapsed = time.perf_counter() - t0
 
-    msg = str(desc) + ' ' if len(desc) else ''
-    msg += f'{elapsed:0.3f} s elapsed'
+        msg = str(desc) + ' ' if len(desc) else ''
+        msg += f'{elapsed:0.3f} s elapsed'
 
-    if exc is not None:
-        msg += f' before exception {exc}'
-        logger_level = 'error'
-    elif elapsed < threshold:
-        logger_level = None
+        if exc is not None:
+            msg += f' before exception {exc}'
+            logger_level = 'error'
+        elif elapsed < threshold:
+            logger_level = None
 
-    if logger_level is None:
-        level_code = None
-    elif logger_level in _LOG_LEVEL_NAMES:
-        level_code = _LOG_LEVEL_NAMES[logger_level]
-    else:
-        raise ValueError(
-            f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
-        )
+        if logger_level is None:
+            level_code = None
+        elif logger_level in _LOG_LEVEL_NAMES:
+            level_code = _LOG_LEVEL_NAMES[logger_level]
+        else:
+            raise ValueError(
+                f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
+            )
 
-    if level_code is not None:
-        extra = {'stopwatch_name': desc, 'stopwatch_time': elapsed}
-        logger.log(level_code, msg.strip().lstrip(), extra)
+        if level_code is not None:
+            extra = {'stopwatch_name': desc, 'stopwatch_time': elapsed}
+            logger.log(level_code, msg.strip().lstrip(), extra)
+    except BaseException as ex:
+        print('uh oh ', ex)
+        raise
 
     if exc is not None:
         raise exc

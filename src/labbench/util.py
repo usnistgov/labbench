@@ -744,30 +744,33 @@ def stopwatch(
     t0 = time.perf_counter()
     try:
         yield
-    finally:
-        elapsed = time.perf_counter() - t0
+    except BaseException as ex:
+        exc = ex
+    else:
+        exc = None
 
-        if elapsed < threshold:
-            return
+    elapsed = time.perf_counter() - t0
 
-        msg = str(desc) + ' ' if len(desc) else ''
-        msg += f'{elapsed:0.3f} s elapsed'
+    msg = str(desc) + ' ' if len(desc) else ''
+    msg += f'{elapsed:0.3f} s elapsed'
 
-        exc_info = sys.exc_info()
-        if exc_info != (None, None, None):
-            msg += f' before exception {exc_info[1]}'
-            logger_level = 'error'
+    if exc is not None:
+        msg += f' before exception {exc}'
+        logger_level = 'error'
 
-        if logger_level in _LOG_LEVEL_NAMES:
-            level_code = _LOG_LEVEL_NAMES[logger_level]
-        else:
-            raise ValueError(
-                f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
-            )
+    if logger_level in _LOG_LEVEL_NAMES:
+        level_code = _LOG_LEVEL_NAMES[logger_level]
+    else:
+        raise ValueError(
+            f'logger_level must be one of {tuple(_LOG_LEVEL_NAMES.keys())}'
+        )
 
+    if elapsed >= threshold or exc is not None:
         extra = {'stopwatch_name': desc, 'stopwatch_time': elapsed}
         logger.log(level_code, msg.strip().lstrip(), extra)
 
+    if exc is not None:
+        raise exc
 
 class Call:
     """Wrap a function to apply arguments for threaded calls to `concurrently`.

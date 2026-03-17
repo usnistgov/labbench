@@ -9,6 +9,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 from __future__ import annotations
 
 import builtins
+import functools
 import inspect
 import numbers
 from contextlib import contextmanager
@@ -70,7 +71,7 @@ def get_owner_meta(
     obj: Union[HasParamAttrs, type[HasParamAttrs]],
 ) -> HasParamAttrsClsInfo:
     if not issubclass(type(obj), (HasParamAttrsMeta, HasParamAttrs)):
-        return None
+        raise TypeError('wrong metaclass')
     return obj._attr_defs
 
 
@@ -78,10 +79,13 @@ def get_class_attrs(
     obj: Union[HasParamAttrs, type[HasParamAttrs]],
 ) -> dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
-    return obj._attr_defs.attrs
+    if obj._attr_defs is None:
+        return {}
+    else:
+        return obj._attr_defs.attrs
 
 
-def add_docstring_to_help(attr: ParamAttr, func: callable):
+def add_docstring_to_help(attr: ParamAttr, func: typing.Callable):
     doc = (func.__doc__ or '').strip().rstrip()
     if len(doc) > 0:
         # take func docstring as default self.help
@@ -89,7 +93,7 @@ def add_docstring_to_help(attr: ParamAttr, func: callable):
         attr.help = attr.kws['help'] = new_help
 
 
-def bound_valid_posargs(func: callable) -> tuple[int, int]:
+def bound_valid_posargs(func: typing.Callable) -> tuple[int, int]:
     """bound on the number of acceptable positional arguments in `func`"""
 
     hi = func.__code__.co_argcount
@@ -98,25 +102,27 @@ def bound_valid_posargs(func: callable) -> tuple[int, int]:
     return lo, hi
 
 
-def name_arguments(func: callable) -> tuple[str]:
-    if hasattr(func, '__signature__'):
-        return tuple(func.__signature__.parameters.keys())
+def name_arguments(func: typing.Callable) -> tuple[str]:
+    sig = getattr(func, '__signature__', None)
+    if sig is not None:
+        return tuple(sig.parameters.keys())
     elif (
         hasattr(func, '__code__')
         and not func.__code__.co_flags & inspect.CO_VARKEYWORDS
     ):
-        return func.__code__.co_varnames[: func.__code__.co_argcount]
+        return func.__code__.co_varnames[: func.__code__.co_argcount] # type: ignore
     else:
-        func.__signature__ = inspect.signature(func)
-        return tuple(func.__signature__.parameters.keys())
+        func.__signature__ = inspect.signature(func) # type: ignore
+        return tuple(func.__signature__.parameters.keys()) # type: ignore
 
 
-def default_arguments(func: callable) -> tuple[str]:
-    if hasattr(func, '__signature__'):
+def default_arguments(func: typing.Callable) -> tuple[str, ...]:
+    sig = getattr(func, '__signature__', None)
+    if sig is not None:
         return tuple(
             [
                 p.default
-                for p in func.__signature__.parameters.values()
+                for p in sig.parameters.values()
                 if p.default is not p.empty
             ]
         )
@@ -124,32 +130,32 @@ def default_arguments(func: callable) -> tuple[str]:
         hasattr(func, '__code__')
         and not func.__code__.co_flags & inspect.CO_VARKEYWORDS
     ):
-        return tuple(func.__defaults__ or ()) + tuple(func.__kwdefaults__ or ())
+        arg_defaults = tuple(func.__defaults__ or ())
+        kw_defaults = tuple((func.__kwdefaults__ or {}).keys() or ())
+        return arg_defaults + kw_defaults
     else:
-        func.__signature__ = inspect.signature(func)
+        sig = func.__signature__ = inspect.signature(func) # type: ignore
         return tuple(
             [
                 p.default
-                for p in func.__signature__.parameters.values()
+                for p in sig.parameters.values()
                 if p.default is not p.empty
             ]
         )
 
 
 def build_method_signature(
-    owner_cls: THasParamAttrsCls, method: Method[T], kwarg_names: list[str], scope='all'
+    owner_cls: THasParamAttrsCls, method: Method[T, _MethodUnknownSignature[T]], kwarg_names: list[str], scope='all'
 ) -> inspect.Signature:
     kwargs_params = []
     defaults = {}
-    broadcast_kwargs = get_owner_meta(owner_cls).broadcast_kwargs
+    bcast_kwargs = get_owner_meta(owner_cls).broadcast_kwargs
 
     for name in kwarg_names:
         try:
-            arg_annotation = broadcast_kwargs[name]._type
-            if broadcast_kwargs[name].default not in (None, Undefined):
-                defaults[name] = chain_get(
-                    broadcast_kwargs, method._kwargs, name
-                ).default
+            arg_annotation = bcast_kwargs[name]._type
+            if bcast_kwargs[name].default not in (None, Undefined):
+                defaults[name] = chain_get(bcast_kwargs, method._kwargs, name).default
         except KeyError:
             arg_annotation = Any
 
@@ -201,17 +207,19 @@ def chain_get(
     default: Union[Undefined, T] = Undefined,
 ) -> T:
     """returns d1[key] if it exists, otherwise d2[key], otherwise default if it is not Undefined"""
-    if default is Undefined:
-        return d1.get(key, d2.get(key))
+    if default == Undefined:
+        k = d2[key]
+        return d1.get(key, k)
     else:
-        return d1.get(key, d2.get(key, default))
+        k = d2.get(key, default)
+        return d1.get(key, k) # type: ignore
 
 
 def missing_kwargs(
-    source: dict[str, MethodKeywordArgument[T]],
-    into: dict[str, MethodKeywordArgument[T]],
+    source: dict[str, MethodKeywordArgument[T, T_co, _P]],
+    into: dict[str, MethodKeywordArgument[T, T_co, _P]],
     only: Union[None, list[str]] = None,
-) -> dict[str, MethodKeywordArgument[T]]:
+) -> dict[str, MethodKeywordArgument[T, T_co, _P]]:
     """return a dictionary of MethodKeywordArguments from self.broadcast_kwargs missing from method"""
     if only is None:
         only = source.keys()
@@ -346,7 +354,7 @@ class KeyAdapterBase:
 
     def getter_factory(
         self, owner_cls: THasParamAttrsCls, method: Method[T]
-    ) -> callable:
+    ) -> typing.Callable:
         """return a getter function implemented with method.key"""
 
         def func(owner: HasParamAttrs, /, **kwargs) -> T:
@@ -361,7 +369,7 @@ class KeyAdapterBase:
 
     def setter_factory(
         self, owner_cls: THasParamAttrsCls, method: Method[T]
-    ) -> callable:
+    ) -> typing.Callable:
         """return a getter function implemented with method.key"""
 
         def func(owner: HasParamAttrs, new_value: T, /, **kwargs):
@@ -381,7 +389,7 @@ class HasParamAttrsClsInfo:
     broadcast_kwargs: dict[str, MethodKeywordArgument]
 
     # unbound methods
-    methods: dict[str, callable]
+    methods: dict[str, typing.Callable]
 
     __slots__ = ['attrs', 'key_adapter', 'broadcast_kwargs', 'methods']
 
@@ -413,6 +421,14 @@ class HasParamAttrsClsInfo:
         )
         obj.attrs = {k: v.copy() for k, v in get_owner_meta(owner_cls).attrs.items()}
         return obj
+
+
+@functools.cache
+def get_cls_annotations(cls):
+    anns = {}
+    for kls in cls.__mro__[::-1]:
+        anns |= typing.get_annotations(kls, eval_str=True)
+    return anns
 
 
 class HasParamAttrsMeta(type):
@@ -508,11 +524,13 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
 
         public_names = {name for name in kws.keys() if not name.startswith('_')}
         defaults = set(self._defaults.keys())
-        annotated_names = set(self.__annotations__)
+
+        annotated_names = set(get_cls_annotations(type(self)))
         private_names = defaults - public_names
         unexpected = (public_names - annotated_names) | (  # "public" annotated names
             private_names - defaults
         )  # secret "private" arguments starting with _
+
         if len(unexpected) > 0:
             unexpected = ', '.join(unexpected)
             raise TypeError(f'invalid keyword argument(s): {unexpected}')
@@ -549,9 +567,10 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
             cls._type = type
 
         # cache annotated fields in the class for faster lookup later
-        cls.__annotations__ = typing.get_type_hints(cls)
+        cls.__annotations__ = get_cls_annotations(cls)
         cls._defaults = {}
         cls._positional = []
+
         for k in cls.__annotations__.keys():
             obj = getattr(cls, k)
             if isinstance(obj, field):
@@ -977,14 +996,14 @@ class Value(ParamAttr[T]):
             self.sets = sets
 
 
-class MethodKeywordArgument(ParamAttr[T], typing.Generic[T_co, _P]):
+class MethodKeywordArgument(ParamAttr[T], typing.Generic[T, T_co, _P]):
     name: str = field(Undefined, kw_only=False)  # type: ignore
     default: Union[T, None, Undefined] = Undefined  # type: ignore
 
     ROLE = 'keyword argument'
 
     # decorated keyword arguments not yet adopted by a Method
-    _decorated: typing.ClassVar[dict[callable, dict[str, ParamAttr[T]]]] = {}
+    _decorated: typing.ClassVar[dict[str, typing.Callable]] = {}
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         raise AttributeError(
@@ -1213,32 +1232,32 @@ class _SetterType(typing.Protocol[T_co, _P]):
         ) -> None: ...
 
 
-class _MethodKnownSignature(typing.Protocol[T_co], typing.Generic[T_co, _P]):
+class _MethodKnownSignature(typing.Protocol[T, _P]):
     # call signature for type hinting decorated Method descriptors
 
     if typing.TYPE_CHECKING:
 
         @typing.overload
         @staticmethod
-        def __call__(new_value: T_co, *args: _P.args, **kwargs: _P.kwargs) -> None: ...
+        def __call__(new_value: T, *args: _P.args, **kwargs: _P.kwargs) -> None: ...
 
         @typing.overload
         @staticmethod
-        def __call__(*args: _P.args, **kwargs: _P.kwargs) -> T_co: ...
+        def __call__(*args: _P.args, **kwargs: _P.kwargs) -> T: ...
 
 
-class _MethodUnknownSignature(typing.Protocol[T_co]):
+class _MethodUnknownSignature(typing.Protocol[T]):
     # call signature protocol for type hinting keyed Method descriptors
     if typing.TYPE_CHECKING:
 
         @typing.overload
         @staticmethod
-        def __call__(new_value: Union[T_co, None], /, **kwargs) -> None:
+        def __call__(new_value: Union[T, None], /, **kwargs) -> None:
             """set to `new_value` according to the scope defined by `kwargs`"""
 
         @typing.overload
         @staticmethod
-        def __call__(**kwargs) -> Union[T_co, None]:
+        def __call__(**kwargs) -> Union[T, None]:
             """get the parameter according to the scope specified by `kwargs`."""
 
 
@@ -1288,7 +1307,7 @@ class Method(OwnerAccessAttr[T], typing.Generic[T, SignatureType]):
 
     ROLE = 'method'
 
-    _kwargs: dict[Union[ParamAttr, callable]] = {}
+    _kwargs: dict[str, Union[ParamAttr, typing.Callable]] = {}
 
     def __init_owner_instance__(self, owner: HasParamAttrs):
         """bind a callable method in the owner"""
@@ -1515,7 +1534,7 @@ def hold_attr_notifications(owner: HasParamAttrs):
 
 
 class HasParamAttrsInstInfo:
-    handlers: dict[str, callable]
+    handlers: dict[str, typing.Callable]
     calibrations: dict[Union[None, str], Any]
     cache: dict[Union[None, str], Any]
     methods: dict[str, _MethodDescriptor]
@@ -1549,6 +1568,8 @@ def list_property_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> list[
 
 
 class HasParamAttrs(metaclass=HasParamAttrsMeta):
+    _attr_defs: typing.ClassVar[HasParamAttrsClsInfo]
+
     def __init__(self, **values):
         self._attr_store = HasParamAttrsInstInfo(self)
         for attr_def in get_class_attrs(self).values():
@@ -1634,7 +1655,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
 def adjust(
     paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws
-) -> callable[[type[T]], type[T]]:
+) -> typing.Callable[[type[T]], type[T]]:
     """decorates a Device subclass to adjust the definition of the specified ParamAttr.
 
     This can be applied to inherited classes that need one of its parents attributes
@@ -2470,8 +2491,8 @@ class BoundedNumber(ParamAttr[T]):
     def transform(
         self,
         other_attr: ParamAttr,
-        forward: callable,
-        reverse: callable,
+        forward: typing.Callable,
+        reverse: typing.Callable,
         help: str = '',
         allow_none: bool = False,
     ):

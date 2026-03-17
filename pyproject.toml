@@ -19,7 +19,7 @@ maintainers = [
     {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
 ]
 
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.9,<3.15"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 
@@ -60,6 +60,7 @@ dev = [
     "ipykernel",
     "pip",
     "ipython",
+    "pytest",
     # for compatibility outside hatch
     "ruff",
     # introspection and stub generation
@@ -67,6 +68,9 @@ dev = [
     "astor>=0.8.1",
     # publishing
     "twine",
+    "pytest-cov",
+    "genbadge",
+    "defusedxml",
 ]
 doc = [
     # documentation
@@ -129,7 +133,7 @@ dependencies = [
 ]
 
 [[tool.hatch.envs.test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.hatch.envs.test.scripts]
 all = [

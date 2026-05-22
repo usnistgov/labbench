@@ -9,9 +9,11 @@ import pytest
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
+from pathlib import Path
 
 lb.util.force_full_traceback(True)
 
+CAL_PATH = str(Path(__file__).parent/'data'/'attenuator_cal.csv')
 
 @store_backend.key_adapter(defaults={'attenuation_setting': 0})
 class PropertyDevice(store_backend.StoreTestDevice):
@@ -31,8 +33,8 @@ class PropertyDevice(store_backend.StoreTestDevice):
         label='dBm',
     )
 
-    calibration_path: float = attr.value.Path(
-        default='tests/data/attenuator_cal.csv',
+    calibration_path: str = attr.value.Path(
+        default=CAL_PATH,
         allow_none=True,
         must_exist=True,
         cache=True,
@@ -139,7 +141,7 @@ class MethodDevice(store_backend.StoreTestDevice):
     )
 
     calibration_path: float = attr.value.Path(
-        default='tests/data/attenuator_cal.csv',
+        default=CAL_PATH,
         allow_none=True,
         must_exist=True,
         cache=True,

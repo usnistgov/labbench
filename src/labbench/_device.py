@@ -207,7 +207,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         kw_only_attrs = []
 
         # validate types and classify by kw_only
-        for name in attr._bases.get_cls_annotations(cls).keys():
+        for name, annot in attr._bases.get_cls_annotations(cls).items():
             attr_def = getattr(cls, name)
 
             if not isinstance(attr_def, attr.value.Value):

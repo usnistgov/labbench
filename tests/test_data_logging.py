@@ -98,8 +98,8 @@ def simple_loop(db, inst, frequencies: list[float], **extra_column_values):
 class SimpleRack(lb.Rack):
     """a device paired with a logger"""
 
-    inst: StoreDevice = StoreDevice()
     db: lb._data.ParamAttrLogger
+    inst: StoreDevice = StoreDevice()
 
     FREQUENCIES = 10e6, 100e6, 1e9, 10e9
     EXTRA_VALUES = dict(power=1.21e9, potato=7)

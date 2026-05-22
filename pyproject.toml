@@ -37,7 +37,7 @@ dependencies = [
     # data formats
     "ruamel-yaml>=0.17.21",
     "feather-format>=0.4.0",
-    "sqlalchemy>=1.4,<2",
+    "sqlalchemy>=1.4",
     "pyarrow>=14",
     # Device backend support
     "pyserial>=3.0",

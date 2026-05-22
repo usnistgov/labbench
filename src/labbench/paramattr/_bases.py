@@ -429,16 +429,26 @@ class HasParamAttrsClsInfo:
 
 
 @functools.cache
-def get_cls_annotations(cls: type):
+def get_cls_annotations(cls: type, debug=False):
     anns = {}
+    g = globals()
+
     for kls in cls.__mro__[::-1]:
-        anns |= typing.get_annotations(kls, eval_str=True)
-    return anns
+        parent_annots = typing.get_annotations(kls, globals=g, eval_str=True)
+        if debug:
+            print('-> ', kls, parent_annots)
+        anns |= {
+            k: v for k,v in parent_annots.items()
+            if getattr(v, '__origin__', None) is not typing.ClassVar
+        }
+    if debug:
+        print('\n-> final ', anns)
+    return dict(anns)
 
 
 class HasParamAttrsMeta(type):
     @classmethod
-    def __prepare__(mcls, names, bases, **kws):  # type: ignore
+    def __prepare__(mcls, names, bases, **kws):
         """Prepare fresh cls._attr_defs.attrs mappings to allow copy-on-write of ParamAttr
         definitions in subclasses.
         """
@@ -500,7 +510,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         inherit: if True, use the definition in a parent class as defaults
     """
 
-    __objclass__: type
+    # __objclass__: type
 
     # the python type representation defined by ParamAttr subclasses
     _type: type = object
@@ -522,7 +532,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     _keywords = {}
     _defaults = {}
     _positional = []
-    name: str
+    name = None
 
     def __init__(self, *args, **kws):
         # apply the dataclass entries
@@ -581,6 +591,9 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
         cls._positional = []
 
         for k in cls.__annotations__.keys():
+            if not hasattr(cls, k):
+                print('no attr ', k)
+                continue
             obj = getattr(cls, k)
             if isinstance(obj, field):
                 if not obj.kw_only:
@@ -1012,7 +1025,7 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T, T_co, _P]):
     ROLE = 'keyword argument'
 
     # decorated keyword arguments not yet adopted by a Method
-    _decorated: typing.ClassVar[dict[typing.Callable, dict[str, MethodKeywordArgument]]] = {}
+    _decorated: typing.ClassVar[dict[typing.Callable, dict[str, 'MethodKeywordArgument']]] = {}
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         raise AttributeError(

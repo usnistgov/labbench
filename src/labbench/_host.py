@@ -189,7 +189,7 @@ class Email(core.Device):
         return subject, message
 
 
-class JSONFormatter(logging.Formatter):
+class NDJSONFormatter(logging.Formatter):
     _last = []
 
     def __init__(self):
@@ -237,7 +237,7 @@ class JSONFormatter(logging.Formatter):
 
         self._last.append((rec, msg))
 
-        return json.dumps(msg, indent=True, default=self.json_serialize_dates)
+        return json.dumps(msg, default=self.json_serialize_dates)
 
 
 class RotatingJSONFileHandler(logging.handlers.RotatingFileHandler):
@@ -277,7 +277,7 @@ class Host(core.Device):
     time_format = '%Y-%m-%d %H:%M:%S'
 
     def open(self):
-        log_formatter = JSONFormatter()
+        log_formatter = NDJSONFormatter()
         stream = LogStreamBuffer()
         sh = logging.StreamHandler(stream)
         sh.setFormatter(log_formatter)
@@ -348,11 +348,9 @@ class Host(core.Device):
         self.backend['log_handler'].flush()
         txt = self.backend['log_stream'].read()
         if len(txt) > 1:
-            self._txt = txt
-            self._serialized = '[' + txt[:-2] + ']'
-            self._ret = json.loads(
-                self._serialized
-            )  # self.backend['log_stream'].read().replace('\n', '\r\n')
+            self._ret = txt
+            # self._serialized = '[' + txt[:-2] + ']'
+            self._ret = [json.loads(line) for line in txt.splitlines()]
             return self._ret
         else:
             return {}

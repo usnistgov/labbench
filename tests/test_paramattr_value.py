@@ -128,6 +128,7 @@ def opened_mixin_device():
     class Device(StoreTestDevice, MixIn):
         pass
     device = Device()
+    assert not device.isopen
     device.open()
     yield device
     device.close()

@@ -6,6 +6,7 @@ from ._bases import (
     Undefined,
     adjust,
     get_class_attrs,
+    get_cls_annotations,
     hold_attr_notifications,
     observe,
     unobserve,

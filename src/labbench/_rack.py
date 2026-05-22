@@ -12,6 +12,7 @@ import typing_extensions as typing
 
 from . import _device as core
 from . import util as util
+from . import paramattr
 
 if typing.TYPE_CHECKING:
     import ctypes
@@ -972,24 +973,15 @@ class Owner:
     def open(self):
         pass
 
-    @property
     def __enter__(self):
         context = self._context = package_owned_contexts(self)
+        context.__enter__()
+        return self
 
-        @wraps(type(self).__enter__.fget)
-        def __enter__():
-            context.__enter__()
-
-            return self
-
-        return __enter__
-
-    @property
-    def __exit__(self):
-        # set self._context to None before __exit__ so it can tell
-        # whether it was invoked through context entry
+    def __exit__(self, *args):
         context, self._context = self._context, None
-        return context.__exit__
+        assert context is not None
+        return context.__exit__(*args)
 
 
 def recursive_devices(top: Owner):
@@ -1358,8 +1350,8 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
     def __init__(self, **ownables):
         # new dict mapping object for the same devices
         ownables = dict(ownables)
-        annotations = dict(self.__annotations__)
-        for name, dev in ownables.items():  # self.__annotations__.items():
+        annotations = dict(paramattr.get_cls_annotations(type(self)))
+        for name, dev in ownables.items():
             try:
                 dev_type = annotations.pop(name)
             except KeyError:

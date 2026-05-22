@@ -275,7 +275,7 @@ class ShellBackend(Device):
         except ValueError:
             pass
 
-        self._logger.debug(f"shell execute {' '.join(argv)!r}")
+        self._logger.debug(f'shell execute {" ".join(argv)!r}')
         cp = sp.run(
             argv, timeout=timeout, stdout=sp.PIPE, stderr=sp.PIPE, check=check_return
         )
@@ -403,7 +403,7 @@ class ShellBackend(Device):
             )
 
         # Generate the commandline and spawn
-        self._logger.debug(f"background execute: {' '.join(argv)!r}")
+        self._logger.debug(f'background execute: {" ".join(argv)!r}')
         self.__kill = False
         spawn(argv)
 
@@ -1179,7 +1179,7 @@ class VISADevice(Device):
             else:
                 msg = (
                     f'resource ambiguity: {len(matches)} VISA resources matched {search_desc}, '
-                    f'disconnect {len(matches)-1} or specify explicit resource names'
+                    f'disconnect {len(matches) - 1} or specify explicit resource names'
                 )
                 raise OSError(msg)
         else:
@@ -1297,7 +1297,7 @@ class VISADevice(Device):
                 except Exception as ex:
                     if not retry or timeout is None:
                         raise
-                    elif time.perf_counter() - t0 >= timeout-.1:
+                    elif time.perf_counter() - t0 >= timeout - 0.1:
                         raise
                     elif 'timeout' or 'timed out' in str(ex):
                         continue

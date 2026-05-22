@@ -300,7 +300,7 @@ class RackMethod(util.Ownable):
         for i, row in enumerate(table.index):
             util.logger.info(
                 f"{self._owned_name} from '{path!s}' "
-                f"- '{row}' ({i+1}/{len(table.index)})"
+                f"- '{row}' ({i + 1}/{len(table.index)})"
             )
             notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
@@ -581,7 +581,7 @@ class BoundSequence(util.Ownable):
         for i, row in enumerate(table.index):
             util.logger.info(
                 f"{self._owned_name} from '{path!s}' "
-                f"- '{row}' ({i+1}/{len(table.index)})"
+                f"- '{row}' ({i + 1}/{len(table.index)})"
             )
             notify.call_iteration_event(self, i, row, len(table.index))
             yield row, self(**table.loc[row].to_dict())
@@ -717,7 +717,7 @@ def flatten_nested_owner_contexts(top) -> dict:
         managers[''] = OwnerContextAdapter(top)
     else:
         raise KeyError(
-            f"unbound owners in the manager tree: {managers['']._owned_name}"
+            f'unbound owners in the manager tree: {managers[""]._owned_name}'
         )
 
     return managers
@@ -761,12 +761,12 @@ def package_owned_contexts(top):
         for attr, obj in dict(remaining).items()
         if isinstance(obj, core.Device)
     }
-    devices_desc = f"({', '.join([str(c) for c in devices.values()])})"
+    devices_desc = f'({", ".join([str(c) for c in devices.values()])})'
     devices = util.concurrently(name='', which='context', **devices)
 
     # what remain are instances of Rack and other Owner types
     owners = flatten_nested_owner_contexts(top)
-    owners_desc = f"({','.join([str(c) for c in owners.values()])})"
+    owners_desc = f'({",".join([str(c) for c in owners.values()])})'
 
     # TODO: concurrent rack entry. This would mean device dependency
     # checking to ensure avoid race conditions

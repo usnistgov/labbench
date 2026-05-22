@@ -433,21 +433,17 @@ class HasParamAttrsClsInfo:
 
 
 @functools.cache
-def get_cls_annotations(cls: type, debug=False):
+def get_cls_annotations(cls: type):
     anns = {}
     g = globals()
 
     for kls in cls.__mro__[::-1]:
         parent_annots = typing.get_annotations(kls, globals=g, eval_str=True)
-        if debug:
-            print('-> ', kls, parent_annots)
         anns |= {
             k: v
             for k, v in parent_annots.items()
             if getattr(v, '__origin__', None) is not typing.ClassVar
         }
-    if debug:
-        print('\n-> final ', anns)
     return dict(anns)
 
 
@@ -1071,7 +1067,7 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T, T_co, _P]):
                 'the default argument is not supported when decorating a method'
             )
 
-        if isinstance(decorated, HasParamAttrs):
+        if isinstance(decorated, (HasParamAttrs, HasParamAttrsMeta)):
             get_owner_meta(decorated).broadcast_kwargs[self.name] = self
             decorated.__init_subclass__()
         elif isinstance(decorated, Method):
@@ -1318,6 +1314,7 @@ class _MethodDescriptor:
             kwargs[name] = self.method._kwargs[name]._finalize_get_value(
                 self.owner, kwargs[name]
             )
+            
 
         if new_value is not Undefined:
             self.method.set_in_owner(self.owner, new_value, kwargs)

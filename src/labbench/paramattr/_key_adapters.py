@@ -84,7 +84,7 @@ class message_keying(KeyAdapterBase):
         if len(self.message_map) != len(self.value_map):
             raise ValueError("'remap' has duplicate values")
 
-    def get_kwarg_names(self, s: str) -> list[str]:
+    def get_kwarg_names(self, key: str) -> list[str]:
         """returns an argument list based on f-string style curly-brace formatting tokens.
 
         Example:
@@ -95,7 +95,7 @@ class message_keying(KeyAdapterBase):
             ['channel']
             ```
         """
-        return [tup[1] for tup in self._formatter.parse(s) if tup[1] is not None]
+        return [tup[1] for tup in self._formatter.parse(key) if tup[1] is not None]
 
     def from_message(self, msg):
         return self.message_map.get(msg, msg)
@@ -123,8 +123,8 @@ class message_keying(KeyAdapterBase):
     def get(
         self,
         owner: HasParamAttrs,
-        scpi_key: str,
-        paramattr: Union[ParamAttr[T], None],
+        key: str,
+        attr: Union[ParamAttr[T], None] = None,
         kwargs: dict[str, Any] = {},
     ) -> T:
         """queries a parameter named `scpi_key` by sending an SCPI message string.
@@ -146,12 +146,12 @@ class message_keying(KeyAdapterBase):
             raise ValueError('query_func needs to be set for key get operations')
         query_func = getattr(owner, self.query_func)
         try:
-            expanded_scpi_key = scpi_key.format(**kwargs)
+            expanded_scpi_key = key.format(**kwargs)
         except KeyError:
-            expected_kws = set(self.get_kwarg_names(scpi_key))
+            expected_kws = set(self.get_kwarg_names(key))
             missing_kws = expected_kws - set(kwargs.keys())
             raise TypeError(
-                f'{paramattr._owned_name(owner)}() missing required positional argument(s) {str(missing_kws)[1:-1]}'
+                f'{attr._owned_name(owner)}() missing required positional argument(s) {str(missing_kws)[1:-1]}'
             )
 
         value_msg = query_func(self.query_fmt.format(key=expanded_scpi_key)).rstrip()
@@ -160,9 +160,9 @@ class message_keying(KeyAdapterBase):
     def set(
         self,
         owner: HasParamAttrs,
-        scpi_key: str,
+        key: str,
         value: T,
-        paramattr: Union[ParamAttr[T], None],
+        attr: Union[ParamAttr[T], None] = None,
         kwargs: dict[str, Any] = {},
     ):
         """writes an SCPI message to set a parameter with a name key
@@ -182,8 +182,8 @@ class message_keying(KeyAdapterBase):
         if self.write_func is None:
             raise ValueError('write_func needs to be set for key set operations')
 
-        value_msg = self.to_message(value, paramattr)
-        expanded_scpi_key = scpi_key.format(**kwargs)
+        value_msg = self.to_message(value, attr)
+        expanded_scpi_key = key.format(**kwargs)
         write_func = getattr(owner, self.write_func)
         write_func(self.write_fmt.format(key=expanded_scpi_key, value=value_msg))
 

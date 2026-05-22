@@ -8,6 +8,9 @@ from labbench import paramattr as attr
 from labbench.testing.store_backend import StoreTestDevice
 
 
+lb.show_messages('warning')
+
+
 class LaggyInstrument(StoreTestDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
 

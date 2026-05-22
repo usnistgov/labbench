@@ -54,7 +54,12 @@ class MyRack(lb.Rack):
 
 
 class MyRack2(lb.Rack):
-    inst1 = LaggyInstrument('a', delay=0.12)
+    try:
+        inst1 = LaggyInstrument('a', delay=0.12)
+    except:
+        import inspect
+        sig = inspect.signature(LaggyInstrument)
+        raise TypeError(repr(LaggyInstrument.__init__.__signature__))
     inst2 = LaggyInstrument('b', delay=0.06)
 
 # Acceptable error in delay time meaurement

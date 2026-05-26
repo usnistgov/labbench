@@ -1314,7 +1314,6 @@ class _MethodDescriptor:
             kwargs[name] = self.method._kwargs[name]._finalize_get_value(
                 self.owner, kwargs[name]
             )
-            
 
         if new_value is not Undefined:
             self.method.set_in_owner(self.owner, new_value, kwargs)

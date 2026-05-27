@@ -34,7 +34,7 @@ import pytest
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing.store_backend import StoreTestDevice
-
+lb.util.force_full_traceback(True)
 
 class LaggyInstrument(StoreTestDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
@@ -166,11 +166,10 @@ def db_path():
 
 def test_context_open():
     rack = MyRack()
-
     assert not rack.inst1.isopen
     assert not rack.inst2.isopen
 
-    with MyRack():
+    with rack:
         assert rack.inst1.isopen
         assert rack.inst2.isopen
 

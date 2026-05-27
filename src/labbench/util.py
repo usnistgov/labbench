@@ -581,7 +581,7 @@ def retry(
                         etype = type(e).__qualname__
                         msg = (
                             f"caught '{etype}' on first call to '{f.__name__}' - repeating the call "
-                            f'{tries-1} more times or until no exception is raised'
+                            f'{tries - 1} more times or until no exception is raised'
                         )
 
                         callable_logger(f).info(msg)
@@ -657,7 +657,7 @@ def until_timeout(
                         etype = type(e).__qualname__
                         msg = (
                             f"caught '{etype}' in first call to '{f.__name__}' - repeating calls for "
-                            f'another {timeout-progress:0.3f}s, or until no exception is raised'
+                            f'another {timeout - progress:0.3f}s, or until no exception is raised'
                         )
 
                         callable_logger(f).info(msg)
@@ -726,7 +726,7 @@ def hash_caller(call_depth: int = 1):
 
 @contextmanager
 def stopwatch(
-    desc: str = '', threshold: float = 0, logger_level: _LogLevelType|None = 'info'
+    desc: str = '', threshold: float = 0, logger_level: _LogLevelType | None = 'info'
 ):
     """Time a block of code using a with statement like this:
 
@@ -780,6 +780,7 @@ def stopwatch(
 
     if exc is not None:
         raise exc
+
 
 class Call:
     """Wrap a function to apply arguments for threaded calls to `concurrently`.
@@ -936,7 +937,7 @@ class MultipleContexts:
 
         try:
             with stopwatch(
-                f"entry into context for {self.params['name']}",
+                f'entry into context for {self.params["name"]}',
                 0.5,
                 logger_level='debug',
             ):
@@ -950,7 +951,7 @@ class MultipleContexts:
     @hide_in_traceback
     def __exit__(self, *exc):
         with stopwatch(
-            f"{self.params['name']} - context exit", 0.5, logger_level='debug'
+            f'{self.params["name"]} - context exit', 0.5, logger_level='debug'
         ):
             for name in tuple(self._entered.keys())[::-1]:
                 context = self._entered[name]

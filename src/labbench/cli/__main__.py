@@ -81,7 +81,7 @@ def post_mortem_debug(note=None, exc_info=None):
             progress_msg = (note or '') + '\n'
             progress_msg += ''
 
-            progress_msg += f'debug thread {i+1} of {len(ex.thread_exceptions)}\n'
+            progress_msg += f'debug thread {i + 1} of {len(ex.thread_exceptions)}\n'
             if name != i:
                 progress_msg += f'thread name "{name}"'
 

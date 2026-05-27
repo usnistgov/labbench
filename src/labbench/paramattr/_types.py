@@ -150,7 +150,7 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
         path = _Path(value)
 
         if self.must_exist and not path.exists():
-            raise OSError('no file at path {value}')
+            raise OSError(f'no file at path {value}')
 
         return path
 

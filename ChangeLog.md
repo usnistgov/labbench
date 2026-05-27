@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.46.0 - unreleased]
+### Changed
+- Support python 3.13 and 3.14
+- Bump minimum supported python version to 3.12
+
+
 ## [0.45.0]
 ### Changed
 - fix an exception suppression bug in `stopwatch`

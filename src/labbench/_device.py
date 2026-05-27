@@ -4,6 +4,8 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
+from __future__ import annotations
+
 import inspect
 import sys
 from functools import wraps
@@ -120,7 +122,7 @@ def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
     """build a signature.Parameter from a ParamAttr.value"""
     if attr_def.only and sys.version_info >= (3, 11):
         # Union[*attr_def.only] is sooo close
-        annotation = typing.Union.__getitem__(tuple(attr_def.only))
+        annotation = typing.Union[*tuple(attr_def.only)]
     else:
         annotation = attr_def._type
 
@@ -190,7 +192,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
     @util.hide_in_traceback
     def __init_subclass__(cls):
         super().__init_subclass__()
-        cls.__annotations__ = typing.get_type_hints(cls)
+        cls.__annotations__ = typing.get_annotations(cls)
         cls.__set_signature__()
 
     @classmethod
@@ -205,7 +207,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         kw_only_attrs = []
 
         # validate types and classify by kw_only
-        for name in typing.get_type_hints(cls).keys():
+        for name, annot in attr._bases.get_cls_annotations(cls).items():
             attr_def = getattr(cls, name)
 
             if not isinstance(attr_def, attr.value.Value):

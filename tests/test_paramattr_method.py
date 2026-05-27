@@ -189,6 +189,10 @@ def test_keyed_argument_bounds():
         # channel too small
         device.method('value', channel=0)
 
+    with pytest.raises(ValueError):
+        # channel too large
+        device.method('value', channel=5)
+
     # normal set/get behavior
     TEST_VALUE = 'text'
     TEST_KWS = {'channel': 1}

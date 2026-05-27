@@ -19,7 +19,7 @@ maintainers = [
     {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
 ]
 
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.12"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 
@@ -37,7 +37,7 @@ dependencies = [
     # data formats
     "ruamel-yaml>=0.17.21",
     "feather-format>=0.4.0",
-    "sqlalchemy>=1.4,<2",
+    "sqlalchemy>=1.4",
     "pyarrow>=14",
     # Device backend support
     "pyserial>=3.0",
@@ -60,6 +60,7 @@ dev = [
     "ipykernel",
     "pip",
     "ipython",
+    "pytest",
     # for compatibility outside hatch
     "ruff",
     # introspection and stub generation
@@ -67,6 +68,9 @@ dev = [
     "astor>=0.8.1",
     # publishing
     "twine",
+    "pytest-cov",
+    "genbadge",
+    "defusedxml",
 ]
 doc = [
     # documentation
@@ -90,7 +94,7 @@ labbench = "labbench.cli.__main__:do_cli"
 
 [tool.black]
 line-length = 100
-target-version = ["py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312","py313","py314"]
 include = '\.pyi?$'
 
 #
@@ -129,7 +133,7 @@ dependencies = [
 ]
 
 [[tool.hatch.envs.test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.hatch.envs.test.scripts]
 all = [

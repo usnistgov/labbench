@@ -124,7 +124,7 @@ class message_keying(KeyAdapterBase):
         self,
         owner: HasParamAttrs,
         key: str,
-        attr: Union[ParamAttr[T], None] = None,
+        attr: ParamAttr[T] | None = None,
         kwargs: dict[str, Any] = {},
     ) -> T:
         """queries a parameter named `scpi_key` by sending an SCPI message string.
@@ -162,7 +162,7 @@ class message_keying(KeyAdapterBase):
         owner: HasParamAttrs,
         key: str,
         value: T,
-        attr: Union[ParamAttr[T], None] = None,
+        attr: ParamAttr[T] | None = None,
         kwargs: dict[str, Any] = {},
     ):
         """writes an SCPI message to set a parameter with a name key

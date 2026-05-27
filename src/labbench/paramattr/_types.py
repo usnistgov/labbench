@@ -30,7 +30,7 @@ class Int(_bases.BoundedNumber[int], type=int):
 class Float(_bases.BoundedNumber[float], type=float):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
 
-    step: typing.Union[float, None] = None
+    step: float | None = None
 
     @util.hide_in_traceback
     def validate(self, value, owner=None):

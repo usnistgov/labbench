@@ -412,20 +412,20 @@ class TarFileIO(io.BytesIO):
         self.overwrite = False
         self.name = relname
         self.mode = mode
-        super(TarFileIO, self).__init__()
+        super().__init__()
 
     def __del__(self):
         try:
-            super(TarFileIO, self).close()
+            super().close()
         except ValueError:
             pass
 
-        super(TarFileIO, self).__del__()
+        super().__del__()
 
     def write(self, data, encoding='ascii'):
         if isinstance(data, str):
             data = bytes(data, encoding=encoding)
-        super(TarFileIO, self).write(data)
+        super().write(data)
 
     def close(self):
         # First: dump the data into the tar file
@@ -442,7 +442,7 @@ class TarFileIO(io.BytesIO):
 
         # Then make sure to close everything
         finally:
-            super(TarFileIO, self).close()
+            super().close()
 
 
 class MungeToTar(MungerBase):
@@ -805,7 +805,7 @@ class Aggregator(util.Ownable):
     def update_name_map(
         self,
         ownables: dict[Device, str],
-        owner_prefix: Union[str, None] = None,
+        owner_prefix: str | None = None,
         fallback_names={},
     ):
         """map each Device to a name in devices.values() by introspection."""
@@ -873,8 +873,8 @@ class Aggregator(util.Ownable):
         self,
         devices,
         changes: bool = True,
-        always: Union[str, list[str]] = [],
-        never: Union[str, list[str]] = ['isopen'],
+        always: str | list[str] = [],
+        never: str | list[str] = ['isopen'],
     ):
         """Configure the data to aggregate from value, property, or datareturn traits in the given devices.
 
@@ -899,7 +899,7 @@ class Aggregator(util.Ownable):
         elif isinstance(devices, dict):
             pass
         elif hasattr(devices, '__iter__'):
-            devices = dict([(d, None) for d in devices])
+            devices = {d: None for d in devices}
         else:
             raise ValueError('devices argument must be a device or iterable of devices')
 
@@ -1064,10 +1064,10 @@ class ParamAttrLogger(
 
     def observe_paramattr(
         self,
-        devices: Union[Device, Iterable[Device]],
+        devices: Device | Iterable[Device],
         changes: bool = True,
-        always: Union[str, Iterable[str]] = [],
-        never: Union[str, Iterable[str]] = ['isopen'],
+        always: str | Iterable[str] = [],
+        never: str | Iterable[str] = ['isopen'],
     ):
         """Configure aggregation of activity in parameter attributes defined with `labbench.paramattr.value`,
         `labbench.paramattr.property`, or labbench.paramattr.method`.
@@ -1764,11 +1764,11 @@ class MungeReader:
 
 
 def read_relational(
-    path: Union[str, Path],
+    path: str | Path,
     expand_col: str,
-    root_cols: Union[list[str], None] = None,
-    target_cols: Union[list[str], None] = None,
-    root_nrows: Union[int, None] = None,
+    root_cols: list[str] | None = None,
+    target_cols: list[str] | None = None,
+    root_nrows: int | None = None,
     root_format: str = 'auto',
     prepend_column_name: bool = True,
 ) -> DataFrameType:

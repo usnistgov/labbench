@@ -18,7 +18,7 @@ class key_adapter(attr.visa_keying):
         super().__init__(remap=remap)
         self.defaults = defaults
 
-    def get_kwarg_names(self, key_def: Union[str, tuple[str]]) -> tuple[str]:
+    def get_kwarg_names(self, key_def: str | tuple[str]) -> tuple[str]:
         if isinstance(key_def, str) or len(key_def) == 1:
             return super().get_kwarg_names(key_def)
         else:
@@ -27,7 +27,7 @@ class key_adapter(attr.visa_keying):
     def get(
         self,
         owner: attr.HasParamAttrs,
-        key_def: Union[str, list[str]],
+        key_def: str | list[str],
         paramattr: attr.ParamAttr = None,
         arguments: dict[str, Any] = {},
     ):

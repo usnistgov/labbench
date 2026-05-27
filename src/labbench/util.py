@@ -181,8 +181,8 @@ class _Formatter(logging.Formatter):
 
 
 def show_messages(
-    minimum_level: Union[_LogLevelType, Literal[False], None],
-    colors: Union[bool, None] = None,
+    minimum_level: _LogLevelType | Literal[False] | None,
+    colors: bool | None = None,
 ):
     """filters logging messages displayed to the console by importance
 
@@ -274,7 +274,7 @@ def callable_logger(func: callable) -> logging.Logger:
 
 
 def find_methods_in_mro(
-    cls: type[object], name: str, until_cls: Union[type[object], None] = None
+    cls: type[object], name: str, until_cls: type[object] | None = None
 ) -> list[callable]:
     """list all methods named `name` in `cls` and its parent classes.
 
@@ -525,7 +525,7 @@ def check_hanging_thread():
 
 @hide_in_traceback
 def retry(
-    exception_or_exceptions: Union[BaseException, typing.Iterable[BaseException]],
+    exception_or_exceptions: BaseException | typing.Iterable[BaseException],
     tries: int = 4,
     *,
     delay: float = 0,
@@ -604,7 +604,7 @@ def retry(
 
 @hide_in_traceback
 def until_timeout(
-    exception_or_exceptions: Union[BaseException, typing.Iterable[BaseException]],
+    exception_or_exceptions: BaseException | typing.Iterable[BaseException],
     timeout: float,
     delay: float = 0,
     backoff: float = 0,
@@ -1017,7 +1017,7 @@ def isdictducktype(cls):
 
 
 def _select_enter_or_call(
-    candidate_objs: typing.Iterable[Union[_ContextManagerType, callable]],
+    candidate_objs: typing.Iterable[_ContextManagerType | callable],
 ) -> str:
     """ensure candidates are either (1) all context managers
     or (2) all callables. Decide what type of operation to proceed with.
@@ -1059,7 +1059,7 @@ def _select_enter_or_call(
 @hide_in_traceback
 def enter_or_call(
     flexible_caller: callable,
-    objs: typing.Iterable[Union[_ContextManagerType, callable]],
+    objs: typing.Iterable[_ContextManagerType | callable],
     kws: dict[str, typing.Any],
 ):
     """Extract value traits from the keyword arguments flags, decide whether

@@ -6,14 +6,14 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-
 import builtins
 import functools
 import inspect
 import numbers
 from contextlib import contextmanager
 from copy import copy
-from typing import Any, Sequence, Union
+from typing import Any, Union
+from collections.abc import Sequence
 import types
 
 # for common types
@@ -41,8 +41,8 @@ class field(typing.Generic[T]):
     # __slots__ = 'kw_only', 'default'
 
     def __new__(
-        cls, default: Union[None, type[Undefined], T] = Undefined, kw_only: bool = True
-    ) -> Union[None, type[Undefined], T, field[T]]:
+        cls, default: None | type[Undefined] | T = Undefined, kw_only: bool = True
+    ) -> None | type[Undefined] | T | field[T]:
         if not kw_only:
             ret = object.__new__(cls)
             ret.__init__(default=default, kw_only=kw_only)
@@ -50,7 +50,7 @@ class field(typing.Generic[T]):
             ret = default
         return ret
 
-    def __init__(self, default: Union[None, type[Undefined], T], kw_only: bool = True):
+    def __init__(self, default: None | type[Undefined] | T, kw_only: bool = True):
         self.kw_only = kw_only
         self.default = default
 
@@ -68,7 +68,7 @@ def get_owner_store(obj: HasParamAttrs) -> HasParamAttrsInstInfo:
 
 
 def get_owner_meta(
-    obj: Union[HasParamAttrs, type[HasParamAttrs]],
+    obj: HasParamAttrs | type[HasParamAttrs],
 ) -> HasParamAttrsClsInfo:
     if not issubclass(type(obj), (HasParamAttrsMeta, HasParamAttrs)):
         raise TypeError('wrong metaclass')
@@ -76,7 +76,7 @@ def get_owner_meta(
 
 
 def get_class_attrs(
-    obj: Union[HasParamAttrs, type[HasParamAttrs]],
+    obj: HasParamAttrs | type[HasParamAttrs],
 ) -> dict[str, ParamAttr]:
     """returns a mapping of labbench paramattrs defined in `obj`"""
     if obj._attr_defs is None:
@@ -199,7 +199,7 @@ def chain_get(
     d1: dict[Any, T],
     d2: dict[Any, T],
     key: Any,
-    default: Union[type[Undefined], T] = Undefined,
+    default: type[Undefined] | T = Undefined,
 ) -> T:
     """returns d1[key] if it exists, otherwise d2[key], otherwise default if it is not Undefined"""
     if default == Undefined:
@@ -292,7 +292,7 @@ class KeyAdapterBase:
         self,
         owner: HasParamAttrs,
         key: str,
-        attr: Union[ParamAttr[T], None] = None,
+        attr: ParamAttr[T] | None = None,
         kwargs: dict[str, Any] = {},
     ) -> T:
         """this must be implemented by a subclass to support of `labbench.parameter.method`
@@ -307,7 +307,7 @@ class KeyAdapterBase:
         owner: HasParamAttrs,
         key: str,
         value: T,
-        attr: Union[ParamAttr[T], None] = None,
+        attr: ParamAttr[T] | None = None,
         kwargs: dict[str, Any] = {},
     ):
         """this must be implemented by a subclass to support of `labbench.parameter.method`
@@ -854,7 +854,7 @@ class ParamAttr(typing.Generic[T], metaclass=ParamAttrMeta):
     def __repr__(
         self,
         skip_params=['help', 'label'],
-        owner: Union[None, HasParamAttrs] = None,
+        owner: None | HasParamAttrs = None,
         with_declaration: bool = True,
     ):
         param_doc = self.doc_params(skip=skip_params, as_argument=True)
@@ -928,7 +928,7 @@ class Value(ParamAttr[T]):
     """
 
     default: T = field[T](Undefined, kw_only=False)  # type: ignore
-    allow_none: Union[bool, None] = None
+    allow_none: bool | None = None
     key: Any = None
     kw_only: bool = True
 
@@ -960,7 +960,7 @@ class Value(ParamAttr[T]):
     @util.hide_in_traceback
     def __get__(
         self,
-        owner: Union[None, HasParamAttrs],
+        owner: None | HasParamAttrs,
         owner_cls: HasParamAttrs,
     ) -> T:
         """Called by the class instance that owns this attribute to
@@ -1022,7 +1022,7 @@ class Value(ParamAttr[T]):
 
 class MethodKeywordArgument(ParamAttr[T], typing.Generic[T, T_co, _P]):
     name: str = field(Undefined, kw_only=False)  # type: ignore
-    default: Union[T, None, Undefined] = Undefined  # type: ignore
+    default: T | None | Undefined = Undefined  # type: ignore
 
     ROLE = 'keyword argument'
 
@@ -1053,8 +1053,8 @@ class MethodKeywordArgument(ParamAttr[T], typing.Generic[T, T_co, _P]):
 
     def __call__(
         self,
-        decorated: Union[_GetterType[T_co, _P], _SetterType[T_co, _P], THasParamAttrs],
-    ) -> Union[_GetterType[T_co, _P], _SetterType[T_co, _P], THasParamAttrs]:
+        decorated: _GetterType[T_co, _P] | _SetterType[T_co, _P] | THasParamAttrs,
+    ) -> _GetterType[T_co, _P] | _SetterType[T_co, _P] | THasParamAttrs:
         """decorate a method to apply type conversion and validation checks to one of its keyword arguments.
 
         These are applied to the keyword argument matching `self.name` immediately before each call to
@@ -1282,12 +1282,12 @@ class _MethodUnknownSignature(typing.Protocol[T]):
 
         @typing.overload
         @staticmethod
-        def __call__(new_value: Union[T, None], /, **kwargs) -> None:
+        def __call__(new_value: T | None, /, **kwargs) -> None:
             """set to `new_value` according to the scope defined by `kwargs`"""
 
         @typing.overload
         @staticmethod
-        def __call__(**kwargs) -> Union[T, None]:
+        def __call__(**kwargs) -> T | None:
             """get the parameter according to the scope specified by `kwargs`."""
 
 
@@ -1304,10 +1304,10 @@ class _MethodDescriptor:
     @util.hide_in_traceback
     def __call__(
         self,
-        new_value: Union[T, None, type[Undefined]] = Undefined,
+        new_value: T | None | type[Undefined] = Undefined,
         /,
         **kwargs,
-    ) -> Union[T, None, Undefined]:
+    ) -> T | None | Undefined:
         for name in self.method._kwargs.keys() & kwargs.keys():
             # apply keyword argument validation to incoming keyword arguments
             kwargs[name] = self.method._kwargs[name]._finalize_get_value(
@@ -1515,7 +1515,7 @@ class Property(OwnerAccessAttr[T]):
     @util.hide_in_traceback
     def __get__(
         self,
-        owner: typing.Union[HasParamAttrs, None],
+        owner: HasParamAttrs | None,
         owner_cls: type[HasParamAttrs],
     ) -> T:
         """Called by the class instance that owns this attribute to
@@ -1543,7 +1543,7 @@ class Property(OwnerAccessAttr[T]):
             return self.get_from_owner(owner)
 
     @util.hide_in_traceback
-    def __set__(self, owner: HasParamAttrs, value: Union[T, None]):
+    def __set__(self, owner: HasParamAttrs, value: T | None):
         self.set_in_owner(owner, value)
 
         if self.get_on_set:
@@ -1567,8 +1567,8 @@ def hold_attr_notifications(owner: HasParamAttrs):
 
 class HasParamAttrsInstInfo:
     handlers: dict[str, typing.Callable]
-    calibrations: dict[Union[None, str], Any]
-    cache: dict[Union[None, str], Any]
+    calibrations: dict[None | str, Any]
+    cache: dict[None | str, Any]
     methods: dict[str, _MethodDescriptor]
 
     __slots__ = 'handlers', 'calibrations', 'cache', 'methods'
@@ -1580,21 +1580,21 @@ class HasParamAttrsInstInfo:
         self.methods = {}
 
 
-def get_key_adapter(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> KeyAdapterBase:
+def get_key_adapter(obj: HasParamAttrs | type[HasParamAttrs]) -> KeyAdapterBase:
     return obj._attr_defs.key_adapter
 
 
-def list_value_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> list[str]:
+def list_value_attrs(obj: HasParamAttrs | type[HasParamAttrs]) -> list[str]:
     """returns a mapping of names of labbench value paramattrs defined in `obj`"""
     return get_owner_meta(obj).value_names()
 
 
-def list_method_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> list[str]:
+def list_method_attrs(obj: HasParamAttrs | type[HasParamAttrs]) -> list[str]:
     """returns a mapping of names of labbench method paramattrs defined in `obj`"""
     return get_owner_meta(obj).method_names()
 
 
-def list_property_attrs(obj: Union[HasParamAttrs, type[HasParamAttrs]]) -> list[str]:
+def list_property_attrs(obj: HasParamAttrs | type[HasParamAttrs]) -> list[str]:
     """returns a list of names of labbench property paramattrs defined in `obj`"""
     return get_owner_meta(obj).property_names()
 
@@ -1686,7 +1686,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
 
 
 def adjust(
-    paramattr: Union[ParamAttr, str], default_or_key: Any = Undefined, /, **kws
+    paramattr: ParamAttr | str, default_or_key: Any = Undefined, /, **kws
 ) -> typing.Callable[[type[THasParamAttrs]], type[THasParamAttrs]]:
     """decorates a Device subclass to adjust the definition of the specified ParamAttr.
 
@@ -2390,8 +2390,8 @@ class TransformedNumberMixIn(DependentNumberParamAttr):
 class BoundedNumber(ParamAttr[T]):
     """accepts numerical, str, or bytes values, following normal python casting procedures (with bounds checking)"""
 
-    min: Union[T, None] = None
-    max: Union[T, None] = None
+    min: T | None = None
+    max: T | None = None
 
     @util.hide_in_traceback
     def validate(self, value, owner=None):

@@ -1,4 +1,3 @@
-
 import contextlib
 import importlib
 import inspect
@@ -37,7 +36,7 @@ def shell_options_from_keyed_values(
     device: Device,
     skip_none=True,
     hide_false: bool = False,
-    join_str: Union[Literal[False], str] = False,
+    join_str: Literal[False] | str = False,
     remap: dict = {},
     converter: callable = str,
 ) -> list[str]:
@@ -247,7 +246,7 @@ class ShellBackend(Device):
         *argv: list[str],
         check_return: bool = False,
         raise_on_stderr: bool = False,
-        timeout: Union[float, None] = None,
+        timeout: float | None = None,
     ) -> None:
         """Blocking execution of the specified command line, with a pipe to collect
         stdout.

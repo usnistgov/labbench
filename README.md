@@ -1,10 +1,10 @@
 [![PyPI Latest Release](https://img.shields.io/pypi/v/labbench.svg)](https://pypi.org/project/labbench/)
-[![DOI](https://img.shields.io/badge/DOI-10.18434%2FM32122-purple
-)](https://doi.org/10.18434/M32122)
 [![License](https://img.shields.io/badge/license-NIST-blue)](https://github.com/usnistgov/labbench/blob/master/LICENSE.md)
-[![Downloads](https://static.pepy.tech/badge/labbench)](https://pepy.tech/project/labbench)
+[![DOI](https://img.shields.io/badge/DOI-10.18434%2FM32122-purple
 [![Last commit](https://img.shields.io/github/last-commit/usnistgov/labbench)](https://pypi.org/project/labbench/)
+)](https://doi.org/10.18434/M32122)
 [![Test coverage](./doc/reports/coverage.svg)](https://github.com/usnistgov/labbench/)
+[![Downloads](https://static.pepy.tech/badge/labbench)](https://pepy.tech/project/labbench)
 
 The `labbench` module provides API tools to support python scripting for laboratory automation.
 The goal is to simplify the process of developing an experimental procedure into clear, concise, explainable, and reusable code.

@@ -19,7 +19,7 @@ maintainers = [
     {name = "Dan Kuester", email = "daniel.kuester@nist.gov"},
 ]
 
-requires-python = ">=3.9,<3.15"
+requires-python = ">=3.12"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 

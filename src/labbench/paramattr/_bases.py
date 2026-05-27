@@ -1656,7 +1656,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
             kwargs=kwargs,
         )
 
-        for handler in self._attr_store.handlers.values():
+        for handler in list(self._attr_store.handlers.values()):
             handler(dict(msg))
 
         self._attr_store.cache[name] = value

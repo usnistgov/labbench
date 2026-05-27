@@ -1,4 +1,3 @@
-from __future__ import annotations
 import importlib.util
 from threading import Event, RLock, Thread, ThreadError
 import inspect  # noqa: E402

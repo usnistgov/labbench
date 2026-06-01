@@ -162,7 +162,7 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
 
         elif self.must_exist:
             return '* Path name must exist on the host'
-        
+
         else:
             return ''
 

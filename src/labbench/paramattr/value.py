@@ -6,6 +6,7 @@ from typing import Callable as _Callable, Protocol as _Protocol, Literal as _Lit
 from pathlib import Path as _Path
 from numbers import Number as _Number
 
+
 class any(Value, _types.Any):
     """defines a value attribute that validates any python object"""
 
@@ -55,19 +56,29 @@ class NetworkAddress(Value, _types.NetworkAddress):
 
 
 if _typing.TYPE_CHECKING:
-
     # trick type-checkers to interpret the value types as int.
     # this allows declarations of init functions as e.g.
     #    field: int = attr.value.int(default=42)
-    # with the downside that type checker introspection will miss 
+    # with the downside that type checker introspection will miss
     # the actual attributes of Value
     class _ValueProto[**P, V](_Protocol):
-        def __call__(self, default: V|None=None, kw_only: _builtins.bool = True, help: _builtins.str|None = None, *args: P.args, **kwargs: P.kwargs):
-            ...
+        def __call__(
+            self,
+            default: V | None = None,
+            kw_only: _builtins.bool = True,
+            help: _builtins.str | None = None,
+            *args: P.args,
+            **kwargs: P.kwargs,
+        ): ...
 
     class _ValuePathProto[**P, V](_Protocol):
-        def __call__(self, default: _Path|_builtins.str|None = None, kw_only: _builtins.bool = True, *args: P.args, **kwargs: P.kwargs):
-            ...
+        def __call__(
+            self,
+            default: _Path | _builtins.str | None = None,
+            kw_only: _builtins.bool = True,
+            *args: P.args,
+            **kwargs: P.kwargs,
+        ): ...
 
     def _hint_as[V, **P](
         stub: _Callable[P, _typing.Any], type: type[V]

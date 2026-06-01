@@ -47,5 +47,6 @@ class dict[**P](_bases.Method[dict], _types.Dict):
 class Path[**P](_bases.Method[_Path], _types.Path):
     pass
 
+
 class NetworkAddress[**P](_bases.Method[_typing.Any], _types.NetworkAddress):
     pass

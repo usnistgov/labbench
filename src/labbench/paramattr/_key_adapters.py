@@ -151,9 +151,7 @@ class message_keying(KeyAdapterBase):
             expected_kws = set(self.get_kwarg_names(key))
             missing_kws = tuple(expected_kws - set(kwargs.keys()))
 
-            raise TypeError(
-                f'positional arguments {missing_kws!r} are missing'
-            )
+            raise TypeError(f'positional arguments {missing_kws!r} are missing')
 
         value_msg = query_func(self.query_fmt.format(key=expanded_scpi_key)).rstrip()
         return self.from_message(value_msg)

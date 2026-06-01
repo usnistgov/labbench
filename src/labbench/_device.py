@@ -37,14 +37,14 @@ def find_device_instances(depth=1):
 
     f = frame = currentframe()
     for i in range(depth):
-        f = f.f_back # type: ignore
+        f = f.f_back  # type: ignore
     try:
-        ret = {k: v for k, v in list(f.frame.f_locals.items()) if isinstance(v, Device)} # type: ignore
+        ret = {k: v for k, v in list(f.frame.f_locals.items()) if isinstance(v, Device)}  # type: ignore
 
         # If the context is a function, look in its first argument,
         # in case it is a method. Search its class instance.
-        if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0: # type: ignore
-            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]] # type: ignore
+        if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0:  # type: ignore
+            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]]  # type: ignore
             for k, v in obj.__dict__.items():
                 if isinstance(v, Device):
                     ret[k] = v
@@ -171,7 +171,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 if isinstance(attr_def, attr.value.Value):
                     if attr_def.default is Undefined:
                         try:
-                            attr_desc = attr.__repr__(owner_inst=self) # type: ignore
+                            attr_desc = attr.__repr__(owner_inst=self)  # type: ignore
                         except TypeError:
                             # if the object isn't a proper object
                             attr_desc = attr.__repr__()
@@ -187,8 +187,8 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         # Instantiate property trait now. It needed to wait until after values are fully
         # instantiated to support paramattr implementation that depends on values
-        self.open = self.__open_wrapper__ # type: ignore
-        self.close = self.__close_wrapper__ # type: ignore
+        self.open = self.__open_wrapper__  # type: ignore
+        self.close = self.__close_wrapper__  # type: ignore
 
     @classmethod
     @util.hide_in_traceback

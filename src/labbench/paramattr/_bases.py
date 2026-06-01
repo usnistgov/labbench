@@ -6,12 +6,16 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
-
 from __future__ import annotations
 from docutils.parsers.rst.directives.misc import Class
 
 import builtins
-from dataclasses import field, Field, MISSING as Undefined, _MISSING_TYPE as UndefinedType
+from dataclasses import (
+    field,
+    Field,
+    MISSING as Undefined,
+    _MISSING_TYPE as UndefinedType,
+)
 import functools
 import inspect
 import numbers
@@ -80,7 +84,9 @@ def bound_valid_posargs(func: typing.Callable) -> tuple[int, int]:
 
         return lo, hi
     else:
-        raise TypeError('can only guess argument count for types.FunctionType instances')
+        raise TypeError(
+            'can only guess argument count for types.FunctionType instances'
+        )
 
 
 def name_arguments(func: typing.Callable) -> tuple[str]:
@@ -302,7 +308,7 @@ class KeyAdapterBase:
             'key adapter needs "get_key_arguments" to implement methods by "key" keyword'
         )
 
-    def method_signature[V,**P](
+    def method_signature[V, **P](
         self,
         owner_cls: type[HasParamAttrs],
         method: Method[V],
@@ -344,9 +350,9 @@ class KeyAdapterBase:
         func.__module__ = f'{owner_cls.__module__}'
         func.__qualname__ = f'{owner_cls.__qualname__}.{method.name}'
 
-        return func 
+        return func
 
-    def setter_factory[V,**P](
+    def setter_factory[V, **P](
         self,
         owner_cls: type[HasParamAttrs],
         method: Method[V],
@@ -503,7 +509,7 @@ class ParamAttr[V](metaclass=ParamAttrMeta):
     allow_none: bool = False
     log: bool = True
     inherit: bool = False
-    name: str|None = field(default=None, init=False, repr=False)
+    name: str | None = field(default=None, init=False, repr=False)
 
     _keywords = {}
     _defaults = {}
@@ -518,7 +524,9 @@ class ParamAttr[V](metaclass=ParamAttrMeta):
         public_names = {name for name in kws.keys() if not name.startswith('_')}
         defaults = set(self._defaults.keys())
 
-        field_names = set(self._defaults.keys()) | set(self._positional) - set(self._skip_init)
+        field_names = set(self._defaults.keys()) | set(self._positional) - set(
+            self._skip_init
+        )
         private_names = defaults - public_names
         unexpected = (public_names - field_names) | (  # "public" annotated names
             private_names - defaults
@@ -537,7 +545,6 @@ class ParamAttr[V](metaclass=ParamAttrMeta):
         # set value attributes
         for k, v in dict(self._defaults, **kws).items():
             setattr(self, k, v)
-            
 
     def copy(
         self, new_type: type[typing.Self] | None = None, default=Undefined, **update_kws
@@ -552,7 +559,7 @@ class ParamAttr[V](metaclass=ParamAttrMeta):
         return obj
 
     @classmethod
-    def __init_subclass__(cls, type: builtins.type|UndefinedType = Undefined):
+    def __init_subclass__(cls, type: builtins.type | UndefinedType = Undefined):
         """python triggers this call immediately after a ParamAttr subclass
             is defined, allowing us to automatically customize its implementation.
 
@@ -725,7 +732,6 @@ class ParamAttr[V](metaclass=ParamAttrMeta):
         except TypeError as ex:
             ex.add_note(f'instantiating attribute {self!r}')
             raise ex
-
 
     @util.hide_in_traceback
     def from_pythonic(self, value):
@@ -1005,14 +1011,12 @@ class Value[V](ParamAttr[V]):
 
 class MethodKwArg[V, T, **P](ParamAttr[V]):
     name: str = field(kw_only=False)
-    default: V | None | UndefinedType = Undefined  
+    default: V | None | UndefinedType = Undefined
 
     ROLE = 'keyword argument'
 
     # decorated keyword arguments not yet adopted by a Method
-    _decorated: typing.ClassVar[
-        dict[typing.Callable, dict[str, 'MethodKwArg']]
-    ] = {}
+    _decorated: typing.ClassVar[dict[typing.Callable, dict[str, 'MethodKwArg']]] = {}
 
     def __init_owner_subclass__(self, owner_cls: type[HasParamAttrs]):
         raise AttributeError(
@@ -1050,7 +1054,7 @@ class MethodKwArg[V, T, **P](ParamAttr[V]):
             )
 
         if isinstance(decorated, (HasParamAttrs, type(HasParamAttrs))):
-            get_owner_meta(decorated).broadcast_kwargs[self.name] = self # ty: ignore
+            get_owner_meta(decorated).broadcast_kwargs[self.name] = self  # ty: ignore
             decorated.__init_subclass__()
         elif isinstance(decorated, Method):
             raise TypeError('decorate keyword arguments after methods')
@@ -1225,9 +1229,7 @@ class _GetterType[T, **P](typing.Protocol):
         __name__: typing.ClassVar[str]
 
         @staticmethod
-        def __call__(
-            owner: HasParamAttrs, *args: P.args, **kwargs: P.kwargs
-        ) -> T: ...
+        def __call__(owner: HasParamAttrs, *args: P.args, **kwargs: P.kwargs) -> T: ...
 
 
 class _SetterType[T, **P](typing.Protocol):
@@ -1285,7 +1287,7 @@ class _MethodDescriptor[V, **P]:
 class Method[V](OwnerAccessAttr[V]):
     # this structure seems to trick some type checkers into honoring the @overloads in
     # _MethodMeta
-    key: str|None = field(default=None, kw_only=False)
+    key: str | None = field(default=None, kw_only=False)
     """when set, this defines the method implementation based on a key adapter in the owner"""
 
     get_on_set: bool = False
@@ -1317,7 +1319,7 @@ class Method[V](OwnerAccessAttr[V]):
     @typing.overload
     def __get__(
         self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs] | None
-    ) -> _InstanceMethod[V,Any]: ...
+    ) -> _InstanceMethod[V, Any]: ...
 
     @typing.overload
     def __get__(
@@ -1326,7 +1328,7 @@ class Method[V](OwnerAccessAttr[V]):
 
     def __get__(
         self, owner: HasParamAttrs | None, owner_cls: type[HasParamAttrs] | None = None
-    ) -> _MethodDescriptor[V,Any] | typing.Self:
+    ) -> _MethodDescriptor[V, Any] | typing.Self:
         if owner is None:
             # __init_owner_instance__ has not yet been called
             return self
@@ -1358,9 +1360,7 @@ class Method[V](OwnerAccessAttr[V]):
                 self.setter(key_adapter.setter_factory(owner_cls, self))
 
     @util.hide_in_traceback
-    def getter[**P2](
-        self, func: _GetterType[V, P2]
-    ) -> _InstanceMethod[V, P2]:
+    def getter[**P2](self, func: _GetterType[V, P2]) -> _InstanceMethod[V, P2]:
         super().getter(func)
 
         # apply any new keyword arguments
@@ -1380,9 +1380,7 @@ class Method[V](OwnerAccessAttr[V]):
         return self
 
     @util.hide_in_traceback
-    def setter[**P](
-        self, func: _SetterType[V, P]
-    ) -> _InstanceMethod[V, P]:
+    def setter[**P](self, func: _SetterType[V, P]) -> _InstanceMethod[V, P]:
         super().setter(func)
 
         # apply new keyword arguments
@@ -1457,11 +1455,10 @@ class Method[V](OwnerAccessAttr[V]):
 
 
 class _DecoratedMethod[V, **P](Method[V]):
-
     @typing.overload
     def __get__(
         self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs] | None
-    ) -> _InstanceMethod[V,P]: ...
+    ) -> _InstanceMethod[V, P]: ...
 
     @typing.overload
     def __get__(
@@ -1470,9 +1467,8 @@ class _DecoratedMethod[V, **P](Method[V]):
 
     def __get__(
         self, owner: HasParamAttrs | None, owner_cls: type[HasParamAttrs] | None = None
-    ) -> _MethodDescriptor[V,P] | typing.Self:
+    ) -> _MethodDescriptor[V, P] | typing.Self:
         return super().__get__(owner, owner_cls)
-
 
 
 class _InstanceMethod[V, **P](typing.Protocol):
@@ -1485,10 +1481,8 @@ class _InstanceMethod[V, **P](typing.Protocol):
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
 
 
-
-
 class Property[V](OwnerAccessAttr[V]):
-    key: str|None = field(default=None, kw_only=False)
+    key: str | None = field(default=None, kw_only=False)
     """when set, this defines the property implementation based on a key adapter in the owner"""
 
     get_on_set: bool = False
@@ -1508,7 +1502,7 @@ class Property[V](OwnerAccessAttr[V]):
         self,
         owner: HasParamAttrs | None,
         owner_cls: type[HasParamAttrs],
-    ) -> V|typing.Self:
+    ) -> V | typing.Self:
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -1858,7 +1852,7 @@ class DependentParamAttr[V](ParamAttr[V]):
         none_names = [
             f'{owner}.{attr.name}'
             for attr in self._cal_deps.values()
-            if getattr(owner, attr.name) is None # ty: ignore
+            if getattr(owner, attr.name) is None  # ty: ignore
         ]
 
         if len(none_names) == 1:
@@ -2101,9 +2095,7 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
             )
         else:
             # execute the set
-            self._cal_deps['base'].set_in_owner(
-                owner, uncal_value, kwargs
-            )
+            self._cal_deps['base'].set_in_owner(owner, uncal_value, kwargs)
 
         if getattr(self, 'name', None) is not None:
             owner.__notify__(
@@ -2117,9 +2109,9 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
 class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
     _CAL_TABLE_KEY = 'table'
 
-    path_attr: ParamAttr = field() # a dependent Unicode ParamAttr
-    index_lookup_attr: 'BoundedNumber' = field() # a dependent ParamAttr
-    table_index_column: str|None = None
+    path_attr: ParamAttr = field()  # a dependent Unicode ParamAttr
+    index_lookup_attr: 'BoundedNumber' = field()  # a dependent ParamAttr
+    table_index_column: str | None = None
 
     def __init_owner_instance__(self, owner):
         super().__init_owner_instance__(owner)
@@ -2188,7 +2180,7 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
             cal = pd.read_csv(str(path), index_col=self.table_index_column, dtype=float)
 
             cal.columns = cal.columns.astype(float)
-            
+
             if self.index_lookup_attr.max in cal.index:
                 cal.drop(self.index_lookup_attr.max, axis=0, inplace=True)
             #    self._cal_offset.values[:] = self._cal_offset.values-self._cal_offset.columns.values[np.newaxis,:]
@@ -2215,7 +2207,6 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
         table = owner._attr_store.calibrations.get(self.name, {}).get(
             self._CAL_TABLE_KEY, None
         )
-
 
         if table is None:
             assert self.path_attr.name is not None
@@ -2306,12 +2297,11 @@ class TransformedNumberMixIn[V](DependentNumberParamAttr[V]):
         base_bounds = base_attr.derived_min(owner), base_attr.derived_max(owner)
 
         other_attr = self._cal_deps.get('other', None)
-        
 
         if other_attr is None:
             trial_bounds = [
-                self._forward(base_bounds[0]), # ty: ignore
-                self._forward(base_bounds[1]), # ty: ignore
+                self._forward(base_bounds[0]),  # ty: ignore
+                self._forward(base_bounds[1]),  # ty: ignore
             ]
         else:
             assert other_attr.name is not None
@@ -2348,9 +2338,7 @@ class TransformedNumberMixIn[V](DependentNumberParamAttr[V]):
         base_value = self._cal_deps['base'].get_from_owner(owner, kwargs)
 
         if 'other' in self._cal_deps:
-            other_value = self._cal_deps['other'].get_from_owner(
-                owner, kwargs
-            )
+            other_value = self._cal_deps['other'].get_from_owner(owner, kwargs)
             ret = self._forward(base_value, other_value)
         else:
             ret = base_value
@@ -2443,9 +2431,9 @@ class BoundedNumber[V](ParamAttr[V]):
         path_attr: ParamAttr,
         index_lookup_attr: ParamAttr,
         *,
-        table_index_column: str|None = None,
+        table_index_column: str | None = None,
         help='',
-        label: str|UndefinedType=Undefined,
+        label: str | UndefinedType = Undefined,
         allow_none=False,
     ):
         """generate a new ParamAttr with value dependent on another attribute. their configuration
@@ -2476,7 +2464,7 @@ class BoundedNumber[V](ParamAttr[V]):
         self,
         attr_expression: ParamAttr,
         help: str = '',
-        label: str|UndefinedType = Undefined,
+        label: str | UndefinedType = Undefined,
         allow_none: bool = False,
     ):
         """create a read-only dependent attribute defined in terms of arithmetic operations on other ParamAttr
@@ -2527,7 +2515,7 @@ class BoundedNumber[V](ParamAttr[V]):
 
     def transform(
         self,
-        other_attr: ParamAttr|None,
+        other_attr: ParamAttr | None,
         forward: typing.Callable,
         reverse: typing.Callable,
         help: str = '',
@@ -2568,7 +2556,11 @@ class BoundedNumber[V](ParamAttr[V]):
             return None if None in (x, y) else x - y
 
         return self.transform(
-            other, add_fwd, add_rev, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+            other,
+            add_fwd,
+            add_rev,
+            allow_none=self.allow_none,
+            help=f'({self.help}) + {other}',
         )
 
     __radd__ = __add__
@@ -2581,7 +2573,11 @@ class BoundedNumber[V](ParamAttr[V]):
             return None if None in (x, y) else x + y
 
         return self.transform(
-            other, sub_fwd, sub_rev, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+            other,
+            sub_fwd,
+            sub_rev,
+            allow_none=self.allow_none,
+            help=f'({self.help}) + {other}',
         )
 
     def __rsub__(self, other):
@@ -2592,7 +2588,11 @@ class BoundedNumber[V](ParamAttr[V]):
             return None if None in (x, y) else y - x
 
         return self.transform(
-            other, rsub_fwd, rsub_rev, allow_none=self.allow_none, help=f'({self.help}) + {other}'
+            other,
+            rsub_fwd,
+            rsub_rev,
+            allow_none=self.allow_none,
+            help=f'({self.help}) + {other}',
         )
 
     def __mul__(self, other):

@@ -124,13 +124,11 @@ class StoreTestDevice(Device):
     resource: str = attr.value.str(None, kw_only=False, help='address')
 
     def open(self):
-        self.backend: TestStore  = TestStore()
+        self.backend: TestStore = TestStore()
         attr.observe(self, self.backend.notification_handler)
 
     @classmethod
-    def get_paramattr_arguments(
-        cls, attr_name
-    ) -> list[attr.method_kwarg.MethodKwArg]:
+    def get_paramattr_arguments(cls, attr_name) -> list[attr.method_kwarg.MethodKwArg]:
         attr = getattr(cls, attr_name)
         return attr.get_key_arguments(cls)
 

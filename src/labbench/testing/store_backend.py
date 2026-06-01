@@ -92,7 +92,7 @@ class TestStore:
         self.notifications = []
 
     def get_store_key(self, attr_def: attr.ParamAttr) -> str:
-        if isinstance(attr_def, attr.value.Value) or attr_def.key is Undefined:
+        if isinstance(attr_def, attr.value.Value) or attr_def.key is None:
             return attr_def.name
         elif isinstance(attr_def.key, str):
             return attr_def.key
@@ -124,13 +124,13 @@ class StoreTestDevice(Device):
     resource: str = attr.value.str(None, kw_only=False, help='address')
 
     def open(self):
-        self.backend = TestStore()
+        self.backend: TestStore  = TestStore()
         attr.observe(self, self.backend.notification_handler)
 
     @classmethod
     def get_paramattr_arguments(
         cls, attr_name
-    ) -> list[attr.method_kwarg.MethodKeywordArgument]:
+    ) -> list[attr.method_kwarg.MethodKwArg]:
         attr = getattr(cls, attr_name)
         return attr.get_key_arguments(cls)
 
@@ -143,7 +143,7 @@ class StoreTestDevice(Device):
         return cls._attr_defs.method_names()
 
     @classmethod
-    def get_property_names(cls) -> list[str]:
+    def get_property_names(cls) -> set[str]:
         return set(cls._attr_defs.method_names()) - set(dir(Device))
 
 

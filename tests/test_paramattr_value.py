@@ -72,7 +72,7 @@ class AdjustedTestDevice(StoreTestDevice):
 
 class RequiredParametersTestDevice(lb.Device):
     required_str: str = attr.value.str(cache=True)
-    required_str_allow_none: str = attr.value.str(cache=True, allow_none=True)
+    required_str_allow_none: str|None = attr.value.str(cache=True, allow_none=True)
 
 
 def change_case(s: str):
@@ -261,8 +261,8 @@ def test_adjusted_constructor():
         number: int = attr.value.int(default=NEW_DEFAULT, inherit=True)
 
     #
-    assert Parent.number.default == OLD_DEFAULT
-    assert Child.number.default == NEW_DEFAULT
+    assert Parent.number.default == OLD_DEFAULT # type: ignore
+    assert Child.number.default == NEW_DEFAULT # type: ignore
 
     # check Device signature
     params = inspect.signature(Child).parameters
@@ -287,8 +287,8 @@ def test_adjusted_constructor_posarg():
         number: int = attr.value.int(NEW_DEFAULT, inherit=True)
 
     #
-    assert Parent.number.default == OLD_DEFAULT
-    assert Child.number.default == NEW_DEFAULT
+    assert Parent.number.default == OLD_DEFAULT # type: ignore
+    assert Child.number.default == NEW_DEFAULT # type: ignore
 
     # check Device signature
     params = inspect.signature(Child).parameters
@@ -323,7 +323,7 @@ def test_inherited_defaults():
     class Child(Parent):
         number: int = attr.value.int(1, inherit=True)
 
-    assert Child.number.help == HELP_MSG
+    assert Child.number.help == HELP_MSG # type: ignore
 
 
 def test_only(opened_device):

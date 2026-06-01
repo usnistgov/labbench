@@ -10,7 +10,7 @@ from labbench.paramattr._bases import (
     Any,
     Method,
     ParamAttr,
-    T,
+    V,
     Undefined,
     get_class_attrs,
     list_value_attrs,
@@ -168,7 +168,7 @@ def update_stubs(path, mod_name, sub_name):
         elif issubclass(cls, (ParamAttr, Rack)):
 
             def transform_annot(cls, a):
-                if a is T:
+                if a is V:
                     return cls._type
                 else:
                     return a

@@ -37,14 +37,14 @@ def find_device_instances(depth=1):
 
     f = frame = currentframe()
     for i in range(depth):
-        f = f.f_back
+        f = f.f_back # type: ignore
     try:
-        ret = {k: v for k, v in list(f.frame.f_locals.items()) if isinstance(v, Device)}
+        ret = {k: v for k, v in list(f.frame.f_locals.items()) if isinstance(v, Device)} # type: ignore
 
         # If the context is a function, look in its first argument,
         # in case it is a method. Search its class instance.
-        if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0:
-            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]]
+        if len(ret) == 0 and len(f.frame.f_code.co_varnames) > 0: # type: ignore
+            obj = f.frame.f_locals[f.frame.f_code.co_varnames[0]] # type: ignore
             for k, v in obj.__dict__.items():
                 if isinstance(v, Device):
                     ret[k] = v
@@ -116,7 +116,7 @@ def log_paramattr_events(msg):
         device._logger.debug(f'unknown operation type "{msg["type"]}"')
 
 
-def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
+def attr_def_to_parameter(attr_def: attr._bases.Value) -> inspect.Parameter:
     """build a signature.Parameter from a ParamAttr.value"""
     if attr_def.only and sys.version_info >= (3, 11):
         # Union[*attr_def.only] is sooo close
@@ -125,17 +125,24 @@ def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
         annotation = attr_def._type
 
     if attr_def.allow_none:
-        annotation = typing.Union[annotation, None]
+        annotation = annotation | None
 
     if attr_def.kw_only:
         kind = inspect.Parameter.KEYWORD_ONLY
     else:
         kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
 
+    if attr_def.default is attr.Undefined:
+        default = inspect.Parameter.empty
+    else:
+        default = attr_def.default
+
+    assert attr_def.name is not None
+
     return inspect.Parameter(
         attr_def.name,
         kind=kind,
-        default=attr_def.default,
+        default=default,
         annotation=annotation,
     )
 
@@ -146,9 +153,6 @@ def attr_def_to_parameter(attr_def: attr.ParamAttr) -> inspect.Parameter:
     field_specifiers=attr.value._ALL_TYPES,
 )
 class DeviceDataClass(HasParamAttrs, util.Ownable):
-    @typing.overload
-    def __init__(self, *args, **values): ...
-
     def __init__(self, *args, **kwargs):
         """Update default values with these arguments on instantiation."""
 
@@ -167,7 +171,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
                 if isinstance(attr_def, attr.value.Value):
                     if attr_def.default is Undefined:
                         try:
-                            attr_desc = attr.__repr__(owner_inst=self)
+                            attr_desc = attr.__repr__(owner_inst=self) # type: ignore
                         except TypeError:
                             # if the object isn't a proper object
                             attr_desc = attr.__repr__()
@@ -183,8 +187,8 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         # Instantiate property trait now. It needed to wait until after values are fully
         # instantiated to support paramattr implementation that depends on values
-        self.open = self.__open_wrapper__
-        self.close = self.__close_wrapper__
+        self.open = self.__open_wrapper__ # type: ignore
+        self.close = self.__close_wrapper__ # type: ignore
 
     @classmethod
     @util.hide_in_traceback

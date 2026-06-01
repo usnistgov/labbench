@@ -3,7 +3,7 @@ import string
 from typing import Any, Union
 from numbers import Number
 
-from ._bases import HasParamAttrs, KeyAdapterBase, ParamAttr, T, BoundedNumber
+from ._bases import HasParamAttrs, KeyAdapterBase, ParamAttr, BoundedNumber
 from ._types import Bool
 
 
@@ -120,13 +120,13 @@ class message_keying(KeyAdapterBase):
 
         return self.value_map[value]
 
-    def get(
+    def get[V](
         self,
         owner: HasParamAttrs,
         key: str,
-        attr: ParamAttr[T] | None = None,
+        attr: ParamAttr[V] | None = None,
         kwargs: dict[str, Any] = {},
-    ) -> T:
+    ) -> V:
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
         The command message string is formatted as f'{scpi_key}?'.
@@ -149,20 +149,21 @@ class message_keying(KeyAdapterBase):
             expanded_scpi_key = key.format(**kwargs)
         except KeyError:
             expected_kws = set(self.get_kwarg_names(key))
-            missing_kws = expected_kws - set(kwargs.keys())
+            missing_kws = tuple(expected_kws - set(kwargs.keys()))
+
             raise TypeError(
-                f'{attr._owned_name(owner)}() missing required positional argument(s) {str(missing_kws)[1:-1]}'
+                f'positional arguments {missing_kws!r} are missing'
             )
 
         value_msg = query_func(self.query_fmt.format(key=expanded_scpi_key)).rstrip()
         return self.from_message(value_msg)
 
-    def set(
+    def set[V](
         self,
         owner: HasParamAttrs,
         key: str,
-        value: T,
-        attr: ParamAttr[T] | None = None,
+        value: V,
+        attr: ParamAttr[V] | None = None,
         kwargs: dict[str, Any] = {},
     ):
         """writes an SCPI message to set a parameter with a name key
@@ -181,7 +182,8 @@ class message_keying(KeyAdapterBase):
             raise ValueError('write_fmt needs to be set for key set operations')
         if self.write_func is None:
             raise ValueError('write_func needs to be set for key set operations')
-
+        if attr is None:
+            raise AssertionError('attr is None')
         value_msg = self.to_message(value, attr)
         expanded_scpi_key = key.format(**kwargs)
         write_func = getattr(owner, self.write_func)

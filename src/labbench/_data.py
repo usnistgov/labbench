@@ -1010,7 +1010,7 @@ class ParamAttrLogger(
 
     def __init__(
         self,
-        path: Path,
+        path: str|Path,
         *,
         append: bool = False,
         text_relational_min: int = 1024,

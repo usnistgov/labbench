@@ -47,7 +47,7 @@ class Float(_bases.BoundedNumber[float], type=float):
         self, skip: list[str] = ['help', 'label'], as_argument: bool = False
     ) -> str:
         if as_argument:
-            return None
+            return ''
 
         else:
             # for text docs: allow subclasses to document their own params
@@ -71,7 +71,7 @@ class Bool(_bases.ParamAttr[bool], type=bool):
     # because this becomes confusing with evaluating boolean trueness
 
 
-class String(_bases.ParamAttr):
+class String[V](_bases.ParamAttr[V]):
     """base class for string types, which adds support for case sensitivity arguments"""
 
     case: bool = True
@@ -97,7 +97,7 @@ class String(_bases.ParamAttr):
         self, skip: list[str] = ['help', 'label'], as_argument: bool = False
     ) -> str:
         if as_argument:
-            return None
+            return ''
 
         else:
             # for text docs: allow subclasses to document their own params
@@ -158,12 +158,13 @@ class Path(_bases.ParamAttr[_Path], type=_Path):
         self, skip: list[str] = ['help', 'label'], as_argument: bool = False
     ) -> str:
         if as_argument:
-            return None
+            return ''
 
+        elif self.must_exist:
+            return '* Path name must exist on the host'
+        
         else:
-            # for text docs: allow subclasses to document their own params
-            if self.must_exist:
-                return '* Path name must exist on the host'
+            return ''
 
 
 class NetworkAddress(Unicode):
@@ -175,7 +176,7 @@ class NetworkAddress(Unicode):
     def validate(self, value, owner=None):
         """roughly IDN-compatible address (not URL) validator"""
 
-        def any_valid(s: str, validators: list[callable]):
+        def any_valid(s: str, validators: typing.Iterable[typing.Callable]):
             for validator in validators:
                 if validator(s):
                     return True

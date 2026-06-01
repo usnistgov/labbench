@@ -168,7 +168,7 @@ class MethodDevice(store_backend.StoreTestDevice):
     )
 
     output_power = attenuation_setting.corrected_from_expression(
-        -attenuation + output_power_offset,
+        (-attenuation) + output_power_offset,
         help='calibrated output power level',
         label='dBm',
     )
@@ -206,22 +206,24 @@ def test_method_set_through_table(method_device):
         method_device.attenuation(112)
 
 
-def test_method_get_with_offset(method_device):
+def test_method_get_with_offset(method_device: MethodDevice):
     for attenuation in (1, 11, 111):
         method_device.attenuation(attenuation)
         output_power = method_device.output_power()
-        assert (
-            output_power == method_device.output_power_offset - attenuation
-        ), f'output power {output_power} dBm when attenuation was set to {attenuation} dB'
+        max_power = method_device.output_power_offset
+        expect = max_power - attenuation
+        desc = f'output_power {output_power} dBm (expected {expect} dBm) for attenuation={attenuation} dB, offset={max_power} dB'
+        assert (output_power == expect), desc
 
 
 def test_method_set_with_offset(method_device):
     for output_power in (9, -1, -101.0):
         method_device.output_power(output_power)
         attenuation = method_device.attenuation()
-        assert (
-            output_power == method_device.output_power_offset - attenuation
-        ), f'output power {output_power} dBm when attenuation was set to {attenuation} dB'
+        max_power = method_device.output_power_offset
+        result = max_power - attenuation
+        desc = f'output_power {result} dBm (set {output_power} dBm) for attenuation={attenuation} dB, offset={max_power} dB'
+        assert (output_power == result), desc
 
     with pytest.raises(ValueError):
         method_device.output_power(10)

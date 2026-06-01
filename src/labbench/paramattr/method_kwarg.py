@@ -1,50 +1,50 @@
 from . import _types
-from ._bases import MethodKeywordArgument
+from ._bases import MethodKwArg
 
 
-class any(MethodKeywordArgument, _types.Any):
+class any(MethodKwArg, _types.Any):
     pass
 
 
-class bool(MethodKeywordArgument, _types.Bool):
+class bool(MethodKwArg, _types.Bool):
     pass
 
 
-class float(MethodKeywordArgument, _types.Float):
+class float(MethodKwArg, _types.Float):
     pass
 
 
-class int(MethodKeywordArgument, _types.Int):
+class int(MethodKwArg, _types.Int):
     pass
 
 
-class complex(MethodKeywordArgument, _types.Complex):
+class complex(MethodKwArg, _types.Complex):
     pass
 
 
-class str(MethodKeywordArgument, _types.Unicode):
+class str(MethodKwArg, _types.Unicode):
     pass
 
 
-class bytes(MethodKeywordArgument, _types.Bytes):
+class bytes(MethodKwArg, _types.Bytes):
     pass
 
 
-class list(MethodKeywordArgument, _types.List):
+class list(MethodKwArg, _types.List):
     pass
 
 
-class tuple(MethodKeywordArgument, _types.Tuple):
+class tuple(MethodKwArg, _types.Tuple):
     pass
 
 
-class dict(MethodKeywordArgument, _types.Dict):
+class dict(MethodKwArg, _types.Dict):
     pass
 
 
-class Path(MethodKeywordArgument, _types.Path):
+class Path(MethodKwArg, _types.Path):
     pass
 
 
-class NetworkAddress(MethodKeywordArgument, _types.NetworkAddress):
+class NetworkAddress(MethodKwArg, _types.NetworkAddress):
     pass

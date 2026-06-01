@@ -125,6 +125,7 @@ def test_cache(opened_device: StoreTestDevice):
         result['set_count'] == 1
     ), f"cache test - first 'set' operation count (got {result['set_count']})"
 
+    opened_device.int_keyed_get_on_set
     result = eval_set_then_get(opened_device, 'str_cached', set_then_get)
     assert (
         result['get_count'] == 0

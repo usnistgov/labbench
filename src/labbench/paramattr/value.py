@@ -1,8 +1,7 @@
 from . import _types, _bases
 from ._bases import Value
 import builtins as _builtins
-import typing as _typing
-from typing import Callable as _Callable, Protocol as _Protocol, Literal as _Literal
+import typing_extensions as _typing
 from pathlib import Path as _Path
 from numbers import Number as _Number
 
@@ -61,68 +60,62 @@ if _typing.TYPE_CHECKING:
     #    field: int = attr.value.int(default=42)
     # with the downside that type checker introspection will miss
     # the actual attributes of Value
-    class _ValueProto[**P, V](_Protocol):
+    from typing import Callable as _Callable, Protocol as _Protocol, Literal as _Literal
+
+    _V1 = _typing.TypeVar('_V1')
+    _V2 = _typing.TypeVar('_V2')
+    _P = _typing.ParamSpec('_P')
+
+    class _ValueProto(_Protocol):
         def __call__(
             self,
-            default: V | None = None,
+            default: _V1 | None = None,
             kw_only: _builtins.bool = True,
             help: _builtins.str | None = None,
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ): ...
+            init: _builtins.bool = True,
+            *args: _P.args,
+            **kwargs: _P.kwargs,
+        ) -> _typing.Any: ...
 
-    class _ValuePathProto[**P, V](_Protocol):
-        def __call__(
-            self,
-            default: _Path | _builtins.str | None = None,
-            kw_only: _builtins.bool = True,
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ): ...
+    def _hint1(
+        stub: _Callable[_P, _typing.Any], t1: type[_V1]
+    ) -> _Callable[[_Callable], _ValueProto[_P, _V1]]: ...
 
-    def _hint_as[V, **P](
-        stub: _Callable[P, _typing.Any], type: type[V]
-    ) -> _Callable[[_Callable], _ValueProto[P, V]]:
-        """fill in type hints for the analysis parameters"""
-        return lambda f: f
+    def _hint2(
+        stub: _Callable[_P, _typing.Any], t1: type[_V1], t2: type[_V2]
+    ) -> _Callable[[_Callable], _ValueProto[_P, _V1 | _V2]]: ...
 
-    def _hint_as_path[V, **P](
-        stub: _Callable[P, _typing.Any], type: type[V]
-    ) -> _Callable[[_Callable], _ValuePathProto[P, V]]:
-        """fill in type hints for the analysis parameters"""
-        return lambda f: f
-
-    @_hint_as(_types.Bool, _builtins.bool)
+    @_hint1(_types.Bool, _builtins.bool)
     def bool(*args, **kws): ...
 
-    @_hint_as(_types.Int, _builtins.int)
+    @_hint1(_types.Int, _builtins.int)
     def int(*args, **kws): ...
 
-    @_hint_as(_types.Float, _builtins.float)
+    @_hint1(_types.Float, _builtins.float)
     def float(*args, **kws): ...
 
-    @_hint_as(_types.Complex, _builtins.complex)
+    @_hint1(_types.Complex, _builtins.complex)
     def complex(*args, **kws): ...
 
-    @_hint_as(_types.Unicode, _builtins.str)
+    @_hint1(_types.Unicode, _builtins.str)
     def str(*args, **kws): ...
 
-    @_hint_as(_types.Bytes, _builtins.bytes)
+    @_hint1(_types.Bytes, _builtins.bytes)
     def bytes(*args, **kws): ...
 
-    @_hint_as(_types.List, _typing.Sequence)
+    @_hint1(_types.List, _typing.Sequence)
     def list(*args, **kws): ...
 
-    @_hint_as(_types.Tuple, _typing.Sequence)
+    @_hint1(_types.Tuple, _typing.Sequence)
     def tuple(*args, **kws): ...
 
-    @_hint_as(_types.Dict, _typing.Mapping)
+    @_hint1(_types.Dict, _typing.Mapping)
     def dict(*args, **kws): ...
 
-    @_hint_as_path(_types.Path, _Path)
+    @_hint2(_types.Path, _Path, _builtins.str)
     def Path(*args, **kws): ...
 
-    @_hint_as(_types.NetworkAddress, _builtins.str)
+    @_hint1(_types.NetworkAddress, _builtins.str)
     def NetworkAddress(*args, **kws): ...
 
 
@@ -131,14 +124,14 @@ _ALL_TYPES = (
     Value,
     any,
     bool,
+    bytes,
+    complex,
+    dict,
     float,
     int,
-    complex,
-    str,
-    bytes,
     list,
-    tuple,
-    dict,
     Path,
+    str,
+    tuple,
     NetworkAddress,
 )

@@ -161,6 +161,7 @@ target-version = "py312"
 extend-include = ["*.ipynb"]
 
 [tool.ruff.format]
+preview = true
 quote-style = "single"
 line-ending = "lf"
 docstring-code-format = true

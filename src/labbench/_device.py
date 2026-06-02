@@ -236,12 +236,10 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
         cls.__init__.__signature__ = inspect.Signature(params)
 
         # generate the __init__ docstring
-        value_docs = ''.join(
-            [
-                f'    {t.name}: {t.doc(as_argument=True)}\n'
-                for t in (non_kw_only_attrs + kw_only_attrs)
-            ]
-        )
+        value_docs = ''.join([
+            f'    {t.name}: {t.doc(as_argument=True)}\n'
+            for t in (non_kw_only_attrs + kw_only_attrs)
+        ])
         cls.__init__.__doc__ = f'\nArguments:\n{value_docs}'
 
 

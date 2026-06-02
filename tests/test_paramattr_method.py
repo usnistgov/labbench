@@ -6,7 +6,7 @@ from labbench import paramattr as attr
 from labbench.testing import store_backend
 
 
-@attr.method_kwarg.int('registered_channel', min=1, max=4)
+@attr.method_kwarg.int('channel', min=1, max=4)
 @store_backend.key_adapter(
     defaults={'str_or_none': None, 'str_cached': 'cached string'}
 )
@@ -27,12 +27,12 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     int_keyed_unbounded = attr.method.int(key='int_keyed_unbounded')
 
     @attr.method.int(min=0, sets=False)
-    def int_decorated_low_bound_getonly(self):
+    def int_decorated_low_bound_getonly(self, *, channel=1):
         ret = self.backend.get('int_decorated_low_bound_getonly', 0)
         return ret
 
     @attr.method.int(min=10, gets=False).setter
-    def int_decorated_low_bound_setonly(self, new_value=lb.Undefined, *, channel=1):
+    def int_decorated_low_bound_setonly(self, /, new_value: int, *, channel=1):
         self.backend.set('int_decorated_high_bound_setonly', new_value)
 
     # test "get_on_set" keyword
@@ -56,7 +56,6 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     str_or_none = attr.method.str(key='str_or_none', allow_none=True)
     str_cached = attr.method.str(key='str_cached', cache=True)
     any = attr.method.any(key='any', allow_none=True)
-
 
 def set_param(device, attr_name, value, arguments={}):
     param_method = getattr(device, attr_name)
@@ -175,6 +174,7 @@ def test_disabled_get(opened_device: StoreTestDevice):
 def test_disabled_set(opened_device: StoreTestDevice):
     # the decorated function does not include a new_value, so we don't test it
     opened_device.int_decorated_low_bound_getonly()
+    opened_device.int_decorated_low_bound_setonly
 
 
 def test_keyed_argument_bounds():

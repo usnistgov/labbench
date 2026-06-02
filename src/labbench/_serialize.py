@@ -206,12 +206,10 @@ def _map_method_defaults(rack_cls):
         import ruamel_yaml
 
     params, _ = _search_method_parameters(rack_cls)
-    cm = ruamel_yaml.comments.CommentedMap(
-        {
-            k: (None if param.default is EMPTY else param.default)
-            for k, param in params.items()
-        }
-    )
+    cm = ruamel_yaml.comments.CommentedMap({
+        k: (None if param.default is EMPTY else param.default)
+        for k, param in params.items()
+    })
 
     for i, k in enumerate(list(cm.keys())[::-1]):
         if params[k].default is EMPTY:
@@ -291,17 +289,15 @@ def dump_rack(
     output_path.mkdir(exist_ok=exist_ok, parents=True)
 
     with open(output_path / RACK_CONFIG_FILENAME, 'w') as stream:
-        cm = ruamel_yaml.comments.CommentedMap(
-            {
-                _FIELD_SOURCE: dict(
-                    import_string=str(sourcepath),
-                    class_name=None if cls.__name__ == '_as_rack' else cls.__name__,
-                    python_path=str(pythonpath),
-                ),
-                _FIELD_KEYWORD_DEFAULTS: _map_method_defaults(rack),
-                _FIELD_DEVICES: _map_devices(cls),
-            }
-        )
+        cm = ruamel_yaml.comments.CommentedMap({
+            _FIELD_SOURCE: dict(
+                import_string=str(sourcepath),
+                class_name=None if cls.__name__ == '_as_rack' else cls.__name__,
+                python_path=str(pythonpath),
+            ),
+            _FIELD_KEYWORD_DEFAULTS: _map_method_defaults(rack),
+            _FIELD_DEVICES: _map_devices(cls),
+        })
 
         cm.yaml_set_comment_before_after_key(
             _FIELD_SOURCE,

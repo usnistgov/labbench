@@ -1,5 +1,5 @@
 from . import _bases, _types
-from ._bases import Method, _InstanceMethod
+from ._bases import Method, _GetterMethod
 from pathlib import Path as _Path
 import typing as _typing
 
@@ -24,27 +24,27 @@ class complex(Method[complex], _types.Complex):
     pass
 
 
-class str[**P](Method[str], _types.Unicode):
+class str(Method[str], _types.Unicode):
     pass
 
 
-class bytes[**P](Method[bytes], _types.Bytes):
+class bytes(Method[bytes], _types.Bytes):
     pass
 
 
-class list[**P](_bases.Method[list], _types.List):
+class list(_bases.Method[list], _types.List):
     pass
 
 
-class tuple[**P](_bases.Method[list], _types.Tuple):
+class tuple(_bases.Method[list], _types.Tuple):
     pass
 
 
-class dict[**P](_bases.Method[dict], _types.Dict):
+class dict(_bases.Method[dict], _types.Dict):
     pass
 
 
-class Path[**P](_bases.Method[_Path], _types.Path):
+class Path(_bases.Method[_Path], _types.Path):
     pass
 
 

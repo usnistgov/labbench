@@ -1673,9 +1673,10 @@ def read(
     from pyarrow import feather
 
     try:
-        reader_guess.update(
-            {'f': feather.read_feather, 'feather': feather.read_feather}
-        )
+        reader_guess.update({
+            'f': feather.read_feather,
+            'feather': feather.read_feather,
+        })
     except BaseException:
         warnings.warn(
             'feather format is not available in this pandas installation, and will not be supported in labbench'

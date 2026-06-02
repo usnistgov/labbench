@@ -121,7 +121,7 @@ class TestStore:
 
 @key_adapter()
 class StoreTestDevice(Device):
-    resource: str = attr.value.str(None, kw_only=False, help='address')
+    resource: str | None = attr.value.str(None, kw_only=False, help='address')
 
     def open(self):
         self.backend: TestStore = TestStore()

@@ -140,7 +140,7 @@ class MethodDevice(store_backend.StoreTestDevice):
         label='dBm',
     )
 
-    calibration_path: float = attr.value.Path(
+    calibration_path: str = attr.value.Path(
         default=CAL_PATH,
         allow_none=True,
         must_exist=True,
@@ -166,6 +166,9 @@ class MethodDevice(store_backend.StoreTestDevice):
         table_index_column='Frequency(Hz)',
         help='calibrated attenuation',
     )
+
+    a = -attenuation
+    b = a + output_power_offset
 
     output_power = attenuation_setting.corrected_from_expression(
         (-attenuation) + output_power_offset,

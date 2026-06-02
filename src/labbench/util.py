@@ -51,7 +51,7 @@ __all__ = [  # "misc"
 TRACEBACK_HIDE_TAG = '🦙 hide from traceback 🦙'
 
 
-def hide_in_traceback(func: _Tfunc) -> _Tfunc:
+def hide_in_traceback[T: Callable](func: T) -> T:
     """decorates a method or function to hide it from tracebacks.
 
     The intent is to remove clutter in the middle of deep stacks in object call stacks.
@@ -65,7 +65,7 @@ def hide_in_traceback(func: _Tfunc) -> _Tfunc:
         Callable[P, T]: _description_
     """
 
-    def adjust(f: _Tfunc) -> None:
+    def adjust(f) -> None:
         code_obj = f.__code__
         f.__code__ = f.__code__.replace(
             co_consts=code_obj.co_consts + (TRACEBACK_HIDE_TAG,)
@@ -374,9 +374,6 @@ class ThreadEndedByMaster(ThreadError):
 concurrency_count = 0
 stop_request_event = Event()
 
-_T = TypeVar('_T')
-_Tfunc = Callable[..., typing.Any]
-
 
 class _ContextManagerType(typing.Protocol):
     def __enter__(self):
@@ -460,9 +457,9 @@ if not isinstance(sys.excepthook, excepthook):
     sys.excepthook = excepthook()
 
 
-def copy_func(
-    func: _T,
-    assigned: tuple[str] = (
+def copy_func[T: types.FunctionType](
+    func: T,
+    assigned: tuple[str, ...] = (
         '__module__',
         '__name__',
         '__qualname__',
@@ -470,7 +467,7 @@ def copy_func(
         '__annotations__',
     ),
     updated: tuple[str] = ('__dict__',),
-) -> _T:
+) -> T:
     """returns a copy of func with specified attributes (following the inspect.wraps arguments).
 
     This is similar to wrapping `func` with `lambda *args, **kws: func(*args, **kws)`, except
@@ -524,7 +521,7 @@ def check_hanging_thread():
 
 
 @hide_in_traceback
-def retry(
+def retry[T: Callable](
     exception_or_exceptions: BaseException | typing.Iterable[BaseException],
     tries: int = 4,
     *,
@@ -532,7 +529,7 @@ def retry(
     backoff: float = 0,
     exception_func=lambda *args, **kws: None,
     log: bool = True,
-) -> callable[_Tfunc, _Tfunc]:
+) -> Callable[[T], T]:
     """calls to the decorated function are repeated, suppressing specified exception(s), until a
     maximum number of retries has been attempted.
 
@@ -603,13 +600,13 @@ def retry(
 
 
 @hide_in_traceback
-def until_timeout(
+def until_timeout[T: Callable](
     exception_or_exceptions: BaseException | typing.Iterable[BaseException],
     timeout: float,
     delay: float = 0,
     backoff: float = 0,
     exception_func: callable = lambda: None,
-) -> callable[_Tfunc, _Tfunc]:
+) -> Callable[[T], T]:
     """calls to the decorated function are repeated, suppressing specified exception(s), until the
     specified timeout period has expired.
 
@@ -1638,7 +1635,7 @@ class ttl_cache:
         self.call_timestamp = None
         self.last_value = {}
 
-    def __call__(self, func: _Tfunc) -> _Tfunc:
+    def __call__[T: Callable](self, func: T) -> T:
         @wraps(func)
         @hide_in_traceback
         def wrapper_decorator(*args, **kws):
@@ -1660,7 +1657,7 @@ class ttl_cache:
         return wrapper_decorator
 
 
-def accessed_attributes(method: _Tfunc) -> tuple[str]:
+def accessed_attributes(method: Callable) -> tuple[str]:
     """enumerate the attributes of the parent class accessed by `method`
 
     :method: callable that is a method or defined in a class

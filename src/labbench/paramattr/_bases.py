@@ -103,18 +103,18 @@ def name_arguments(func: typing.Callable) -> tuple[str]:
 def default_arguments(func: types.FunctionType | typing.Callable) -> tuple[str, ...]:
     sig = getattr(func, '__signature__', None)
     if sig is not None:
-        return tuple(
-            [p.default for p in sig.parameters.values() if p.default is not p.empty]
-        )
+        return tuple([
+            p.default for p in sig.parameters.values() if p.default is not p.empty
+        ])
     elif isinstance(func, types.FunctionType):
         arg_defaults = tuple(func.__defaults__ or ())
         kw_defaults = tuple((func.__kwdefaults__ or {}).keys() or ())
         return arg_defaults + kw_defaults
     else:
         sig = func.__signature__ = inspect.signature(func)  # type: ignore
-        return tuple(
-            [p.default for p in sig.parameters.values() if p.default is not p.empty]
-        )
+        return tuple([
+            p.default for p in sig.parameters.values() if p.default is not p.empty
+        ])
 
 
 def build_method_signature[V, **P](
@@ -334,11 +334,11 @@ class KeyAdapterBase:
 
         return ret
 
-    def getter_factory[V, **P2](
+    def getter_factory[V, **P](
         self,
         owner_cls: type[HasParamAttrs],
         method: Method[V],
-    ) -> _GetterType[V, Any]:
+    ) -> _Getter[V, Any]:
         """return a getter function implemented with method.key"""
 
         def func(owner: HasParamAttrs, /, **kwargs) -> V:
@@ -356,7 +356,7 @@ class KeyAdapterBase:
         self,
         owner_cls: type[HasParamAttrs],
         method: Method[V],
-    ) -> _SetterType[V, Any]:
+    ) -> _Setter[V, Any]:
         """return a getter function implemented with method.key"""
 
         def func(owner: HasParamAttrs, new_value: V, /, **kwargs):
@@ -920,6 +920,7 @@ class Value[V](ParamAttr[V]):
     key: str | None = None
     allow_none: bool | None = None
     kw_only: bool = True
+    init: bool = True
 
     ROLE = 'value'
 
@@ -941,17 +942,17 @@ class Value[V](ParamAttr[V]):
             raise TypeError('cannot set default=None with allow_none=True')
 
     @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> V: ...
+    def __get__(self, owner: None, owner_cls: Any) -> Value[V]: ...
 
     @typing.overload
-    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self: ...
+    def __get__(self, owner: HasParamAttrs, owner_cls: Any) -> V: ...
 
     @util.hide_in_traceback
     def __get__(
         self,
-        owner: None | HasParamAttrs,
-        owner_cls: HasParamAttrs,
-    ) -> V:
+        owner: HasParamAttrs | None,
+        owner_cls: type[HasParamAttrs],
+    ) -> Any:
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -967,12 +968,12 @@ class Value[V](ParamAttr[V]):
         # shouldn't get in their way.
         if owner is None:  # or not isinstance(owner, HasParamAttrs):
             # escape an infinite recursion loop before accessing any class members
-            return self  # type: ignore
+            return self
 
         cls_getter = owner_cls.__dict__.get(self.name, None)  # type: ignore
         objclass_getter = self.__objclass__.__dict__.get(self.name)  # type: ignore
         if cls_getter is not objclass_getter:
-            return self  # type: ignore
+            return self
         else:
             return self.get_from_owner(owner)
 
@@ -1030,18 +1031,18 @@ class MethodKwArg[V, T, **P](ParamAttr[V]):
         return self.__repr__()
 
     @typing.overload
-    def __call__(self, decorated: _GetterType[T, P]) -> _GetterType[T, P]: ...
+    def __call__(self, decorated: _Getter[T, P]) -> _Getter[T, P]: ...
 
     @typing.overload
-    def __call__(self, decorated: _SetterType[T, P]) -> _SetterType[T, P]: ...
+    def __call__(self, decorated: _Setter[T, P]) -> _Setter[T, P]: ...
 
     @typing.overload
     def __call__(self, decorated: THasParamAttrs) -> THasParamAttrs: ...
 
     def __call__(
         self,
-        decorated: _GetterType[T, P] | _SetterType[T, P] | THasParamAttrs,
-    ) -> _GetterType[T, P] | _SetterType[T, P] | THasParamAttrs:
+        decorated: _Getter[T, P] | _Setter[T, P] | THasParamAttrs,
+    ) -> _Getter[T, P] | _Setter[T, P] | THasParamAttrs:
         """decorate a method to apply type conversion and validation checks to one of its keyword arguments.
 
         These are applied to the keyword argument matching `self.name` immediately before each call to
@@ -1171,7 +1172,7 @@ class OwnerAccessAttr[V](ParamAttr[V]):
         owner.__notify__(self.name, value, 'set', cache=self.cache, kwargs=kwargs)
 
     @util.hide_in_traceback
-    def getter(self, func: _GetterType[V, Any]) -> typing.Self:
+    def getter(self, func):
         """decorate a getter method to implement behavior in the owner"""
 
         # validate signature
@@ -1195,7 +1196,7 @@ class OwnerAccessAttr[V](ParamAttr[V]):
         return self
 
     @util.hide_in_traceback
-    def setter(self, func: _SetterType[V, Any]) -> typing.Self:
+    def setter(self, func):
         """decorate a setter method to implement behavior in the owner"""
 
         # validate signature
@@ -1222,30 +1223,32 @@ class OwnerAccessAttr[V](ParamAttr[V]):
     __call__ = getter
 
 
-class _GetterType[T, **P](typing.Protocol):
+class _Getter[T, **P](typing.Protocol):
     """call signature protocol for *decorated* methods of Method descriptors"""
 
-    if typing.TYPE_CHECKING:
-        __name__: typing.ClassVar[str]
+    __name__: typing.ClassVar[str]
 
-        @staticmethod
-        def __call__(owner: HasParamAttrs, *args: P.args, **kwargs: P.kwargs) -> T: ...
+    def __call__(
+        _,
+        self: Any,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> T: ...
 
 
-class _SetterType[T, **P](typing.Protocol):
+class _Setter[T, **P](typing.Protocol):
     """call signature protocol for *decorated* methods of Method descriptors"""
 
-    if typing.TYPE_CHECKING:
-        __name__: typing.ClassVar[str]
+    __name__: typing.ClassVar[str]
 
-        @staticmethod
-        def __call__(
-            owner: HasParamAttrs,
-            /,
-            new_value: T,
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ) -> None: ...
+    def __call__(
+        _,
+        self: Any,
+        /,
+        new_value: T,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> None: ...
 
 
 class _MethodDescriptor[V, **P]:
@@ -1257,6 +1260,12 @@ class _MethodDescriptor[V, **P]:
         self.__signature__ = build_method_signature(
             type(owner), method, method.get_kwarg_names()
         )
+
+    @typing.overload
+    def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...
+
+    @typing.overload
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
 
     @util.hide_in_traceback
     def __call__(
@@ -1282,6 +1291,40 @@ class _MethodDescriptor[V, **P]:
             value = self.method.get_from_owner(self.owner, kwargs)
 
         return value
+
+
+class _GetterMethod[V, **P](typing.Protocol):
+    # call signature for type hinting decorated Method descriptors
+
+    def __call__(self: Any, *args: P.args, **kwargs: P.kwargs) -> V: ...
+
+    def setter(self, func: _Setter[V, P]) -> _GetterSetterMethod[V, P]: ...
+
+    def getter(self, func: _Getter[V, P]) -> _GetterMethod[V, P]: ...
+
+
+class _SetterMethod[V, **P](typing.Protocol):
+    # call signature for type hinting decorated Method descriptors
+
+    def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...
+
+    def setter(self, func: _Setter[V, P]) -> _SetterMethod[V, P]: ...
+
+    def getter(self, func: _Getter[V, P]) -> _GetterSetterMethod[V, P]: ...
+
+
+class _GetterSetterMethod[V, **P](typing.Protocol):
+    # call signature for type hinting decorated Method descriptors
+
+    @typing.overload
+    def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...
+
+    @typing.overload
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
+
+    def setter(self, func: _Setter[V, P]) -> _GetterSetterMethod[V, P]: ...
+
+    def getter(self, func: _Getter[V, P]) -> _GetterSetterMethod[V, P]: ...
 
 
 class Method[V](OwnerAccessAttr[V]):
@@ -1319,7 +1362,7 @@ class Method[V](OwnerAccessAttr[V]):
     @typing.overload
     def __get__(
         self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs] | None
-    ) -> _InstanceMethod[V, Any]: ...
+    ) -> _MethodDescriptor[V, Any]: ...
 
     @typing.overload
     def __get__(
@@ -1360,7 +1403,7 @@ class Method[V](OwnerAccessAttr[V]):
                 self.setter(key_adapter.setter_factory(owner_cls, self))
 
     @util.hide_in_traceback
-    def getter[**P2](self, func: _GetterType[V, P2]) -> _InstanceMethod[V, P2]:
+    def getter[**P](self, func: _Getter[V, P]) -> _GetterMethod[V, P]:
         super().getter(func)
 
         # apply any new keyword arguments
@@ -1377,10 +1420,10 @@ class Method[V](OwnerAccessAttr[V]):
         if self._setter is not None:
             self._validate_paired_signatures()
 
-        return self
+        return typing.cast(_GetterMethod[V, P], self)
 
     @util.hide_in_traceback
-    def setter[**P](self, func: _SetterType[V, P]) -> _InstanceMethod[V, P]:
+    def setter[**P](self, func: _Setter[V, P]) -> _SetterMethod[V, P]:
         super().setter(func)
 
         # apply new keyword arguments
@@ -1396,7 +1439,7 @@ class Method[V](OwnerAccessAttr[V]):
         if self._getter is not None:
             self._validate_paired_signatures()
 
-        return self
+        return typing.cast(_SetterMethod[V, P], self)
 
     __call__ = getter
 
@@ -1454,33 +1497,6 @@ class Method[V](OwnerAccessAttr[V]):
             raise TypeError('setter and getter default arguments must match')
 
 
-class _DecoratedMethod[V, **P](Method[V]):
-    @typing.overload
-    def __get__(
-        self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs] | None
-    ) -> _InstanceMethod[V, P]: ...
-
-    @typing.overload
-    def __get__(
-        self, owner: None, owner_cls: type[HasParamAttrs] | None
-    ) -> typing.Self: ...
-
-    def __get__(
-        self, owner: HasParamAttrs | None, owner_cls: type[HasParamAttrs] | None = None
-    ) -> _MethodDescriptor[V, P] | typing.Self:
-        return super().__get__(owner, owner_cls)
-
-
-class _InstanceMethod[V, **P](typing.Protocol):
-    # call signature for type hinting decorated Method descriptors
-
-    @typing.overload
-    def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...
-
-    @typing.overload
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
-
-
 class Property[V](OwnerAccessAttr[V]):
     key: str | None = field(default=None, kw_only=False)
     """when set, this defines the property implementation based on a key adapter in the owner"""
@@ -1492,17 +1508,17 @@ class Property[V](OwnerAccessAttr[V]):
     ROLE = 'property'
 
     @typing.overload
-    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> V: ...
+    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> Property[V]: ...
 
     @typing.overload
-    def __get__(self, owner: None, owner_cls: type[HasParamAttrs]) -> typing.Self: ...
+    def __get__(self, owner: HasParamAttrs, owner_cls: type[HasParamAttrs]) -> V: ...
 
     @util.hide_in_traceback
     def __get__(
         self,
-        owner: HasParamAttrs | None,
-        owner_cls: type[HasParamAttrs],
-    ) -> V | typing.Self:
+        owner: None | HasParamAttrs,
+        owner_cls: Any,
+    ) -> Property[V] | V:
         """Called by the class instance that owns this attribute to
         retreive its value. This, in turn, decides whether to call a wrapped
         decorator function or the owner's property adapter method to retrieve
@@ -1534,8 +1550,15 @@ class Property[V](OwnerAccessAttr[V]):
         if self.get_on_set:
             self.__get__(owner, type(owner))
 
-    def __call__(self, func: _SetterType[V, Any]) -> typing.Self:
-        return self.getter(func)
+    @util.hide_in_traceback
+    def getter(self, func: typing.Callable[[Any], V]) -> typing.Self:
+        return super().getter(func)
+
+    @util.hide_in_traceback
+    def setter(self, func: typing.Callable[[Any, V], None]) -> typing.Self:
+        return super().setter(func)
+
+    __call__ = getter
 
 
 @contextmanager
@@ -1545,9 +1568,9 @@ def hold_attr_notifications(owner: HasParamAttrs):
         # msg = dict(new=value, old=old, owner=owner, name=name, type=type, cache=cache)
         owner._attr_store.cache[name] = value
 
-    original, owner.__notify__ = owner.__notify__, skip_notify
+    original, owner.__notify__ = owner.__notify__, skip_notify  # type: ignore
     yield
-    owner.__notify__ = original
+    owner.__notify__ = original  # type: ignore
 
 
 class HasParamAttrsInstInfo:
@@ -1604,7 +1627,7 @@ class HasParamAttrs(metaclass=HasParamAttrsMeta):
                 if isinstance(attr_def, (Method, Property)) and callable(obj):
                     # if it's a method, decorate it.
                     # TODO: check if this is really necessary
-                    attr_defs[name] = attr_def(obj)
+                    attr_defs[name] = attr_def(obj)  # type: ignore
                 else:
                     # if not decorating, clear from the attrs dict, and emit a warning at runtime
                     thisclsname = cls.__qualname__
@@ -1865,7 +1888,7 @@ class DependentParamAttr[V](ParamAttr[V]):
             )
 
     @classmethod
-    def derive(
+    def derive[T: ParamAttr](
         mixin_cls: type[ParamAttr],
         template_attr: ParamAttr,
         dependent_attrs={},
@@ -2072,22 +2095,20 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
         return ret
 
     @util.hide_in_traceback
-    def set_in_owner(
-        self, owner: HasParamAttrs, cal_value, kwargs: dict[str, Any] = {}
-    ):
+    def set_in_owner(self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}):
         # owner_cal = owner._attr_store.calibrations.get(self.name, self.EMPTY_STORE)
         self._validate_attr_dependencies(owner, False, 'set')
-        self._prepare_set_value(owner, cal_value, kwargs)
+        self._prepare_set_value(owner, value, kwargs)
 
         # start with type conversion and validation on the requested calibrated value
-        cal_value = self._cal_deps['base'].to_pythonic(cal_value)
+        value = self._cal_deps['base'].to_pythonic(value)
 
         # lookup the uncalibrated value that results in the nearest calibrated result
-        uncal_value = self.find_uncal(cal_value, owner)
+        uncal_value = self.find_uncal(value, owner)
         base = self._cal_deps['base']
 
         if uncal_value is None:
-            base.set_in_owner(owner, cal_value, kwargs)
+            base.set_in_owner(owner, value, kwargs)
         elif uncal_value != base.validate(uncal_value, owner):
             # raise an exception if the calibration table contains invalid values instead
             raise ValueError(
@@ -2100,7 +2121,7 @@ class RemappedBoundedNumberMixIn(DependentNumberParamAttr):
         if getattr(self, 'name', None) is not None:
             owner.__notify__(
                 self.name,
-                cal_value,
+                value,
                 'set',
                 cache=self.cache or isinstance(self, Value),
             )
@@ -2185,9 +2206,9 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
                 cal.drop(self.index_lookup_attr.max, axis=0, inplace=True)
             #    self._cal_offset.values[:] = self._cal_offset.values-self._cal_offset.columns.values[np.newaxis,:]
 
-            owner._attr_store.calibrations.setdefault(self.name, {}).update(
-                {self._CAL_TABLE_KEY: cal}
-            )
+            owner._attr_store.calibrations.setdefault(self.name, {}).update({
+                self._CAL_TABLE_KEY: cal
+            })
 
             owner._logger.debug(f'calibration data read from "{path}"')
 
@@ -2245,11 +2266,9 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
         return super().get_from_owner(owner, kwargs)
 
     @util.hide_in_traceback
-    def set_in_owner(
-        self, owner: HasParamAttrs, cal_value, kwargs: dict[str, Any] = {}
-    ):
+    def set_in_owner(self, owner: HasParamAttrs, value, kwargs: dict[str, Any] = {}):
         self._touch_table(owner)
-        super().set_in_owner(owner, cal_value, kwargs)
+        super().set_in_owner(owner, value, kwargs)
 
     def doc_params(
         self, skip: list[str] = ['help', 'label'], as_argument: bool = False
@@ -2435,7 +2454,7 @@ class BoundedNumber[V](ParamAttr[V]):
         help='',
         label: str | UndefinedType = Undefined,
         allow_none=False,
-    ):
+    ) -> typing.Self:
         """generate a new ParamAttr with value dependent on another attribute. their configuration
         comes from a attribute in the owner.
 
@@ -2458,15 +2477,15 @@ class BoundedNumber[V](ParamAttr[V]):
             **kws,
         )
 
-        return ret
+        return typing.cast(typing.Self, ret)
 
-    def corrected_from_expression(
+    def corrected_from_expression[T: ParamAttr](
         self,
-        attr_expression: ParamAttr,
+        attr_expression: T,
         help: str = '',
         label: str | UndefinedType = Undefined,
         allow_none: bool = False,
-    ):
+    ) -> T:
         """create a read-only dependent attribute defined in terms of arithmetic operations on other ParamAttr
         instances.
 
@@ -2513,14 +2532,14 @@ class BoundedNumber[V](ParamAttr[V]):
             attr_expression, help=help, label=label, allow_none=allow_none
         )
 
-    def transform(
+    def transform[T: ParamAttr](
         self,
-        other_attr: ParamAttr | None,
+        other_attr: T,
         forward: typing.Callable,
         reverse: typing.Callable,
         help: str = '',
         allow_none: bool = False,
-    ):
+    ) -> typing.Self:
         """generate a new attribute subclass that adjusts values in other attributes.
 
         Arguments:
@@ -2538,9 +2557,9 @@ class BoundedNumber[V](ParamAttr[V]):
             _reverse=reverse,
         )
 
-        return obj
+        return typing.cast(typing.Self, obj)
 
-    def __neg__(self):
+    def __neg__(self) -> typing.Self:
         def neg(x, y=None):
             return None if x is None else -x
 
@@ -2548,7 +2567,7 @@ class BoundedNumber[V](ParamAttr[V]):
             self, neg, neg, allow_none=self.allow_none, help=f'-1*({self.help})'
         )
 
-    def __add__(self, other):
+    def __add__(self, other: ParamAttr) -> typing.Self:
         def add_fwd(x, y):
             return None if None in (x, y) else x + y
 
@@ -2565,7 +2584,7 @@ class BoundedNumber[V](ParamAttr[V]):
 
     __radd__ = __add__
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> typing.Self:
         def sub_fwd(x, y):
             return None if None in (x, y) else x - y
 
@@ -2580,7 +2599,7 @@ class BoundedNumber[V](ParamAttr[V]):
             help=f'({self.help}) + {other}',
         )
 
-    def __rsub__(self, other):
+    def __rsub__(self, other) -> typing.Self:
         def rsub_rev(x, y):
             return None if None in (x, y) else y + x
 
@@ -2595,7 +2614,7 @@ class BoundedNumber[V](ParamAttr[V]):
             help=f'({self.help}) + {other}',
         )
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> typing.Self:
         def mul(x, y):
             return None if None in (x, y) else x * y
 
@@ -2608,7 +2627,7 @@ class BoundedNumber[V](ParamAttr[V]):
 
     __rmul__ = __mul__
 
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> typing.Self:
         def mul(x, y):
             return None if None in (x, y) else x * y
 
@@ -2619,7 +2638,7 @@ class BoundedNumber[V](ParamAttr[V]):
             other, div, mul, allow_none=self.allow_none, help=f'({self.help}) + {other}'
         )
 
-    def __rdiv__(self, other):
+    def __rdiv__(self, other) -> typing.Self:
         def mul(x, y):
             return None if None in (x, y) else y * x
 

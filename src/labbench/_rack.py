@@ -195,9 +195,9 @@ class MethodTaggerDataclass:
     pending = {}
 
     def __call__(self, func):
-        self.pending.setdefault(func, {}).update(
-            {n: getattr(self, n) for n in self.__annotations__}
-        )
+        self.pending.setdefault(func, {}).update({
+            n: getattr(self, n) for n in self.__annotations__
+        })
 
         return func
 
@@ -782,9 +782,9 @@ def package_owned_contexts(top):
         seq['_devices'] = devices
     seq.update(owners)
 
-    desc = '->'.join(
-        [d for d in (firsts_desc, devices_desc, owners_desc) if len(d) > 0]
-    )
+    desc = '->'.join([
+        d for d in (firsts_desc, devices_desc, owners_desc) if len(d) > 0
+    ])
 
     log.debug(f'context order: {desc}')
     return util.sequentially(name=f'{top!r}', **seq) or null_context(top)

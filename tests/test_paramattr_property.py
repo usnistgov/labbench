@@ -4,6 +4,7 @@ from paramattr_tooling import eval_set_then_get, loop_closed_loop_set_gets
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing import store_backend
+from typing import Any, Callable, overload
 
 
 @store_backend.key_adapter(
@@ -24,14 +25,13 @@ class StoreTestDevice(store_backend.StoreTestDevice):
     bool_keyed = attr.property.bool(key='bool_keyed')
     int_keyed_unbounded = attr.property.int(key='int_keyed_unbounded')
 
-    int_decorated_low_bound_getonly = attr.property.int(min=0, sets=False)
-
-    @int_decorated_low_bound_getonly.getter
-    def _(self):
+    @attr.property.int(min=0, sets=False).getter
+    def int_decorated_low_bound_getonly(self) -> int:
+        return 5
         return self.backend.setdefault('int_decorated_low_bound_getonly', 0)
 
     @attr.property.int(min=10, gets=False).setter
-    def int_decorated_low_bound_setonly(self, set_value=lb.Undefined):
+    def int_decorated_low_bound_setonly(self, set_value: int):
         self.backend['int_decorated_high_bound_setonly'] = set_value
 
     str_or_none = attr.property.str(key='str_or_none', allow_none=True)

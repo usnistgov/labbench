@@ -326,13 +326,13 @@ class Host(core.Device):
     def __python_module_versions(self):
         """Enumerate the versions of installed python modules"""
 
-        versions = dict(
-            [str(d).lower().split(' ') for d in pip.get_installed_distributions()]
-        )
+        versions = dict([
+            str(d).lower().split(' ') for d in pip.get_installed_distributions()
+        ])
         running = dict(
-            sorted(
-                [(k, versions[k.lower()]) for k in sys.modules.keys() if k in versions]
-            )
+            sorted([
+                (k, versions[k.lower()]) for k in sys.modules.keys() if k in versions
+            ])
         )
         return pd.Series(running).sort_index()
 

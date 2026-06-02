@@ -1155,13 +1155,11 @@ class VISADevice(Device):
                     'treating resource as a serial number (pyvisa does not recognize it as a VISA name)'
                 )
             # match the supplied (make, model) and/or treat self.resource as a serial number to match
-            search_desc = ', '.join(
-                [
-                    f'{name} {getattr(self, name)!r}'
-                    for name in ('make', 'model', 'resource')
-                    if getattr(self, name)
-                ]
-            ).replace('resource', 'serial number')
+            search_desc = ', '.join([
+                f'{name} {getattr(self, name)!r}'
+                for name in ('make', 'model', 'resource')
+                if getattr(self, name)
+            ]).replace('resource', 'serial number')
 
             matches = visa_probe_devices(self)
 

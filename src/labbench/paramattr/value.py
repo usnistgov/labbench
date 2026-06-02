@@ -1,7 +1,7 @@
 from . import _types, _bases
 from ._bases import Value
 import builtins as _builtins
-import typing_extensions as _typing
+import typing as _typing
 from pathlib import Path as _Path
 from numbers import Number as _Number
 

@@ -6,7 +6,7 @@ import time
 from copy import deepcopy
 from functools import wraps
 
-import typing_extensions as typing
+import typing
 
 from . import _device as core
 from . import util as util

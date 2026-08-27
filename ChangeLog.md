@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Support python 3.13 and 3.14
 - Bump minimum supported python version to 3.12
-
+- Fix a mis-applied timeout bug in VISA query
 
 ## [0.45.0]
 ### Changed

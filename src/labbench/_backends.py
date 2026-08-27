@@ -1280,7 +1280,7 @@ class VISADevice(Device):
         self._logger.debug(f'query({msg_out}):')
 
         if timeout is None and self.backend.timeout < 1_000_000:
-            timeout = self.backend.timeout
+            timeout = self.backend.timeout / 1000
 
         with visa_timeout_context(self.backend, timeout):
             t0 = time.perf_counter()

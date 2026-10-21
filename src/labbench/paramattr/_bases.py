@@ -7,7 +7,6 @@ the objects in an interpreter instead of reverse-engineering this code.
 """
 
 from __future__ import annotations
-from docutils.parsers.rst.directives.misc import Class
 
 import builtins
 from dataclasses import (

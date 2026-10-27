@@ -1,0 +1,71 @@
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# python files
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+parts/
+sdist/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+__pycache__/
+*.py[codz]
+*$py.class
+
+# PyInstaller
+#   Usually these files are written by a python script from a template
+#   before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
+cover/
+tests/sensor/sweeps/outputs
+doc/html
+uv.lock
+pixi.lock
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# virtual environments
+.venv
+.pixi/envs
+.pixi/cache
+.python-version
+
+# AI/IDEs
+.claude/
+.cospec/
+.vscode

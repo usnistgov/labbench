@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 import labbench as lb
@@ -11,7 +13,8 @@ class Shell_Python(lb.ShellBackend):
 
     # @attr.kwargs_to_self('script_path', 'command')
     def __call__(self, **kwargs):
-        argv = ['python']
+        # use the running interpreter; a bare 'python' may not exist on PATH
+        argv = [sys.executable]
         if self.script_path is not None:
             argv += [self.script_path]
         argv += lb.shell_options_from_keyed_values(self)

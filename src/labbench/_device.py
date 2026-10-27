@@ -71,6 +71,10 @@ class DisconnectedBackend:
 
     @util.hide_in_traceback
     def __getattr__(self, key):
+        if key.startswith('__') and key.endswith('__'):
+            # introspection tools (inspect, copy, pickle, sphinx autodoc, etc.)
+            # probe for dunder attributes and expect AttributeError when absent
+            raise AttributeError(key)
         msg = f'open {self.name} first to access its backend'
         raise ConnectionError(msg)
 

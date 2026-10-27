@@ -1,17 +1,30 @@
 Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
     executenb(
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 1314, in execute
+    ~~~~~~~~~^
+        nb,
+        ^^^
+    ...<4 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 1323, in execute
     return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
     return loop.run_until_complete(inner)
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 642, in run_until_complete
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/dkuester/.local/share/uv/python/cpython-3.14.3-macos-aarch64-none/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
     return future.result()
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 709, in async_execute
+           ~~~~~~~~~~~~~^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 709, in async_execute
     await self.async_execute_cell(
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+        cell, index, execution_count=self.code_cells_executed + 1
+    )
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 1062, in async_execute_cell
     await self._check_raise_for_error(cell, cell_index, exec_reply)
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
@@ -21,21 +34,21 @@ with PowerSensor() as sensor:
 ------------------
 
 
-[0;31m---------------------------------------------------------------------------[0m
-[0;31mConnectionError[0m                           Traceback (most recent call last)
-Cell [0;32mIn[2], line 1[0m
-[0;32m----> 1[0m [38;5;28;01mwith[39;00m PowerSensor() [38;5;28;01mas[39;00m sensor:
-[1;32m      2[0m     sensor[38;5;241m.[39mfrequency([38;5;241m6e9[39m)
-[1;32m      3[0m     data [38;5;241m=[39m sensor[38;5;241m.[39mfetch()
+[31m---------------------------------------------------------------------------[39m
+[31mConnectionError[39m                           Traceback (most recent call last)
+[36mCell[39m[36m [39m[32mIn[2][39m[32m, line 1[39m
+[32m----> [39m[32m1[39m [38;5;28;01mwith[39;00m PowerSensor() [38;5;28;01mas[39;00m sensor:
+[32m      2[39m     sensor.frequency([32m6e9[39m)
+[32m      3[39m     data = sensor.fetch()
 
-File [0;32m~/Documents/src/labbench/src/labbench/_backends.py:1143[0m, in [0;36mVISADevice.open[0;34m(self)[0m
-[1;32m   1141[0m         [38;5;28;01mraise[39;00m [38;5;167;01mOSError[39;00m(msg)
-[1;32m   1142[0m [38;5;28;01melse[39;00m:
-[0;32m-> 1143[0m     [38;5;28;01mraise[39;00m [38;5;167;01mConnectionError[39;00m(
-[1;32m   1144[0m         [38;5;124mf[39m[38;5;124m'[39m[38;5;124mmust specify a pyvisa resource name, an instrument serial number, or define [39m[38;5;132;01m{[39;00m[38;5;28mtype[39m([38;5;28mself[39m)[38;5;132;01m!r}[39;00m[38;5;124m with default make and model[39m[38;5;124m'[39m
-[1;32m   1145[0m     )
-[1;32m   1147[0m [38;5;28;01mif[39;00m [38;5;28mself[39m[38;5;241m.[39mtimeout [38;5;129;01mis[39;00m [38;5;129;01mnot[39;00m [38;5;28;01mNone[39;00m:
-[1;32m   1148[0m     kwargs[[38;5;124m'[39m[38;5;124mtimeout[39m[38;5;124m'[39m] [38;5;241m=[39m [38;5;28mint[39m([38;5;28mself[39m[38;5;241m.[39mtimeout [38;5;241m*[39m [38;5;241m1000[39m)
+[36mFile [39m[32m~/Documents/src/labbench/src/labbench/_backends.py:1183[39m, in [36mVISADevice.open[39m[34m(self)[39m
+[32m   1181[39m         [38;5;28;01mraise[39;00m [38;5;167;01mOSError[39;00m(msg)
+[32m   1182[39m [38;5;28;01melse[39;00m:
+[32m-> [39m[32m1183[39m     [38;5;28;01mraise[39;00m [38;5;167;01mConnectionError[39;00m(
+[32m   1184[39m         [33mf[39m[33m'[39m[33mmust specify a pyvisa resource name, an instrument serial number, or define [39m[38;5;132;01m{[39;00m[38;5;28mtype[39m([38;5;28mself[39m)[38;5;132;01m!r}[39;00m[33m with default make and model[39m[33m'[39m
+[32m   1185[39m     )
+[32m   1187[39m [38;5;28;01mif[39;00m [38;5;28mself[39m.timeout [38;5;129;01mis[39;00m [38;5;129;01mnot[39;00m [38;5;28;01mNone[39;00m:
+[32m   1188[39m     kwargs[[33m'[39m[33mtimeout[39m[33m'[39m] = [38;5;28mround[39m([38;5;28mself[39m.timeout * [32m1000[39m)
 
-[0;31mConnectionError[0m: PowerSensor(): must specify a pyvisa resource name, an instrument serial number, or define <class '__main__.PowerSensor'> with default make and model
+[31mConnectionError[39m: PowerSensor(): must specify a pyvisa resource name, an instrument serial number, or define <class '__main__.PowerSensor'> with default make and model
 

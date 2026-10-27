@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>VISA automation quick start &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../../_static/documentation_options.js?v=29b1acb9"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=63f5dc7c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <script src="../../_static/documentation_options.js?v=243652a6"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Testbed Organization" href="02%20rack.html" />
     <link rel="prev" title="Orientation" href="00%20overview.html" />
@@ -57,7 +57,7 @@
   <![endif]-->
 </header>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -120,6 +120,11 @@ Specialized <code class="docutils literal notranslate"><span class="pre">VISADev
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Resources discovered on resource manager &#39;/Users/dkuester/Documents/src/labbench/src/labbench/testing/pyvisa_sim.yml@sim&#39;:
   • Make: &quot;Faketech&quot;
+    Model: &quot;Power Sensor #1234&quot;
+    Serial: &quot;63472&quot;
+    Device: lb.VISADevice(&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;, write_termination=&#39;\r\n&#39;)
+
+  • Make: &quot;Faketech&quot;
     Model: &quot;Oscilloscope #1234&quot;
     Serial: &quot;OMGBBQ58&quot;
     Device: lb.VISADevice(&#39;USB0::0x1111::0x2233::0x9876::0::INSTR&#39;)
@@ -133,11 +138,6 @@ Specialized <code class="docutils literal notranslate"><span class="pre">VISADev
     Model: &quot;Signal Generator #1234&quot;
     Serial: &quot;1837518935&quot;
     Device: lb.VISADevice(&#39;TCPIP0::localhost:10001::inst0::INSTR&#39;)
-
-  • Make: &quot;Faketech&quot;
-    Model: &quot;Power Sensor #1234&quot;
-    Serial: &quot;63472&quot;
-    Device: lb.VISADevice(&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;, write_termination=&#39;\r\n&#39;)
 </pre></div>
 </div>
 </div>
@@ -159,7 +159,7 @@ For subclasses that define <code class="docutils literal notranslate"><span clas
 <p>At its simplest, a <code class="docutils literal notranslate"><span class="pre">VISADevice</span></code> object exposes the <a class="reference external" href="https://pyvisa.readthedocs.io/en/1.14.1/introduction/rvalues.html">communication capabilities of pyvisa resource</a>. Starting from the power sensor in our VISA probe:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lb</span>
 <span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim-labbench&#39;</span><span class="p">)</span>
 
 <span class="n">inst</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">(</span><span class="s1">&#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;</span><span class="p">,</span> <span class="n">write_termination</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -185,7 +185,7 @@ simulated instrument in <code class="docutils literal notranslate"><span class="
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># use a pyvisa-sim simulated VISA instrument for the demo</span>
-<span class="kn">from</span> <span class="nn">labbench.testing.pyvisa_sim</span> <span class="kn">import</span> <span class="n">PowerSensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">labbench.testing.pyvisa_sim</span><span class="w"> </span><span class="kn">import</span> <span class="n">PowerSensor</span>
 <span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="s1">&#39;@sim-labbench&#39;</span><span class="p">)</span>
 
 <span class="c1"># watch the low-level write and query actions</span>
@@ -209,26 +209,26 @@ simulated instrument in <code class="docutils literal notranslate"><span class="
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,807.807</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,808.809</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,809.810</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,810.810</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SYST:PRES&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,811.811</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SENS:FREQ 1000000000.0&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,812.813</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 1000000000.0 (Hz) → frequency
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,812.813</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SENS:MRAT FAST&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,813.813</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> &#39;FAST&#39;  → measurement_rate
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,814.814</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;TRIG:COUN 200&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,815.815</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 200 (samples) → trigger_count
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,815.816</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;SWE:APER 2e-05&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,816.816</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> 2e-05 (s) → sweep_aperture
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,816.817</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> write(&#39;INIT:CONT ON&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,817.817</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> True  → initiate_continuous
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,817.818</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> query(&#39;FETC?&#39;):
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,820.820</span> • <span class=" -Color -Color-Blue">PowerSensor():</span>     → (1572 bytes)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,820.821</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> query(&#39;TRIG:COUN?&#39;):
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,821.821</span> • <span class=" -Color -Color-Blue">PowerSensor():</span>     → &#39;200&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,821.822</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> trigger_count → 200  (samples)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:54,958.959</span> • <span class=" -Color -Color-Blue">PowerSensor():</span> closed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> DEBUG  2026-10-27 13:47:36.508 • PowerSensor(): probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+ DEBUG  2026-10-27 13:47:36.509 • PowerSensor(): &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:36.510 • PowerSensor(): opened
+ DEBUG  2026-10-27 13:47:36.510 • PowerSensor(): write(&#39;SYST:PRES&#39;)
+ DEBUG  2026-10-27 13:47:36.511 • PowerSensor(): write(&#39;SENS:FREQ 1000000000.0&#39;)
+ DEBUG  2026-10-27 13:47:36.511 • PowerSensor(): 1000000000.0 (Hz) → frequency
+ DEBUG  2026-10-27 13:47:36.512 • PowerSensor(): write(&#39;SENS:MRAT FAST&#39;)
+ DEBUG  2026-10-27 13:47:36.512 • PowerSensor(): &#39;FAST&#39;  → measurement_rate
+ DEBUG  2026-10-27 13:47:36.513 • PowerSensor(): write(&#39;TRIG:COUN 200&#39;)
+ DEBUG  2026-10-27 13:47:36.514 • PowerSensor(): 200 (samples) → trigger_count
+ DEBUG  2026-10-27 13:47:36.515 • PowerSensor(): write(&#39;SWE:APER 2e-05&#39;)
+ DEBUG  2026-10-27 13:47:36.515 • PowerSensor(): 2e-05 (s) → sweep_aperture
+ DEBUG  2026-10-27 13:47:36.516 • PowerSensor(): write(&#39;INIT:CONT ON&#39;)
+ DEBUG  2026-10-27 13:47:36.517 • PowerSensor(): True  → initiate_continuous
+ DEBUG  2026-10-27 13:47:36.517 • PowerSensor(): query(&#39;FETC?&#39;):
+ DEBUG  2026-10-27 13:47:36.518 • PowerSensor():     → (1572 bytes)
+ DEBUG  2026-10-27 13:47:36.519 • PowerSensor(): query(&#39;TRIG:COUN?&#39;):
+ DEBUG  2026-10-27 13:47:36.520 • PowerSensor():     → &#39;200&#39;
+ DEBUG  2026-10-27 13:47:36.520 • PowerSensor(): trigger_count → 200  (samples)
+ DEBUG  2026-10-27 13:47:36.764 • PowerSensor(): closed
 </pre></div>
 </div>
 </div>
@@ -249,7 +249,7 @@ Some trial and error is often needed, and it is best to iterate in small steps:
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../../index.html">Table of Contents</a></h3>
@@ -283,7 +283,7 @@ Some trial and error is often needed, and it is best to iterate in small steps:
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -291,13 +291,13 @@ Some trial and error is often needed, and it is best to iterate in small steps:
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">

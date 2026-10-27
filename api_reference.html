@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>API Reference &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-    <link rel="stylesheet" type="text/css" href="_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="_static/documentation_options.js?v=29b1acb9"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="_static/pyramid.css?v=63f5dc7c" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <script src="_static/documentation_options.js?v=243652a6"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="labbench" href="labbench.html" />
     <link rel="prev" title="Simplified Concurrency" href="guide/02_getting_started/04%20concurrency.html" />
@@ -57,7 +57,7 @@
   <![endif]-->
 </header>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -101,6 +101,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Device"><code class="docutils literal notranslate"><span class="pre">Device</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Device.backend"><code class="docutils literal notranslate"><span class="pre">Device.backend</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Device.close"><code class="docutils literal notranslate"><span class="pre">Device.close()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Device.isopen"><code class="docutils literal notranslate"><span class="pre">Device.isopen</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.Device.open"><code class="docutils literal notranslate"><span class="pre">Device.open()</span></code></a></li>
@@ -224,7 +225,6 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.TelnetDevice.timeout"><code class="docutils literal notranslate"><span class="pre">TelnetDevice.timeout</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.Undefined"><code class="docutils literal notranslate"><span class="pre">Undefined</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="labbench.html#labbench.VISADevice"><code class="docutils literal notranslate"><span class="pre">VISADevice</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.backend"><code class="docutils literal notranslate"><span class="pre">VISADevice.backend</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.html#labbench.VISADevice.close"><code class="docutils literal notranslate"><span class="pre">VISADevice.close()</span></code></a></li>
@@ -326,6 +326,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="labbench.paramattr.html#labbench.paramattr.adjust"><code class="docutils literal notranslate"><span class="pre">adjust()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="labbench.paramattr.html#labbench.paramattr.get_class_attrs"><code class="docutils literal notranslate"><span class="pre">get_class_attrs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="labbench.paramattr.html#labbench.paramattr.get_cls_annotations"><code class="docutils literal notranslate"><span class="pre">get_cls_annotations()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="labbench.paramattr.html#labbench.paramattr.hold_attr_notifications"><code class="docutils literal notranslate"><span class="pre">hold_attr_notifications()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="labbench.paramattr.html#labbench.paramattr.list_method_attrs"><code class="docutils literal notranslate"><span class="pre">list_method_attrs()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="labbench.paramattr.html#labbench.paramattr.list_property_attrs"><code class="docutils literal notranslate"><span class="pre">list_property_attrs()</span></code></a></li>
@@ -578,6 +579,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.NetworkAddress.allow_none"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.NetworkAddress.cache"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.cache</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.NetworkAddress.case"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.case</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.NetworkAddress.default"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.NetworkAddress.gets"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.NetworkAddress.help"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.NetworkAddress.inherit"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.inherit</span></code></a></li>
@@ -592,6 +594,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.Path.ROLE"><code class="docutils literal notranslate"><span class="pre">Path.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.Path.allow_none"><code class="docutils literal notranslate"><span class="pre">Path.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.Path.cache"><code class="docutils literal notranslate"><span class="pre">Path.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.Path.default"><code class="docutils literal notranslate"><span class="pre">Path.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.Path.gets"><code class="docutils literal notranslate"><span class="pre">Path.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.Path.help"><code class="docutils literal notranslate"><span class="pre">Path.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.Path.inherit"><code class="docutils literal notranslate"><span class="pre">Path.inherit</span></code></a></li>
@@ -607,6 +610,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.any.ROLE"><code class="docutils literal notranslate"><span class="pre">any.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.any.allow_none"><code class="docutils literal notranslate"><span class="pre">any.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.any.cache"><code class="docutils literal notranslate"><span class="pre">any.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.any.default"><code class="docutils literal notranslate"><span class="pre">any.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.any.gets"><code class="docutils literal notranslate"><span class="pre">any.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.any.help"><code class="docutils literal notranslate"><span class="pre">any.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.any.inherit"><code class="docutils literal notranslate"><span class="pre">any.inherit</span></code></a></li>
@@ -621,6 +625,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bool.ROLE"><code class="docutils literal notranslate"><span class="pre">bool.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bool.allow_none"><code class="docutils literal notranslate"><span class="pre">bool.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bool.cache"><code class="docutils literal notranslate"><span class="pre">bool.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bool.default"><code class="docutils literal notranslate"><span class="pre">bool.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bool.gets"><code class="docutils literal notranslate"><span class="pre">bool.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bool.help"><code class="docutils literal notranslate"><span class="pre">bool.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bool.inherit"><code class="docutils literal notranslate"><span class="pre">bool.inherit</span></code></a></li>
@@ -636,6 +641,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bytes.allow_none"><code class="docutils literal notranslate"><span class="pre">bytes.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bytes.cache"><code class="docutils literal notranslate"><span class="pre">bytes.cache</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bytes.case"><code class="docutils literal notranslate"><span class="pre">bytes.case</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bytes.default"><code class="docutils literal notranslate"><span class="pre">bytes.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bytes.gets"><code class="docutils literal notranslate"><span class="pre">bytes.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bytes.help"><code class="docutils literal notranslate"><span class="pre">bytes.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.bytes.inherit"><code class="docutils literal notranslate"><span class="pre">bytes.inherit</span></code></a></li>
@@ -650,6 +656,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.complex.ROLE"><code class="docutils literal notranslate"><span class="pre">complex.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.complex.allow_none"><code class="docutils literal notranslate"><span class="pre">complex.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.complex.cache"><code class="docutils literal notranslate"><span class="pre">complex.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.complex.default"><code class="docutils literal notranslate"><span class="pre">complex.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.complex.gets"><code class="docutils literal notranslate"><span class="pre">complex.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.complex.help"><code class="docutils literal notranslate"><span class="pre">complex.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.complex.inherit"><code class="docutils literal notranslate"><span class="pre">complex.inherit</span></code></a></li>
@@ -664,6 +671,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.dict.ROLE"><code class="docutils literal notranslate"><span class="pre">dict.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.dict.allow_none"><code class="docutils literal notranslate"><span class="pre">dict.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.dict.cache"><code class="docutils literal notranslate"><span class="pre">dict.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.dict.default"><code class="docutils literal notranslate"><span class="pre">dict.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.dict.gets"><code class="docutils literal notranslate"><span class="pre">dict.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.dict.help"><code class="docutils literal notranslate"><span class="pre">dict.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.dict.inherit"><code class="docutils literal notranslate"><span class="pre">dict.inherit</span></code></a></li>
@@ -678,6 +686,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.float.ROLE"><code class="docutils literal notranslate"><span class="pre">float.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.float.allow_none"><code class="docutils literal notranslate"><span class="pre">float.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.float.cache"><code class="docutils literal notranslate"><span class="pre">float.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.float.default"><code class="docutils literal notranslate"><span class="pre">float.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.float.gets"><code class="docutils literal notranslate"><span class="pre">float.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.float.help"><code class="docutils literal notranslate"><span class="pre">float.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.float.index_lookup_attr"><code class="docutils literal notranslate"><span class="pre">float.index_lookup_attr</span></code></a></li>
@@ -698,6 +707,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.int.ROLE"><code class="docutils literal notranslate"><span class="pre">int.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.int.allow_none"><code class="docutils literal notranslate"><span class="pre">int.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.int.cache"><code class="docutils literal notranslate"><span class="pre">int.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.int.default"><code class="docutils literal notranslate"><span class="pre">int.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.int.gets"><code class="docutils literal notranslate"><span class="pre">int.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.int.help"><code class="docutils literal notranslate"><span class="pre">int.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.int.index_lookup_attr"><code class="docutils literal notranslate"><span class="pre">int.index_lookup_attr</span></code></a></li>
@@ -717,6 +727,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.list.ROLE"><code class="docutils literal notranslate"><span class="pre">list.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.list.allow_none"><code class="docutils literal notranslate"><span class="pre">list.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.list.cache"><code class="docutils literal notranslate"><span class="pre">list.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.list.default"><code class="docutils literal notranslate"><span class="pre">list.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.list.gets"><code class="docutils literal notranslate"><span class="pre">list.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.list.help"><code class="docutils literal notranslate"><span class="pre">list.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.list.inherit"><code class="docutils literal notranslate"><span class="pre">list.inherit</span></code></a></li>
@@ -732,6 +743,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.str.allow_none"><code class="docutils literal notranslate"><span class="pre">str.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.str.cache"><code class="docutils literal notranslate"><span class="pre">str.cache</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.str.case"><code class="docutils literal notranslate"><span class="pre">str.case</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.str.default"><code class="docutils literal notranslate"><span class="pre">str.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.str.gets"><code class="docutils literal notranslate"><span class="pre">str.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.str.help"><code class="docutils literal notranslate"><span class="pre">str.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.str.inherit"><code class="docutils literal notranslate"><span class="pre">str.inherit</span></code></a></li>
@@ -746,6 +758,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.tuple.ROLE"><code class="docutils literal notranslate"><span class="pre">tuple.ROLE</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.tuple.allow_none"><code class="docutils literal notranslate"><span class="pre">tuple.allow_none</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.tuple.cache"><code class="docutils literal notranslate"><span class="pre">tuple.cache</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.tuple.default"><code class="docutils literal notranslate"><span class="pre">tuple.default</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.tuple.gets"><code class="docutils literal notranslate"><span class="pre">tuple.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.tuple.help"><code class="docutils literal notranslate"><span class="pre">tuple.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.method_kwarg.html#labbench.paramattr.method_kwarg.tuple.inherit"><code class="docutils literal notranslate"><span class="pre">tuple.inherit</span></code></a></li>
@@ -980,6 +993,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.NetworkAddress.gets"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.NetworkAddress.help"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.NetworkAddress.inherit"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.NetworkAddress.init"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.NetworkAddress.key"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.NetworkAddress.kw_only"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.NetworkAddress.label"><code class="docutils literal notranslate"><span class="pre">NetworkAddress.label</span></code></a></li>
@@ -997,6 +1011,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.Path.gets"><code class="docutils literal notranslate"><span class="pre">Path.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.Path.help"><code class="docutils literal notranslate"><span class="pre">Path.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.Path.inherit"><code class="docutils literal notranslate"><span class="pre">Path.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.Path.init"><code class="docutils literal notranslate"><span class="pre">Path.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.Path.key"><code class="docutils literal notranslate"><span class="pre">Path.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.Path.kw_only"><code class="docutils literal notranslate"><span class="pre">Path.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.Path.label"><code class="docutils literal notranslate"><span class="pre">Path.label</span></code></a></li>
@@ -1015,6 +1030,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.any.gets"><code class="docutils literal notranslate"><span class="pre">any.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.any.help"><code class="docutils literal notranslate"><span class="pre">any.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.any.inherit"><code class="docutils literal notranslate"><span class="pre">any.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.any.init"><code class="docutils literal notranslate"><span class="pre">any.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.any.key"><code class="docutils literal notranslate"><span class="pre">any.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.any.kw_only"><code class="docutils literal notranslate"><span class="pre">any.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.any.label"><code class="docutils literal notranslate"><span class="pre">any.label</span></code></a></li>
@@ -1032,6 +1048,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bool.gets"><code class="docutils literal notranslate"><span class="pre">bool.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bool.help"><code class="docutils literal notranslate"><span class="pre">bool.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bool.inherit"><code class="docutils literal notranslate"><span class="pre">bool.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bool.init"><code class="docutils literal notranslate"><span class="pre">bool.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bool.key"><code class="docutils literal notranslate"><span class="pre">bool.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bool.kw_only"><code class="docutils literal notranslate"><span class="pre">bool.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bool.label"><code class="docutils literal notranslate"><span class="pre">bool.label</span></code></a></li>
@@ -1050,6 +1067,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bytes.gets"><code class="docutils literal notranslate"><span class="pre">bytes.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bytes.help"><code class="docutils literal notranslate"><span class="pre">bytes.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bytes.inherit"><code class="docutils literal notranslate"><span class="pre">bytes.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bytes.init"><code class="docutils literal notranslate"><span class="pre">bytes.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bytes.key"><code class="docutils literal notranslate"><span class="pre">bytes.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bytes.kw_only"><code class="docutils literal notranslate"><span class="pre">bytes.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.bytes.label"><code class="docutils literal notranslate"><span class="pre">bytes.label</span></code></a></li>
@@ -1067,6 +1085,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.complex.gets"><code class="docutils literal notranslate"><span class="pre">complex.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.complex.help"><code class="docutils literal notranslate"><span class="pre">complex.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.complex.inherit"><code class="docutils literal notranslate"><span class="pre">complex.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.complex.init"><code class="docutils literal notranslate"><span class="pre">complex.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.complex.key"><code class="docutils literal notranslate"><span class="pre">complex.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.complex.kw_only"><code class="docutils literal notranslate"><span class="pre">complex.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.complex.label"><code class="docutils literal notranslate"><span class="pre">complex.label</span></code></a></li>
@@ -1084,6 +1103,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.dict.gets"><code class="docutils literal notranslate"><span class="pre">dict.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.dict.help"><code class="docutils literal notranslate"><span class="pre">dict.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.dict.inherit"><code class="docutils literal notranslate"><span class="pre">dict.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.dict.init"><code class="docutils literal notranslate"><span class="pre">dict.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.dict.key"><code class="docutils literal notranslate"><span class="pre">dict.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.dict.kw_only"><code class="docutils literal notranslate"><span class="pre">dict.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.dict.label"><code class="docutils literal notranslate"><span class="pre">dict.label</span></code></a></li>
@@ -1102,6 +1122,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.float.help"><code class="docutils literal notranslate"><span class="pre">float.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.float.index_lookup_attr"><code class="docutils literal notranslate"><span class="pre">float.index_lookup_attr</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.float.inherit"><code class="docutils literal notranslate"><span class="pre">float.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.float.init"><code class="docutils literal notranslate"><span class="pre">float.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.float.key"><code class="docutils literal notranslate"><span class="pre">float.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.float.kw_only"><code class="docutils literal notranslate"><span class="pre">float.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.float.label"><code class="docutils literal notranslate"><span class="pre">float.label</span></code></a></li>
@@ -1125,6 +1146,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.int.help"><code class="docutils literal notranslate"><span class="pre">int.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.int.index_lookup_attr"><code class="docutils literal notranslate"><span class="pre">int.index_lookup_attr</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.int.inherit"><code class="docutils literal notranslate"><span class="pre">int.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.int.init"><code class="docutils literal notranslate"><span class="pre">int.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.int.key"><code class="docutils literal notranslate"><span class="pre">int.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.int.kw_only"><code class="docutils literal notranslate"><span class="pre">int.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.int.label"><code class="docutils literal notranslate"><span class="pre">int.label</span></code></a></li>
@@ -1146,6 +1168,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.list.gets"><code class="docutils literal notranslate"><span class="pre">list.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.list.help"><code class="docutils literal notranslate"><span class="pre">list.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.list.inherit"><code class="docutils literal notranslate"><span class="pre">list.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.list.init"><code class="docutils literal notranslate"><span class="pre">list.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.list.key"><code class="docutils literal notranslate"><span class="pre">list.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.list.kw_only"><code class="docutils literal notranslate"><span class="pre">list.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.list.label"><code class="docutils literal notranslate"><span class="pre">list.label</span></code></a></li>
@@ -1164,6 +1187,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.str.gets"><code class="docutils literal notranslate"><span class="pre">str.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.str.help"><code class="docutils literal notranslate"><span class="pre">str.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.str.inherit"><code class="docutils literal notranslate"><span class="pre">str.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.str.init"><code class="docutils literal notranslate"><span class="pre">str.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.str.key"><code class="docutils literal notranslate"><span class="pre">str.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.str.kw_only"><code class="docutils literal notranslate"><span class="pre">str.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.str.label"><code class="docutils literal notranslate"><span class="pre">str.label</span></code></a></li>
@@ -1181,6 +1205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.tuple.gets"><code class="docutils literal notranslate"><span class="pre">tuple.gets</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.tuple.help"><code class="docutils literal notranslate"><span class="pre">tuple.help</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.tuple.inherit"><code class="docutils literal notranslate"><span class="pre">tuple.inherit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.tuple.init"><code class="docutils literal notranslate"><span class="pre">tuple.init</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.tuple.key"><code class="docutils literal notranslate"><span class="pre">tuple.key</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.tuple.kw_only"><code class="docutils literal notranslate"><span class="pre">tuple.kw_only</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="labbench.paramattr.value.html#labbench.paramattr.value.tuple.label"><code class="docutils literal notranslate"><span class="pre">tuple.label</span></code></a></li>
@@ -1201,7 +1226,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h4>Previous topic</h4>
@@ -1220,7 +1245,7 @@
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -1228,13 +1253,13 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">

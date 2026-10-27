@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Logging device states and test results to a database &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../../_static/documentation_options.js?v=29b1acb9"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=63f5dc7c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <script src="../../_static/documentation_options.js?v=243652a6"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="search" title="Search" href="../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -55,7 +55,7 @@
   <![endif]-->
 </header>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -162,29 +162,29 @@
 <p>Here is a emulated “dummy” instrument. It has a few state settings similar to a simple power sensor. The state descriptors (<code class="docutils literal notranslate"><span class="pre">initiate_continuous</span></code>, <code class="docutils literal notranslate"><span class="pre">output_trigger</span></code>, etc.) are defined as local types, which means they don’t trigger communication with any actual devices. The <code class="docutils literal notranslate"><span class="pre">fetch_trace</span></code> method generates a “trace” drawn from a uniform distribution.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;..&#39;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="k">class</span> <span class="nc">EmulatedInstrument</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EmulatedInstrument</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; This &quot;instrument&quot; makes mock data and instrument states to</span>
 <span class="sd">        demonstrate we can show the process of setting</span>
 <span class="sd">        up a measurement.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">class</span> <span class="nc">state</span> <span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">state</span> <span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
         <span class="n">initiate_continuous</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;INIT:CONT&#39;</span><span class="p">)</span>
         <span class="n">output_trigger</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;OUTP:TRIG&#39;</span><span class="p">)</span>
         <span class="n">sweep_aperture</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">200e-3</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
         <span class="n">frequency</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">18e9</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hz&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; This would tell the instrument to start a measurement</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
     
-    <span class="k">def</span> <span class="nf">fetch_trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1001</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fetch_trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1001</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Generate N points of junk data as a pandas series.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
@@ -199,14 +199,14 @@
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
 <span class="ne">AttributeError</span><span class="g g-Whitespace">                            </span>Traceback (most recent call last)
 <span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">7</span>
-<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="ne">----&gt; </span><span class="mi">7</span> <span class="k">class</span> <span class="nc">EmulatedInstrument</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="p">):</span>
-<span class="g g-Whitespace">      </span><span class="mi">8</span><span class="w">     </span><span class="sd">&quot;&quot;&quot; This &quot;instrument&quot; makes mock data and instrument states to</span>
-<span class="g g-Whitespace">      </span><span class="mi">9</span><span class="sd">         demonstrate we can show the process of setting</span>
-<span class="g g-Whitespace">     </span><span class="mi">10</span><span class="sd">         up a measurement.</span>
-<span class="g g-Whitespace">     </span><span class="mi">11</span><span class="sd">     &quot;&quot;&quot;</span>
-<span class="g g-Whitespace">     </span><span class="mi">12</span>     <span class="k">class</span> <span class="nc">state</span> <span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">import</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lb</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="g g-Whitespace">      </span><span class="mi">6</span> 
+<span class="ne">----&gt; </span><span class="mi">7</span> <span class="k">class</span><span class="w"> </span><span class="nc">EmulatedInstrument</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">EmulatedVISADevice</span><span class="p">):</span>
+<span class="g g-Whitespace">      </span><span class="mi">8</span>     <span class="s2">&quot;&quot;&quot; This &quot;instrument&quot; makes mock data and instrument states to</span>
+<span class="g g-Whitespace">      </span><span class="mi">9</span><span class="s2">         demonstrate we can show the process of setting</span>
+<span class="g g-Whitespace">     </span><span class="mi">10</span><span class="s2">         up a measurement.</span>
 
 <span class="ne">AttributeError</span>: module &#39;labbench&#39; has no attribute &#39;EmulatedVISADevice&#39;
 </pre></div>
@@ -223,13 +223,13 @@ The arguments specify the name of the sqlite database file and the name of the t
 <p>Remember that use of the <code class="docutils literal notranslate"><span class="pre">with</span></code> statement automatically connects to the instruments, and then ensures that the instruments are properly closed when we leave the <code class="docutils literal notranslate"><span class="pre">with</span></code> block (even if there is an exception).</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">inst1_trace</span> <span class="p">():</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">inst1_trace</span> <span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Return a 1001-point trace</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">inst1</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">inst1</span><span class="o">.</span><span class="n">fetch_trace</span><span class="p">(</span><span class="mi">51</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">inst2_trace</span> <span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inst2_trace</span> <span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; This one returns only one point</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">inst2</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
@@ -297,7 +297,7 @@ The arguments specify the name of the sqlite database file and the name of the t
 <p>now we can manipulate the results to look for meaningful information in the data.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span><span class="p">;</span> <span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s1">&#39;notebook&#39;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;ticks&#39;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span> <span class="c1"># Theme stuff</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span><span class="p">;</span> <span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s1">&#39;notebook&#39;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;ticks&#39;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span> <span class="c1"># Theme stuff</span>
 
 <span class="n">waveforms</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;inst1_frequency&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;inst1_trace_voltage&#39;</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;hexbin&#39;</span><span class="p">)</span>
 <span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Frequency (Hz)&#39;</span><span class="p">)</span>
@@ -315,7 +315,7 @@ The arguments specify the name of the sqlite database file and the name of the t
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../../index.html">Table of Contents</a></h3>
@@ -338,7 +338,7 @@ The arguments specify the name of the sqlite database file and the name of the t
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -346,13 +346,13 @@ The arguments specify the name of the sqlite database file and the name of the t
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">

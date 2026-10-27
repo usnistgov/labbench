@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Introduction &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../_static/documentation_options.js?v=29b1acb9"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=63f5dc7c" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <script src="../_static/documentation_options.js?v=243652a6"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Getting Started" href="02_getting_started.html" />
     <link rel="prev" title="Contents" href="../index.html" />
@@ -57,7 +57,7 @@
   <![endif]-->
 </header>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -82,8 +82,8 @@
   <section id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h1>
 <p><a class="reference external" href="https://pypi.org/project/labbench/"><img alt="PyPI Latest Release" src="https://img.shields.io/pypi/v/labbench.svg" /></a>
-<a class="reference external" href="https://doi.org/10.18434/M32122"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.18434/M32122.svg" /></a>
-<a class="reference external" href="https://github.com/usnistgov/labbench/blob/master/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-NIST-brightgreen" /></a>
+<a class="reference external" href="https://github.com/usnistgov/labbench/blob/master/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-NIST-blue" /></a>
+<a class="reference external" href="https://doi.org/10.18434/M32122"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.18434%2FM32122-purple" /></a>
 <a class="reference external" href="https://pepy.tech/project/labbench"><img alt="Downloads" src="https://static.pepy.tech/badge/labbench" /></a>
 <a class="reference external" href="https://pypi.org/project/labbench/"><img alt="Last commit" src="https://img.shields.io/github/last-commit/usnistgov/labbench" /></a>
 <a class="reference external" href="https://github.com/usnistgov/labbench/"><img alt="Test coverage" src="guide/doc/reports/coverage.svg" /></a></p>
@@ -123,25 +123,21 @@ These characteristics are necessary to scale up the complexity of large testbeds
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
 <ol class="arabic">
-<li><p>Ensure prerequisites are installed:</p>
+<li><p>Prerequisites:</p>
 <ul class="simple">
 <li><p>python (3.9-3.12)</p></li>
-<li><p><a class="reference external" href="https://pypi.org/project/pip/"><code class="docutils literal notranslate"><span class="pre">pip</span></code></a> for package management</p></li>
+<li><p>an installer for python packages (<a class="reference external" href="https://pypi.org/project/pip/"><code class="docutils literal notranslate"><span class="pre">pip</span></code></a>, <code class="docutils literal notranslate"><span class="pre">conda</span></code>, etc.)</p></li>
 </ul>
 </li>
-<li><p>Recommended module installation:</p>
-<ul>
-<li><p>For python distributions based on anaconda:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>--upgrade-strategy<span class="w"> </span>only-if-needed<span class="w"> </span>install<span class="w"> </span>labbench
+<li><p>Command-line package install options</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># option 1: preferred option in anaconda based distributions</span>
+conda<span class="w"> </span>install<span class="w"> </span>conda-forge::labbench
 </pre></div>
 </div>
-</li>
-<li><p>For other python installations:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>labbench
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># option 2: preferred in other distributions</span>
+pip<span class="w"> </span>install<span class="w"> </span>labbench
 </pre></div>
 </div>
-</li>
-</ul>
 </li>
 </ol>
 </section>
@@ -199,7 +195,7 @@ best available for the purpose._ -->
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../index.html">Table of Contents</a></h3>
@@ -232,7 +228,7 @@ best available for the purpose._ -->
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -240,13 +236,13 @@ best available for the purpose._ -->
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">

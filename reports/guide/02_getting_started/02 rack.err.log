@@ -1,17 +1,30 @@
 Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
     executenb(
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 1314, in execute
+    ~~~~~~~~~^
+        nb,
+        ^^^
+    ...<4 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 1323, in execute
     return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
     return loop.run_until_complete(inner)
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 642, in run_until_complete
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/dkuester/.local/share/uv/python/cpython-3.14.3-macos-aarch64-none/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
     return future.result()
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 709, in async_execute
+           ~~~~~~~~~~~~~^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 709, in async_execute
     await self.async_execute_cell(
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+        cell, index, execution_count=self.code_cells_executed + 1
+    )
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 1062, in async_execute_cell
     await self._check_raise_for_error(cell, cell_index, exec_reply)
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
@@ -70,49 +83,64 @@ with Testbed() as testbed:
 ------------------
 
 ----- stderr -----
-[1;30m INFO  [0m [32m2024-03-20 13:42:57,955.955[0m • [34mlabbench:[0m starting frequency sweep across 3 points
+ INFO   2026-10-27 13:47:39.479 • labbench: starting frequency sweep across 3 points
 ----- stderr -----
-[1;30m INFO  [0m [32m2024-03-20 13:42:57,955.955[0m • [34mlabbench:[0m single frequency test at 2400.000 MHz
+ INFO   2026-10-27 13:47:39.480 • labbench: single frequency test at 2400.000 MHz
 ------------------
 
-[0;31m---------------------------------------------------------------------------[0m
-[0;31mValueError[0m                                Traceback (most recent call last)
-Cell [0;32mIn[5], line 52[0m
-[1;32m     49[0m lb[38;5;241m.[39mshow_messages([38;5;124m'[39m[38;5;124minfo[39m[38;5;124m'[39m)
-[1;32m     51[0m [38;5;28;01mwith[39;00m Testbed() [38;5;28;01mas[39;00m testbed:
-[0;32m---> 52[0m     data [38;5;241m=[39m testbed[38;5;241m.[39msweep(frequencies[38;5;241m=[39m[[38;5;241m2.4e9[39m, [38;5;241m2.44e9[39m, [38;5;241m2.48e9[39m])
+[31m---------------------------------------------------------------------------[39m
+[31mValueError[39m                                Traceback (most recent call last)
+[36mCell[39m[36m [39m[32mIn[5][39m[32m, line 51[39m
+[32m     47[39m         [38;5;28;01mreturn[39;00m ret
+[32m     48[39m 
+[32m     49[39m lb.show_messages([33m'info'[39m)
+[32m     50[39m 
+[32m---> [39m[32m51[39m [38;5;28;01mwith[39;00m Testbed() [38;5;28;01mas[39;00m testbed:
+[32m     52[39m     data = testbed.sweep(frequencies=[[32m2.4e9[39m, [32m2.44e9[39m, [32m2.48e9[39m])
 
-Cell [0;32mIn[5], line 52[0m
-[1;32m     49[0m lb[38;5;241m.[39mshow_messages([38;5;124m'[39m[38;5;124minfo[39m[38;5;124m'[39m)
-[1;32m     51[0m [38;5;28;01mwith[39;00m Testbed() [38;5;28;01mas[39;00m testbed:
-[0;32m---> 52[0m     data [38;5;241m=[39m [43mtestbed[49m[38;5;241;43m.[39;49m[43msweep[49m[43m([49m[43mfrequencies[49m[38;5;241;43m=[39;49m[43m[[49m[38;5;241;43m2.4e9[39;49m[43m,[49m[43m [49m[38;5;241;43m2.44e9[39;49m[43m,[49m[43m [49m[38;5;241;43m2.48e9[39;49m[43m][49m[43m)[49m
+[36mFile [39m[32m~/Documents/src/labbench/src/labbench/_rack.py:983[39m, in [36mOwner.__exit__[39m[34m(self, *args)[39m
+[32m    981[39m context, [38;5;28mself[39m._context = [38;5;28mself[39m._context, [38;5;28;01mNone[39;00m
+[32m    982[39m [38;5;28;01massert[39;00m context [38;5;129;01mis[39;00m [38;5;129;01mnot[39;00m [38;5;28;01mNone[39;00m
+[32m--> [39m[32m983[39m [38;5;28;01mreturn[39;00m [30;43mcontext[39;49m[30;43m.[39;49m[30;43m__exit__[39;49m[30;43m([39;49m[30;43m*[39;49m[30;43margs[39;49m[30;43m)[39;49m
 
-Cell [0;32mIn[5], line 45[0m, in [0;36mTestbed.sweep[0;34m(self, frequencies)[0m
-[1;32m     42[0m ret [38;5;241m=[39m []
-[1;32m     44[0m [38;5;28;01mfor[39;00m freq [38;5;129;01min[39;00m frequencies:
-[0;32m---> 45[0m     ret[38;5;241m.[39mappend([38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43msingle_frequency[49m[43m([49m[43mcenter_frequency[49m[38;5;241;43m=[39;49m[43mfreq[49m[43m)[49m)
-[1;32m     47[0m [38;5;28;01mreturn[39;00m ret
+[36mCell[39m[36m [39m[32mIn[5][39m[32m, line 51[39m
+[32m     47[39m         [38;5;28;01mreturn[39;00m ret
+[32m     48[39m 
+[32m     49[39m lb.show_messages([33m'info'[39m)
+[32m     50[39m 
+[32m---> [39m[32m51[39m [38;5;28;01mwith[39;00m Testbed() [38;5;28;01mas[39;00m testbed:
+[32m     52[39m     data = testbed.sweep(frequencies=[[32m2.4e9[39m, [32m2.44e9[39m, [32m2.48e9[39m])
 
-Cell [0;32mIn[5], line 38[0m, in [0;36mTestbed.single_frequency[0;34m(self, center_frequency)[0m
-[1;32m     36[0m [38;5;28mself[39m[38;5;241m.[39mmeasurement[38;5;241m.[39macquire()
-[1;32m     37[0m [38;5;28mself[39m[38;5;241m.[39mgenerator[38;5;241m.[39moutput_enabled [38;5;241m=[39m [38;5;28;01mFalse[39;00m
-[0;32m---> 38[0m [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mmeasurement[49m[38;5;241;43m.[39;49m[43mfetch[49m[43m([49m[43m)[49m
+[36mCell[39m[36m [39m[32mIn[5][39m[32m, line 45[39m, in [36mTestbed.sweep[39m[34m(self, frequencies)[39m
+[32m     41[39m         logger.info(f'starting frequency sweep across {len(frequencies)} points')
+[32m     42[39m         ret = []
+[32m     43[39m 
+[32m     44[39m         [38;5;28;01mfor[39;00m freq [38;5;28;01min[39;00m frequencies:
+[32m---> [39m[32m45[39m             ret.append(self.single_frequency(center_frequency=freq))
+[32m     46[39m 
+[32m     47[39m         [38;5;28;01mreturn[39;00m ret
 
-Cell [0;32mIn[5], line 18[0m, in [0;36mMeasurement.fetch[0;34m(self)[0m
-[1;32m     16[0m [38;5;28;01mdef[39;00m [38;5;21mfetch[39m([38;5;28mself[39m):
-[1;32m     17[0m     spectrum [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39mspectrum_analyzer[38;5;241m.[39mfetch()
-[0;32m---> 18[0m     pvt [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mpower_sensor[49m[38;5;241;43m.[39;49m[43mfetch[49m[43m([49m[43m)[49m
-[1;32m     19[0m     [38;5;28;01mreturn[39;00m {
-[1;32m     20[0m         [38;5;124m'[39m[38;5;124mspectrum[39m[38;5;124m'[39m: spectrum,
-[1;32m     21[0m         [38;5;124m'[39m[38;5;124mpower[39m[38;5;124m'[39m: pvt
-[1;32m     22[0m     }
+[36mCell[39m[36m [39m[32mIn[5][39m[32m, line 38[39m, in [36mTestbed.single_frequency[39m[34m(self, center_frequency)[39m
+[32m     34[39m         self.generator.output_enabled = [38;5;28;01mTrue[39;00m
+[32m     35[39m 
+[32m     36[39m         self.measurement.acquire()
+[32m     37[39m         self.generator.output_enabled = [38;5;28;01mFalse[39;00m
+[32m---> [39m[32m38[39m         [38;5;28;01mreturn[39;00m self.measurement.fetch()
 
-File [0;32m~/Documents/src/labbench/src/labbench/testing/pyvisa_sim.py:65[0m, in [0;36mPowerSensor.fetch[0;34m(self)[0m
-[1;32m     62[0m response [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39mquery([38;5;124m'[39m[38;5;124mFETC?[39m[38;5;124m'[39m)
-[1;32m     64[0m [38;5;28;01mif[39;00m [38;5;28mself[39m[38;5;241m.[39mtrigger_count [38;5;241m==[39m [38;5;241m1[39m:
-[0;32m---> 65[0m     [38;5;28;01mreturn[39;00m [38;5;28;43mfloat[39;49m[43m([49m[43mresponse[49m[43m)[49m
-[1;32m     66[0m [38;5;28;01melse[39;00m:
-[1;32m     67[0m     [38;5;28;01mreturn[39;00m pd[38;5;241m.[39mSeries([[38;5;28mfloat[39m(s) [38;5;28;01mfor[39;00m s [38;5;129;01min[39;00m response[38;5;241m.[39msplit([38;5;124m'[39m[38;5;124m,[39m[38;5;124m'[39m)], name[38;5;241m=[39m[38;5;124m'[39m[38;5;124mspectrum[39m[38;5;124m'[39m)
+[36mCell[39m[36m [39m[32mIn[5][39m[32m, line 18[39m, in [36mMeasurement.fetch[39m[34m(self)[39m
+[32m     16[39m     [38;5;28;01mdef[39;00m fetch(self):
+[32m     17[39m         spectrum = self.spectrum_analyzer.fetch()
+[32m---> [39m[32m18[39m         pvt = self.power_sensor.fetch()
+[32m     19[39m         return {
+[32m     20[39m             [33m'spectrum'[39m: spectrum,
+[32m     21[39m             [33m'power'[39m: pvt
 
-[0;31mValueError[0m: could not convert string to float: '-52.617,-52.373,-52.724,-51.893,-52.27,-52.047,-53.059,-52.053,-52.426,-52.343,-52.228,-52.976,-52.186,-53.0,-51.894,-53.18,-51.96,-52.326,-52.492,-52.871,-52.41,-53.111,-53.199,-52.907,-52.791,-52.68,-51.63,-51.679,-51.743,-52.613,-52.108,-53.138,-52.014,-52.289,-52.235,-52.26,-53.135,-52.503,-52.201,-51.633,-51.933,-52.82,-52.287,-52.594,-51.89,-52.371,-52.068,-51.888,-53.145,-53.085,-52.392,-52.064,-51.688,-52.188,-52.211,-52.226,-52.841,-51.951,-51.573,-51.521,-52.115,-52.302,-52.958,-52.503,-52.32,-52.81,-52.357,-51.729,-52.956,-52.849,-51.883,-51.505,-52.027,-52.234,-52.092,-51.446,-52.798,-51.601,-52.14,-51.477,-52.614,-52.291,-52.532,-52.861,-51.814,-51.821,-52.997,-53.184,-51.761,-53.052,-51.612,-52.876,-52.013,-52.252,-52.059,-52.806,-52.474,-51.689,-52.606,-51.924,-51.964,-51.601,-52.815,-53.172,-52.183,-53.071,-52.763,-52.999,-52.595,-52.463,-52.48,-52.701,-52.337,-51.778,-52.039,-51.493,-51.591,-51.654,-51.525,-52.925,-51.531,-53.169,-52.997,-52.519,-52.298,-52.078,-52.547,-51.518,-51.589,-51.567,-51.502,-51.984,-52.215,-52.681,-51.468,-53.197,-53.007,-51.929,-52.465,-53.132,-52.073,-51.75,-52.8,-52.054,-52.493,-51.605,-53.026,-52.28,-52.331,-52.109,-51.889,-52.878,-51.874,-51.801,-52.031,-52.625,-51.84,-53.029,-52.431,-51.655,-52.51,-52.431,-52.165,-52.009,-51.973,-53.042,-52.632,-51.754,-52.637,-51.757,-51.9,-52.775,-52.49,-52.022,-52.151,-52.05,-51.867,-52.494,-53.014,-52.14,-53.036,-51.799,-51.848,-51.996,-52.254,-52.75,-51.492,-51.755,-52.494,-53.193,-53.114,-53.028,-52.898,-52.992,-53.127,-51.752,-53.065,-52.585,-51.861,-51.596'
+[36mFile [39m[32m~/Documents/src/labbench/src/labbench/testing/pyvisa_sim.py:65[39m, in [36mPowerSensor.fetch[39m[34m(self)[39m
+[32m     62[39m response = [38;5;28mself[39m.query([33m'[39m[33mFETC?[39m[33m'[39m)
+[32m     64[39m [38;5;28;01mif[39;00m [38;5;28mself[39m.trigger_count == [32m1[39m:
+[32m---> [39m[32m65[39m     [38;5;28;01mreturn[39;00m [30;43mfloat[39;49m[30;43m([39;49m[30;43mresponse[39;49m[30;43m)[39;49m
+[32m     66[39m [38;5;28;01melse[39;00m:
+[32m     67[39m     [38;5;28;01mreturn[39;00m pd.Series([[38;5;28mfloat[39m(s) [38;5;28;01mfor[39;00m s [38;5;129;01min[39;00m response.split([33m'[39m[33m,[39m[33m'[39m)], name=[33m'[39m[33mspectrum[39m[33m'[39m)
+
+[31mValueError[39m: could not convert string to float: '-52.617,-52.373,-52.724,-51.893,-52.27,-52.047,-53.059,-52.053,-52.426,-52.343,-52.228,-52.976,-52.186,-53.0,-51.894,-53.18,-51.96,-52.326,-52.492,-52.871,-52.41,-53.111,-53.199,-52.907,-52.791,-52.68,-51.63,-51.679,-51.743,-52.613,-52.108,-53.138,-52.014,-52.289,-52.235,-52.26,-53.135,-52.503,-52.201,-51.633,-51.933,-52.82,-52.287,-52.594,-51.89,-52.371,-52.068,-51.888,-53.145,-53.085,-52.392,-52.064,-51.688,-52.188,-52.211,-52.226,-52.841,-51.951,-51.573,-51.521,-52.115,-52.302,-52.958,-52.503,-52.32,-52.81,-52.357,-51.729,-52.956,-52.849,-51.883,-51.505,-52.027,-52.234,-52.092,-51.446,-52.798,-51.601,-52.14,-51.477,-52.614,-52.291,-52.532,-52.861,-51.814,-51.821,-52.997,-53.184,-51.761,-53.052,-51.612,-52.876,-52.013,-52.252,-52.059,-52.806,-52.474,-51.689,-52.606,-51.924,-51.964,-51.601,-52.815,-53.172,-52.183,-53.071,-52.763,-52.999,-52.595,-52.463,-52.48,-52.701,-52.337,-51.778,-52.039,-51.493,-51.591,-51.654,-51.525,-52.925,-51.531,-53.169,-52.997,-52.519,-52.298,-52.078,-52.547,-51.518,-51.589,-51.567,-51.502,-51.984,-52.215,-52.681,-51.468,-53.197,-53.007,-51.929,-52.465,-53.132,-52.073,-51.75,-52.8,-52.054,-52.493,-51.605,-53.026,-52.28,-52.331,-52.109,-51.889,-52.878,-51.874,-51.801,-52.031,-52.625,-51.84,-53.029,-52.431,-51.655,-52.51,-52.431,-52.165,-52.009,-51.973,-53.042,-52.632,-51.754,-52.637,-51.757,-51.9,-52.775,-52.49,-52.022,-52.151,-52.05,-51.867,-52.494,-53.014,-52.14,-53.036,-51.799,-51.848,-51.996,-52.254,-52.75,-51.492,-51.755,-52.494,-53.193,-53.114,-53.028,-52.898,-52.992,-53.127,-51.752,-53.065,-52.585,-51.861,-51.596'
 

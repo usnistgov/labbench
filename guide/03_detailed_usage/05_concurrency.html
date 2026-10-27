@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Simplified Concurrency &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../../_static/documentation_options.js?v=29b1acb9"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=63f5dc7c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <script src="../../_static/documentation_options.js?v=243652a6"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="search" title="Search" href="../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -55,7 +55,7 @@
   <![endif]-->
 </header>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -78,34 +78,34 @@
 <p>Notice that <code class="docutils literal notranslate"><span class="pre">do_something_3</span></code> takes 3 arguments (and returns them), and that <code class="docutils literal notranslate"><span class="pre">do_something_4</span></code> raises an exception.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
-<span class="k">def</span> <span class="nf">do_something_1</span> <span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">do_something_1</span> <span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 1&#39;</span><span class="p">)</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 1&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="mi">1</span>
 
-<span class="k">def</span> <span class="nf">do_something_2</span> <span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">do_something_2</span> <span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 2&#39;</span><span class="p">)</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 2&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="mi">2</span>
 
-<span class="k">def</span> <span class="nf">do_something_3</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">do_something_3</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 3&#39;</span><span class="p">)</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">2.5</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 3&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span> 
 
-<span class="k">def</span> <span class="nf">do_something_4</span> <span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">do_something_4</span> <span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 4&#39;</span><span class="p">)</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;I had an error&#39;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;end 4&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="mi">4</span>
 
-<span class="k">def</span> <span class="nf">do_something_5</span> <span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">do_something_5</span> <span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;start 5&#39;</span><span class="p">)</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;I had a different error&#39;</span><span class="p">)</span>
@@ -118,7 +118,7 @@
 <p>Here is the simplest example, where we call functions <code class="docutils literal notranslate"><span class="pre">do_something_1</span></code> and <code class="docutils literal notranslate"><span class="pre">do_something_2</span></code> that take no arguments and raise no exceptions:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lb</span>
 
 <span class="n">results</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">concurrently</span><span class="p">(</span><span class="n">do_something_1</span><span class="p">,</span> <span class="n">do_something_2</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;results: </span><span class="si">{</span><span class="n">results</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -127,7 +127,6 @@
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 1start 2
-
 end 1
 end 2
 results: {&#39;do_something_1&#39;: 1, &#39;do_something_2&#39;: 2}
@@ -144,8 +143,8 @@ results: {&#39;do_something_1&#39;: 1, &#39;do_something_2&#39;: 2}
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 1start 3
-
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 1
+start 3
 end 1
 end 3
 </pre></div>
@@ -158,7 +157,7 @@ end 3
 <p>More than one of the functions running concurrently may raise exceptions. Tracebacks print to the screen, and by default <code class="docutils literal notranslate"><span class="pre">ConcurrentException</span></code> is also raised:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">concurrently</span><span class="p">,</span> <span class="n">Call</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="kn">import</span> <span class="n">concurrently</span><span class="p">,</span> <span class="n">Call</span>
 
 <span class="n">results</span> <span class="o">=</span> <span class="n">concurrently</span><span class="p">(</span><span class="n">do_something_4</span><span class="p">,</span> <span class="n">do_something_5</span><span class="p">)</span>
 <span class="n">results</span>
@@ -166,24 +165,23 @@ end 3
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 4
-start 5
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>start 4start 5
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Traceback (most recent call last):
-  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py&quot;, line 24, in do_something_4
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py&quot;, line 24, in do_something_4
     raise ValueError(&#39;I had an error&#39;)
 ValueError: I had an error
 Traceback (most recent call last):
-  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py&quot;, line 31, in do_something_5
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py&quot;, line 31, in do_something_5
     raise IndexError(&#39;I had a different error&#39;)
 IndexError: I had a different error
 Traceback (most recent call last):
-  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py&quot;, line 24, in do_something_4
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py&quot;, line 24, in do_something_4
     raise ValueError(&#39;I had an error&#39;)
 ValueError: I had an error
 Traceback (most recent call last):
-  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py&quot;, line 31, in do_something_5
+  File &quot;/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py&quot;, line 31, in do_something_5
     raise IndexError(&#39;I had a different error&#39;)
 IndexError: I had a different error
 </pre></div>
@@ -191,7 +189,8 @@ IndexError: I had a different error
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
 <span class="ne">ConcurrentException</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
 <span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">line</span> <span class="mi">3</span>
-<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">concurrently</span><span class="p">,</span> <span class="n">Call</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">from</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="kn">import</span> <span class="n">concurrently</span><span class="p">,</span> <span class="n">Call</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> 
 <span class="ne">----&gt; </span><span class="mi">3</span> <span class="n">results</span> <span class="o">=</span> <span class="n">concurrently</span><span class="p">(</span><span class="n">do_something_4</span><span class="p">,</span> <span class="n">do_something_5</span><span class="p">)</span>
 <span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">results</span>
 
@@ -203,7 +202,7 @@ IndexError: I had a different error
 <p>the <code class="docutils literal notranslate"><span class="pre">catch</span></code> flag changes concurrent exception handling behavior to return values of functions that did not raise exceptions (instead of raising <code class="docutils literal notranslate"><span class="pre">ConcurrentException</span></code>). The return dictionary only includes keys for functions that did not raise exceptions.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">concurrently</span><span class="p">,</span> <span class="n">Call</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="kn">import</span> <span class="n">concurrently</span><span class="p">,</span> <span class="n">Call</span>
 
 <span class="n">results</span> <span class="o">=</span> <span class="n">concurrently</span><span class="p">(</span><span class="n">do_something_4</span><span class="p">,</span> <span class="n">do_something_1</span><span class="p">,</span> <span class="n">catch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">results</span>
@@ -218,7 +217,7 @@ IndexError: I had a different error
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
@@ -227,7 +226,7 @@ IndexError: I had a different error
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -235,13 +234,13 @@ IndexError: I had a different error
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">

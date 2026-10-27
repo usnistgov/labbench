@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Testbed Organization &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../../_static/documentation_options.js?v=29b1acb9"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=63f5dc7c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <script src="../../_static/documentation_options.js?v=243652a6"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Data Logging" href="03%20data%20logging.html" />
     <link rel="prev" title="VISA automation quick start" href="01%20VISADevice.html" />
@@ -57,7 +57,7 @@
   <![endif]-->
 </header>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -88,13 +88,13 @@
 <p>The basic use of <a class="reference internal" href="../../labbench.html#labbench.Rack" title="labbench.Rack"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Rack</span></code></a> is to create a container that groups together different <a class="reference internal" href="../../labbench.html#labbench.Device" title="labbench.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">labbench.Device</span></code></a> objects. In order to reduce python object boilerplate, they are written in the style of <a class="reference external" href="https://docs.python.org/3/library/dataclasses.html">dataclasses</a>. As an example, to group together two types of detecting instruments:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lb</span>
 
 <span class="c1"># simulated instruments</span>
-<span class="kn">from</span> <span class="nn">labbench.testing.pyvisa_sim</span> <span class="kn">import</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SpectrumAnalyzer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">labbench.testing.pyvisa_sim</span><span class="w"> </span><span class="kn">import</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SpectrumAnalyzer</span>
 
 
-<span class="k">class</span> <span class="nc">Measurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Measurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="c1"># the annotation (&quot;:&quot; notation) specifies that power_sensor</span>
     <span class="c1"># can be set later when we create a Measurement object</span>
     <span class="n">spectrum_analyzer</span><span class="p">:</span> <span class="n">SpectrumAnalyzer</span> <span class="o">=</span> <span class="n">SpectrumAnalyzer</span><span class="p">()</span>
@@ -111,12 +111,11 @@
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Red">Class constructor information:</span>
- Measurement<span class=" -Color -Color-Blue">(</span>
-    <span class=" -Color -Color-Blue">*,</span>
-    spectrum_analyzer<span class=" -Color -Color-Blue">:</span> labbench<span class=" -Color -Color-Blue">.</span>testing<span class=" -Color -Color-Blue">.</span>pyvisa_sim<span class=" -Color -Color-Blue">.</span>SpectrumAnalyzer <span class=" -Color -Color-Blue">=</span> SpectrumAnalyzer<span class=" -Color -Color-Blue">(),</span>
-    power_sensor<span class=" -Color -Color-Blue">:</span> labbench<span class=" -Color -Color-Blue">.</span>testing<span class=" -Color -Color-Blue">.</span>pyvisa_sim<span class=" -Color -Color-Blue">.</span>PowerSensor<span class=" -Color -Color-Blue">,</span>
-<span class=" -Color -Color-Blue">)</span>
- 
+ Measurement(
+    *,
+    spectrum_analyzer: labbench.testing.pyvisa_sim.SpectrumAnalyzer = SpectrumAnalyzer(),
+    power_sensor: labbench.testing.pyvisa_sim.PowerSensor,
+)
 </pre></div>
 </div>
 </div>
@@ -138,22 +137,22 @@
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Spectrum analyzer center frequency:  10000000.0
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:56,088.088</span> • <span class=" -Color -Color-Blue">labbench:</span> context order: (spectrum_analyzer, power_sensor)-&gt;(&lt;__main__.Measurement object at 0x11bb90190&gt;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,638.639</span> • <span class=" -Color -Color-Blue">power_sensor:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,641.641</span> • <span class=" -Color -Color-Blue">power_sensor:</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,642.642</span> • <span class=" -Color -Color-Blue">power_sensor:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,868.868</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Spectrum Analyzer #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,870.871</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,871.872</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,872.872</span> • <span class=" -Color -Color-Blue">labbench:</span> entry into context for  1.782 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,873.873</span> • <span class=" -Color -Color-Blue">labbench:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,873.874</span> • <span class=" -Color -Color-Blue">labbench:</span> entry into context for &lt;__main__.Measurement object at 0x11bb90190&gt; 1.783 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,874.874</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> query(&#39;SENS:FREQ?&#39;):
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,874.875</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span>     → &#39;10000000.000000&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,875.875</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> center_frequency → 10000000.0  (Hz)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,875.876</span> • <span class=" -Color -Color-Blue">labbench:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,877.877</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,877.878</span> • <span class=" -Color -Color-Blue">power_sensor:</span> closed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> DEBUG  2026-10-27 13:47:37.611 • labbench: context order: (spectrum_analyzer, power_sensor)-&gt;(&lt;__main__.Measurement object at 0x10d0f56a0&gt;)
+ DEBUG  2026-10-27 13:47:39.424 • power_sensor: probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+ DEBUG  2026-10-27 13:47:39.426 • power_sensor: &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:39.426 • power_sensor: opened
+ DEBUG  2026-10-27 13:47:39.425 • spectrum_analyzer: probed resource by matching make &#39;FakeTech&#39;, model &#39;Spectrum Analyzer #1234&#39;
+ DEBUG  2026-10-27 13:47:39.427 • spectrum_analyzer: &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:39.428 • spectrum_analyzer: opened
+ DEBUG  2026-10-27 13:47:39.429 • labbench: entry into context for  1.818 s elapsed
+ DEBUG  2026-10-27 13:47:39.430 • labbench: opened
+ DEBUG  2026-10-27 13:47:39.431 • labbench: entry into context for &lt;__main__.Measurement object at 0x10d0f56a0&gt; 1.820 s elapsed
+ DEBUG  2026-10-27 13:47:39.431 • spectrum_analyzer: query(&#39;SENS:FREQ?&#39;):
+ DEBUG  2026-10-27 13:47:39.432 • spectrum_analyzer:     → &#39;10000000.000000&#39;
+ DEBUG  2026-10-27 13:47:39.432 • spectrum_analyzer: center_frequency → 10000000.0  (Hz)
+ DEBUG  2026-10-27 13:47:39.433 • labbench: closed
+ DEBUG  2026-10-27 13:47:39.434 • spectrum_analyzer: closed
+ DEBUG  2026-10-27 13:47:39.434 • power_sensor: closed
 </pre></div>
 </div>
 </div>
@@ -165,9 +164,9 @@
 <p>Rack objects can be nested together, resulting in recursive context management of all devices by a top-level class. For example:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">labbench.testing.pyvisa_sim</span> <span class="kn">import</span> <span class="n">SignalGenerator</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SpectrumAnalyzer</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">labbench.testing.pyvisa_sim</span><span class="w"> </span><span class="kn">import</span> <span class="n">SignalGenerator</span><span class="p">,</span> <span class="n">PowerSensor</span><span class="p">,</span> <span class="n">SpectrumAnalyzer</span>
 
-<span class="k">class</span> <span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="c1"># as with Device objects, we annotate a type to allow </span>
     <span class="n">measurement</span><span class="p">:</span> <span class="n">Measurement</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">power_sensor</span><span class="o">=</span><span class="n">PowerSensor</span><span class="p">())</span>
 
@@ -185,27 +184,27 @@
 Signal generator center frequency:  10000000.0
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,890.891</span> • <span class=" -Color -Color-Blue">labbench:</span> context order: (generator, spectrum_analyzer, power_sensor)-&gt;(measurement,&lt;__main__.Testbed object at 0x11bbb8370&gt;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,917.917</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,918.919</span> • <span class=" -Color -Color-Blue">generator:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Signal Generator #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,919.919</span> • <span class=" -Color -Color-Blue">generator:</span> &#39;TCPIP0::localhost:10001::inst0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,919.920</span> • <span class=" -Color -Color-Blue">power_sensor:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,920.920</span> • <span class=" -Color -Color-Blue">generator:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,920.921</span> • <span class=" -Color -Color-Blue">power_sensor:</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,921.921</span> • <span class=" -Color -Color-Blue">power_sensor:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,921.922</span> • <span class=" -Color -Color-Blue">measurement:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,921.922</span> • <span class=" -Color -Color-Blue">labbench:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,922.922</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> query(&#39;SENS:FREQ?&#39;):
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,922.923</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span>     → &#39;10000000.000000&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,922.923</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> center_frequency → 10000000.0  (Hz)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,923.923</span> • <span class=" -Color -Color-Blue">generator:</span> query(&#39;SENS:FREQ?&#39;):
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,923.923</span> • <span class=" -Color -Color-Blue">generator:</span>     → &#39;10000000.000000&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,923.924</span> • <span class=" -Color -Color-Blue">generator:</span> center_frequency → 10000000.0  (Hz)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,923.924</span> • <span class=" -Color -Color-Blue">labbench:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,924.924</span> • <span class=" -Color -Color-Blue">measurement:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,924.924</span> • <span class=" -Color -Color-Blue">power_sensor:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,924.925</span> • <span class=" -Color -Color-Blue">generator:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,924.925</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> closed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> DEBUG  2026-10-27 13:47:39.443 • labbench: context order: (generator, spectrum_analyzer, power_sensor)-&gt;(measurement,&lt;__main__.Testbed object at 0x10c9cecf0&gt;)
+ DEBUG  2026-10-27 13:47:39.445 • spectrum_analyzer: opened
+ DEBUG  2026-10-27 13:47:39.446 • generator: probed resource by matching make &#39;FakeTech&#39;, model &#39;Signal Generator #1234&#39;
+ DEBUG  2026-10-27 13:47:39.447 • generator: &#39;TCPIP0::localhost:10001::inst0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:39.448 • generator: opened
+ DEBUG  2026-10-27 13:47:39.447 • power_sensor: probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+ DEBUG  2026-10-27 13:47:39.448 • power_sensor: &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:39.449 • power_sensor: opened
+ DEBUG  2026-10-27 13:47:39.449 • measurement: opened
+ DEBUG  2026-10-27 13:47:39.449 • labbench: opened
+ DEBUG  2026-10-27 13:47:39.450 • spectrum_analyzer: query(&#39;SENS:FREQ?&#39;):
+ DEBUG  2026-10-27 13:47:39.450 • spectrum_analyzer:     → &#39;10000000.000000&#39;
+ DEBUG  2026-10-27 13:47:39.450 • spectrum_analyzer: center_frequency → 10000000.0  (Hz)
+ DEBUG  2026-10-27 13:47:39.450 • generator: query(&#39;SENS:FREQ?&#39;):
+ DEBUG  2026-10-27 13:47:39.451 • generator:     → &#39;10000000.000000&#39;
+ DEBUG  2026-10-27 13:47:39.451 • generator: center_frequency → 10000000.0  (Hz)
+ DEBUG  2026-10-27 13:47:39.451 • labbench: closed
+ DEBUG  2026-10-27 13:47:39.452 • measurement: closed
+ DEBUG  2026-10-27 13:47:39.452 • power_sensor: closed
+ DEBUG  2026-10-27 13:47:39.452 • generator: closed
+ DEBUG  2026-10-27 13:47:39.452 • spectrum_analyzer: closed
 </pre></div>
 </div>
 </div>
@@ -217,29 +216,29 @@ Signal generator center frequency:  10000000.0
 <p>Rack classes can define functions that execute snippets of measurement procedures within the scope of its owned devices. These include an <code class="docutils literal notranslate"><span class="pre">open</span></code> method to initialize the state of the group of instruments. For example, extending our container objects:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">labbench.util</span> <span class="kn">import</span> <span class="n">logger</span>
-<span class="k">class</span> <span class="nc">Measurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">labbench.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Measurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="n">spectrum_analyzer</span><span class="p">:</span> <span class="n">SpectrumAnalyzer</span> <span class="o">=</span> <span class="n">SpectrumAnalyzer</span><span class="p">()</span>
     <span class="n">power_sensor</span><span class="p">:</span> <span class="n">PowerSensor</span>
 
-    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># this is called automatically after its owned devices are opened</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Measurement open()&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Measurement close()&#39;</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="n">generator</span><span class="p">:</span> <span class="n">SignalGenerator</span> <span class="o">=</span> <span class="n">SignalGenerator</span><span class="p">()</span>
     <span class="n">measurement</span><span class="p">:</span> <span class="n">Measurement</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">power_sensor</span><span class="o">=</span><span class="n">PowerSensor</span><span class="p">())</span>
 
-    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># the last open() call is here after everything else has opened</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sweep open()&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># the first close() call is here before nested objects</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sweep close()&#39;</span><span class="p">)</span>
 
@@ -249,29 +248,29 @@ Signal generator center frequency:  10000000.0
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,934.934</span> • <span class=" -Color -Color-Blue">labbench:</span> context order: (generator, spectrum_analyzer, power_sensor)-&gt;(measurement,&lt;__main__.Testbed object at 0x11bb7d7c0&gt;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,936.936</span> • <span class=" -Color -Color-Blue">generator:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Signal Generator #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,936.936</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Spectrum Analyzer #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,936.937</span> • <span class=" -Color -Color-Blue">generator:</span> &#39;TCPIP0::localhost:10001::inst0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,936.937</span> • <span class=" -Color -Color-Blue">power_sensor:</span> probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,937.937</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,937.937</span> • <span class=" -Color -Color-Blue">generator:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,937.938</span> • <span class=" -Color -Color-Blue">power_sensor:</span> &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,938.938</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,938.939</span> • <span class=" -Color -Color-Blue">power_sensor:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,939.939</span> • <span class=" -Color -Color-Blue">labbench:</span> Measurement open()
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,939.940</span> • <span class=" -Color -Color-Blue">power_sensor:</span> write(&#39;SYST:PRES&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,939.940</span> • <span class=" -Color -Color-Blue">measurement:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,939.940</span> • <span class=" -Color -Color-Blue">labbench:</span> Sweep open()
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,940.940</span> • <span class=" -Color -Color-Blue">generator:</span> write(&#39;*RST&#39;)
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,940.940</span> • <span class=" -Color -Color-Blue">labbench:</span> opened
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,940.941</span> • <span class=" -Color -Color-Blue">labbench:</span> Sweep close()
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,940.941</span> • <span class=" -Color -Color-Blue">labbench:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,941.941</span> • <span class=" -Color -Color-Blue">labbench:</span> Measurement close()
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,941.941</span> • <span class=" -Color -Color-Blue">measurement:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,941.941</span> • <span class=" -Color -Color-Blue">power_sensor:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,941.942</span> • <span class=" -Color -Color-Blue">spectrum_analyzer:</span> closed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> DEBUG </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,941.942</span> • <span class=" -Color -Color-Blue">generator:</span> closed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> DEBUG  2026-10-27 13:47:39.460 • labbench: context order: (generator, spectrum_analyzer, power_sensor)-&gt;(measurement,&lt;__main__.Testbed object at 0x10c9cee40&gt;)
+ DEBUG  2026-10-27 13:47:39.462 • generator: probed resource by matching make &#39;FakeTech&#39;, model &#39;Signal Generator #1234&#39;
+ DEBUG  2026-10-27 13:47:39.463 • generator: &#39;TCPIP0::localhost:10001::inst0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:39.463 • generator: opened
+ DEBUG  2026-10-27 13:47:39.463 • spectrum_analyzer: probed resource by matching make &#39;FakeTech&#39;, model &#39;Spectrum Analyzer #1234&#39;
+ DEBUG  2026-10-27 13:47:39.464 • spectrum_analyzer: &#39;USB0::0x1111::0x2222::0x4445::0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:39.463 • power_sensor: probed resource by matching make &#39;FakeTech&#39;, model &#39;Power Sensor #1234&#39;
+ DEBUG  2026-10-27 13:47:39.465 • power_sensor: &#39;USB0::0x1111::0x2222::0x1234::0::INSTR&#39;  → resource
+ DEBUG  2026-10-27 13:47:39.465 • power_sensor: opened
+ DEBUG  2026-10-27 13:47:39.464 • spectrum_analyzer: opened
+ INFO   2026-10-27 13:47:39.466 • labbench: Measurement open()
+ DEBUG  2026-10-27 13:47:39.466 • power_sensor: write(&#39;SYST:PRES&#39;)
+ DEBUG  2026-10-27 13:47:39.466 • measurement: opened
+ INFO   2026-10-27 13:47:39.466 • labbench: Sweep open()
+ DEBUG  2026-10-27 13:47:39.467 • generator: write(&#39;*RST&#39;)
+ DEBUG  2026-10-27 13:47:39.467 • labbench: opened
+ INFO   2026-10-27 13:47:39.467 • labbench: Sweep close()
+ DEBUG  2026-10-27 13:47:39.467 • labbench: closed
+ INFO   2026-10-27 13:47:39.468 • labbench: Measurement close()
+ DEBUG  2026-10-27 13:47:39.468 • measurement: closed
+ DEBUG  2026-10-27 13:47:39.468 • spectrum_analyzer: closed
+ DEBUG  2026-10-27 13:47:39.468 • power_sensor: closed
+ DEBUG  2026-10-27 13:47:39.469 • generator: closed
 </pre></div>
 </div>
 </div>
@@ -287,11 +286,11 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
 <p>As an organizational tool, short pieces of experimental procedure can be expressed by implementing methods (class-level functions) in each rack:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Measurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Measurement</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="n">spectrum_analyzer</span><span class="p">:</span> <span class="n">SpectrumAnalyzer</span> <span class="o">=</span> <span class="n">SpectrumAnalyzer</span><span class="p">()</span>
     <span class="n">power_sensor</span><span class="p">:</span> <span class="n">PowerSensor</span>
 
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">load_state</span><span class="p">(</span><span class="s2">&quot;state_filename&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">resolution_bandwidth</span> <span class="o">=</span> <span class="mf">10e6</span>
@@ -299,10 +298,10 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
         <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">preset</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
 
-    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
         <span class="n">pvt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -310,15 +309,15 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
             <span class="s1">&#39;power&#39;</span><span class="p">:</span> <span class="n">pvt</span>
         <span class="p">}</span>
 
-<span class="k">class</span> <span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Testbed</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">Rack</span><span class="p">):</span>
     <span class="n">generator</span><span class="p">:</span> <span class="n">SignalGenerator</span> <span class="o">=</span> <span class="n">SignalGenerator</span><span class="p">()</span>
     <span class="n">measurement</span><span class="p">:</span> <span class="n">Measurement</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">power_sensor</span><span class="o">=</span><span class="n">PowerSensor</span><span class="p">())</span>
 
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">center_frequency</span> <span class="o">=</span> <span class="n">center_frequency</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">center_frequency</span><span class="o">=</span><span class="n">center_frequency</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">single_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">single_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">center_frequency</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;single frequency test at </span><span class="si">{</span><span class="n">center_frequency</span><span class="o">/</span><span class="mf">1e6</span><span class="si">:</span><span class="s1">0.3f</span><span class="si">}</span><span class="s1"> MHz&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">output_enabled</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -326,7 +325,7 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">output_enabled</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;starting frequency sweep across </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frequencies</span><span class="p">)</span><span class="si">}</span><span class="s1"> points&#39;</span><span class="p">)</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -343,41 +342,56 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,955.955</span> • <span class=" -Color -Color-Blue">labbench:</span> starting frequency sweep across 3 points
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:42:57,955.955</span> • <span class=" -Color -Color-Blue">labbench:</span> single frequency test at 2400.000 MHz
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> INFO   2026-10-27 13:47:39.479 • labbench: starting frequency sweep across 3 points
+ INFO   2026-10-27 13:47:39.480 • labbench: single frequency test at 2400.000 MHz
 </pre></div>
 </div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
 <span class="ne">ValueError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">line</span> <span class="mi">52</span>
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">line</span> <span class="mi">51</span>
+<span class="g g-Whitespace">     </span><span class="mi">47</span>         <span class="k">return</span> <span class="n">ret</span>
+<span class="g g-Whitespace">     </span><span class="mi">48</span> 
 <span class="g g-Whitespace">     </span><span class="mi">49</span> <span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;info&#39;</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">51</span> <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">testbed</span><span class="p">:</span>
-<span class="ne">---&gt; </span><span class="mi">52</span>     <span class="n">data</span> <span class="o">=</span> <span class="n">testbed</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">])</span>
+<span class="g g-Whitespace">     </span><span class="mi">50</span> 
+<span class="ne">---&gt; </span><span class="mi">51</span> <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">testbed</span><span class="p">:</span>
+<span class="g g-Whitespace">     </span><span class="mi">52</span>     <span class="n">data</span> <span class="o">=</span> <span class="n">testbed</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">])</span>
 
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">line</span> <span class="mi">52</span>
+<span class="nn">File ~/Documents/src/labbench/src/labbench/_rack.py:983,</span> in <span class="ni">Owner.__exit__</span><span class="nt">(self, *args)</span>
+<span class="g g-Whitespace">    </span><span class="mi">981</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">982</span> <span class="k">assert</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="ne">--&gt; </span><span class="mi">983</span> <span class="k">return</span> <span class="n">context</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">line</span> <span class="mi">51</span>
+<span class="g g-Whitespace">     </span><span class="mi">47</span>         <span class="k">return</span> <span class="n">ret</span>
+<span class="g g-Whitespace">     </span><span class="mi">48</span> 
 <span class="g g-Whitespace">     </span><span class="mi">49</span> <span class="n">lb</span><span class="o">.</span><span class="n">show_messages</span><span class="p">(</span><span class="s1">&#39;info&#39;</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">51</span> <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">testbed</span><span class="p">:</span>
-<span class="ne">---&gt; </span><span class="mi">52</span>     <span class="n">data</span> <span class="o">=</span> <span class="n">testbed</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">])</span>
+<span class="g g-Whitespace">     </span><span class="mi">50</span> 
+<span class="ne">---&gt; </span><span class="mi">51</span> <span class="k">with</span> <span class="n">Testbed</span><span class="p">()</span> <span class="k">as</span> <span class="n">testbed</span><span class="p">:</span>
+<span class="g g-Whitespace">     </span><span class="mi">52</span>     <span class="n">data</span> <span class="o">=</span> <span class="n">testbed</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4e9</span><span class="p">,</span> <span class="mf">2.44e9</span><span class="p">,</span> <span class="mf">2.48e9</span><span class="p">])</span>
 
 <span class="nn">Cell In[5], line 45,</span> in <span class="ni">Testbed.sweep</span><span class="nt">(self, frequencies)</span>
-<span class="g g-Whitespace">     </span><span class="mi">42</span> <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="g g-Whitespace">     </span><span class="mi">44</span> <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">frequencies</span><span class="p">:</span>
-<span class="ne">---&gt; </span><span class="mi">45</span>     <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">single_frequency</span><span class="p">(</span><span class="n">center_frequency</span><span class="o">=</span><span class="n">freq</span><span class="p">))</span>
-<span class="g g-Whitespace">     </span><span class="mi">47</span> <span class="k">return</span> <span class="n">ret</span>
+<span class="g g-Whitespace">     </span><span class="mi">41</span>         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;starting frequency sweep across </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frequencies</span><span class="p">)</span><span class="si">}</span><span class="s1"> points&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">42</span>         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="g g-Whitespace">     </span><span class="mi">43</span> 
+<span class="g g-Whitespace">     </span><span class="mi">44</span>         <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">frequencies</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">45</span>             <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">single_frequency</span><span class="p">(</span><span class="n">center_frequency</span><span class="o">=</span><span class="n">freq</span><span class="p">))</span>
+<span class="g g-Whitespace">     </span><span class="mi">46</span> 
+<span class="g g-Whitespace">     </span><span class="mi">47</span>         <span class="k">return</span> <span class="n">ret</span>
 
 <span class="nn">Cell In[5], line 38,</span> in <span class="ni">Testbed.single_frequency</span><span class="nt">(self, center_frequency)</span>
-<span class="g g-Whitespace">     </span><span class="mi">36</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
-<span class="g g-Whitespace">     </span><span class="mi">37</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">output_enabled</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="ne">---&gt; </span><span class="mi">38</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">34</span>         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">output_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="g g-Whitespace">     </span><span class="mi">35</span> 
+<span class="g g-Whitespace">     </span><span class="mi">36</span>         <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">37</span>         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">output_enabled</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="ne">---&gt; </span><span class="mi">38</span>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
 
 <span class="nn">Cell In[5], line 18,</span> in <span class="ni">Measurement.fetch</span><span class="nt">(self)</span>
-<span class="g g-Whitespace">     </span><span class="mi">16</span> <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="g g-Whitespace">     </span><span class="mi">17</span>     <span class="n">spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
-<span class="ne">---&gt; </span><span class="mi">18</span>     <span class="n">pvt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
-<span class="g g-Whitespace">     </span><span class="mi">19</span>     <span class="k">return</span> <span class="p">{</span>
-<span class="g g-Whitespace">     </span><span class="mi">20</span>         <span class="s1">&#39;spectrum&#39;</span><span class="p">:</span> <span class="n">spectrum</span><span class="p">,</span>
-<span class="g g-Whitespace">     </span><span class="mi">21</span>         <span class="s1">&#39;power&#39;</span><span class="p">:</span> <span class="n">pvt</span>
-<span class="g g-Whitespace">     </span><span class="mi">22</span>     <span class="p">}</span>
+<span class="g g-Whitespace">     </span><span class="mi">16</span>     <span class="k">def</span><span class="w"> </span><span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="g g-Whitespace">     </span><span class="mi">17</span>         <span class="n">spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectrum_analyzer</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+<span class="ne">---&gt; </span><span class="mi">18</span>         <span class="n">pvt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_sensor</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+<span class="g g-Whitespace">     </span><span class="mi">19</span>         <span class="k">return</span> <span class="p">{</span>
+<span class="g g-Whitespace">     </span><span class="mi">20</span>             <span class="s1">&#39;spectrum&#39;</span><span class="p">:</span> <span class="n">spectrum</span><span class="p">,</span>
+<span class="g g-Whitespace">     </span><span class="mi">21</span>             <span class="s1">&#39;power&#39;</span><span class="p">:</span> <span class="n">pvt</span>
 
 <span class="nn">File ~/Documents/src/labbench/src/labbench/testing/pyvisa_sim.py:65,</span> in <span class="ni">PowerSensor.fetch</span><span class="nt">(self)</span>
 <span class="g g-Whitespace">     </span><span class="mi">62</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FETC?&#39;</span><span class="p">)</span>
@@ -399,7 +413,7 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../../index.html">Table of Contents</a></h3>
@@ -431,7 +445,7 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -439,13 +453,13 @@ As a result, calling <code class="docutils literal notranslate"><span class="pre
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">

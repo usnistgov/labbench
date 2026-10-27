@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Simplified Concurrency &#8212; labbench</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=0613869e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
-    <script src="../../_static/documentation_options.js?v=29b1acb9"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css?v=63f5dc7c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <script src="../../_static/documentation_options.js?v=243652a6"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="API Reference" href="../../api_reference.html" />
     <link rel="prev" title="Data Logging" href="03%20data%20logging.html" />
@@ -57,7 +57,7 @@
   <![endif]-->
 </header>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -86,29 +86,29 @@
 <p>Here are simple Device objects that use <code class="xref py py-func docutils literal notranslate"><span class="pre">time.sleep()</span></code> as a stand-in for long-running remote operations:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">labbench</span> <span class="k">as</span> <span class="nn">lb</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lb</span>
 
 <span class="c1"># a placeholder for long-running remote operations</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span>
 
-<span class="k">class</span> <span class="nc">Device1</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Device1</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># open() is called on connection to the device</span>
         <span class="k">with</span> <span class="n">lb</span><span class="o">.</span><span class="n">stopwatch</span><span class="p">(</span><span class="s1">&#39;Device1 connect&#39;</span><span class="p">):</span>
             <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             
-    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">lb</span><span class="o">.</span><span class="n">stopwatch</span><span class="p">(</span><span class="s1">&#39;Device1 fetch&#39;</span><span class="p">):</span>
             <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">5</span>
 
-<span class="k">class</span> <span class="nc">Device2</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Device2</span><span class="p">(</span><span class="n">lb</span><span class="o">.</span><span class="n">VISADevice</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># open() is called on connection to the device</span>
         <span class="k">with</span> <span class="n">lb</span><span class="o">.</span><span class="n">stopwatch</span><span class="p">(</span><span class="s1">&#39;Device2 connect&#39;</span><span class="p">):</span>
             <span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
             
-    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">lb</span><span class="o">.</span><span class="n">stopwatch</span><span class="p">(</span><span class="s1">&#39;Device2 acquire&#39;</span><span class="p">):</span>
             <span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -119,8 +119,8 @@
 <p>Suppose we need to both <code class="docutils literal notranslate"><span class="pre">fetch</span></code> from <code class="docutils literal notranslate"><span class="pre">Device1</span></code> and <code class="docutils literal notranslate"><span class="pre">acquire</span></code> in <code class="docutils literal notranslate"><span class="pre">Device2</span></code>, and that the time-sequencing is not important. One approach is to simply call one and then the other:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">testing</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">perf_counter</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="kn">import</span> <span class="n">testing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">perf_counter</span>
 
 <span class="c1"># allow simulated connections to the specified VISA devices</span>
 <span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="n">testing</span><span class="o">.</span><span class="n">pyvisa_sim_resource</span><span class="p">)</span>
@@ -141,11 +141,11 @@
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>connect both (total time): 3.0 s
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:03,867.867</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.004 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:05,875.875</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:06,880.881</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.003 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:08,885.886</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.003 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:08,888.888</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 3.011 s elapsed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> INFO   2026-10-27 13:47:45.106 • labbench: Device1 connect 1.005 s elapsed
+ INFO   2026-10-27 13:47:47.111 • labbench: Device2 connect 2.003 s elapsed
+ INFO   2026-10-27 13:47:48.112 • labbench: Device1 fetch 1.000 s elapsed
+ INFO   2026-10-27 13:47:50.118 • labbench: Device2 acquire 2.005 s elapsed
+ INFO   2026-10-27 13:47:50.118 • labbench: both Device1.fetch and Device2.acquire (total time) 3.006 s elapsed
 </pre></div>
 </div>
 </div>
@@ -154,8 +154,8 @@
 <p>Suppose that we want to perform each of the open and fetch/acquire operations concurrently. Enter <a class="reference internal" href="../../labbench.html#labbench.concurrently" title="labbench.concurrently"><code class="xref py py-func docutils literal notranslate"><span class="pre">labbench.concurrently()</span></code></a>:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">labbench</span> <span class="kn">import</span> <span class="n">testing</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">perf_counter</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">labbench</span><span class="w"> </span><span class="kn">import</span> <span class="n">testing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">perf_counter</span>
 
 <span class="c1"># allow simulated connections to the specified VISA devices</span>
 <span class="n">lb</span><span class="o">.</span><span class="n">visa_default_resource_manager</span><span class="p">(</span><span class="n">testing</span><span class="o">.</span><span class="n">pyvisa_sim_resource</span><span class="p">)</span>
@@ -178,11 +178,11 @@
 Return value:  {&#39;fetch&#39;: 5}
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:09,902.903</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 connect 1.003 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:10,904.905</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 connect 2.004 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:11,910.911</span> • <span class=" -Color -Color-Blue">labbench:</span> Device1 fetch 1.003 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:12,913.913</span> • <span class=" -Color -Color-Blue">labbench:</span> Device2 acquire 2.005 s elapsed
-<span class=" -Color -Color-Bold -Color-Bold-Black"> INFO  </span> <span class=" -Color -Color-Green">2024-03-20 13:43:12,915.916</span> • <span class=" -Color -Color-Blue">labbench:</span> both Device1.fetch and Device2.acquire (total time) 2.008 s elapsed
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> INFO   2026-10-27 13:47:51.129 • labbench: Device1 connect 1.005 s elapsed
+ INFO   2026-10-27 13:47:52.126 • labbench: Device2 connect 2.002 s elapsed
+ INFO   2026-10-27 13:47:53.131 • labbench: Device1 fetch 1.004 s elapsed
+ INFO   2026-10-27 13:47:54.130 • labbench: Device2 acquire 2.002 s elapsed
+ INFO   2026-10-27 13:47:54.132 • labbench: both Device1.fetch and Device2.acquire (total time) 2.005 s elapsed
 </pre></div>
 </div>
 </div>
@@ -200,7 +200,7 @@ The syntax is a little more involved when you want to pass in arguments to multi
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h4>Previous topic</h4>
@@ -219,7 +219,7 @@ The syntax is a little more involved when you want to pass in arguments to multi
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -227,13 +227,13 @@ The syntax is a little more involved when you want to pass in arguments to multi
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">

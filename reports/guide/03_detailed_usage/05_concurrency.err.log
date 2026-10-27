@@ -1,17 +1,30 @@
 Traceback (most recent call last):
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
     executenb(
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 1314, in execute
+    ~~~~~~~~~^
+        nb,
+        ^^^
+    ...<4 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 1323, in execute
     return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
     return loop.run_until_complete(inner)
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 642, in run_until_complete
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/dkuester/.local/share/uv/python/cpython-3.14.3-macos-aarch64-none/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
     return future.result()
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 709, in async_execute
+           ~~~~~~~~~~~~~^^
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 709, in async_execute
     await self.async_execute_cell(
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+        cell, index, execution_count=self.code_cells_executed + 1
+    )
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 1062, in async_execute_cell
     await self._check_raise_for_error(cell, cell_index, exec_reply)
-  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.9/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+  File "/Users/dkuester/Documents/src/labbench/.venv/lib/python3.14/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
@@ -22,35 +35,35 @@ results
 ------------------
 
 ----- stdout -----
-start 4
-start 5
+start 4start 5
 ----- stderr -----
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 24, in do_something_4
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 ----- stderr -----
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 31, in do_something_5
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ----- stderr -----
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 24, in do_something_4
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py", line 24, in do_something_4
     raise ValueError('I had an error')
 ValueError: I had an error
 Traceback (most recent call last):
-  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_46205/3738405091.py", line 31, in do_something_5
+  File "/var/folders/4c/2cryg6ld5b10g45f5cpsrf740016fl/T/ipykernel_73560/3738405091.py", line 31, in do_something_5
     raise IndexError('I had a different error')
 IndexError: I had a different error
 ------------------
 
-[0;31m---------------------------------------------------------------------------[0m
-[0;31mConcurrentException[0m                       Traceback (most recent call last)
-Cell [0;32mIn[4], line 3[0m
-[1;32m      1[0m [38;5;28;01mfrom[39;00m [38;5;21;01mlabbench[39;00m [38;5;28;01mimport[39;00m concurrently, Call
-[0;32m----> 3[0m results [38;5;241m=[39m [43mconcurrently[49m[43m([49m[43mdo_something_4[49m[43m,[49m[43m [49m[43mdo_something_5[49m[43m)[49m
-[1;32m      4[0m results
+[31m---------------------------------------------------------------------------[39m
+[31mConcurrentException[39m                       Traceback (most recent call last)
+[36mCell[39m[36m [39m[32mIn[4][39m[32m, line 3[39m
+[32m      1[39m [38;5;28;01mfrom[39;00m labbench [38;5;28;01mimport[39;00m concurrently, Call
+[32m      2[39m 
+[32m----> [39m[32m3[39m results = concurrently(do_something_4, do_something_5)
+[32m      4[39m results
 
-[0;31mConcurrentException[0m: 2 call(s) raised exceptions
+[31mConcurrentException[39m: 2 call(s) raised exceptions
 

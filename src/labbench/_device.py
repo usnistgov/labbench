@@ -4,6 +4,7 @@ model. Consider starting with a close read of the documentation and exploring
 the objects in an interpreter instead of reverse-engineering this code.
 """
 
+from __future__ import annotations
 import inspect
 import sys
 from functools import wraps

@@ -67,7 +67,7 @@ dev = [
     "ast_decompiler",
     "astor>=0.8.1",
     # publishing
-    "twine",
+    "twine>=6.2.1",
     "pytest-cov",
     "genbadge",
     "defusedxml",
@@ -117,11 +117,11 @@ path = "src/labbench/_version.py"
 [tool.hatch.envs.default]
 features = ["dev"]
 path = ".venv"
-python = "3.13"
+python = "3.14"
 
 [tool.hatch.envs.build]
 features = ["dev"]
-python = "3.13"
+python = "3.14"
 
 # test environment
 [tool.hatch.envs.test]

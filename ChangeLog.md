@@ -4,11 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.46.0 - unreleased]
+## [0.46.0]
 ### Changed
-- Support python 3.13 and 3.14
+- New support for python 3.13-3.15
 - Bump minimum supported python version to 3.12
 - Fix a mis-applied timeout bug in VISA query
+- Remove a spurious import that prevented imports in certain environments
 
 ## [0.45.0]
 ### Changed

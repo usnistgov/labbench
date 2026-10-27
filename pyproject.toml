@@ -113,48 +113,8 @@ packages = ["src/labbench"]
 [tool.hatch.version]
 path = "src/labbench/_version.py"
 
-# the default virtual environment
-[tool.hatch.envs.default]
-features = ["dev"]
-path = ".venv"
-python = "3.14"
-
-[tool.hatch.envs.build]
-features = ["dev"]
-python = "3.14"
-
-# test environment
-[tool.hatch.envs.test]
-dependencies = [
-    "pytest",
-    "pytest-cov",
-    "genbadge",
-    "defusedxml",
-]
-
-[[tool.hatch.envs.test.matrix]]
-python = ["3.12", "3.13", "3.14", "3.15"]
-
-[tool.hatch.envs.test.scripts]
-all = [
-    "pytest --cov-report xml:doc/reports/coverage.xml --cov-report term --cov=labbench tests",
-    "genbadge coverage -i doc/reports/coverage.xml -o doc/reports/coverage.svg -l"
-]
-
 [tool.coverage.run]
 omit = ["src/labbench/testing/*", "src/labbench/cli/*", "src/labbench/notebooks.py"]
-
-# documentation
-
-[tool.hatch.envs.doc]
-features = ["doc"]
-env-vars = {TEXINPUTS="doc/latex"}
-
-[tool.hatch.envs.doc.scripts]
-html="sphinx-build -b html doc doc/html"
-latex="sphinx-build -b latex doc doc/latex"
-pdf="pdflatex doc/latex/labbench-api.tex --output-directory=doc" 
-rst="sphinx-apidoc -F . -o doc"
 
 [tool.ruff]
 target-version = "py312"

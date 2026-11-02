@@ -37,6 +37,7 @@ test = "pytest tests"
 test-cov = "pytest --cov-report xml:doc/reports/coverage.xml --cov-report term --cov=labbench tests"
 coverage-badge = { cmd = "genbadge coverage -i doc/reports/coverage.xml -o doc/reports/coverage.svg -l", depends-on = ["test-cov"] }
 lint = "ruff check src tests"
+typecheck = "ty check"
 format = "ruff format src tests"
 # make_stubs.py resolves the package as Path('labbench'), so it must run from src/
 stubs = { cmd = "python ../scripts/make_stubs.py", cwd = "src" }

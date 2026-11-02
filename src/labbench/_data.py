@@ -1533,7 +1533,7 @@ class SQLiteLogger(ParamAttrLogger):
             column_type = self._sql_type_name(pending[c])
             with engine.connect() as con:
                 query = f'alter table {self.OUTPUT_TABLE_NAME} add column {c} {column_type} default NULL'
-                con.execute(query)  # xfail-audit observation: raw SQL string passed to Connection.execute
+                con.execute(query)  # ty: ignore[no-matching-overload]  # xfail-audit observation: raw SQL string passed to Connection.execute
 
         # Form the new database row
         df = pd.concat([blank, pending], sort=True)

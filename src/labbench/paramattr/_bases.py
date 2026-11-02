@@ -9,7 +9,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 from __future__ import annotations
 
 import builtins
-from dataclasses import field, Field, MISSING as Undefined, _MISSING_TYPE
+from dataclasses import field, Field, MISSING as Undefined
 import functools
 import inspect
 import numbers
@@ -30,7 +30,11 @@ if typing.TYPE_CHECKING:
 else:
     pd = util.lazy_import('pandas')
 
-UndefinedType: typing.TypeAlias = _MISSING_TYPE
+if typing.TYPE_CHECKING:
+    from dataclasses import _MISSING_TYPE as UndefinedType
+else:
+    # Python 3.15 makes MISSING a PEP 661 sentinel and removes _MISSING_TYPE
+    UndefinedType = type(Undefined)
 
 
 class no_cast_argument:

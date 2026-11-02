@@ -11,7 +11,8 @@ adds sphinx; `publish` adds `build` and `twine`.
 
 ```sh
 pixi run test                                           # full suite, py314
-pixi run -e test312 test                                # full suite on another Python
+pixi run -e test312 test                                # full suite on the oldest Python
+pixi run -e test315 test                                # full suite on the newest Python
 pixi run pytest tests/test_paramattr_value.py -q        # one file
 pixi run pytest -k test_python_print                    # one test by name
 pixi run format                                         # ruff format src tests (single quotes, preview style)
@@ -380,7 +381,10 @@ run; `pixi run pytest tests -q -rxX` lists both.
 `test_paramattr_value.py`, `test_pyvisa.py`, ...), and shared helpers are plain modules
 imported by bare name (`from paramattr_tooling import ...`, `module_as_testbed.py`) because
 pytest's prepend import mode puts `tests/` on `sys.path`. Add new tests to the existing module
-for the area rather than creating a file per feature. A change runs under `pixi run test` and,
-when it touches the Python-version floor or syntax, under `pixi run -e test312 test` as well. Fixtures are module-local; several
-modules use an autouse module-scoped fixture for setup. Simulated devices come from
-`labbench.testing`.
+for the area rather than creating a file per feature. A change passes the suite in the oldest and
+the newest test environments, `pixi run -e test312 test` and `pixi run -e test315 test`, before
+it is reported done; `pixi run test` alone covers only py314. The standard library changes between
+minor versions (3.15 removes `dataclasses._MISSING_TYPE`), so an import of a private
+stdlib name is guarded or replaced rather than assumed to exist on every supported Python.
+Fixtures are module-local; several modules use an autouse module-scoped fixture for setup.
+Simulated devices come from `labbench.testing`.

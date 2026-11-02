@@ -125,7 +125,7 @@ def attr_def_to_parameter(attr_def: attr._bases.Value) -> inspect.Parameter:
     """build a signature.Parameter from a ParamAttr.value"""
     if attr_def.only and sys.version_info >= (3, 11):
         # Union[*attr_def.only] is sooo close
-        annotation = typing.Union[*tuple(attr_def.only)]
+        annotation: typing.Any = typing.Union[tuple(attr_def.only)]
     else:
         annotation = attr_def._type
 

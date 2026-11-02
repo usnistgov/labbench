@@ -1007,7 +1007,8 @@ class Value[V](ParamAttr[V]):
 
 
 class MethodKwArg[V, T, **P](ParamAttr[V]):
-    name: str | None = field(kw_only=False)
+    # a required positional field; ParamAttr.name is None only before __set_name__
+    name: str = field(kw_only=False)  # ty: ignore[invalid-mutable-override]
     default: V | None | UndefinedType = Undefined
 
     ROLE = 'keyword argument'
@@ -1035,10 +1036,16 @@ class MethodKwArg[V, T, **P](ParamAttr[V]):
     @typing.overload
     def __call__(self, decorated: THasParamAttrs) -> THasParamAttrs: ...
 
+    @typing.overload
+    def __call__(self, decorated: type[THasParamAttrs]) -> type[THasParamAttrs]: ...
+
     def __call__(
         self,
-        decorated: _Getter[T, P] | _Setter[T, P] | THasParamAttrs,
-    ) -> _Getter[T, P] | _Setter[T, P] | THasParamAttrs:
+        decorated: _Getter[T, P]
+        | _Setter[T, P]
+        | THasParamAttrs
+        | type[THasParamAttrs],
+    ) -> _Getter[T, P] | _Setter[T, P] | THasParamAttrs | type[THasParamAttrs]:
         """decorate a method to apply type conversion and validation checks to one of its keyword arguments.
 
         These are applied to the keyword argument matching `self.name` immediately before each call to
@@ -1240,8 +1247,8 @@ class _Setter[T, **P](typing.Protocol):
     def __call__(
         _,
         self: Any,
-        /,
         new_value: T,
+        /,
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> None: ...
@@ -1292,6 +1299,14 @@ class _MethodDescriptor[V, **P]:
 class _GetterMethod[V, **P](typing.Protocol):
     # call signature for type hinting decorated Method descriptors
 
+    @typing.overload
+    def __get__(self, owner: None, owner_cls: Any) -> typing.Self: ...
+
+    @typing.overload
+    def __get__(
+        self, owner: HasParamAttrs, owner_cls: Any
+    ) -> _MethodDescriptor[V, P]: ...
+
     def __call__(self: Any, *args: P.args, **kwargs: P.kwargs) -> V: ...
 
     def setter(self, func: _Setter[V, P]) -> _GetterSetterMethod[V, P]: ...
@@ -1302,6 +1317,14 @@ class _GetterMethod[V, **P](typing.Protocol):
 class _SetterMethod[V, **P](typing.Protocol):
     # call signature for type hinting decorated Method descriptors
 
+    @typing.overload
+    def __get__(self, owner: None, owner_cls: Any) -> typing.Self: ...
+
+    @typing.overload
+    def __get__(
+        self, owner: HasParamAttrs, owner_cls: Any
+    ) -> _MethodDescriptor[V, P]: ...
+
     def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...
 
     def setter(self, func: _Setter[V, P]) -> _SetterMethod[V, P]: ...
@@ -1311,6 +1334,14 @@ class _SetterMethod[V, **P](typing.Protocol):
 
 class _GetterSetterMethod[V, **P](typing.Protocol):
     # call signature for type hinting decorated Method descriptors
+
+    @typing.overload
+    def __get__(self, owner: None, owner_cls: Any) -> typing.Self: ...
+
+    @typing.overload
+    def __get__(
+        self, owner: HasParamAttrs, owner_cls: Any
+    ) -> _MethodDescriptor[V, P]: ...
 
     @typing.overload
     def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...

@@ -126,7 +126,6 @@ include = ["src"]
 
 [tool.ty.rules]
 call-top-callable = "ignore"
-invalid-type-form = "ignore"
 
 [tool.ruff]
 target-version = "py312"

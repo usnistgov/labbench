@@ -504,7 +504,19 @@ def copy_func[T: types.FunctionType](
     for attr in updated:
         getattr(new, attr).update(getattr(func, attr))
 
-    return new
+    # FunctionType(...) builds a plain function; the copy is used as the same type as func
+    return typing.cast(T, new)
+
+
+def set_signature(func: Callable[..., Any], signature: inspect.Signature) -> None:
+    """attach `signature` to `func` for `inspect.signature` and documentation tools."""
+    # typeshed's FunctionType declares no __signature__ attribute
+    typing.cast(Any, func).__signature__ = signature
+
+
+def get_signature(func: Callable[..., Any]) -> inspect.Signature:
+    """return the signature attached to `func` by `set_signature`."""
+    return typing.cast(Any, func).__signature__
 
 
 def sleep(seconds: float, tick=1.0):

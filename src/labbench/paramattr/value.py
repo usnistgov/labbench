@@ -55,68 +55,144 @@ class NetworkAddress(Value, _types.NetworkAddress):
 
 
 if _typing.TYPE_CHECKING:
-    # trick type-checkers to interpret the value types as int.
-    # this allows declarations of init functions as e.g.
+    # Type checkers see the value types as functions that return Any, so that
     #    field: int = attr.value.int(default=42)
-    # with the downside that type checker introspection will miss
-    # the actual attributes of Value
-    from typing import Callable as _Callable, Protocol as _Protocol, Literal as _Literal
+    # checks, and the dataclass_transform on Device honors kw_only, init and
+    # default (PEP 681 field specifiers must be functions or classes that name
+    # those parameters; a Protocol instance is not recognized). The downside is
+    # that type checker introspection misses the attributes of Value.
 
-    _V1 = _typing.TypeVar('_V1')
-    _V2 = _typing.TypeVar('_V2')
-    _P = _typing.ParamSpec('_P')
+    def any(
+        default: _typing.Any = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    class _ValueProto[**P, V](_Protocol):
-        def __call__(
-            self,
-            default: V | None = None,
-            kw_only: _builtins.bool = True,
-            help: _builtins.str | None = None,
-            init: _builtins.bool = True,
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ) -> _typing.Any: ...
+    def bool(
+        default: _builtins.bool | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    def _hint1(
-        stub: _Callable[_P, _typing.Any], t1: type[_V1]
-    ) -> _Callable[[_Callable], _ValueProto[_P, _V1]]: ...
+    def int(
+        default: _builtins.int | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    def _hint2(
-        stub: _Callable[_P, _typing.Any], t1: type[_V1], t2: type[_V2]
-    ) -> _Callable[[_Callable], _ValueProto[_P, _V1 | _V2]]: ...
+    def float(
+        default: _builtins.float | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.Bool, _builtins.bool)
-    def bool(*args, **kws): ...
+    def complex(
+        default: _builtins.complex | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.Int, _builtins.int)
-    def int(*args, **kws): ...
+    def str(
+        default: _builtins.str | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.Float, _builtins.float)
-    def float(*args, **kws): ...
+    def bytes(
+        default: _builtins.bytes | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.Complex, _builtins.complex)
-    def complex(*args, **kws): ...
+    def list(
+        default: _typing.Sequence | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.Unicode, _builtins.str)
-    def str(*args, **kws): ...
+    def tuple(
+        default: _typing.Sequence | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.Bytes, _builtins.bytes)
-    def bytes(*args, **kws): ...
+    def dict(
+        default: _typing.Mapping | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.List, _typing.Sequence)
-    def list(*args, **kws): ...
+    def Path(
+        default: _Path | _builtins.str | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
-    @_hint1(_types.Tuple, _typing.Sequence)
-    def tuple(*args, **kws): ...
-
-    @_hint1(_types.Dict, _typing.Mapping)
-    def dict(*args, **kws): ...
-
-    @_hint2(_types.Path, _Path, _builtins.str)
-    def Path(*args, **kws): ...
-
-    @_hint1(_types.NetworkAddress, _builtins.str)
-    def NetworkAddress(*args, **kws): ...
+    def NetworkAddress(
+        default: _builtins.str | None = None,
+        *,
+        key: _builtins.str | None = None,
+        kw_only: _builtins.bool = True,
+        init: _builtins.bool = True,
+        allow_none: _builtins.bool | None = None,
+        help: _builtins.str | None = None,
+        **kws: _typing.Any,
+    ) -> _typing.Any: ...
 
 
 # used to set up hints for static type checking

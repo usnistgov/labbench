@@ -674,13 +674,13 @@ class SerialDevice(Device):
     )
 
     # Connection value traits
-    timeout: float = attr.value.float(
+    timeout: float | None = attr.value.float(
         default=None,
         min=0,
         label='s',
         help='max wait time on reads before raising TimeoutError',
     )
-    write_timeout: float = attr.value.float(
+    write_timeout: float | None = attr.value.float(
         default=None,
         min=0,
         label='s',
@@ -692,12 +692,12 @@ class SerialDevice(Device):
         label='bytes/s',
         help='data rate of the physical serial connection.',
     )
-    parity: bytes = attr.value.str(
+    parity: str = attr.value.str(
         default=serial.PARITY_NONE,
         only=tuple(serial.PARITY_NAMES.keys()),
         help='parity in the physical serial connection.',
     )
-    stopbits: float = attr.value.float(
+    stopbits: float | None = attr.value.float(
         default=None,
         only=[1, 1.5, 2],
         label='bits',
@@ -705,17 +705,17 @@ class SerialDevice(Device):
     xonxoff: bool = attr.value.bool(
         default=False, help='whether to enable software flow control on open'
     )
-    rtscts: bool = attr.value.bool(
+    rtscts: bool | None = attr.value.bool(
         default=False,
         allow_none=True,
         help='whether to enable hardware (RTS/CTS) flow control on open',
     )
-    dsrdtr: bool = attr.value.bool(
+    dsrdtr: bool | None = attr.value.bool(
         default=False,
         allow_none=True,
         help='whether to enable hardware (DSR/DTR) flow control on open',
     )
-    bytesize: int = attr.value.int(
+    bytesize: int | None = attr.value.int(
         default=8, allow_none=True, only=(5, 6, 7, 8), label='bits'
     )
 
@@ -765,7 +765,7 @@ class SerialDevice(Device):
             inter_byte_timeout=None,
             exclusive=None,
         )
-        kws = dict(defaults, **kws)
+        kws: dict[str, typing.Any] = dict(defaults, **kws)
         return cls(url, **kws)
 
     @staticmethod

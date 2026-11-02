@@ -9,12 +9,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 from __future__ import annotations
 
 import builtins
-from dataclasses import (
-    field,
-    Field,
-    MISSING as Undefined,
-    _MISSING_TYPE as UndefinedType,
-)
+from dataclasses import field, Field, MISSING as Undefined
 import functools
 import inspect
 import numbers
@@ -34,6 +29,8 @@ if typing.TYPE_CHECKING:
     import pandas as pd
 else:
     pd = util.lazy_import('pandas')
+
+UndefinedType = type(Undefined)
 
 
 class no_cast_argument:

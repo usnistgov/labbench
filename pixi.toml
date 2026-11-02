@@ -70,6 +70,25 @@ labbench = { path = ".", editable = true, extras = ["dev", "jupyter", "pyvisa-py
 doc = "sphinx-build -b html doc doc/html"
 doc-clean = "rm -rf doc/html doc/jupyter_execute"
 
+# conda-forge has no twine (nh3/cmarkgfm) for win-arm64
+[feature.publish]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64", "win-64"]
+
+[feature.publish.dependencies]
+python-build = "*"
+twine = ">=6.2.1"
+
+[feature.publish.tasks]
+# build into a fresh staging directory so `twine upload` only sees the current
+# version, leaving the archive of past releases in dist/ alone
+build-clean = "python -c \"import shutil; shutil.rmtree('dist/latest', ignore_errors=True)\""
+build = { cmd = "python -m build --outdir dist/latest", depends-on = ["build-clean"] }
+build-check = { cmd = "twine check dist/latest/*", depends-on = ["build"] }
+# credentials come from ~/.pypirc or TWINE_USERNAME/TWINE_PASSWORD (__token__ + an API token)
+publish-test = { cmd = "twine upload --repository testpypi dist/latest/*", depends-on = ["build-check"] }
+# afterwards, print the version and sha256 lines to paste into the conda-forge feedstock recipe
+publish = { cmd = "twine upload dist/latest/* && python scripts/conda_recipe_lines.py", depends-on = ["build-check"] }
+
 [environments]
 default = ["py314"]
 test312 = ["py312"]
@@ -77,3 +96,4 @@ test313 = ["py313"]
 test314 = ["py314"]
 test315 = ["py315"]
 doc = ["doc", "py314"]
+publish = ["publish", "py314"]

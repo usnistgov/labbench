@@ -4,11 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+### Changed
+- Publishing maintenance
+
 ## [0.46.1]
 ### Changed
 - Corrected an import bug in python 3.15 
-
-### Security
 - `labbench.read` and `labbench.read_relational` now refuse to load `.p`/`.pickle` files unless
   the `LABBENCH_AUTOLOAD_PICKLE` environment variable is set, because unpickling can execute arbitrary code
 

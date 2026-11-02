@@ -48,6 +48,20 @@ internal and change without warning. `labbench.paramattr` defines the `value`, `
 documentation. The user guide is in `doc/guide/`, and the API reference is rendered from
 docstrings by sphinx autodoc with napoleon.
 
+### Known gaps are recorded as strict xfails
+
+Library defects that need a design decision rather than a local fix are written as
+`pytest.mark.xfail(strict=True, reason=...)` tests against the intended behavior, so
+`grep -rn "mark.xfail" tests` lists them with their causes. Read the reason before treating
+a red test as new, and expect a genuine fix to turn that xfail into an unexpected pass that
+must then be removed. The ledger `tests/xfail-audit.md` records each one: the node id, the
+mechanism with file and line, why the test's expectation is the right one, the impact tier,
+and the fix with its difficulty. Its numbered items are stable identifiers, and a
+suite-state line records the `passed/xfailed` counts of each pass. `reason=` names the
+mechanism and stays verbatim once written. A fix turns the xfail into an unexpected pass:
+remove the marker and retire the item in the same change. A run with any xpass is a failed
+run; `pixi run pytest tests -q -rxX` lists both.
+
 ## Conventions
 
 - **Lint.** The rule set is ruff's default plus the per-file ignores in `pyproject.toml`; the

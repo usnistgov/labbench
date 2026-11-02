@@ -278,3 +278,49 @@ def test_read_pickle_requires_opt_in(tmp_path, monkeypatch, ext):
     pd.testing.assert_frame_equal(
         lb.read(path, columns=['a'], nrows=2), df[['a']].iloc[:2]
     )
+
+
+# %% known faults, recorded in xfail-audit.md
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason='to_feather (_data.py:1613-1618) reads Index.is_monotonic, removed in pandas 2.0, '
+    'and np.str, removed in NumPy 1.24',
+)
+def test_feather_roundtrip(tmp_path):
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2], 'b': [3.0, 4.0]})
+    path = tmp_path / 'table.feather'
+    lb._data.to_feather(df, path)
+    pd.testing.assert_frame_equal(pd.read_feather(path), df)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason='MungeToTar._relational_from_file (_data.py:493-495) uses self.tar; '
+    'the attribute set by open() is self.tarfile',
+)
+def test_tar_munger_moves_external_file(tmp_path):
+    external = tmp_path / 'external' / 'payload.txt'
+    external.parent.mkdir()
+    external.write_text('payload')
+    munger = lb._data.MungeToTar(tmp_path / 'db')
+    with munger:
+        key = munger._from_external_file('payload', str(external), index=0, row={})
+        names = munger.tarfile.getnames()
+    assert key in names
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason='Aggregator.get (_data.py:637) reports a key conflict through self.critical, '
+    'which Aggregator does not define',
+)
+def test_aggregator_rack_output_overrides_conflicting_key():
+    agg = lb._data.Aggregator()
+    agg.incoming_attr_auto = {'shared': 'from attr'}
+    agg.incoming_rack_output = {'shared': 'from rack'}
+    output, _ = agg.get()
+    assert output['shared'] == 'from rack'

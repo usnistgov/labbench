@@ -115,7 +115,7 @@ class Bytes(String[bytes], type=bytes):
     """accepts bytes objects only - encode str (unicode) explicitly before assignment"""
 
 
-class Iterable(_bases.ParamAttr):
+class Iterable[V](_bases.ParamAttr[V]):
     """accepts any iterable"""
 
     @util.hide_in_traceback

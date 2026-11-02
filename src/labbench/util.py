@@ -13,7 +13,7 @@ from collections.abc import Callable  # noqa: E402
 from contextlib import _GeneratorContextManager, contextmanager  # noqa: E402
 from functools import wraps  # noqa: E402
 from queue import Empty, Queue  # noqa: E402
-from typing import Union, Literal, TypeVar  # noqa: E402
+from typing import Any, Union, Literal, TypeVar  # noqa: E402
 
 
 __all__ = [  # "misc"
@@ -145,6 +145,7 @@ if typing.TYPE_CHECKING:
     import psutil
     import textwrap
     import traceback  # noqa: E402
+    from typing_extensions import TypeIs
 else:
     ast = lazy_import('ast')
     hashlib = lazy_import('hashlib')
@@ -178,10 +179,10 @@ _LogLevelType = Union[
 
 
 class _Formatter(logging.Formatter):
-    def format(self, rec: logging.LogRecord):
-        if len(rec.args) > 0:
-            rec.args = tuple()
-        return super().format(rec)
+    def format(self, record: logging.LogRecord):
+        if len(record.args) > 0:
+            record.args = tuple()
+        return super().format(record)
 
 
 def show_messages(
@@ -269,7 +270,9 @@ def repr_as_log_dict(obj: typing.Any) -> dict[str, str]:
     return d
 
 
-def callable_logger(func: callable) -> logging.Logger:
+def callable_logger(
+    func: Callable[..., Any],
+) -> logging.Logger | logging.LoggerAdapter[logging.Logger]:
     """return the most specialized available logger for the input object"""
     if isinstance(getattr(func, '__self__', None), Ownable):
         return func.__self__._logger
@@ -279,7 +282,7 @@ def callable_logger(func: callable) -> logging.Logger:
 
 def find_methods_in_mro(
     cls: type[object], name: str, until_cls: type[object] | None = None
-) -> list[callable]:
+) -> list[Callable[..., Any]]:
     """list all methods named `name` in `cls` and its parent classes.
 
     Args:
@@ -420,7 +423,10 @@ class exc_info:
 
     @classmethod
     def filter(
-        cls, etype: type[BaseException], evalue: BaseException, tb: types.TracebackType
+        cls,
+        etype: type[BaseException] | None,
+        evalue: BaseException | None,
+        tb: types.TracebackType | None,
     ):
         if cls.debug or tb is None:
             return etype, evalue, tb
@@ -613,7 +619,7 @@ def until_timeout[T: Callable](
     timeout: float,
     delay: float = 0,
     backoff: float = 0,
-    exception_func: callable = lambda: None,
+    exception_func: Callable[[], Any] = lambda: None,
 ) -> Callable[[T], T]:
     """calls to the decorated function are repeated, suppressing specified exception(s), until the
     specified timeout period has expired.
@@ -793,7 +799,7 @@ class Call:
     keep track of some call metadata during execution.
     """
 
-    def __init__(self, func: callable, *args, **kws):
+    def __init__(self, func: Callable[..., Any], *args, **kws):
         if not callable(func):
             raise ValueError('`func` argument is not callable')
         self.func = func
@@ -837,7 +843,9 @@ class Call:
         self.queue = queue
 
     @classmethod
-    def wrap_list_to_dict(cls, name_func_pairs: dict[str, callable]) -> dict[str, Call]:
+    def wrap_list_to_dict(
+        cls, name_func_pairs: typing.Iterable[tuple[str | None, Callable[..., Any]]]
+    ) -> dict[str, Call]:
         """adjusts naming and wraps callables with Call"""
         ret = {}
         # First, generate the list of callables
@@ -887,7 +895,7 @@ class MultipleContexts:
     """
 
     def __init__(
-        self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list
+        self, call_handler: Callable[[dict, list], dict], params: dict, objs: list
     ):
         """
             call_handler: one of `sequentially_call` or `concurrently_call`
@@ -920,7 +928,7 @@ class MultipleContexts:
         self.exc = {}
 
     @hide_in_traceback
-    def enter(self, name: str, context: object):
+    def enter(self, name: str, context: _ContextManagerType):
         """
         enter!
         """
@@ -1022,8 +1030,8 @@ def isdictducktype(cls):
 
 
 def _select_enter_or_call(
-    candidate_objs: typing.Iterable[_ContextManagerType | callable],
-) -> str:
+    candidate_objs: list[tuple[str | None, _ContextManagerType | Callable[..., Any]]],
+) -> str | None:
     """ensure candidates are either (1) all context managers
     or (2) all callables. Decide what type of operation to proceed with.
     """
@@ -1063,8 +1071,8 @@ def _select_enter_or_call(
 
 @hide_in_traceback
 def enter_or_call(
-    flexible_caller: callable,
-    objs: typing.Iterable[_ContextManagerType | callable],
+    flexible_caller: Callable[[dict, list], dict],
+    objs: typing.Iterable[_ContextManagerType | Callable[..., Any]],
     kws: dict[str, typing.Any],
 ):
     """Extract value traits from the keyword arguments flags, decide whether
@@ -1643,7 +1651,7 @@ class ttl_cache:
         self.call_timestamp = None
         self.last_value = {}
 
-    def __call__[T: Callable](self, func: T) -> T:
+    def __call__[**P, R](self, func: Callable[P, R]) -> Callable[P, R]:
         @wraps(func)
         @hide_in_traceback
         def wrapper_decorator(*args, **kws):
@@ -1665,7 +1673,7 @@ class ttl_cache:
         return wrapper_decorator
 
 
-def accessed_attributes(method: Callable) -> tuple[str]:
+def accessed_attributes(method: Callable) -> tuple[str, ...]:
     """enumerate the attributes of the parent class accessed by `method`
 
     :method: callable that is a method or defined in a class
@@ -1697,7 +1705,7 @@ def accessed_attributes(method: Callable) -> tuple[str]:
 
     self_name = func.args.args[0].arg
 
-    def isselfattr(node):
+    def isselfattr(node: ast.AST) -> TypeIs[ast.Attribute]:
         return (
             isinstance(node, ast.Attribute)
             and getattr(node.value, 'id', None) == self_name

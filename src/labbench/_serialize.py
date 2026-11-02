@@ -274,7 +274,7 @@ def dump_rack(
     rack: Rack,
     output_path: str | Path,
     sourcepath: str | Path,
-    pythonpath: Path | None = None,
+    pythonpath: str | Path | None = None,
     exist_ok: bool = False,
     with_defaults: bool = False,
     skip_tables: bool = False,

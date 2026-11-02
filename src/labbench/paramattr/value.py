@@ -66,15 +66,15 @@ if _typing.TYPE_CHECKING:
     _V2 = _typing.TypeVar('_V2')
     _P = _typing.ParamSpec('_P')
 
-    class _ValueProto(_Protocol):
+    class _ValueProto[**P, V](_Protocol):
         def __call__(
             self,
-            default: _V1 | None = None,
+            default: V | None = None,
             kw_only: _builtins.bool = True,
             help: _builtins.str | None = None,
             init: _builtins.bool = True,
-            *args: _P.args,
-            **kwargs: _P.kwargs,
+            *args: P.args,
+            **kwargs: P.kwargs,
         ) -> _typing.Any: ...
 
     def _hint1(

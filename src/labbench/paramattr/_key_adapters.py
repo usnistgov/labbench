@@ -1,5 +1,6 @@
 import builtins
 import string
+from collections.abc import Sequence
 from typing import Any, Union
 from numbers import Number
 
@@ -84,7 +85,7 @@ class message_keying(KeyAdapterBase):
         if len(self.message_map) != len(self.value_map):
             raise ValueError("'remap' has duplicate values")
 
-    def get_kwarg_names(self, key: str) -> list[str]:
+    def get_kwarg_names(self, key: str) -> Sequence[str]:
         """returns an argument list based on f-string style curly-brace formatting tokens.
 
         Example:

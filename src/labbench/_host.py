@@ -34,7 +34,7 @@ else:
 __all__ = ['Host', 'Email']
 
 
-def find_repo_in_parents(path: Path) -> 'repo.Repo':
+def find_repo_in_parents(path: str | Path) -> 'repo.Repo':
     """find a git repository in path, or in the first parent to contain one"""
     path = Path(path).absolute()
 
@@ -205,37 +205,37 @@ class NDJSONFormatter(logging.Formatter):
             return obj.isoformat()
         raise TypeError(f'Type {type(obj).__qualname__} not serializable')
 
-    def format(self, rec: logging.LogRecord):
+    def format(self, record: logging.LogRecord):
         """Return a YAML string for each logger record"""
 
-        if isinstance(rec.args, dict):
-            kwargs = rec.args
+        if isinstance(record.args, dict):
+            kwargs = record.args
         else:
             kwargs = {}
 
         msg = dict(
-            message=rec.msg,
-            time=datetime.datetime.fromtimestamp(rec.created),
-            elapsed_seconds=rec.created - self.t0,
-            level=rec.levelname,
-            object=getattr(rec, 'object', None),
-            object_log_name=getattr(rec, 'owned_name', None),
-            source_file=rec.pathname,
-            source_line=rec.lineno,
-            process=rec.process,
-            thread=rec.threadName,
+            message=record.msg,
+            time=datetime.datetime.fromtimestamp(record.created),
+            elapsed_seconds=record.created - self.t0,
+            level=record.levelname,
+            object=getattr(record, 'object', None),
+            object_log_name=getattr(record, 'owned_name', None),
+            source_file=record.pathname,
+            source_line=record.lineno,
+            process=record.process,
+            thread=record.threadName,
             **kwargs,
         )
 
-        if rec.threadName != 'MainThread':
-            msg['thread'] = rec.threadName
+        if record.threadName != 'MainThread':
+            msg['thread'] = record.threadName
 
         etype, einst, exc_tb = sys.exc_info()
         if etype is not None:
             msg['exception'] = traceback.format_exception_only(etype, einst)[0].rstrip()
             msg['traceback'] = ''.join(traceback.format_tb(exc_tb)).splitlines()
 
-        self._last.append((rec, msg))
+        self._last.append((record, msg))
 
         return json.dumps(msg, default=self.json_serialize_dates)
 
@@ -253,8 +253,8 @@ class RotatingJSONFileHandler(logging.handlers.RotatingFileHandler):
 
         super().__init__(path, *args, **kws)
 
-    def emit(self, rec):
-        self.cached_recs.append(rec)
+    def emit(self, record):
+        self.cached_recs.append(record)
 
     def close(self):
         if len(self.cached_recs) == 0:

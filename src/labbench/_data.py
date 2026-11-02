@@ -5,10 +5,10 @@ import os
 import pickle
 import re
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, TypeVar, TYPE_CHECKING, Union
+from typing import IO, Any, TypeVar, TYPE_CHECKING, Union
 
 from . import _device, _host, _rack, util
 from . import _device as core
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     import json
     import numpy as np
     import pandas as pd
+    import pandas.io.sql  # noqa: F401  (makes pd.io.sql resolvable for type checkers)
     import sqlalchemy
     import pyarrow
     import shutil
@@ -130,7 +131,7 @@ class MungerBase(core.Device):
     def get_metadata(
         self,
         name,
-        name_func: Callable[[attr.HasParamAttrs, str, dict], str],
+        name_func: Callable[[attr.HasParamAttrs, str], str],
         **metadata,
     ):
         def process_value(value, key_name):
@@ -332,7 +333,7 @@ class MungeToDirectory(MungerBase):
 
         return open(os.path.join(relpath, name), mode)
 
-    def _open_metadata(self, name, mode, in_root=False):
+    def _open_metadata(self: MungerBase, name, mode, in_root=False):
         if in_root:
             dirpath = self.resource
         else:
@@ -341,7 +342,7 @@ class MungeToDirectory(MungerBase):
 
         return open(Path(dirpath) / name, mode)
 
-    def _get_key(self, stream):
+    def _get_key(self, buf):
         """Key to use for the relative data in the root database?
 
         Arguments:
@@ -349,7 +350,7 @@ class MungeToDirectory(MungerBase):
         Returns:
             the key
         """
-        return os.path.relpath(stream.name, self.resource)
+        return os.path.relpath(buf.name, self.resource)
 
     def _relational_from_file(self, old_path, dest):
         # Retry moves for several seconds in case the file is in the process
@@ -538,8 +539,8 @@ class Aggregator(util.Ownable):
     """Manages aggregation of parameters of Device attributes defined with paramattr, and data returned by calls to methods in Rack instances"""
 
     # note: this is not a dataclass, these annotations are only for type-hinting
-    name_map: dict[attr.HasParamAttrs, str]
-    attr_rules: dict[str, dict[attr.HasParamAttrs, str]]
+    name_map: dict[attr.HasParamAttrs | util.Ownable, str]
+    attr_rules: dict[str, dict[attr.HasParamAttrs | util.Ownable, tuple[str, ...]]]
 
     # observed value changes from paramattr objects
     incoming_attr_always: dict[str, attr.HasParamAttrs]
@@ -592,7 +593,7 @@ class Aggregator(util.Ownable):
 
         return isinstance(attr_def, attr.value.Value) or attr_def.cache
 
-    def get(self) -> list([dict, dict]):
+    def get(self) -> tuple[dict, dict]:
         """return an aggregated dictionary output data (from Device paramattr objects and Rack method returns)
         and an aggregated dictionary of input data (keyword arguments passed to the toplevel Rack method).
         A get is
@@ -653,7 +654,7 @@ class Aggregator(util.Ownable):
 
         return aggregated_output, aggregated_input
 
-    def get_metadata(self, process_func: callable):
+    def get_metadata(self, process_func: Callable[..., Any]):
         metadata = dict(self.metadata)
         global_values = {}
         for owner, owner_name in self.name_map.items():
@@ -675,7 +676,10 @@ class Aggregator(util.Ownable):
         return re.sub(r'\W+|^(?=\d)+', '_', string)
 
     def name_attr_field(
-        self, device: attr.HasParamAttrs, attr_name: str, kwargs: dict[str, Any] = {}
+        self,
+        device: attr.HasParamAttrs | util.Ownable,
+        attr_name: str,
+        kwargs: dict[str, Any] = {},
     ):
         """Generate a name for a trait based on the names of
         a device and one of its states or paramattr.
@@ -706,7 +710,7 @@ class Aggregator(util.Ownable):
 
         return sanitized_name
 
-    def set_device_labels(self, **mapping: dict[Device, str]):
+    def set_device_labels(self, **mapping: util.Ownable):
         """Manually choose device name for a device instance.
 
         Arguments:
@@ -802,9 +806,9 @@ class Aggregator(util.Ownable):
         elif not name.startswith('_'):
             self.incoming_attr_auto[data_name] = msg['new']
 
-    def update_name_map(
+    def update_name_map[OwnableT: util.Ownable](
         self,
-        ownables: dict[Device, str],
+        ownables: Mapping[OwnableT, str | None],
         owner_prefix: str | None = None,
         fallback_names={},
     ):
@@ -873,8 +877,8 @@ class Aggregator(util.Ownable):
         self,
         devices,
         changes: bool = True,
-        always: str | list[str] = [],
-        never: str | list[str] = ['isopen'],
+        always: str | Iterable[str] = [],
+        never: str | Iterable[str] = ['isopen'],
     ):
         """Configure the data to aggregate from value, property, or datareturn traits in the given devices.
 
@@ -1304,6 +1308,9 @@ class CSVLogger(ParamAttrLogger):
     ROOT_FILE_NAME = OUTPUT_FILE_NAME = 'outputs.csv'
     INPUT_FILE_NAME = 'inputs.csv'
     output_index = 0
+    if TYPE_CHECKING:
+        # Owner.__init_subclass__ consumes runtime class annotations, so this hint stays out of __annotations__
+        tables: dict[str, 'pd.DataFrame']
     tables = {}
 
     nonscalar_file_type = 'csv'
@@ -1359,7 +1366,7 @@ class CSVLogger(ParamAttrLogger):
         the preexisting file; subsequent calls append.
         """
 
-        def append_csv(path: Path, df: 'pd.DataFrame'):
+        def append_csv(path: Path, df: 'pd.DataFrame | list[dict]'):
             if len(df) == 0:
                 return
 
@@ -1670,9 +1677,9 @@ def read_pickle(path_or_buf, **kws):
 
 
 def read(
-    path_or_buf: str,
-    columns: list[str] = None,
-    nrows: int = None,
+    path_or_buf: str | Path | IO[bytes],
+    columns: list[str] | None = None,
+    nrows: int | None = None,
     format: str = 'auto',
     **kws,
 ):
@@ -1787,7 +1794,7 @@ class MungeReader:
         the root database
     """
 
-    def __new__(cls, path):
+    def __new__(cls, path) -> MungeTarReader | MungeDirectoryReader:
         dirname = os.path.dirname(path)
 
         for n in MungeTarReader.tarnames:

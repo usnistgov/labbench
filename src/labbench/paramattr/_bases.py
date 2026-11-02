@@ -294,7 +294,7 @@ class KeyAdapterBase:
             f'key adapter does not implement "set" {type(self)!r}'
         )
 
-    def get_kwarg_names(self, key: Any) -> list[str]:
+    def get_kwarg_names(self, key: Any) -> Sequence[str]:
         """returns a list of arguments for the parameter attribute key.
 
         This must be implemented in order to define `labbench.paramattr.method` attributes
@@ -966,8 +966,8 @@ class Value[V](ParamAttr[V]):
             # escape an infinite recursion loop before accessing any class members
             return self
 
-        cls_getter = owner_cls.__dict__.get(self.name, None)  # type: ignore
-        objclass_getter = self.__objclass__.__dict__.get(self.name)  # type: ignore
+        cls_getter = owner_cls.__dict__.get(self.name, None)
+        objclass_getter = self.__objclass__.__dict__.get(self.name)
         if cls_getter is not objclass_getter:
             return self
         else:
@@ -1864,7 +1864,9 @@ class DependentParamAttr[V](ParamAttr[V]):
         for attr_def in self._cal_deps.values():
             attr_def.__objclass__ = objclass
 
-    def _validate_attr_dependencies(self, owner, allow_none: bool, operation='access'):
+    def _validate_attr_dependencies(
+        self, owner, allow_none: bool | None, operation='access'
+    ):
         if allow_none:
             return
 
@@ -2534,7 +2536,7 @@ class BoundedNumber[V](ParamAttr[V]):
         forward: typing.Callable,
         reverse: typing.Callable,
         help: str = '',
-        allow_none: bool = False,
+        allow_none: bool | None = False,
     ) -> typing.Self:
         """generate a new attribute subclass that adjusts values in other attributes.
 

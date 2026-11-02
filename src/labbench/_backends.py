@@ -1,6 +1,6 @@
 from __future__ import annotations
 import contextlib
-import importlib
+import importlib.util
 import inspect
 import logging
 import os
@@ -11,6 +11,7 @@ import sys
 import time
 import warnings
 from collections import OrderedDict
+from collections.abc import Callable
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
@@ -24,6 +25,10 @@ from ._device import Device
 if typing.TYPE_CHECKING:
     import psutil
     import pyvisa
+    import pyvisa.constants
+    import pyvisa.errors
+    import pyvisa.highlevel
+    import pyvisa.resources
     import serial
     import subprocess as sp
 else:
@@ -39,7 +44,7 @@ def shell_options_from_keyed_values(
     hide_false: bool = False,
     join_str: Literal[False] | str = False,
     remap: dict = {},
-    converter: callable = str,
+    converter: Callable[[typing.Any], str] = str,
 ) -> list[str]:
     """generate a list of command line argument strings based on
     :module:`labbench.paramattr.value` descriptors in `device`.
@@ -220,7 +225,7 @@ class ShellBackend(Device):
             return self._run_simple(*argv, check_return=check_return, timeout=timeout)
 
     def _run_simple(
-        self, *argv: list[str], check_return: bool = False, timeout: bool = None
+        self, *argv: str, check_return: bool = False, timeout: float | None = None
     ):
         """Blocking execution of the command line strings specified by `argv`. If check=True, raise an exception
         on non-zero return code.
@@ -244,11 +249,11 @@ class ShellBackend(Device):
 
     def _run_piped(
         self,
-        *argv: list[str],
+        *argv: str,
         check_return: bool = False,
         raise_on_stderr: bool = False,
         timeout: float | None = None,
-    ) -> None:
+    ) -> bytes:
         """Blocking execution of the specified command line, with a pipe to collect
         stdout.
 
@@ -1124,6 +1129,9 @@ class VISADevice(Device):
             'operating': bool(code & 0b10000000),
         }
 
+    if typing.TYPE_CHECKING:
+        # type-only: Device.__set_signature__ rejects runtime class annotations
+        _rm: str | None
     _rm = None  # set at runtime
     _opc = False
 
@@ -1141,7 +1149,7 @@ class VISADevice(Device):
 
         self._opc = False
 
-        kwargs = dict(
+        kwargs: dict[str, typing.Any] = dict(
             read_termination=self.read_termination,
             write_termination=self.write_termination,
         )
@@ -1357,7 +1365,10 @@ class VISADevice(Device):
 
     @contextlib.contextmanager
     def overlap_and_block(
-        self, timeout: float = None, quiet: bool = False, query_func: callable = None
+        self,
+        timeout: float | None = None,
+        quiet: bool = False,
+        query_func: Callable[..., typing.Any] | None = None,
     ):
         """context manager that sends '*OPC' on entry, and performs
         a blocking '*OPC?' query on exit.
@@ -1482,7 +1493,7 @@ def _visa_parse_identity(identity: str):
     return identity.split(',', 4)
 
 
-def visa_list_resources(resourcemanager: str = None) -> list[str]:
+def visa_list_resources(resourcemanager: str | None = None) -> tuple[str, ...]:
     """autodetects and returns a list of valid VISADevice resource strings"""
     if resourcemanager is None:
         rm = VISADevice()._get_rm()
@@ -1492,7 +1503,7 @@ def visa_list_resources(resourcemanager: str = None) -> list[str]:
     return rm.list_resources()
 
 
-def visa_default_resource_manager(name: str = None):
+def visa_default_resource_manager(name: str | None = None):
     """set the pyvisa resource manager used by labbench.
 
     Arguments:
@@ -1532,8 +1543,8 @@ def visa_default_resource_manager(name: str = None):
 @util.locked_calls
 @util.ttl_cache(10)  # a cache of recent resource parameters
 def _visa_probe_resource(
-    resource: str, open_timeout, timeout, encoding: ascii
-) -> VISADevice:
+    resource: str, open_timeout, timeout, encoding: str
+) -> VISADevice | None:
     device = VISADevice(resource, open_timeout=open_timeout, timeout=timeout)
     device._logger = logging.getLogger()  # suppress the normal logger for probing
 
@@ -1609,7 +1620,7 @@ def _visa_valid_resource_name(resource: str):
 
 
 def visa_probe_devices(
-    target: VISADevice = None,
+    target: VISADevice | type[VISADevice] | None = None,
     skip_interfaces: list[str] = [],
     open_timeout: float = 0.5,
     timeout: float = 0.25,

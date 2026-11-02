@@ -6,6 +6,7 @@ import sys
 import time
 from copy import deepcopy
 from functools import wraps
+from collections.abc import Callable
 
 import typing
 
@@ -96,7 +97,11 @@ class notify:
 
     @classmethod
     def call_iteration_event(
-        cls, owner, index: int, step_name: str = None, total_count: int = None
+        cls,
+        owner,
+        index: int,
+        step_name: str | None = None,
+        total_count: int | None = None,
     ):
         if owner in cls._owner_hold_list:
             return
@@ -229,9 +234,9 @@ class rack_kwargs_template(MethodTaggerDataclass):
         skip: list of column names to omit
     """
 
-    template: callable
+    template: Callable[..., typing.Any]
 
-    def __init__(self, template: callable):
+    def __init__(self, template: Callable[..., typing.Any]):
         self.template = template
 
 
@@ -246,7 +251,7 @@ class rack_kwargs_skip(MethodTaggerDataclass):
         skip: list of column names to omit
     """
 
-    skip: list = None
+    skip: tuple[str, ...] | None = None
 
     def __init__(self, *arg_names):
         self.skip = arg_names
@@ -525,6 +530,14 @@ class BoundSequence(util.Ownable):
     a new Rack object. its keyword arguments are aggregated
     from all of the methods called by the Sequence.
     """
+
+    if typing.TYPE_CHECKING:
+        # attributes injected into the namespace by Sequence.__owner_subclass__; kept out of
+        # __annotations__ because labbench evaluates Ownable class annotations at runtime
+        sequence: list[list[RackMethod]]
+        dependencies: dict[str, core.Device]
+        tags: dict[str, typing.Any]
+        cleanup_func: Callable[[], typing.Any] | None
 
     cleanup_func = None
     exception_allowlist = NeverRaisedException
@@ -841,10 +854,15 @@ class WrappedClose:
 class Owner:
     """own context-managed instances of Device as well as setup and cleanup calls to owned instances of Owner"""
 
+    if typing.TYPE_CHECKING:
+        # declared here instead of as a runtime annotation because Rack.__init_subclass__
+        # turns annotated names in its MRO into __init__ parameters
+        _entry_order: typing.Sequence[type]
+
     _entry_order = []
     _concurrent = True
 
-    def __init_subclass__(cls, entry_order: list = None):
+    def __init_subclass__(cls, entry_order: typing.Sequence[type] | None = None):
         """type configuration performed each time a new subclass is created"""
         # registries that will be context managed
         cls._devices = {}  # each of cls._devices.values() these will be context managed
@@ -1110,13 +1128,18 @@ class Sequence(util.Ownable):
     Sequence are meant to be defined as attributes of Rack subclasses in instances of the Rack subclasses.
     """
 
+    if typing.TYPE_CHECKING:
+        # declared here instead of as a runtime annotation because labbench evaluates
+        # Ownable class annotations at runtime
+        access_spec: list[list[tuple[str, ...]]] | None
+
     access_spec = None
     cleanup_func = None
     exception_allowlist = NeverRaisedException
 
     def __init__(self, *specification, shared_names=[], input_table=None):
         self.spec = [standardize_spec_step(spec) for spec in specification]
-        self.tags = dict(
+        self.tags: dict[str, typing.Any] = dict(
             table_path=input_table,
             shared_names=shared_names,
         )
@@ -1406,11 +1429,11 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
     def __owner_init__(self, owner):
         super().__owner_init__(owner)
 
-    def __getattribute__(self, item):
-        if item != '_methods' and item in self._methods:
-            return self._methods[item]
+    def __getattribute__(self, name):
+        if name != '_methods' and name in self._methods:
+            return self._methods[name]
         else:
-            return super().__getattribute__(item)
+            return super().__getattribute__(name)
 
     def __getitem__(self, item):
         return self._methods[item]
@@ -1446,7 +1469,7 @@ def import_as_rack(
     import_string: str,
     *,
     # working_dir: str,
-    cls_name: str = None,
+    cls_name: str | None = None,
     append_path: list = [],
     base_cls: type = Rack,
     replace_attrs: list = ['__doc__', '__module__'],
@@ -1549,7 +1572,7 @@ def import_as_rack(
 
 
 def find_owned_rack_by_type(
-    parent_rack: Rack, target_type: Rack, include_parent: bool = True
+    parent_rack: Rack, target_type: type[Rack], include_parent: bool = True
 ):
     """return a rack instance of `target_type` owned by `parent_rack`. if there is
     not exactly 1 for `target_type`, TypeError is raised.

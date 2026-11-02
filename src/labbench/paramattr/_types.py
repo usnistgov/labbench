@@ -61,13 +61,13 @@ class Float(_bases.BoundedNumber[float], type=float):
 class Complex(_bases.ParamAttr[complex], type=complex):
     """accepts numerical or str values, following normal python casting procedures (with bounds checking)"""
 
-    allow_none: bool = False
+    allow_none: bool | None = False
 
 
 class Bool(_bases.ParamAttr[bool], type=bool):
     """accepts boolean or numeric values, or a case-insensitive match to one of ('true',b'true','false',b'false')"""
 
-    allow_none: bool = False
+    allow_none: bool | None = False
     # because this becomes confusing with evaluating boolean trueness
 
 

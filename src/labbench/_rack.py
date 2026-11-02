@@ -41,7 +41,7 @@ _INSPECT_SKIP_PARAMETER_KINDS = (
 )
 
 
-def _filter_signature_parameters(params: dict):
+def _filter_signature_parameters(params: typing.Mapping[str, inspect.Parameter]):
     return {
         p.name: p
         for p in list(params.values())[1:]
@@ -1027,7 +1027,9 @@ def override_empty(a, b, param_name, field):
         return EMPTY
 
 
-def update_parameter_dict(dest: dict, signature: inspect.Signature):
+def update_parameter_dict(
+    dest: dict, signature: inspect.Signature | typing.Mapping[str, inspect.Parameter]
+):
     """updates the dest mapping with parameters taken from inspect.Signature.
 
     Items with the same name and defaults or annotations that are not EMPTY must be the same,

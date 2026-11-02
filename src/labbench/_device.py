@@ -275,6 +275,10 @@ class Device(DeviceDataClass):
 
     """
 
+    if typing.TYPE_CHECKING:
+        # __set_signature__ rejects any runtime class annotation that is not a
+        # paramattr.value descriptor, so this hint stays out of __annotations__
+        backend: typing.Any
     backend = DisconnectedBackend(None)
     """ this attribute is some reference to a controller for the device.
         it is to be set in `connect` and `disconnect` by the subclass that implements the backend.

@@ -9,7 +9,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 from __future__ import annotations
 
 import builtins
-from dataclasses import field, Field, MISSING as Undefined
+from dataclasses import field, Field, MISSING as Undefined, _MISSING_TYPE
 import functools
 import inspect
 import numbers
@@ -30,7 +30,7 @@ if typing.TYPE_CHECKING:
 else:
     pd = util.lazy_import('pandas')
 
-UndefinedType = type(Undefined)
+UndefinedType: typing.TypeAlias = _MISSING_TYPE
 
 
 class no_cast_argument:
@@ -502,7 +502,7 @@ class ParamAttr[V](metaclass=ParamAttrMeta):
     gets: bool = True
     cache: bool = False
     only: Sequence[V] = tuple()
-    allow_none: bool = False
+    allow_none: bool | None = False
     log: bool = True
     inherit: bool = False
     name: str | None = field(default=None, init=False, repr=False)
@@ -931,9 +931,9 @@ class Value[V](ParamAttr[V]):
 
         if self.allow_none is None:
             if self.default is None:
-                self.allow_none = True  # pyright: ignore
+                self.allow_none = True
             else:
-                self.allow_none = False  # pyright: ignore
+                self.allow_none = False
         elif self.default is None and not self.allow_none:
             raise TypeError('cannot set default=None with allow_none=True')
 
@@ -1007,7 +1007,7 @@ class Value[V](ParamAttr[V]):
 
 
 class MethodKwArg[V, T, **P](ParamAttr[V]):
-    name: str = field(kw_only=False)
+    name: str | None = field(kw_only=False)
     default: V | None | UndefinedType = Undefined
 
     ROLE = 'keyword argument'

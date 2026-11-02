@@ -83,13 +83,16 @@ def hide_in_traceback[T: Callable](func: T) -> T:
     return func
 
 
-class single_threaded_call_lock:
+class single_threaded_call_lock[**P, R]:
     """decorates a function to ensure executes in only one thread at a time.
 
     This is a low-performance way to ensure thread-safety.
     """
 
-    def __new__(cls, func):
+    func: Callable[P, R]
+    lock: RLock
+
+    def __new__(cls, func: Callable[P, R]):
         obj = super().__new__(cls)
         obj.func = func
         obj.lock = RLock()
@@ -97,7 +100,7 @@ class single_threaded_call_lock:
         return obj
 
     @hide_in_traceback
-    def __call__(self, *args, **kws):
+    def __call__(self, *args: P.args, **kws: P.kwargs) -> R:
         self.lock.acquire()
 
         # no other threads are running self.func; invoke it in this one
@@ -110,7 +113,7 @@ class single_threaded_call_lock:
 
 
 @single_threaded_call_lock
-def lazy_import(module_name: str):
+def lazy_import(module_name: str) -> types.ModuleType:
     """postponed import of the module with the specified name.
 
     The import is not performed until the module is accessed in the code. This
@@ -312,6 +315,10 @@ class Ownable:
 
     __objclass__ = None
     _owned_name = None
+    if typing.TYPE_CHECKING:
+        # paramattr._bases.get_cls_annotations evaluates runtime class annotations
+        # across the Device MRO, so this hint stays out of __annotations__
+        _logger: logging.Logger | logging.LoggerAdapter[logging.Logger]
     _logger = logger
 
     def __init__(self):
@@ -361,7 +368,7 @@ class Ownable:
 class ConcurrentException(Exception):
     """Raised on concurrency errors in `labbench.concurrently`"""
 
-    thread_exceptions = []
+    thread_exceptions: list[typing.Any] | dict[typing.Any, typing.Any] = []
 
 
 class OwnerThreadException(ThreadError):
@@ -523,7 +530,7 @@ def check_hanging_thread():
 
 @hide_in_traceback
 def retry[T: Callable](
-    exception_or_exceptions: BaseException | typing.Iterable[BaseException],
+    exception_or_exceptions: type[BaseException] | tuple[type[BaseException], ...],
     tries: int = 4,
     *,
     delay: float = 0,
@@ -602,7 +609,7 @@ def retry[T: Callable](
 
 @hide_in_traceback
 def until_timeout[T: Callable](
-    exception_or_exceptions: BaseException | typing.Iterable[BaseException],
+    exception_or_exceptions: type[BaseException] | tuple[type[BaseException], ...],
     timeout: float,
     delay: float = 0,
     backoff: float = 0,

@@ -40,6 +40,8 @@ def _yaml_comment_out(cm, key):
     """comment out the line containing the item with the specified key"""
     try:
         import ruamel.yaml as ruamel_yaml
+        import ruamel.yaml.error
+        import ruamel.yaml.tokens
     except ModuleNotFoundError:
         import ruamel_yaml
 
@@ -202,6 +204,7 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
 def _map_method_defaults(rack_cls):
     try:
         import ruamel.yaml as ruamel_yaml
+        import ruamel.yaml.comments
     except ModuleNotFoundError:
         import ruamel_yaml
 
@@ -227,6 +230,7 @@ def _map_method_defaults(rack_cls):
 def _map_devices(cls):
     try:
         import ruamel.yaml as ruamel_yaml
+        import ruamel.yaml.comments
     except ModuleNotFoundError:
         import ruamel_yaml
 
@@ -268,15 +272,16 @@ def _map_devices(cls):
 
 def dump_rack(
     rack: Rack,
-    output_path: Path,
-    sourcepath: Path,
-    pythonpath: Path = None,
+    output_path: str | Path,
+    sourcepath: str | Path,
+    pythonpath: Path | None = None,
     exist_ok: bool = False,
     with_defaults: bool = False,
     skip_tables: bool = False,
 ):
     try:
         import ruamel.yaml as ruamel_yaml
+        import ruamel.yaml.comments
     except ModuleNotFoundError:
         import ruamel_yaml
 
@@ -336,14 +341,14 @@ def dump_rack(
                 )
 
 
-def read_yaml_config(config_path: str):
+def read_yaml_config(config_path: str | Path):
     with open(config_path) as f:
         config = _get_yaml().load(f)
         util.logger.debug(f'loaded configuration from "{config_path!s}"')
     return config
 
 
-def load_rack(output_path: str, defaults: dict = {}, apply: bool = True) -> Rack:
+def load_rack(output_path: str | Path, defaults: dict = {}, apply: bool = True) -> Rack:
     """instantiates a Rack object from a config directory created by dump_rack.
 
     After instantiation, the current working directory is changed to output_path.

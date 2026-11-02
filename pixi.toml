@@ -16,13 +16,13 @@ libusb = "*"
 # conda-forge has no pandas or pyarrow builds for win-arm64, so there the whole stack
 # comes from PyPI wheels (mixing in conda numpy alone duplicates it)
 [target.unix.dependencies]
-numpy = ">=1.19"
-pandas = ">=1.2.0"
+numpy = ">=1.26"
+pandas = ">=2.1.0"
 pyarrow = ">=14"
 
 [target.win-64.dependencies]
-numpy = ">=1.19"
-pandas = ">=1.2.0"
+numpy = ">=1.26"
+pandas = ">=2.1.0"
 pyarrow = ">=14"
 
 [pypi-dependencies]

@@ -11,7 +11,8 @@ adds sphinx; `publish` adds `build` and `twine`.
 
 ```sh
 pixi run test                                           # full suite, py314
-pixi run -e test312 test                                # full suite on another Python
+pixi run -e test312 test                                # full suite on the oldest Python
+pixi run -e test315 test                                # full suite on the newest Python
 pixi run pytest tests/test_paramattr_value.py -q        # one file
 pixi run pytest -k test_python_print                    # one test by name
 pixi run format                                         # ruff format src tests (single quotes, preview style)
@@ -48,13 +49,28 @@ internal and change without warning. `labbench.paramattr` defines the `value`, `
 documentation. The user guide is in `doc/guide/`, and the API reference is rendered from
 docstrings by sphinx autodoc with napoleon.
 
+### Known gaps are recorded as strict xfails
+
+Library defects that need a design decision rather than a local fix are written as
+`pytest.mark.xfail(strict=True, reason=...)` tests against the intended behavior, so
+`grep -rn "mark.xfail" tests` lists them with their causes. Read the reason before treating
+a red test as new, and expect a genuine fix to turn that xfail into an unexpected pass that
+must then be removed. The ledger `tests/xfail-audit.md` records each one: the node id, the
+mechanism with file and line, why the test's expectation is the right one, the impact tier,
+and the fix with its difficulty. Its numbered items are stable identifiers, and a
+suite-state line records the `passed/xfailed` counts of each pass. `reason=` names the
+mechanism and stays verbatim once written. A fix turns the xfail into an unexpected pass:
+remove the marker and retire the item in the same change. A run with any xpass is a failed
+run; `pixi run pytest tests -q -rxX` lists both.
+
 ## Conventions
 
 - **Lint.** The rule set is ruff's default plus the per-file ignores in `pyproject.toml`; the
   pixi lock pins the ruff version, and the counts below are from that version (0.17.3). As of
-  2026-11-02, `pixi run lint` reports 367 errors (mostly B006, C408, BLE001, I001, RUF012,
-  TRY004, F401) and `pixi run ruff format --check src tests` lists 13 unformatted files; that
-  count must not grow, and code the task changes is brought to clean. A line that must keep a flagged pattern carries
+  2026-11-02, `pixi run lint` reports 352 errors (mostly B006, C408, BLE001, I001, RUF012,
+  TRY004, F401); that count must not grow, and code the task changes is brought to clean.
+  `pixi run ruff format --check src` reports nothing; `tests/` still carries unformatted files,
+  so format only the test files a change touches. A line that must keep a flagged pattern carries
   `# noqa: <RULE>` with the reason, never a bare `# noqa`. Fix with
   `ruff check --fix-only --fixable <RULES>` under the full config rather than `--select`, which
   redefines the enabled set and makes RUF100 report every other `noqa` as unused.
@@ -67,9 +83,35 @@ docstrings by sphinx autodoc with napoleon.
   `**kwargs: Unpack[<Name>Kws]` with a `TypedDict`; anything else is `**kwargs: Any`.
   `TypedDict` is for keyword sets only; structured return values stay `dataclasses`. A
   decorator that returns a wrapper names its type variables in the return annotation, not the
-  bare alias, so the checker keeps the wrapped signature. Suppress a checker diagnostic on the
-  offending line with the rule name (`# type: ignore[rule-name]`), never a blanket
-  `# type: ignore`; fix a new diagnostic with a better hint before suppressing it.
+  bare alias, so the checker keeps the wrapped signature.
+  - **Gate.** `pixi run typecheck` (ty, pinned in the `dev` extra; `[tool.ty]` in
+    `pyproject.toml` sets the 3.12 floor and `src/` scope) must report no diagnostics,
+    warnings included. ty reports an unused ignore as a warning, so a stale suppression fails
+    the gate.
+  - **Suppressions.** Fix a diagnostic with a better hint, a guard, a local, or a cast before
+    suppressing it. A suppression is `# ty: ignore[rule-name]  # reason` on the offending
+    line, never a blanket `# ty: ignore` or `# type: ignore`. When the cause is a known defect,
+    the reason is `xfail-audit item N` (or `xfail-audit observation: ...`) and the ledger lists
+    the site; the fix removes the comment, the xfail marker, and the ledger item together.
+    Platform-only imports (`clr`, `win32com`, `pythoncom`) and the deliberate `sys` hook
+    replacements in `util.py` are the other accepted reasons.
+  - **Class annotations are runtime data.** `paramattr._bases.get_cls_annotations` evaluates
+    the `__annotations__` of every class in a `Device` MRO (including `util.Ownable`) with
+    `_bases.py` globals, `Device.__set_signature__` raises for any annotated class attribute
+    that is not a `paramattr.value` descriptor, `ParamAttr` annotations define constructor
+    fields, `Rack` annotations become `__init__` keywords, and `MethodTaggerDataclass`
+    annotations become decorator keywords. A type-only declaration in any of those classes
+    goes inside `if typing.TYPE_CHECKING:` in the class body, above the runtime assignment
+    (verified on 3.12-3.14 to leave `__annotations__` untouched); see `Device.backend` and
+    `Ownable._logger`. Changing the type of an existing `ParamAttr` field annotation is fine;
+    adding or removing an annotated name is a constructor change.
+  - **Field specifiers.** The `TYPE_CHECKING` stubs in `paramattr/value.py` are plain
+    functions naming the PEP 681 parameters (`default`, `kw_only`, `init`, `allow_none`) so
+    that ty's `dataclass_transform` on `Device` honors `kw_only=False` and positional
+    defaults; keep new value types in that form (a Protocol instance is not recognized as a
+    field specifier).
+  - **Signatures.** `util.set_signature` and `util.get_signature` hold the only casts for
+    `__signature__` on function objects; use them rather than casting at the site.
 - **Comments:** only write one if a competent engineer or agent reading the code cold would be
   surprised or misled without it. Worth writing: a non-obvious *why* (constraint, workaround,
   domain rule, performance trade-off); something that looks wrong but is intentional; external
@@ -339,7 +381,10 @@ docstrings by sphinx autodoc with napoleon.
 `test_paramattr_value.py`, `test_pyvisa.py`, ...), and shared helpers are plain modules
 imported by bare name (`from paramattr_tooling import ...`, `module_as_testbed.py`) because
 pytest's prepend import mode puts `tests/` on `sys.path`. Add new tests to the existing module
-for the area rather than creating a file per feature. A change runs under `pixi run test` and,
-when it touches the Python-version floor or syntax, under `pixi run -e test312 test` as well. Fixtures are module-local; several
-modules use an autouse module-scoped fixture for setup. Simulated devices come from
-`labbench.testing`.
+for the area rather than creating a file per feature. A change passes the suite in the oldest and
+the newest test environments, `pixi run -e test312 test` and `pixi run -e test315 test`, before
+it is reported done; `pixi run test` alone covers only py314. The standard library changes between
+minor versions (3.15 removes `dataclasses._MISSING_TYPE`), so an import of a private
+stdlib name is guarded or replaced rather than assumed to exist on every supported Python.
+Fixtures are module-local; several modules use an autouse module-scoped fixture for setup.
+Simulated devices come from `labbench.testing`.

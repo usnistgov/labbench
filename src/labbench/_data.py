@@ -5,10 +5,10 @@ import os
 import pickle
 import re
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, TypeVar, TYPE_CHECKING, Union
+from typing import IO, Any, TypeVar, TYPE_CHECKING, Union
 
 from . import _device, _host, _rack, util
 from . import _device as core
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     import json
     import numpy as np
     import pandas as pd
+    import pandas.io.sql  # noqa: F401  (makes pd.io.sql resolvable for type checkers)
     import sqlalchemy
     import pyarrow
     import shutil
@@ -130,7 +131,7 @@ class MungerBase(core.Device):
     def get_metadata(
         self,
         name,
-        name_func: Callable[[attr.HasParamAttrs, str, dict], str],
+        name_func: Callable[[attr.HasParamAttrs, str], str],
         **metadata,
     ):
         def process_value(value, key_name):
@@ -332,7 +333,7 @@ class MungeToDirectory(MungerBase):
 
         return open(os.path.join(relpath, name), mode)
 
-    def _open_metadata(self, name, mode, in_root=False):
+    def _open_metadata(self: MungerBase, name, mode, in_root=False):
         if in_root:
             dirpath = self.resource
         else:
@@ -341,7 +342,7 @@ class MungeToDirectory(MungerBase):
 
         return open(Path(dirpath) / name, mode)
 
-    def _get_key(self, stream):
+    def _get_key(self, buf):
         """Key to use for the relative data in the root database?
 
         Arguments:
@@ -349,7 +350,7 @@ class MungeToDirectory(MungerBase):
         Returns:
             the key
         """
-        return os.path.relpath(stream.name, self.resource)
+        return os.path.relpath(buf.name, self.resource)
 
     def _relational_from_file(self, old_path, dest):
         # Retry moves for several seconds in case the file is in the process
@@ -411,7 +412,7 @@ class TarFileIO(io.BytesIO):
         self.tarfile = open_tarfile
         self.overwrite = False
         self.name = relname
-        self.mode = mode
+        self._mode = mode
         super().__init__()
 
     def __del__(self):
@@ -489,9 +490,9 @@ class MungeToTar(MungerBase):
         return buf.name
 
     def _relational_from_file(self, old_path, dest):
-        info = self.tar.gettarinfo(old_path)
+        info = self.tar.gettarinfo(old_path)  # ty: ignore[unresolved-attribute]  # xfail-audit item 4
         info.name = dest
-        self.tar.addfile(old_path, info)
+        self.tar.addfile(old_path, info)  # ty: ignore[unresolved-attribute]  # xfail-audit item 4
 
         @util.until_timeout(PermissionError, 5, delay=0.5)
         def remove():
@@ -538,8 +539,8 @@ class Aggregator(util.Ownable):
     """Manages aggregation of parameters of Device attributes defined with paramattr, and data returned by calls to methods in Rack instances"""
 
     # note: this is not a dataclass, these annotations are only for type-hinting
-    name_map: dict[attr.HasParamAttrs, str]
-    attr_rules: dict[str, dict[attr.HasParamAttrs, str]]
+    name_map: dict[attr.HasParamAttrs | util.Ownable, str]
+    attr_rules: dict[str, dict[attr.HasParamAttrs | util.Ownable, tuple[str, ...]]]
 
     # observed value changes from paramattr objects
     incoming_attr_always: dict[str, attr.HasParamAttrs]
@@ -592,7 +593,7 @@ class Aggregator(util.Ownable):
 
         return isinstance(attr_def, attr.value.Value) or attr_def.cache
 
-    def get(self) -> list([dict, dict]):
+    def get(self) -> tuple[dict, dict]:
         """return an aggregated dictionary output data (from Device paramattr objects and Rack method returns)
         and an aggregated dictionary of input data (keyword arguments passed to the toplevel Rack method).
         A get is
@@ -633,7 +634,7 @@ class Aggregator(util.Ownable):
         # check namespace conflicts and pull in rack outputs
         key_conflicts = set(aggregated_output).intersection(self.incoming_rack_output)
         if len(key_conflicts) > 0:
-            self.critical(
+            self.critical(  # ty: ignore[unresolved-attribute]  # xfail-audit item 5
                 f'key name conflict in aggregated data - Rack data is overwriting trait data for {key_conflicts}'
             )
         aggregated_output.update(self.incoming_rack_output)
@@ -653,7 +654,7 @@ class Aggregator(util.Ownable):
 
         return aggregated_output, aggregated_input
 
-    def get_metadata(self, process_func: callable):
+    def get_metadata(self, process_func: Callable[..., Any]):
         metadata = dict(self.metadata)
         global_values = {}
         for owner, owner_name in self.name_map.items():
@@ -675,7 +676,10 @@ class Aggregator(util.Ownable):
         return re.sub(r'\W+|^(?=\d)+', '_', string)
 
     def name_attr_field(
-        self, device: attr.HasParamAttrs, attr_name: str, kwargs: dict[str, Any] = {}
+        self,
+        device: attr.HasParamAttrs | util.Ownable,
+        attr_name: str,
+        kwargs: dict[str, Any] = {},
     ):
         """Generate a name for a trait based on the names of
         a device and one of its states or paramattr.
@@ -706,7 +710,7 @@ class Aggregator(util.Ownable):
 
         return sanitized_name
 
-    def set_device_labels(self, **mapping: dict[Device, str]):
+    def set_device_labels(self, **mapping: util.Ownable):
         """Manually choose device name for a device instance.
 
         Arguments:
@@ -802,9 +806,9 @@ class Aggregator(util.Ownable):
         elif not name.startswith('_'):
             self.incoming_attr_auto[data_name] = msg['new']
 
-    def update_name_map(
+    def update_name_map[OwnableT: util.Ownable](
         self,
-        ownables: dict[Device, str],
+        ownables: Mapping[OwnableT, str | None],
         owner_prefix: str | None = None,
         fallback_names={},
     ):
@@ -830,8 +834,8 @@ class Aggregator(util.Ownable):
                 # naming for device. needs this
                 new_name = prefix + self.name_map[obj]
 
-            elif getattr(obj, '_owned_name', None) is not None:
-                self.name_map[obj] = new_name = obj._owned_name
+            elif (owned_name := getattr(obj, '_owned_name', None)) is not None:
+                self.name_map[obj] = new_name = owned_name
 
             elif hasattr(obj, '__name__'):
                 # Ownable instances that have owners have this attribute set
@@ -873,8 +877,8 @@ class Aggregator(util.Ownable):
         self,
         devices,
         changes: bool = True,
-        always: str | list[str] = [],
-        never: str | list[str] = ['isopen'],
+        always: str | Iterable[str] = [],
+        never: str | Iterable[str] = ['isopen'],
     ):
         """Configure the data to aggregate from value, property, or datareturn traits in the given devices.
 
@@ -951,13 +955,18 @@ class Aggregator(util.Ownable):
             else:
                 raise KeyError
 
-        f = frame = inspect.currentframe()
+        frame = inspect.currentframe()
+        if frame is None:
+            raise RuntimeError('frame introspection is unavailable')
+        f = frame
 
         ret = None
 
         try:
             while f.f_code.co_filename in INSPECT_SKIP_FILES:
                 f = f.f_back
+                if f is None:
+                    raise RuntimeError('frame introspection is unavailable')
 
             tries_elapsed = 0
             while tries_elapsed < max_levels:
@@ -965,10 +974,11 @@ class Aggregator(util.Ownable):
                 try:
                     ret = find_value(f.f_locals, target)
                 except KeyError:
-                    f = f.f_back
-                    if f is None:
+                    caller = f.f_back
+                    if caller is None:
                         tries_elapsed = max_levels
                     else:
+                        f = caller
                         tries_elapsed += 1
                     continue
                 else:
@@ -1034,7 +1044,7 @@ class ParamAttrLogger(
         # select the backend that dumps relational data
         munge_cls = MungeToTar if tar else MungeToDirectory
         self.munge = munge_cls(
-            path,
+            self.path,
             text_relational_min=text_relational_min,
             force_relational=force_relational,
             nonscalar_file_type=nonscalar_file_type,
@@ -1304,6 +1314,9 @@ class CSVLogger(ParamAttrLogger):
     ROOT_FILE_NAME = OUTPUT_FILE_NAME = 'outputs.csv'
     INPUT_FILE_NAME = 'inputs.csv'
     output_index = 0
+    if TYPE_CHECKING:
+        # Owner.__init_subclass__ consumes runtime class annotations, so this hint stays out of __annotations__
+        tables: dict[str, 'pd.DataFrame | None']
     tables = {}
 
     nonscalar_file_type = 'csv'
@@ -1344,9 +1357,10 @@ class CSVLogger(ParamAttrLogger):
 
             if self._append and file_path.stat().st_size > 0:
                 # there's something here and we plan to append
-                self.tables[file_name] = pd.read_csv(file_path, nrows=1)
-                self.tables[file_name].index.name = self.INDEX_LABEL
-                self.output_index = len(self.tables[file_name])
+                table = pd.read_csv(file_path, nrows=1)
+                table.index.name = self.INDEX_LABEL
+                self.tables[file_name] = table
+                self.output_index = len(table)
             else:
                 self.tables[file_name] = None
                 self.output_index = 0
@@ -1359,27 +1373,27 @@ class CSVLogger(ParamAttrLogger):
         the preexisting file; subsequent calls append.
         """
 
-        def append_csv(path: Path, df: 'pd.DataFrame'):
+        def append_csv(path: Path, df: 'pd.DataFrame | list[dict]'):
             if len(df) == 0:
                 return
 
-            isfirst = self.tables.get(path.name, None) is None
+            existing = self.tables.get(path.name, None)
+            isfirst = existing is None
             pending = pd.DataFrame(df)
             pending.index.name = self.INDEX_LABEL
             pending.index = pending.index + self.output_index
 
-            if isfirst:
-                self.tables[path.name] = pending
+            if existing is None:
+                table = pending
             else:
-                self.tables[path.name] = pd.concat((self.tables[path.name], pending))
-                self.tables[path.name] = self.tables[path.name].loc[pending.index[0] :]
-            self.tables[path.name].sort_index(inplace=True)
+                table = pd.concat((existing, pending))
+                table = table.loc[pending.index[0] :]
+            table.sort_index(inplace=True)
+            self.tables[path.name] = table
 
             self.path.mkdir(exist_ok=True, parents=True)
 
-            self.tables[path.name].to_csv(
-                path, mode='a', header=isfirst, index=False, encoding='utf-8'
-            )
+            table.to_csv(path, mode='a', header=isfirst, index=False, encoding='utf-8')
 
         if len(self.pending_input) > 0:
             append_csv(self.path / self.INPUT_FILE_NAME, self.pending_input)
@@ -1387,6 +1401,8 @@ class CSVLogger(ParamAttrLogger):
             append_csv(self.path / self.OUTPUT_FILE_NAME, self.pending_output)
 
             output_df = self.tables[(self.path / self.OUTPUT_FILE_NAME).name]
+            if output_df is None:
+                raise RuntimeError('output table was not written')
             self.output_index = output_df.index[-1]
 
 
@@ -1508,12 +1524,16 @@ class SQLiteLogger(ParamAttrLogger):
             blank_cols = [c.lower() for c in blank.columns]
             new_columns = list(set(trait_cols).difference(blank_cols))
 
+        engine = self._engine
+        if engine is None:
+            raise ConnectionError('open the logger first')
+
         for c in new_columns:
             self._logger.debug(f"inserting new column '{c}'")
             column_type = self._sql_type_name(pending[c])
-            with self._engine.connect() as con:
+            with engine.connect() as con:
                 query = f'alter table {self.OUTPUT_TABLE_NAME} add column {c} {column_type} default NULL'
-                con.execute(query)
+                con.execute(query)  # ty: ignore[no-matching-overload]  # xfail-audit observation: raw SQL string passed to Connection.execute
 
         # Form the new database row
         df = pd.concat([blank, pending], sort=True)
@@ -1608,11 +1628,11 @@ def to_feather(data, path):
             and data.index[-1] == data.shape[0] - 1
         ):
             data = data.reset_index()
-        data.columns = np.array(data.columns).astype(np.str)
+        data.columns = np.array(data.columns).astype(np.str)  # ty: ignore[unresolved-attribute]  # xfail-audit item 3
         data.to_feather(path)
     finally:
         data.index.name = iname
-        data.columns.name = cname
+        data.columns.name = cname  # ty: ignore[unresolved-attribute]  # xfail-audit item 3
 
 
 def read_sqlite(
@@ -1670,9 +1690,9 @@ def read_pickle(path_or_buf, **kws):
 
 
 def read(
-    path_or_buf: str,
-    columns: list[str] = None,
-    nrows: int = None,
+    path_or_buf: str | Path | IO[bytes],
+    columns: list[str] | None = None,
+    nrows: int | None = None,
     format: str = 'auto',
     **kws,
 ):
@@ -1735,13 +1755,12 @@ def read(
         ) from e
 
     if reader == read_sqlite:
-        return reader(path_or_buf, columns=columns, nrows=nrows, **kws)
+        return read_sqlite(path_or_buf, columns=columns, nrows=nrows, **kws)
     elif reader == pd.read_csv:
-        return reader(path_or_buf, usecols=columns, nrows=nrows, **kws)
+        return pd.read_csv(path_or_buf, usecols=columns, nrows=nrows, **kws)
     else:
-        if columns is None:
-            columns = slice(None, None)
-        return reader(path_or_buf, **kws)[columns].iloc[:nrows]
+        selection = slice(None, None) if columns is None else columns
+        return reader(path_or_buf, **kws)[selection].iloc[:nrows]
 
 
 class MungeTarReader:
@@ -1756,7 +1775,10 @@ class MungeTarReader:
         for k in key, key.replace('\\', '/').replace('//', '/'):
             try:
                 ext = os.path.splitext(key)[1][1:]
-                return read(self.tarfile.extractfile(k), format=ext, *args, **kws)
+                buf = self.tarfile.extractfile(k)
+                if buf is None:
+                    raise FileNotFoundError(k)
+                return read(buf, format=ext, *args, **kws)
             except KeyError as e:
                 ex = e
                 continue
@@ -1787,7 +1809,7 @@ class MungeReader:
         the root database
     """
 
-    def __new__(cls, path):
+    def __new__(cls, path) -> MungeTarReader | MungeDirectoryReader:
         dirname = os.path.dirname(path)
 
         for n in MungeTarReader.tarnames:

@@ -36,7 +36,7 @@ class list(_bases.Method[list], _types.List):
     pass
 
 
-class tuple(_bases.Method[list], _types.Tuple):
+class tuple(_bases.Method[tuple], _types.Tuple):
     pass
 
 

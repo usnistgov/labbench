@@ -1,10 +1,10 @@
 from __future__ import annotations
 import contextlib
+import importlib.abc
 import importlib.util
 import inspect
 import logging
 import os
-import platform
 import select
 import socket
 import sys
@@ -382,7 +382,7 @@ class ShellBackend(Device):
             if self.running():
                 raise Exception('already running')
 
-            if platform.system().lower() == 'windows':
+            if sys.platform == 'win32':
                 si = sp.STARTUPINFO()
                 si.dwFlags |= sp.STARTF_USESHOWWINDOW
                 platform_flags = {
@@ -536,7 +536,7 @@ class DotNetDevice(Device):
 
         try:
             # static linters really don't like this, since it's created dynamically
-            import clr
+            import clr  # ty: ignore[unresolved-import]  # Windows/.NET-only backend
         except ImportError:
             raise ImportError('pythonnet module is required to use dotnet drivers')
 
@@ -545,21 +545,25 @@ class DotNetDevice(Device):
         clr.AddReference('System.Reflection')
 
         # more frustration for static linters
-        import System
-        from System.Reflection import Assembly
+        import System  # ty: ignore[unresolved-import]  # Windows/.NET-only backend
+        from System.Reflection import Assembly  # ty: ignore[unresolved-import]  # Windows/.NET-only backend
 
         try:
-            contents = importlib.util.find_spec(library.__package__).loader.get_data(
-                str(dll_path)
-            )
+            spec = importlib.util.find_spec(library.__package__)
+            if spec is None or spec.loader is None:
+                raise ImportError(f'cannot locate {library.__package__}')
+            loader = typing.cast(importlib.abc.FileLoader, spec.loader)
+            contents = loader.get_data(str(dll_path))
         except BaseException:
             with open(dll_path, 'rb') as f:
                 contents = f.read()
 
         # binary file contents
-        contents = importlib.util.find_spec(library.__package__).loader.get_data(
-            str(dll_path)
-        )
+        spec = importlib.util.find_spec(library.__package__)
+        if spec is None or spec.loader is None:
+            raise ImportError(f'cannot locate {library.__package__}')
+        loader = typing.cast(importlib.abc.FileLoader, spec.loader)
+        contents = loader.get_data(str(dll_path))
 
         # dump that into dotnet
         Assembly.Load(System.Array[System.Byte](contents))
@@ -1253,7 +1257,7 @@ class VISADevice(Device):
             msg = msg + ';*OPC'
 
         # substitute message based on remap() in self._keying
-        kws = {k: self._keying.to_message(v) for k, v in kws.items()}
+        kws = {k: self._keying.to_message(v) for k, v in kws.items()}  # ty: ignore[unresolved-attribute]  # xfail-audit item 6
         msg = msg.format(**kws)
 
         # outbound message as truncated event log entry
@@ -1281,7 +1285,7 @@ class VISADevice(Device):
         """
 
         # substitute message based on remap() in self._keying
-        kws = {k: self._keying.to_message(v) for k, v in kws.items()}
+        kws = {k: self._keying.to_message(v) for k, v in kws.items()}  # ty: ignore[unresolved-attribute]  # xfail-audit item 6
         msg = msg.format(**kws)
 
         # outbound message as truncated event log entry
@@ -1304,7 +1308,7 @@ class VISADevice(Device):
                         raise
                     elif time.perf_counter() - t0 >= timeout - 0.1:
                         raise
-                    elif 'timeout' or 'timed out' in str(ex):
+                    elif 'timeout' or 'timed out' in str(ex):  # ty: ignore[redundant-condition]  # xfail-audit item 7
                         continue
                     else:
                         raise
@@ -1316,7 +1320,7 @@ class VISADevice(Device):
         self._logger.debug(f'    → {msg_out}')
 
         if remap:
-            return self._keying.from_message(ret)
+            return self._keying.from_message(ret)  # ty: ignore[unresolved-attribute]  # xfail-audit item 6
         else:
             return ret
 
@@ -1445,7 +1449,7 @@ class VISADevice(Device):
             if is_ivi:
                 url = r'https://pyvisa.readthedocs.io/en/latest/faq/getting_nivisa.html#faq-getting-nivisa'
                 msg = f'could not connect to resource manager - see {url}'
-                e.args[0] += msg
+                e.args[0] += msg  # ty: ignore[invalid-assignment]  # xfail-audit observation: unreachable except in _get_rm
             raise e
 
         return rm
@@ -1459,6 +1463,7 @@ def _visa_missing_pyvisapy_support() -> list[str]:
     try:
         warnings.filterwarnings('ignore', 'GPIB library not found')
         import gpib_ctypes
+        import gpib_ctypes.gpib
 
         if not gpib_ctypes.gpib._load_lib():
             missing.append('GPIB')
@@ -1597,10 +1602,9 @@ def _visa_probe_resource(
             )
             raise
     else:
-        device = None
+        return None
 
-    if device is not None:
-        device.close()
+    device.close()
 
     return device
 
@@ -1684,11 +1688,7 @@ def visa_probe_devices(
         return []
 
     if target is not None:
-        try:
-            is_subclass = issubclass(target, Device)
-        except TypeError:
-            is_subclass = False
-        if is_subclass:
+        if isinstance(target, type) and issubclass(target, VISADevice):
             target = target()
 
         devices = {
@@ -1726,24 +1726,27 @@ class Win32ComDevice(Device):
 
     def open(self):
         """Connect to the win32 com object"""
-        import win32com
-        import win32com.client
+        import win32com  # ty: ignore[unresolved-import]  # Windows-only backend
+        import win32com.client  # ty: ignore[unresolved-import]  # Windows-only backend
 
         def should_sandbox(obj):
             try:
                 name = win32com.__name__
-                return inspect.getmodule(obj).__name__.startswith(name)
+                module = inspect.getmodule(obj)
+                if module is None:
+                    return False
+                return module.__name__.startswith(name)
             except AttributeError:
                 return False
 
         def factory():
-            from pythoncom import CoInitialize
+            from pythoncom import CoInitialize  # ty: ignore[unresolved-import]  # Windows-only backend
 
             CoInitialize()
             return win32com.client.Dispatch(self.com_object)
 
         # Oddness for win32 threadsafety
-        sys.coinit_flags = 0
+        sys.coinit_flags = 0  # ty: ignore[unresolved-attribute]  # set by pythoncom on Windows
 
         if self.com_object == '':
             raise Exception('value traits.com_object needs to be set')

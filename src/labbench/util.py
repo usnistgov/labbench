@@ -130,6 +130,8 @@ def lazy_import(module_name: str) -> types.ModuleType:
     spec = importlib.util.find_spec(module_name)
     if spec is None:
         raise ImportError(f'no module found named "{module_name}"')
+    if spec.loader is None:
+        raise ImportError(f'no loader available for module "{module_name}"')
     spec.loader = importlib.util.LazyLoader(spec.loader)
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
@@ -153,8 +155,13 @@ else:
     textwrap = lazy_import('textwrap')
     traceback = lazy_import('traceback')
 
+
+class _LoggerAdapter(logging.LoggerAdapter):
+    _screen_handler: logging.StreamHandler | None = None
+
+
 # the base object for labbench loggers
-logger = logging.LoggerAdapter(
+logger = _LoggerAdapter(
     logging.getLogger('labbench'),
     dict(
         label='labbench'
@@ -180,7 +187,7 @@ _LogLevelType = Union[
 
 class _Formatter(logging.Formatter):
     def format(self, record: logging.LogRecord):
-        if len(record.args) > 0:
+        if record.args is not None and len(record.args) > 0:
             record.args = tuple()
         return super().format(record)
 
@@ -222,7 +229,7 @@ def show_messages(
     logger.setLevel(logging.DEBUG)
 
     # clear any stale handlers
-    if hasattr(logger, '_screen_handler'):
+    if logger._screen_handler is not None:
         logger.logger.removeHandler(logger._screen_handler)
 
     if level is None:
@@ -274,8 +281,9 @@ def callable_logger(
     func: Callable[..., Any],
 ) -> logging.Logger | logging.LoggerAdapter[logging.Logger]:
     """return the most specialized available logger for the input object"""
-    if isinstance(getattr(func, '__self__', None), Ownable):
-        return func.__self__._logger
+    owner = getattr(func, '__self__', None)
+    if isinstance(owner, Ownable):
+        return owner._logger
     else:
         return logger
 
@@ -440,7 +448,10 @@ class exc_info:
                 # filter this traceback
                 if this_tb is tb:
                     # shift the starting traceback
-                    this_tb = prev_tb = tb = this_tb.tb_next
+                    tb = this_tb = this_tb.tb_next
+                    if this_tb is None:
+                        break
+                    prev_tb = this_tb
                 else:
                     # skip this traceback
                     this_tb = prev_tb.tb_next = this_tb.tb_next
@@ -453,7 +464,7 @@ class exc_info:
 
 if not isinstance(sys.exc_info, exc_info):
     # monkeypatch sys.exc_info
-    sys.exc_info = exc_info()
+    sys.exc_info = exc_info()  # ty: ignore[invalid-assignment]  # labbench replaces the sys hook by design
 
 
 class excepthook:
@@ -463,12 +474,12 @@ class excepthook:
     def __call__(
         cls, etype: type[BaseException], evalue: BaseException, tb: types.TracebackType
     ):
-        return cls.sys_excepthook(*exc_info.filter(type, evalue, tb))
+        return cls.sys_excepthook(*exc_info.filter(type, evalue, tb))  # ty: ignore[invalid-argument-type]  # xfail-audit item 9
 
 
 if not isinstance(sys.excepthook, excepthook):
     # monkeypatch sys.excepthook
-    sys.excepthook = excepthook()
+    sys.excepthook = excepthook()  # ty: ignore[invalid-assignment]  # labbench replaces the sys hook by design
 
 
 def copy_func[T: types.FunctionType](
@@ -815,7 +826,7 @@ class Call:
         if not callable(func):
             raise ValueError('`func` argument is not callable')
         self.func = func
-        self.name = self.func.__name__
+        self.name = self.func.__name__  # ty: ignore[unresolved-attribute]  # xfail-audit item 10
         self.args = args
         self.kws = kws
         self.queue = None
@@ -829,8 +840,9 @@ class Call:
             [repr(v) for v in self.args]
             + [(k + '=' + repr(v)) for k, v in self.kws.items()]
         )
-        if hasattr(self.func, '__qualname__'):
-            name = self.func.__module__ + '.' + self.func.__qualname__
+        qualname = getattr(self.func, '__qualname__', None)
+        if qualname is not None:
+            name = self.func.__module__ + '.' + qualname
         else:
             name = self.name
         return f'Call({name},{args})'
@@ -865,9 +877,9 @@ class Call:
             try:
                 if name is None:
                     if hasattr(func, 'name'):
-                        name = func.name
+                        name = typing.cast(Any, func).name
                     elif hasattr(func, '__name__'):
-                        name = func.__name__
+                        name = typing.cast(Any, func).__name__
                     else:
                         raise TypeError(f'could not find name of {func}')
 
@@ -1074,8 +1086,8 @@ def _select_enter_or_call(
                 raise TypeError('cannot mix context managers and callables')
 
     # Enforce uniqueness in the (callable or context manager) object
-    candidate_objs = [c[1] for c in candidate_objs]
-    if len(set(candidate_objs)) != len(candidate_objs):
+    unique_objs = [c[1] for c in candidate_objs]
+    if len(set(unique_objs)) != len(unique_objs):
         raise ValueError('each callable and context manager must be unique')
 
     return which
@@ -1140,7 +1152,11 @@ def enter_or_call(
 
     if params['name'] is None:
         # come up with a gobbledigook name that is at least unique
-        frame = inspect.currentframe().f_back.f_back
+        frame = inspect.currentframe()
+        frame = frame.f_back if frame is not None else None
+        frame = frame.f_back if frame is not None else None
+        if frame is None:
+            raise RuntimeError('unable to inspect the calling frame to name the call')
         params['name'] = (
             f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
         )
@@ -1385,7 +1401,12 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
     for name, wrapper in wrappers.items():
         ret = wrapper()
         if wrapper.traceback is not None:
-            raise wrapper.traceback[1]
+            exc = wrapper.traceback[1]
+            if exc is None:
+                raise RuntimeError(
+                    f'{name!r} recorded a traceback without an exception'
+                )
+            raise exc
         if ret is not None or params['nones']:
             results[name] = ret
 
@@ -1545,9 +1566,11 @@ class ThreadSandbox:
 
             def default_sandbox_check_func(obj):
                 try:
-                    return inspect.getmodule(obj).__name__.startswith(
-                        inspect.getmodule(root).__name__
-                    )
+                    obj_module = inspect.getmodule(obj)
+                    root_module = inspect.getmodule(root)
+                    if obj_module is None or root_module is None:
+                        return False
+                    return obj_module.__name__.startswith(root_module.__name__)
                 except AttributeError:
                     return False
 
@@ -1564,12 +1587,16 @@ class ThreadSandbox:
         if exc:
             return
 
+        requestq = self._requestq
+        if requestq is None:
+            raise ConnectionError('ThreadSandbox request queue is not initialized')
+
         # Do some sort of setup here
         while True:
             ret = None
             exc = None
 
-            op, obj, name, args, kws, rsp = self._requestq.get(True)
+            op, obj, name, args, kws, rsp = requestq.get(True)
 
             # End if that's good
             if op is OP_QUIT:

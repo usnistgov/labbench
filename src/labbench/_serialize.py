@@ -10,8 +10,8 @@ from . import paramattr as attr
 from . import util
 from ._rack import Rack, import_as_rack, update_parameter_dict
 
-# some packages install ruamel_yaml, others ruamel.yaml. fall back to ruamel_yaml in case ruamel.yaml fails
-# using ruamel yaml instead of pyyaml because it allows us to place comments for human readability
+# ruamel.yaml (a declared dependency) is used instead of pyyaml because it allows us to
+# place comments for human readability
 
 RACK_CONFIG_FILENAME = 'config.yaml'
 EMPTY = inspect.Parameter.empty
@@ -26,10 +26,7 @@ _FIELD_KEYWORD_DEFAULTS = 'default_arguments'
 
 @functools.cache
 def _get_yaml():
-    try:
-        import ruamel.yaml as ruamel_yaml
-    except ModuleNotFoundError:
-        import ruamel_yaml
+    import ruamel.yaml as ruamel_yaml
 
     yaml = ruamel_yaml.YAML()
     yaml.indent(mapping=4, sequence=4)
@@ -38,12 +35,9 @@ def _get_yaml():
 
 def _yaml_comment_out(cm, key):
     """comment out the line containing the item with the specified key"""
-    try:
-        import ruamel.yaml as ruamel_yaml
-        import ruamel.yaml.error
-        import ruamel.yaml.tokens
-    except ModuleNotFoundError:
-        import ruamel_yaml
+    import ruamel.yaml as ruamel_yaml
+    import ruamel.yaml.error
+    import ruamel.yaml.tokens
 
     cm.ca.items.setdefault(key, [None, [], None, None])
     cm.ca.items[key][1] = [
@@ -54,10 +48,7 @@ def _yaml_comment_out(cm, key):
 def _quote_strings_recursive(cm):
     """apply quotes to dict values that have str type"""
 
-    try:
-        from ruamel.yaml.scalarstring import DoubleQuotedScalarString as quote
-    except ModuleNotFoundError:
-        from ruamel_yaml.scalarstring import DoubleQuotedScalarString as quote
+    from ruamel.yaml.scalarstring import DoubleQuotedScalarString as quote
 
     ret = dict()
 
@@ -202,11 +193,8 @@ def write_table_stub(rack: Rack, name: str, path: Path, with_defaults: bool = Fa
 
 
 def _map_method_defaults(rack_cls):
-    try:
-        import ruamel.yaml as ruamel_yaml
-        import ruamel.yaml.comments
-    except ModuleNotFoundError:
-        import ruamel_yaml
+    import ruamel.yaml as ruamel_yaml
+    import ruamel.yaml.comments
 
     params, _ = _search_method_parameters(rack_cls)
     cm = ruamel_yaml.comments.CommentedMap({
@@ -228,11 +216,8 @@ def _map_method_defaults(rack_cls):
 
 
 def _map_devices(cls):
-    try:
-        import ruamel.yaml as ruamel_yaml
-        import ruamel.yaml.comments
-    except ModuleNotFoundError:
-        import ruamel_yaml
+    import ruamel.yaml as ruamel_yaml
+    import ruamel.yaml.comments
 
     cm = ruamel_yaml.comments.CommentedMap()
 
@@ -279,11 +264,8 @@ def dump_rack(
     with_defaults: bool = False,
     skip_tables: bool = False,
 ):
-    try:
-        import ruamel.yaml as ruamel_yaml
-        import ruamel.yaml.comments
-    except ModuleNotFoundError:
-        import ruamel_yaml
+    import ruamel.yaml as ruamel_yaml
+    import ruamel.yaml.comments
 
     if not isinstance(rack, Rack):
         raise TypeError("'rack' argument must be an instance of labbench.Rack")

@@ -238,7 +238,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
         cls.__init__ = util.copy_func(cls.__init__)
-        cls.__init__.__signature__ = inspect.Signature(params)
+        util.set_signature(cls.__init__, inspect.Signature(params))
 
         # generate the __init__ docstring
         value_docs = ''.join([
@@ -408,8 +408,9 @@ class Device(DeviceDataClass):
 
     def __repr__(self):
         name = self.__class__.__qualname__
-        if hasattr(self, 'resource'):
-            if self.resource != type(self).resource.default:
+        resource_attr = getattr(type(self), 'resource', None)
+        if resource_attr is not None and hasattr(self, 'resource'):
+            if self.resource != resource_attr.default:
                 resource_str = repr(self.resource)
             else:
                 resource_str = ''

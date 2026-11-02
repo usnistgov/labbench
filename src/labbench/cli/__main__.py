@@ -214,7 +214,7 @@ def reset(path, with_defaults=False):
         rack = lb.load_rack(Path(path).parent, apply=True)
 
         # make_sequence_stub takes care of the introspection on the rack
-        lb._serialize.make_sequence_stub(
+        lb._serialize.make_sequence_stub(  # ty: ignore[unresolved-attribute]  # xfail-audit item 12
             rack, path.stem, path.parent, with_defaults=with_defaults
         )
         print(f'reset "{path}" to stub')
@@ -272,7 +272,7 @@ def run(csv_path, notebook=False, verbose=False):
     rack = lb.load_rack(config_dir, apply=True)
 
     if notebook:
-        from labbench import notebooks
+        from labbench import notebooks  # ty: ignore[unresolved-import]  # xfail-audit item 11
 
         notebooks.display(notebooks.panel(rack))
 

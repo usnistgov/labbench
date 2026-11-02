@@ -19,10 +19,12 @@ class key_adapter(attr.visa_keying):
         self.defaults = defaults
 
     def get_kwarg_names(self, key: str | tuple[str, ...]) -> typing.Sequence[str]:
-        if isinstance(key, str) or len(key) == 1:
-            return super().get_kwarg_names(key)
-        else:
+        if isinstance(key, tuple):
+            if len(key) == 1:
+                return super().get_kwarg_names(key)  # ty: ignore[invalid-argument-type]  # deliberate pass-through of a 1-tuple key
             return tuple(key[1:])
+        else:
+            return super().get_kwarg_names(key)
 
     def get(
         self,
@@ -44,11 +46,16 @@ class key_adapter(attr.visa_keying):
         Returns:
             response (str)
         """
-        store_name = owner.backend.get_store_key(attr)
-        backend_key = owner.backend.get_backend_key(owner, attr, kwargs)
+        if attr is None:
+            raise TypeError('a ParamAttr is required')
+
+        # this adapter is only bound to StoreTestDevice subclasses, which have a backend
+        device = typing.cast(Device, owner)
+        store_name = device.backend.get_store_key(attr)
+        backend_key = device.backend.get_backend_key(device, attr, kwargs)
 
         default = self.defaults.get(store_name, attr._type())
-        return owner.backend.get(backend_key, default)
+        return device.backend.get(backend_key, default)
 
     def set(
         self,
@@ -69,8 +76,10 @@ class key_adapter(attr.visa_keying):
             value (str): value to assign
             name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
         """
-        backend_key = owner.backend.get_backend_key(owner, attr, kwargs)
-        owner.backend.set(backend_key, value)
+        # this adapter is only bound to StoreTestDevice subclasses, which have a backend
+        device = typing.cast(Device, owner)
+        backend_key = device.backend.get_backend_key(device, attr, kwargs)
+        device.backend.set(backend_key, value)
 
 
 class TestStore:
@@ -220,14 +229,14 @@ class Oscilloscope(StoreTestDevice):
         help='channel center frequency',
     )
     def center_frequency(self, *, channel):
-        return self.query(f'CH{channel}:SENS:FREQ?')
+        return self.query(f'CH{channel}:SENS:FREQ?')  # ty: ignore[unresolved-attribute]  # xfail-audit observation: Oscilloscope.center_frequency calls undefined query/write
 
     @center_frequency.setter
     def _(self, set_value, /, *, channel):
-        self.write(f'CH{channel}:SENS:FREQ {set_value}')
+        self.write(f'CH{channel}:SENS:FREQ {set_value}')  # ty: ignore[unresolved-attribute]  # xfail-audit observation: Oscilloscope.center_frequency calls undefined query/write
 
     resolution_bandwidth = attr.method.float(
-        key=('CH:SENS:BW', 'channel'),
+        key=('CH:SENS:BW', 'channel'),  # ty: ignore[invalid-argument-type]  # deliberate test of a tuple key
         min=1,
         max=40e6,
         step=1e-3,

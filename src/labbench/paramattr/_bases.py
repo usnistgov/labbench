@@ -1057,8 +1057,10 @@ class MethodKwArg[V, T, **P](ParamAttr[V]):
                 'the default argument is not supported when decorating a method'
             )
 
-        if isinstance(decorated, (HasParamAttrs, type(HasParamAttrs))):
-            get_owner_meta(decorated).broadcast_kwargs[self.name] = self  # ty: ignore
+        if isinstance(decorated, HasParamAttrs) or (
+            isinstance(decorated, type) and issubclass(decorated, HasParamAttrs)
+        ):
+            get_owner_meta(decorated).broadcast_kwargs[self.name] = self
             decorated.__init_subclass__()
         elif isinstance(decorated, Method):
             raise TypeError('decorate keyword arguments after methods')
@@ -1904,7 +1906,7 @@ class DependentParamAttr[V](ParamAttr[V]):
         none_names = [
             f'{owner}.{attr.name}'
             for attr in self._cal_deps.values()
-            if getattr(owner, attr.name) is None  # ty: ignore
+            if attr.name is not None and getattr(owner, attr.name) is None
         ]
 
         if len(none_names) == 1:
@@ -2314,12 +2316,14 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
 class TransformedNumberMixIn[V](DependentNumberParamAttr[V]):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber"""
 
+    # placeholders: transform() stores the caller's functions as instance attributes,
+    # and they take one argument or two (the base value and the other value)
     @staticmethod
-    def _forward(x, y):
+    def _forward(x, y=None):
         return x
 
     @staticmethod
-    def _reverse(x, y):
+    def _reverse(x, y=None):
         return x
 
     def __init_owner_instance__(self, owner):
@@ -2348,8 +2352,8 @@ class TransformedNumberMixIn[V](DependentNumberParamAttr[V]):
 
         if other_attr is None:
             trial_bounds = [
-                self._forward(base_bounds[0]),  # ty: ignore
-                self._forward(base_bounds[1]),  # ty: ignore
+                self._forward(base_bounds[0]),
+                self._forward(base_bounds[1]),
             ]
         else:
             assert other_attr.name is not None

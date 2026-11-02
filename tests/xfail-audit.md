@@ -49,20 +49,20 @@ confidence before Medium.
 
 ## Summary table
 
-| # | Test | Confidence | Impact | Fix |
+| # | Fault | Confidence | Impact | Fix |
 | --- | --- | --- | --- | --- |
-| 8 | `test_host.py::test_host_opens_outside_a_git_repository` | High | A | trivial |
-| 2 | `test_rack.py::test_sequence_returns_allowlisted_exception` | High | B | trivial |
-| 3 | `test_data_logging.py::test_feather_roundtrip` | High | B | trivial |
-| 4 | `test_data_logging.py::test_tar_munger_moves_external_file` | High | B | small |
-| 5 | `test_data_logging.py::test_aggregator_rack_output_overrides_conflicting_key` | High | B | trivial |
-| 7 | `test_pyvisa.py::test_query_retry_reraises_other_errors` | High | B | trivial |
-| 10 | `test_util.py::test_call_accepts_a_partial` | High | B | trivial |
-| 1 | `test_rack.py::test_sequence_template_index_is_step_name` | High | B | trivial |
-| 6 | `test_pyvisa.py::test_query_formats_keywords` | Medium | B | moderate |
-| 11 | `test_cli.py::test_notebooks_module_exists` | High | C | design |
-| 12 | `test_cli.py::test_make_sequence_stub_exists` | High | C | design |
-| 9 | `test_util.py::test_excepthook_forwards_the_exception_type` | High | C | trivial |
+| 8 | `Host.open` raises `UnboundLocalError` outside a git repository, so every logger does too | High | A | trivial |
+| 2 | A `Sequence` with `return_on_exceptions` raises `AttributeError` when a step raises an allowlisted exception | High | B | trivial |
+| 3 | `to_feather` uses `Index.is_monotonic` and `np.str`, removed from pandas 2.0 and NumPy 1.24 | High | B | trivial |
+| 4 | `MungeToTar` reads `self.tar` instead of `self.tarfile` when moving an external file into the archive | High | B | small |
+| 5 | `Aggregator.get` reports a key conflict through an undefined `self.critical` | High | B | trivial |
+| 7 | `VISADevice.query(retry=True)` retries every exception until the timeout because of an always-true `or` | High | B | trivial |
+| 10 | `Call` reads `func.__name__` unconditionally and rejects a `functools.partial` | High | B | trivial |
+| 1 | `BoundSequence.to_template` reads an undefined `cls.INDEX_COLUMN_NAME` | High | B | trivial |
+| 6 | `VISADevice.write` and `query` format keywords through `self._keying`, which nothing assigns | Medium | B | moderate |
+| 11 | The CLI `--notebook` option imports a `labbench.notebooks` module that does not exist | High | C | design |
+| 12 | The CLI sequence-table reset calls a `_serialize.make_sequence_stub` that does not exist | High | C | design |
+| 9 | `excepthook` forwards the builtin `type` to the wrapped hook in place of the exception type | High | C | trivial |
 
 ## Tier A: reached by documented usage
 

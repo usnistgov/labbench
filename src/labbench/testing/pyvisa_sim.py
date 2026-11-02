@@ -189,7 +189,7 @@ class Oscilloscope(VISADevice):
 
         series = pd.Series([float(s) for s in response.split(',')], name='spectrum')
         series.index = pd.Index(
-            self.center_frequency + np.linspace(-5e6, 5e6, len(series)),
+            self.center_frequency + np.linspace(-5e6, 5e6, len(series)),  # ty: ignore[unsupported-operator]  # xfail-audit observation: Oscilloscope.fetch adds the descriptor object to an array
             name='frequency',
         )
 

@@ -125,7 +125,7 @@ def attr_def_to_parameter(attr_def: attr._bases.Value) -> inspect.Parameter:
     """build a signature.Parameter from a ParamAttr.value"""
     if attr_def.only and sys.version_info >= (3, 11):
         # Union[*attr_def.only] is sooo close
-        annotation = typing.Union[*tuple(attr_def.only)]
+        annotation: typing.Any = typing.Union[tuple(attr_def.only)]
     else:
         annotation = attr_def._type
 
@@ -238,7 +238,7 @@ class DeviceDataClass(HasParamAttrs, util.Ownable):
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
         cls.__init__ = util.copy_func(cls.__init__)
-        cls.__init__.__signature__ = inspect.Signature(params)
+        util.set_signature(cls.__init__, inspect.Signature(params))
 
         # generate the __init__ docstring
         value_docs = ''.join([
@@ -275,6 +275,10 @@ class Device(DeviceDataClass):
 
     """
 
+    if typing.TYPE_CHECKING:
+        # __set_signature__ rejects any runtime class annotation that is not a
+        # paramattr.value descriptor, so this hint stays out of __annotations__
+        backend: typing.Any
     backend = DisconnectedBackend(None)
     """ this attribute is some reference to a controller for the device.
         it is to be set in `connect` and `disconnect` by the subclass that implements the backend.
@@ -404,8 +408,9 @@ class Device(DeviceDataClass):
 
     def __repr__(self):
         name = self.__class__.__qualname__
-        if hasattr(self, 'resource'):
-            if self.resource != type(self).resource.default:
+        resource_attr = getattr(type(self), 'resource', None)
+        if resource_attr is not None and hasattr(self, 'resource'):
+            if self.resource != resource_attr.default:
                 resource_str = repr(self.resource)
             else:
                 resource_str = ''

@@ -9,7 +9,7 @@ the objects in an interpreter instead of reverse-engineering this code.
 from __future__ import annotations
 
 import builtins
-from dataclasses import field, Field, MISSING as Undefined
+from dataclasses import field, Field, MISSING as Undefined, _MISSING_TYPE
 import functools
 import inspect
 import numbers
@@ -30,7 +30,7 @@ if typing.TYPE_CHECKING:
 else:
     pd = util.lazy_import('pandas')
 
-UndefinedType = type(Undefined)
+UndefinedType: typing.TypeAlias = _MISSING_TYPE
 
 
 class no_cast_argument:
@@ -294,7 +294,7 @@ class KeyAdapterBase:
             f'key adapter does not implement "set" {type(self)!r}'
         )
 
-    def get_kwarg_names(self, key: Any) -> list[str]:
+    def get_kwarg_names(self, key: Any) -> Sequence[str]:
         """returns a list of arguments for the parameter attribute key.
 
         This must be implemented in order to define `labbench.paramattr.method` attributes
@@ -502,7 +502,7 @@ class ParamAttr[V](metaclass=ParamAttrMeta):
     gets: bool = True
     cache: bool = False
     only: Sequence[V] = tuple()
-    allow_none: bool = False
+    allow_none: bool | None = False
     log: bool = True
     inherit: bool = False
     name: str | None = field(default=None, init=False, repr=False)
@@ -931,9 +931,9 @@ class Value[V](ParamAttr[V]):
 
         if self.allow_none is None:
             if self.default is None:
-                self.allow_none = True  # pyright: ignore
+                self.allow_none = True
             else:
-                self.allow_none = False  # pyright: ignore
+                self.allow_none = False
         elif self.default is None and not self.allow_none:
             raise TypeError('cannot set default=None with allow_none=True')
 
@@ -966,8 +966,8 @@ class Value[V](ParamAttr[V]):
             # escape an infinite recursion loop before accessing any class members
             return self
 
-        cls_getter = owner_cls.__dict__.get(self.name, None)  # type: ignore
-        objclass_getter = self.__objclass__.__dict__.get(self.name)  # type: ignore
+        cls_getter = owner_cls.__dict__.get(self.name, None)
+        objclass_getter = self.__objclass__.__dict__.get(self.name)
         if cls_getter is not objclass_getter:
             return self
         else:
@@ -1007,7 +1007,8 @@ class Value[V](ParamAttr[V]):
 
 
 class MethodKwArg[V, T, **P](ParamAttr[V]):
-    name: str = field(kw_only=False)
+    # a required positional field; ParamAttr.name is None only before __set_name__
+    name: str = field(kw_only=False)  # ty: ignore[invalid-mutable-override]
     default: V | None | UndefinedType = Undefined
 
     ROLE = 'keyword argument'
@@ -1035,10 +1036,16 @@ class MethodKwArg[V, T, **P](ParamAttr[V]):
     @typing.overload
     def __call__(self, decorated: THasParamAttrs) -> THasParamAttrs: ...
 
+    @typing.overload
+    def __call__(self, decorated: type[THasParamAttrs]) -> type[THasParamAttrs]: ...
+
     def __call__(
         self,
-        decorated: _Getter[T, P] | _Setter[T, P] | THasParamAttrs,
-    ) -> _Getter[T, P] | _Setter[T, P] | THasParamAttrs:
+        decorated: _Getter[T, P]
+        | _Setter[T, P]
+        | THasParamAttrs
+        | type[THasParamAttrs],
+    ) -> _Getter[T, P] | _Setter[T, P] | THasParamAttrs | type[THasParamAttrs]:
         """decorate a method to apply type conversion and validation checks to one of its keyword arguments.
 
         These are applied to the keyword argument matching `self.name` immediately before each call to
@@ -1050,8 +1057,10 @@ class MethodKwArg[V, T, **P](ParamAttr[V]):
                 'the default argument is not supported when decorating a method'
             )
 
-        if isinstance(decorated, (HasParamAttrs, type(HasParamAttrs))):
-            get_owner_meta(decorated).broadcast_kwargs[self.name] = self  # ty: ignore
+        if isinstance(decorated, HasParamAttrs) or (
+            isinstance(decorated, type) and issubclass(decorated, HasParamAttrs)
+        ):
+            get_owner_meta(decorated).broadcast_kwargs[self.name] = self
             decorated.__init_subclass__()
         elif isinstance(decorated, Method):
             raise TypeError('decorate keyword arguments after methods')
@@ -1240,8 +1249,8 @@ class _Setter[T, **P](typing.Protocol):
     def __call__(
         _,
         self: Any,
-        /,
         new_value: T,
+        /,
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> None: ...
@@ -1292,6 +1301,14 @@ class _MethodDescriptor[V, **P]:
 class _GetterMethod[V, **P](typing.Protocol):
     # call signature for type hinting decorated Method descriptors
 
+    @typing.overload
+    def __get__(self, owner: None, owner_cls: Any) -> typing.Self: ...
+
+    @typing.overload
+    def __get__(
+        self, owner: HasParamAttrs, owner_cls: Any
+    ) -> _MethodDescriptor[V, P]: ...
+
     def __call__(self: Any, *args: P.args, **kwargs: P.kwargs) -> V: ...
 
     def setter(self, func: _Setter[V, P]) -> _GetterSetterMethod[V, P]: ...
@@ -1302,6 +1319,14 @@ class _GetterMethod[V, **P](typing.Protocol):
 class _SetterMethod[V, **P](typing.Protocol):
     # call signature for type hinting decorated Method descriptors
 
+    @typing.overload
+    def __get__(self, owner: None, owner_cls: Any) -> typing.Self: ...
+
+    @typing.overload
+    def __get__(
+        self, owner: HasParamAttrs, owner_cls: Any
+    ) -> _MethodDescriptor[V, P]: ...
+
     def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...
 
     def setter(self, func: _Setter[V, P]) -> _SetterMethod[V, P]: ...
@@ -1311,6 +1336,14 @@ class _SetterMethod[V, **P](typing.Protocol):
 
 class _GetterSetterMethod[V, **P](typing.Protocol):
     # call signature for type hinting decorated Method descriptors
+
+    @typing.overload
+    def __get__(self, owner: None, owner_cls: Any) -> typing.Self: ...
+
+    @typing.overload
+    def __get__(
+        self, owner: HasParamAttrs, owner_cls: Any
+    ) -> _MethodDescriptor[V, P]: ...
 
     @typing.overload
     def __call__(self, new_value: V, *args: P.args, **kwargs: P.kwargs) -> None: ...
@@ -1864,14 +1897,16 @@ class DependentParamAttr[V](ParamAttr[V]):
         for attr_def in self._cal_deps.values():
             attr_def.__objclass__ = objclass
 
-    def _validate_attr_dependencies(self, owner, allow_none: bool, operation='access'):
+    def _validate_attr_dependencies(
+        self, owner, allow_none: bool | None, operation='access'
+    ):
         if allow_none:
             return
 
         none_names = [
             f'{owner}.{attr.name}'
             for attr in self._cal_deps.values()
-            if getattr(owner, attr.name) is None  # ty: ignore
+            if attr.name is not None and getattr(owner, attr.name) is None
         ]
 
         if len(none_names) == 1:
@@ -2281,12 +2316,14 @@ class TableCorrectionMixIn(RemappedBoundedNumberMixIn):
 class TransformedNumberMixIn[V](DependentNumberParamAttr[V]):
     """act as an arbitrarily-defined (but reversible) transformation of another BoundedNumber"""
 
+    # placeholders: transform() stores the caller's functions as instance attributes,
+    # and they take one argument or two (the base value and the other value)
     @staticmethod
-    def _forward(x, y):
+    def _forward(x, y=None):
         return x
 
     @staticmethod
-    def _reverse(x, y):
+    def _reverse(x, y=None):
         return x
 
     def __init_owner_instance__(self, owner):
@@ -2315,8 +2352,8 @@ class TransformedNumberMixIn[V](DependentNumberParamAttr[V]):
 
         if other_attr is None:
             trial_bounds = [
-                self._forward(base_bounds[0]),  # ty: ignore
-                self._forward(base_bounds[1]),  # ty: ignore
+                self._forward(base_bounds[0]),
+                self._forward(base_bounds[1]),
             ]
         else:
             assert other_attr.name is not None
@@ -2534,7 +2571,7 @@ class BoundedNumber[V](ParamAttr[V]):
         forward: typing.Callable,
         reverse: typing.Callable,
         help: str = '',
-        allow_none: bool = False,
+        allow_none: bool | None = False,
     ) -> typing.Self:
         """generate a new attribute subclass that adjusts values in other attributes.
 

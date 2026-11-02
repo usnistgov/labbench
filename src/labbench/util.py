@@ -13,7 +13,7 @@ from collections.abc import Callable  # noqa: E402
 from contextlib import _GeneratorContextManager, contextmanager  # noqa: E402
 from functools import wraps  # noqa: E402
 from queue import Empty, Queue  # noqa: E402
-from typing import Union, Literal, TypeVar  # noqa: E402
+from typing import Any, Union, Literal, TypeVar  # noqa: E402
 
 
 __all__ = [  # "misc"
@@ -83,13 +83,16 @@ def hide_in_traceback[T: Callable](func: T) -> T:
     return func
 
 
-class single_threaded_call_lock:
+class single_threaded_call_lock[**P, R]:
     """decorates a function to ensure executes in only one thread at a time.
 
     This is a low-performance way to ensure thread-safety.
     """
 
-    def __new__(cls, func):
+    func: Callable[P, R]
+    lock: RLock
+
+    def __new__(cls, func: Callable[P, R]):
         obj = super().__new__(cls)
         obj.func = func
         obj.lock = RLock()
@@ -97,7 +100,7 @@ class single_threaded_call_lock:
         return obj
 
     @hide_in_traceback
-    def __call__(self, *args, **kws):
+    def __call__(self, *args: P.args, **kws: P.kwargs) -> R:
         self.lock.acquire()
 
         # no other threads are running self.func; invoke it in this one
@@ -110,7 +113,7 @@ class single_threaded_call_lock:
 
 
 @single_threaded_call_lock
-def lazy_import(module_name: str):
+def lazy_import(module_name: str) -> types.ModuleType:
     """postponed import of the module with the specified name.
 
     The import is not performed until the module is accessed in the code. This
@@ -127,6 +130,8 @@ def lazy_import(module_name: str):
     spec = importlib.util.find_spec(module_name)
     if spec is None:
         raise ImportError(f'no module found named "{module_name}"')
+    if spec.loader is None:
+        raise ImportError(f'no loader available for module "{module_name}"')
     spec.loader = importlib.util.LazyLoader(spec.loader)
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
@@ -142,6 +147,7 @@ if typing.TYPE_CHECKING:
     import psutil
     import textwrap
     import traceback  # noqa: E402
+    from typing_extensions import TypeIs
 else:
     ast = lazy_import('ast')
     hashlib = lazy_import('hashlib')
@@ -149,8 +155,13 @@ else:
     textwrap = lazy_import('textwrap')
     traceback = lazy_import('traceback')
 
+
+class _LoggerAdapter(logging.LoggerAdapter):
+    _screen_handler: logging.StreamHandler | None = None
+
+
 # the base object for labbench loggers
-logger = logging.LoggerAdapter(
+logger = _LoggerAdapter(
     logging.getLogger('labbench'),
     dict(
         label='labbench'
@@ -175,10 +186,10 @@ _LogLevelType = Union[
 
 
 class _Formatter(logging.Formatter):
-    def format(self, rec: logging.LogRecord):
-        if len(rec.args) > 0:
-            rec.args = tuple()
-        return super().format(rec)
+    def format(self, record: logging.LogRecord):
+        if record.args is not None and len(record.args) > 0:
+            record.args = tuple()
+        return super().format(record)
 
 
 def show_messages(
@@ -218,7 +229,7 @@ def show_messages(
     logger.setLevel(logging.DEBUG)
 
     # clear any stale handlers
-    if hasattr(logger, '_screen_handler'):
+    if logger._screen_handler is not None:
         logger.logger.removeHandler(logger._screen_handler)
 
     if level is None:
@@ -266,17 +277,20 @@ def repr_as_log_dict(obj: typing.Any) -> dict[str, str]:
     return d
 
 
-def callable_logger(func: callable) -> logging.Logger:
+def callable_logger(
+    func: Callable[..., Any],
+) -> logging.Logger | logging.LoggerAdapter[logging.Logger]:
     """return the most specialized available logger for the input object"""
-    if isinstance(getattr(func, '__self__', None), Ownable):
-        return func.__self__._logger
+    owner = getattr(func, '__self__', None)
+    if isinstance(owner, Ownable):
+        return owner._logger
     else:
         return logger
 
 
 def find_methods_in_mro(
     cls: type[object], name: str, until_cls: type[object] | None = None
-) -> list[callable]:
+) -> list[Callable[..., Any]]:
     """list all methods named `name` in `cls` and its parent classes.
 
     Args:
@@ -312,6 +326,10 @@ class Ownable:
 
     __objclass__ = None
     _owned_name = None
+    if typing.TYPE_CHECKING:
+        # paramattr._bases.get_cls_annotations evaluates runtime class annotations
+        # across the Device MRO, so this hint stays out of __annotations__
+        _logger: logging.Logger | logging.LoggerAdapter[logging.Logger]
     _logger = logger
 
     def __init__(self):
@@ -361,7 +379,7 @@ class Ownable:
 class ConcurrentException(Exception):
     """Raised on concurrency errors in `labbench.concurrently`"""
 
-    thread_exceptions = []
+    thread_exceptions: list[typing.Any] | dict[typing.Any, typing.Any] = []
 
 
 class OwnerThreadException(ThreadError):
@@ -413,7 +431,10 @@ class exc_info:
 
     @classmethod
     def filter(
-        cls, etype: type[BaseException], evalue: BaseException, tb: types.TracebackType
+        cls,
+        etype: type[BaseException] | None,
+        evalue: BaseException | None,
+        tb: types.TracebackType | None,
     ):
         if cls.debug or tb is None:
             return etype, evalue, tb
@@ -427,7 +448,10 @@ class exc_info:
                 # filter this traceback
                 if this_tb is tb:
                     # shift the starting traceback
-                    this_tb = prev_tb = tb = this_tb.tb_next
+                    tb = this_tb = this_tb.tb_next
+                    if this_tb is None:
+                        break
+                    prev_tb = this_tb
                 else:
                     # skip this traceback
                     this_tb = prev_tb.tb_next = this_tb.tb_next
@@ -440,7 +464,7 @@ class exc_info:
 
 if not isinstance(sys.exc_info, exc_info):
     # monkeypatch sys.exc_info
-    sys.exc_info = exc_info()
+    sys.exc_info = exc_info()  # ty: ignore[invalid-assignment]  # labbench replaces the sys hook by design
 
 
 class excepthook:
@@ -450,12 +474,12 @@ class excepthook:
     def __call__(
         cls, etype: type[BaseException], evalue: BaseException, tb: types.TracebackType
     ):
-        return cls.sys_excepthook(*exc_info.filter(type, evalue, tb))
+        return cls.sys_excepthook(*exc_info.filter(type, evalue, tb))  # ty: ignore[invalid-argument-type]  # xfail-audit item 9
 
 
 if not isinstance(sys.excepthook, excepthook):
     # monkeypatch sys.excepthook
-    sys.excepthook = excepthook()
+    sys.excepthook = excepthook()  # ty: ignore[invalid-assignment]  # labbench replaces the sys hook by design
 
 
 def copy_func[T: types.FunctionType](
@@ -491,7 +515,19 @@ def copy_func[T: types.FunctionType](
     for attr in updated:
         getattr(new, attr).update(getattr(func, attr))
 
-    return new
+    # FunctionType(...) builds a plain function; the copy is used as the same type as func
+    return typing.cast(T, new)
+
+
+def set_signature(func: Callable[..., Any], signature: inspect.Signature) -> None:
+    """attach `signature` to `func` for `inspect.signature` and documentation tools."""
+    # typeshed's FunctionType declares no __signature__ attribute
+    typing.cast(Any, func).__signature__ = signature
+
+
+def get_signature(func: Callable[..., Any]) -> inspect.Signature:
+    """return the signature attached to `func` by `set_signature`."""
+    return typing.cast(Any, func).__signature__
 
 
 def sleep(seconds: float, tick=1.0):
@@ -523,7 +559,7 @@ def check_hanging_thread():
 
 @hide_in_traceback
 def retry[T: Callable](
-    exception_or_exceptions: BaseException | typing.Iterable[BaseException],
+    exception_or_exceptions: type[BaseException] | tuple[type[BaseException], ...],
     tries: int = 4,
     *,
     delay: float = 0,
@@ -602,11 +638,11 @@ def retry[T: Callable](
 
 @hide_in_traceback
 def until_timeout[T: Callable](
-    exception_or_exceptions: BaseException | typing.Iterable[BaseException],
+    exception_or_exceptions: type[BaseException] | tuple[type[BaseException], ...],
     timeout: float,
     delay: float = 0,
     backoff: float = 0,
-    exception_func: callable = lambda: None,
+    exception_func: Callable[[], Any] = lambda: None,
 ) -> Callable[[T], T]:
     """calls to the decorated function are repeated, suppressing specified exception(s), until the
     specified timeout period has expired.
@@ -786,11 +822,11 @@ class Call:
     keep track of some call metadata during execution.
     """
 
-    def __init__(self, func: callable, *args, **kws):
+    def __init__(self, func: Callable[..., Any], *args, **kws):
         if not callable(func):
             raise ValueError('`func` argument is not callable')
         self.func = func
-        self.name = self.func.__name__
+        self.name = self.func.__name__  # ty: ignore[unresolved-attribute]  # xfail-audit item 10
         self.args = args
         self.kws = kws
         self.queue = None
@@ -804,8 +840,9 @@ class Call:
             [repr(v) for v in self.args]
             + [(k + '=' + repr(v)) for k, v in self.kws.items()]
         )
-        if hasattr(self.func, '__qualname__'):
-            name = self.func.__module__ + '.' + self.func.__qualname__
+        qualname = getattr(self.func, '__qualname__', None)
+        if qualname is not None:
+            name = self.func.__module__ + '.' + qualname
         else:
             name = self.name
         return f'Call({name},{args})'
@@ -830,7 +867,9 @@ class Call:
         self.queue = queue
 
     @classmethod
-    def wrap_list_to_dict(cls, name_func_pairs: dict[str, callable]) -> dict[str, Call]:
+    def wrap_list_to_dict(
+        cls, name_func_pairs: typing.Iterable[tuple[str | None, Callable[..., Any]]]
+    ) -> dict[str, Call]:
         """adjusts naming and wraps callables with Call"""
         ret = {}
         # First, generate the list of callables
@@ -838,9 +877,9 @@ class Call:
             try:
                 if name is None:
                     if hasattr(func, 'name'):
-                        name = func.name
+                        name = typing.cast(Any, func).name
                     elif hasattr(func, '__name__'):
-                        name = func.__name__
+                        name = typing.cast(Any, func).__name__
                     else:
                         raise TypeError(f'could not find name of {func}')
 
@@ -880,7 +919,7 @@ class MultipleContexts:
     """
 
     def __init__(
-        self, call_handler: Callable[[dict, list, dict], dict], params: dict, objs: list
+        self, call_handler: Callable[[dict, list], dict], params: dict, objs: list
     ):
         """
             call_handler: one of `sequentially_call` or `concurrently_call`
@@ -913,7 +952,7 @@ class MultipleContexts:
         self.exc = {}
 
     @hide_in_traceback
-    def enter(self, name: str, context: object):
+    def enter(self, name: str, context: _ContextManagerType):
         """
         enter!
         """
@@ -1015,8 +1054,8 @@ def isdictducktype(cls):
 
 
 def _select_enter_or_call(
-    candidate_objs: typing.Iterable[_ContextManagerType | callable],
-) -> str:
+    candidate_objs: list[tuple[str | None, _ContextManagerType | Callable[..., Any]]],
+) -> str | None:
     """ensure candidates are either (1) all context managers
     or (2) all callables. Decide what type of operation to proceed with.
     """
@@ -1047,8 +1086,8 @@ def _select_enter_or_call(
                 raise TypeError('cannot mix context managers and callables')
 
     # Enforce uniqueness in the (callable or context manager) object
-    candidate_objs = [c[1] for c in candidate_objs]
-    if len(set(candidate_objs)) != len(candidate_objs):
+    unique_objs = [c[1] for c in candidate_objs]
+    if len(set(unique_objs)) != len(unique_objs):
         raise ValueError('each callable and context manager must be unique')
 
     return which
@@ -1056,8 +1095,8 @@ def _select_enter_or_call(
 
 @hide_in_traceback
 def enter_or_call(
-    flexible_caller: callable,
-    objs: typing.Iterable[_ContextManagerType | callable],
+    flexible_caller: Callable[[dict, list], dict],
+    objs: typing.Iterable[_ContextManagerType | Callable[..., Any]],
     kws: dict[str, typing.Any],
 ):
     """Extract value traits from the keyword arguments flags, decide whether
@@ -1113,7 +1152,11 @@ def enter_or_call(
 
     if params['name'] is None:
         # come up with a gobbledigook name that is at least unique
-        frame = inspect.currentframe().f_back.f_back
+        frame = inspect.currentframe()
+        frame = frame.f_back if frame is not None else None
+        frame = frame.f_back if frame is not None else None
+        if frame is None:
+            raise RuntimeError('unable to inspect the calling frame to name the call')
         params['name'] = (
             f'<{frame.f_code.co_filename}:{frame.f_code.co_firstlineno} call 0x{hashlib.md5().hexdigest()}>'
         )
@@ -1358,7 +1401,12 @@ def sequentially_call(params: dict, name_func_pairs: list) -> dict:
     for name, wrapper in wrappers.items():
         ret = wrapper()
         if wrapper.traceback is not None:
-            raise wrapper.traceback[1]
+            exc = wrapper.traceback[1]
+            if exc is None:
+                raise RuntimeError(
+                    f'{name!r} recorded a traceback without an exception'
+                )
+            raise exc
         if ret is not None or params['nones']:
             results[name] = ret
 
@@ -1518,9 +1566,11 @@ class ThreadSandbox:
 
             def default_sandbox_check_func(obj):
                 try:
-                    return inspect.getmodule(obj).__name__.startswith(
-                        inspect.getmodule(root).__name__
-                    )
+                    obj_module = inspect.getmodule(obj)
+                    root_module = inspect.getmodule(root)
+                    if obj_module is None or root_module is None:
+                        return False
+                    return obj_module.__name__.startswith(root_module.__name__)
                 except AttributeError:
                     return False
 
@@ -1537,12 +1587,16 @@ class ThreadSandbox:
         if exc:
             return
 
+        requestq = self._requestq
+        if requestq is None:
+            raise ConnectionError('ThreadSandbox request queue is not initialized')
+
         # Do some sort of setup here
         while True:
             ret = None
             exc = None
 
-            op, obj, name, args, kws, rsp = self._requestq.get(True)
+            op, obj, name, args, kws, rsp = requestq.get(True)
 
             # End if that's good
             if op is OP_QUIT:
@@ -1636,7 +1690,7 @@ class ttl_cache:
         self.call_timestamp = None
         self.last_value = {}
 
-    def __call__[T: Callable](self, func: T) -> T:
+    def __call__[**P, R](self, func: Callable[P, R]) -> Callable[P, R]:
         @wraps(func)
         @hide_in_traceback
         def wrapper_decorator(*args, **kws):
@@ -1658,7 +1712,7 @@ class ttl_cache:
         return wrapper_decorator
 
 
-def accessed_attributes(method: Callable) -> tuple[str]:
+def accessed_attributes(method: Callable) -> tuple[str, ...]:
     """enumerate the attributes of the parent class accessed by `method`
 
     :method: callable that is a method or defined in a class
@@ -1690,7 +1744,7 @@ def accessed_attributes(method: Callable) -> tuple[str]:
 
     self_name = func.args.args[0].arg
 
-    def isselfattr(node):
+    def isselfattr(node: ast.AST) -> TypeIs[ast.Attribute]:
         return (
             isinstance(node, ast.Attribute)
             and getattr(node.value, 'id', None) == self_name

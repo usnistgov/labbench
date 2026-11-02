@@ -252,3 +252,29 @@ def test_sqlite(sqlite_path):
     expected_expanded_columns = set(rack.simple_loop_expected_expanded_columns())
     assert expected_expanded_columns == set(df.columns)
     assert len(df.index) == len(all_json_rows)
+
+
+@pytest.mark.parametrize('ext', ['pickle', 'p'])
+def test_read_pickle_requires_opt_in(tmp_path, monkeypatch, ext):
+    df = pd.DataFrame({'a': [1, 2, 3], 'b': ['x', 'y', 'z']})
+    path = tmp_path / f'data.{ext}'
+    df.to_pickle(path)
+
+    # unset: refuse, for both guessed and explicit formats
+    monkeypatch.delenv('LABBENCH_AUTOLOAD_PICKLE', raising=False)
+    with pytest.raises(RuntimeError, match='LABBENCH_AUTOLOAD_PICKLE'):
+        lb.read(path)
+    with pytest.raises(RuntimeError, match='LABBENCH_AUTOLOAD_PICKLE'):
+        lb.read(path, format='pickle')
+
+    # explicitly disabled: still refuse
+    monkeypatch.setenv('LABBENCH_AUTOLOAD_PICKLE', '0')
+    with pytest.raises(RuntimeError, match='LABBENCH_AUTOLOAD_PICKLE'):
+        lb.read(path)
+
+    # opted in: load normally, including column/row selection
+    monkeypatch.setenv('LABBENCH_AUTOLOAD_PICKLE', '1')
+    pd.testing.assert_frame_equal(lb.read(path), df)
+    pd.testing.assert_frame_equal(
+        lb.read(path, columns=['a'], nrows=2), df[['a']].iloc[:2]
+    )

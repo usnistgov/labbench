@@ -1641,6 +1641,34 @@ def read_sqlite(
     return df
 
 
+LABBENCH_AUTOLOAD_PICKLE = 'LABBENCH_AUTOLOAD_PICKLE'
+
+
+def read_pickle(path_or_buf, **kws):
+    """Load a pickled pandas object, but only when the user has opted in.
+
+    Unpickling executes arbitrary code contained in the file. Set the environment
+    variable ``LABBENCH_AUTOLOAD_PICKLE`` (to any value other than
+    ``0``/``false``/``no``/``off``) to permit loading pickle files that you trust.
+
+    Arguments:
+        path_or_buf: path or file-like object to pass to `pandas.read_pickle`
+        kws: additional keyword arguments to pass to `pandas.read_pickle`
+    Returns:
+        the unpickled object
+    Raises:
+        RuntimeError: if ``LABBENCH_AUTOLOAD_PICKLE`` is unset or disabled
+    """
+    value = os.environ.get(LABBENCH_AUTOLOAD_PICKLE, '').strip().lower()
+    if value in ('', '0', 'false', 'no', 'off'):
+        raise RuntimeError(
+            f'refusing to unpickle {path_or_buf!r}: loading pickle files can execute '
+            f'arbitrary code. Set the environment variable {LABBENCH_AUTOLOAD_PICKLE}=1 '
+            'to enable this for files you trust.'
+        )
+    return pd.read_pickle(path_or_buf, **kws)
+
+
 def read(
     path_or_buf: str,
     columns: list[str] = None,
@@ -1655,15 +1683,19 @@ def read(
         path: path to the  data file.
         columns: a column or iterable of multiple columns to return from the data file, or None (the default) to return all columns
         nrows: number of rows to read at the beginning of the table, or None (the default) to read all rows
-        format: data file format, one of ['pickle','feather','csv','json','csv'], or 'auto' (the default) to guess from the file extension
+        format: data file format, one of ['pickle','feather','csv','json','sqlite'], or 'auto' (the default) to guess from the file extension
         kws: additional keyword arguments to pass to the pandas read_<ext> function matching the file extension
     Returns:
         pandas.DataFrame instance containing data read from file
+
+    Because unpickling can execute arbitrary code, the 'p' and 'pickle' formats
+    are refused unless the environment variable ``LABBENCH_AUTOLOAD_PICKLE`` is set
+    (see `read_pickle`).
     """
 
     reader_guess = {
-        'p': pd.read_pickle,
-        'pickle': pd.read_pickle,
+        'p': read_pickle,
+        'pickle': read_pickle,
         'db': read_sqlite,
         'sqlite': read_sqlite,
         'json': pd.read_json,

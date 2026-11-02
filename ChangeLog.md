@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.46.1]
 ### Changed
 - Corrected an import bug in python 3.15 
-
-### Security
 - `labbench.read` and `labbench.read_relational` now refuse to load `.p`/`.pickle` files unless
   the `LABBENCH_AUTOLOAD_PICKLE` environment variable is set, because unpickling can execute arbitrary code
 

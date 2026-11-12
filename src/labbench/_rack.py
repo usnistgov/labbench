@@ -6,6 +6,7 @@ import sys
 import time
 from copy import deepcopy
 from functools import wraps
+from collections.abc import Callable
 
 import typing
 
@@ -41,7 +42,7 @@ _INSPECT_SKIP_PARAMETER_KINDS = (
 )
 
 
-def _filter_signature_parameters(params: dict):
+def _filter_signature_parameters(params: typing.Mapping[str, inspect.Parameter]):
     return {
         p.name: p
         for p in list(params.values())[1:]
@@ -96,7 +97,11 @@ class notify:
 
     @classmethod
     def call_iteration_event(
-        cls, owner, index: int, step_name: str = None, total_count: int = None
+        cls,
+        owner,
+        index: int,
+        step_name: str | None = None,
+        total_count: int | None = None,
     ):
         if owner in cls._owner_hold_list:
             return
@@ -229,9 +234,9 @@ class rack_kwargs_template(MethodTaggerDataclass):
         skip: list of column names to omit
     """
 
-    template: callable
+    template: Callable[..., typing.Any]
 
-    def __init__(self, template: callable):
+    def __init__(self, template: Callable[..., typing.Any]):
         self.template = template
 
 
@@ -246,7 +251,7 @@ class rack_kwargs_skip(MethodTaggerDataclass):
         skip: list of column names to omit
     """
 
-    skip: list = None
+    skip: tuple[str, ...] | None = None
 
     def __init__(self, *arg_names):
         self.skip = arg_names
@@ -325,7 +330,8 @@ class RackMethod(util.Ownable):
 
         __owner_subclass__ must have been called first to do introspection on self._callable_template.
         """
-        self.__call__ = util.copy_func(self.__call__)
+        # copy_func reads __code__, __globals__, __defaults__ and __closure__, which the bound method proxies
+        self.__call__ = util.copy_func(typing.cast(typing.Any, self.__call__))
 
         # note the devices needed to execute this function
         if isinstance(self._owner, Rack):
@@ -375,15 +381,16 @@ class RackMethod(util.Ownable):
 
         # apply updated defaults
         sig = sig.replace(
-            parameters=(
+            parameters=[
                 p.replace(default=self._kwdefaults.get(name, p.default))
                 for name, p in params.items()
                 if name not in skip_param_names
-            )
+            ]
         )
 
         # set the call signature shown by help(), or with ? in ipython/jupyter
-        self.__signature__ = self.__call__.__signature__ = sig
+        self.__signature__ = sig
+        util.set_signature(self.__call__, sig)
 
         # remember only named keywords, not "*args" and "**kwargs" in call signatures
         self._parameters = list(_filter_signature_parameters(sig.parameters).values())
@@ -391,7 +398,7 @@ class RackMethod(util.Ownable):
     def set_kwdefault(self, name, new_default):
         self._kwdefaults[name] = new_default
 
-        sig = self.__call__.__signature__
+        sig = util.get_signature(self.__call__)
         parameters = dict(sig.parameters)
 
         p = parameters[name]
@@ -404,8 +411,8 @@ class RackMethod(util.Ownable):
             p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
         parameters[name] = p.replace(default=new_default)
 
-        sig = sig.replace(parameters=parameters.values())
-        self.__call__.__signature__ = sig
+        sig = sig.replace(parameters=list(parameters.values()))
+        util.set_signature(self.__call__, sig)
 
         # if value is EMPTY:
         #     self._kwdefaults.pop(name, None)
@@ -425,7 +432,7 @@ class RackMethod(util.Ownable):
 
     def extended_signature(self, name_map={}):
         """maps extended keyword argument names into a copy of self.__call__.__signature__"""
-        sig = self.__call__.__signature__
+        sig = util.get_signature(self.__call__)
         ext_names = self.extended_arguments(name_map)
 
         param_list = list(_filter_signature_parameters(sig.parameters).values())
@@ -443,7 +450,7 @@ class RackMethod(util.Ownable):
             name_map (dict): name remapping, overriding self.tags
         """
         # TODO: should these all have 'owner' as a name, to specify the context?
-        sig = self.__call__.__signature__
+        sig = util.get_signature(self.__call__)
         if hasattr(self._owner, '__name__'):
             prefix = self._owner.__name__ + '_'
         else:
@@ -526,6 +533,14 @@ class BoundSequence(util.Ownable):
     from all of the methods called by the Sequence.
     """
 
+    if typing.TYPE_CHECKING:
+        # attributes injected into the namespace by Sequence.__owner_subclass__; kept out of
+        # __annotations__ because labbench evaluates Ownable class annotations at runtime
+        sequence: list[list[RackMethod]]
+        dependencies: dict[str, core.Device]
+        tags: dict[str, typing.Any]
+        cleanup_func: Callable[[], typing.Any] | None
+
     cleanup_func = None
     exception_allowlist = NeverRaisedException
 
@@ -538,6 +553,8 @@ class BoundSequence(util.Ownable):
 
         notify.call_event(self, kwargs)
 
+        owner_name = getattr(self.__objclass__, '__qualname__', None)
+
         try:
             for i, sequence in enumerate(self.sequence):
                 step_kws = self._step(sequence, kwargs)
@@ -545,17 +562,17 @@ class BoundSequence(util.Ownable):
                 util.logger.debug(
                     # TODO: removing name metadata from each step removed a descriptive name here.
                     # add something back?
-                    f'{self.__objclass__.__qualname__}.{self.__name__} ({i}/{len(self.sequence)})'
+                    f'{owner_name}.{self.__name__} ({i}/{len(self.sequence)})'
                 )
                 ret.update(util.concurrently(**step_kws) or {})
         except self.exception_allowlist as e:
-            core.logger.warning(f'{e!s}')
+            core.logger.warning(f'{e!s}')  # ty: ignore[unresolved-attribute]  # xfail-audit item 2
             ret['exception'] = e.__class__.__name__
             if self.cleanup_func is not None:
                 self.cleanup_func()
 
         util.logger.debug(
-            f'{self.__objclass__.__qualname__}.{self.__name__} ({len(self.sequence)}/{len(self.sequence)}, finished)'
+            f'{owner_name}.{self.__name__} ({len(self.sequence)}/{len(self.sequence)}, finished)'
         )
 
         return ret
@@ -567,7 +584,7 @@ class BoundSequence(util.Ownable):
         util.logger.debug(f'writing csv template to {path!r}')
         params = inspect.signature(cls.__call__).parameters
         df = pd.DataFrame(columns=list(params)[1:])
-        df.index.name = cls.INDEX_COLUMN_NAME
+        df.index.name = cls.INDEX_COLUMN_NAME  # ty: ignore[unresolved-attribute]  # xfail-audit item 1
         df.to_csv(path)
 
     def iterate_from_csv(self, path):
@@ -685,7 +702,12 @@ class OwnerContextAdapter:
                 print(methods, len(all_ex))
                 raise ex
             elif len(all_ex) == 1:
-                raise all_ex[0][1]
+                exc = all_ex[0][1]
+                if exc is None:
+                    raise RuntimeError(
+                        f'exception missing from close failure in {self}'
+                    )
+                raise exc
 
     def __repr__(self):
         return repr(self._owner)
@@ -811,7 +833,7 @@ def owner_getattr_chains(owner):
 class WrappedOpen:
     def __init__(self, obj: Owner):
         open_func = object.__getattribute__(obj, 'open')
-        self.__call__ = wraps(open_func)(self)
+        self.__call__ = wraps(open_func)(self)  # ty: ignore[invalid-assignment]  # instance __call__ replaced by a functools wrapper of the owner's open/close
         self.obj = obj
         self.unwrapped = open_func
 
@@ -824,7 +846,7 @@ class WrappedOpen:
 class WrappedClose:
     def __init__(self, obj: Owner):
         close_func = object.__getattribute__(obj, 'close')
-        self.__call__ = wraps(close_func)(self)
+        self.__call__ = wraps(close_func)(self)  # ty: ignore[invalid-assignment]  # instance __call__ replaced by a functools wrapper of the owner's open/close
         self.obj = obj
         self.unwrapped = close_func
 
@@ -841,10 +863,15 @@ class WrappedClose:
 class Owner:
     """own context-managed instances of Device as well as setup and cleanup calls to owned instances of Owner"""
 
+    if typing.TYPE_CHECKING:
+        # declared here instead of as a runtime annotation because Rack.__init_subclass__
+        # turns annotated names in its MRO into __init__ parameters
+        _entry_order: typing.Sequence[type]
+
     _entry_order = []
     _concurrent = True
 
-    def __init_subclass__(cls, entry_order: list = None):
+    def __init_subclass__(cls, entry_order: typing.Sequence[type] | None = None):
         """type configuration performed each time a new subclass is created"""
         # registries that will be context managed
         cls._devices = {}  # each of cls._devices.values() these will be context managed
@@ -1027,7 +1054,9 @@ def override_empty(a, b, param_name, field):
         return EMPTY
 
 
-def update_parameter_dict(dest: dict, signature: inspect.Signature):
+def update_parameter_dict(
+    dest: dict, signature: inspect.Signature | typing.Mapping[str, inspect.Parameter]
+):
     """updates the dest mapping with parameters taken from inspect.Signature.
 
     Items with the same name and defaults or annotations that are not EMPTY must be the same,
@@ -1035,9 +1064,9 @@ def update_parameter_dict(dest: dict, signature: inspect.Signature):
     """
     # pull a dictionary of signature values (default, annotation) with EMPTY as a null sentinel value
     if not hasattr(signature, 'parameters'):
-        parameters = signature
+        parameters = typing.cast(typing.Mapping[str, inspect.Parameter], signature)
     else:
-        parameters = signature.parameters
+        parameters = typing.cast(inspect.Signature, signature).parameters
 
     for name, param in parameters.items():
         if param.kind is inspect.Parameter.POSITIONAL_ONLY:
@@ -1108,13 +1137,18 @@ class Sequence(util.Ownable):
     Sequence are meant to be defined as attributes of Rack subclasses in instances of the Rack subclasses.
     """
 
+    if typing.TYPE_CHECKING:
+        # declared here instead of as a runtime annotation because labbench evaluates
+        # Ownable class annotations at runtime
+        access_spec: list[list[tuple[str, ...]]] | None
+
     access_spec = None
     cleanup_func = None
     exception_allowlist = NeverRaisedException
 
     def __init__(self, *specification, shared_names=[], input_table=None):
         self.spec = [standardize_spec_step(spec) for spec in specification]
-        self.tags = dict(
+        self.tags: dict[str, typing.Any] = dict(
             table_path=input_table,
             shared_names=shared_names,
         )
@@ -1159,6 +1193,8 @@ class Sequence(util.Ownable):
 
         # initialization on the parent class definition
         # waited until after __set_name__, because this depends on __name__ having been set for the tasks task
+        if self.access_spec is None:
+            raise RuntimeError('Sequence is not bound to a Rack')
         spec = [
             [attr_chain_to_method(owner, c) for c in chain]
             for chain in self.access_spec
@@ -1202,7 +1238,9 @@ class Sequence(util.Ownable):
                     params, func.extended_signature(name_map=name_map)
                 )
 
-        cls.__call__.__signature__ = inspect.Signature(parameters=params.values())
+        util.set_signature(
+            cls.__call__, inspect.Signature(parameters=list(params.values()))
+        )
 
         # the testbed gets this BoundSequence instance in place of self
         obj = object.__new__(cls)
@@ -1342,7 +1380,7 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
 
         # we need a wrapper so that __init__ can be modified separately for each subclass
         cls.__init__ = util.copy_func(cls.__init__)
-        cls.__init__.__signature__ = inspect.Signature(params)
+        util.set_signature(cls.__init__, inspect.Signature(params))
 
         super().__init_subclass__(entry_order=entry_order)
 
@@ -1404,11 +1442,11 @@ class Rack(Owner, util.Ownable, metaclass=RackMeta):
     def __owner_init__(self, owner):
         super().__owner_init__(owner)
 
-    def __getattribute__(self, item):
-        if item != '_methods' and item in self._methods:
-            return self._methods[item]
+    def __getattribute__(self, name):
+        if name != '_methods' and name in self._methods:
+            return self._methods[name]
         else:
-            return super().__getattribute__(item)
+            return super().__getattribute__(name)
 
     def __getitem__(self, item):
         return self._methods[item]
@@ -1444,7 +1482,7 @@ def import_as_rack(
     import_string: str,
     *,
     # working_dir: str,
-    cls_name: str = None,
+    cls_name: str | None = None,
     append_path: list = [],
     base_cls: type = Rack,
     replace_attrs: list = ['__doc__', '__module__'],
@@ -1547,7 +1585,7 @@ def import_as_rack(
 
 
 def find_owned_rack_by_type(
-    parent_rack: Rack, target_type: Rack, include_parent: bool = True
+    parent_rack: Rack, target_type: type[Rack], include_parent: bool = True
 ):
     """return a rack instance of `target_type` owned by `parent_rack`. if there is
     not exactly 1 for `target_type`, TypeError is raised.

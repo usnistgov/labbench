@@ -32,8 +32,8 @@ dependencies = [
     "click~=8.0",
     "dulwich>=0.20",
     # numerical
-    "numpy>=1.19",
-    "pandas>=1.2.0",
+    "numpy>=1.26",
+    "pandas>=2.1.0",
     # data formats
     "ruamel-yaml>=0.17.21",
     "feather-format>=0.4.0",
@@ -63,6 +63,7 @@ dev = [
     "pytest",
     # for compatibility outside hatch
     "ruff",
+    "ty==0.0.95",
     # introspection and stub generation
     "ast_decompiler",
     "astor>=0.8.1",
@@ -115,6 +116,16 @@ path = "src/labbench/_version.py"
 
 [tool.coverage.run]
 omit = ["src/labbench/testing/*", "src/labbench/cli/*", "src/labbench/notebooks.py"]
+
+[tool.ty.environment]
+# the 3.12 floor governs the rules in every environment
+python-version = "3.12"
+
+[tool.ty.src]
+include = ["src"]
+
+[tool.ty.rules]
+call-top-callable = "ignore"
 
 [tool.ruff]
 target-version = "py312"

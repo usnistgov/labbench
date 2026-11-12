@@ -34,7 +34,9 @@ import pytest
 import labbench as lb
 from labbench import paramattr as attr
 from labbench.testing.store_backend import StoreTestDevice
+
 lb.util.force_full_traceback(True)
+
 
 class LaggyInstrument(StoreTestDevice):
     """A mock "instrument" to measure time response in (a)sync operations"""
@@ -258,3 +260,41 @@ def test_call_open():
 #         if annots[k] is not lb._rack.EMPTY:
 #             before, *after = s.split(b'\n', 1)
 #             s = b'\n'.join([before+f" # {annots[k].__qualname__}"] + after)
+
+
+# %% known faults, recorded in xfail-audit.md
+
+
+class FailingRack(lb.Rack):
+    def fail(self):
+        raise ValueError('intentional failure')
+
+
+class AllowlistRack(lb.Rack):
+    inner = FailingRack()
+    run = lb.Sequence(inner.fail)
+    run.return_on_exceptions(ValueError)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason='BoundSequence.to_template (_rack.py:583) reads cls.INDEX_COLUMN_NAME, '
+    'which no class defines; the constant is _serialize.INDEX_COLUMN_NAME',
+)
+def test_sequence_template_index_is_step_name(tmp_path):
+    path = tmp_path / 'template.csv'
+    MyRack().run.to_template(path)
+    header = path.read_text().splitlines()[0].split(',')
+    assert header[0] == lb._serialize.INDEX_COLUMN_NAME
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason='BoundSequence.__call__ (_rack.py:565) logs an allowlisted exception through '
+    'core.logger, and _device defines no logger',
+)
+def test_sequence_returns_allowlisted_exception():
+    rack = AllowlistRack()
+    with rack:
+        ret = rack.run()
+    assert ret['exception'] == 'ValueError'

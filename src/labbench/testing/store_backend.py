@@ -18,18 +18,20 @@ class key_adapter(attr.visa_keying):
         super().__init__(remap=remap)
         self.defaults = defaults
 
-    def get_kwarg_names(self, key_def: str | tuple[str]) -> tuple[str]:
-        if isinstance(key_def, str) or len(key_def) == 1:
-            return super().get_kwarg_names(key_def)
+    def get_kwarg_names(self, key: str | tuple[str, ...]) -> typing.Sequence[str]:
+        if isinstance(key, tuple):
+            if len(key) == 1:
+                return super().get_kwarg_names(key)  # ty: ignore[invalid-argument-type]  # deliberate pass-through of a 1-tuple key
+            return tuple(key[1:])
         else:
-            return tuple(key_def[1:])
+            return super().get_kwarg_names(key)
 
     def get(
         self,
         owner: attr.HasParamAttrs,
-        key_def: str | list[str],
-        paramattr: attr.ParamAttr = None,
-        arguments: dict[str, Any] = {},
+        key: str,
+        attr: attr.ParamAttr | None = None,
+        kwargs: dict[str, Any] = {},
     ):
         """queries a parameter named `scpi_key` by sending an SCPI message string.
 
@@ -44,19 +46,24 @@ class key_adapter(attr.visa_keying):
         Returns:
             response (str)
         """
-        store_name = owner.backend.get_store_key(paramattr)
-        backend_key = owner.backend.get_backend_key(owner, paramattr, arguments)
+        if attr is None:
+            raise TypeError('a ParamAttr is required')
 
-        default = self.defaults.get(store_name, paramattr._type())
-        return owner.backend.get(backend_key, default)
+        # this adapter is only bound to StoreTestDevice subclasses, which have a backend
+        device = typing.cast(Device, owner)
+        store_name = device.backend.get_store_key(attr)
+        backend_key = device.backend.get_backend_key(device, attr, kwargs)
+
+        default = self.defaults.get(store_name, attr._type())
+        return device.backend.get(backend_key, default)
 
     def set(
         self,
         owner: attr.HasParamAttrs,
-        key_def: str,
+        key: str,
         value,
-        attr: attr.ParamAttr = None,
-        arguments: dict[str, Any] = {},
+        attr: attr.ParamAttr | None = None,
+        kwargs: dict[str, Any] = {},
     ):
         """writes an attribute
 
@@ -69,8 +76,10 @@ class key_adapter(attr.visa_keying):
             value (str): value to assign
             name (str, None): name of the trait setting the key (or None to indicate no trait) (ignored)
         """
-        backend_key = owner.backend.get_backend_key(owner, attr, arguments)
-        owner.backend.set(backend_key, value)
+        # this adapter is only bound to StoreTestDevice subclasses, which have a backend
+        device = typing.cast(Device, owner)
+        backend_key = device.backend.get_backend_key(device, attr, kwargs)
+        device.backend.set(backend_key, value)
 
 
 class TestStore:
@@ -91,7 +100,9 @@ class TestStore:
         self.set_count = defaultdict(int)
         self.notifications = []
 
-    def get_store_key(self, attr_def: attr.ParamAttr) -> str:
+    def get_store_key(
+        self, attr_def: attr.value.Value | attr._bases.OwnerAccessAttr
+    ) -> str | None:
         if isinstance(attr_def, attr.value.Value) or attr_def.key is None:
             return attr_def.name
         elif isinstance(attr_def.key, str):
@@ -218,14 +229,14 @@ class Oscilloscope(StoreTestDevice):
         help='channel center frequency',
     )
     def center_frequency(self, *, channel):
-        return self.query(f'CH{channel}:SENS:FREQ?')
+        return self.query(f'CH{channel}:SENS:FREQ?')  # ty: ignore[unresolved-attribute]  # xfail-audit observation: Oscilloscope.center_frequency calls undefined query/write
 
     @center_frequency.setter
     def _(self, set_value, /, *, channel):
-        self.write(f'CH{channel}:SENS:FREQ {set_value}')
+        self.write(f'CH{channel}:SENS:FREQ {set_value}')  # ty: ignore[unresolved-attribute]  # xfail-audit observation: Oscilloscope.center_frequency calls undefined query/write
 
     resolution_bandwidth = attr.method.float(
-        key=('CH:SENS:BW', 'channel'),
+        key=('CH:SENS:BW', 'channel'),  # ty: ignore[invalid-argument-type]  # deliberate test of a tuple key
         min=1,
         max=40e6,
         step=1e-3,

@@ -176,9 +176,13 @@ _LogLevelType = Union[
 
 class _Formatter(logging.Formatter):
     def format(self, rec: logging.LogRecord):
-        if len(rec.args) > 0:
-            rec.args = tuple()
-        return super().format(rec)
+        # handlers downstream of this one read rec.args for the structured
+        # fields of the log entry
+        args, rec.args = rec.args, ()
+        try:
+            return super().format(rec)
+        finally:
+            rec.args = args
 
 
 def show_messages(

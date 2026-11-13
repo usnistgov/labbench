@@ -1,3 +1,5 @@
+import json
+import logging
 import shutil
 from pathlib import Path
 
@@ -278,3 +280,32 @@ def test_read_pickle_requires_opt_in(tmp_path, monkeypatch, ext):
     pd.testing.assert_frame_equal(
         lb.read(path, columns=['a'], nrows=2), df[['a']].iloc[:2]
     )
+
+
+def test_console_handler_leaves_structured_fields_for_the_host_log() -> None:
+    from labbench import _host
+
+    host_formatter = _host.NDJSONFormatter()
+    entries: list[dict] = []
+
+    class CaptureHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            entries.append(json.loads(host_formatter.format(record)))
+
+    logger = logging.getLogger('labbench')
+    capture = CaptureHandler()
+
+    # the console handler is registered at import, and `Host.open` registers
+    # the host log handler after it
+    lb.show_messages('info')
+    logger.addHandler(capture)
+    try:
+        with lb.stopwatch('timed block'):
+            pass
+    finally:
+        logger.removeHandler(capture)
+        lb.show_messages('warning')
+
+    assert len(entries) == 1
+    assert entries[0]['stopwatch_name'] == 'timed block'
+    assert isinstance(entries[0]['stopwatch_time'], float)

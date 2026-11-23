@@ -297,6 +297,8 @@ def test_console_handler_leaves_structured_fields_for_the_host_log() -> None:
 
     # the console handler is registered at import, and `Host.open` registers
     # the host log handler after it
+    _prior_handler = getattr(lb.util.logger, '_screen_handler', None)
+    _prior_console_level = _prior_handler.level if _prior_handler is not None else None
     lb.show_messages('info')
     logger.addHandler(capture)
     try:
@@ -304,7 +306,7 @@ def test_console_handler_leaves_structured_fields_for_the_host_log() -> None:
             pass
     finally:
         logger.removeHandler(capture)
-        lb.show_messages('warning')
+        lb.show_messages(_prior_console_level)
 
     assert len(entries) == 1
     assert entries[0]['stopwatch_name'] == 'timed block'

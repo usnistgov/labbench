@@ -175,7 +175,7 @@ _LogLevelType = Union[
 
 
 class _Formatter(logging.Formatter):
-    def format(self, rec: logging.LogRecord):
+    def format(self, rec: logging.LogRecord) -> str:
         # handlers downstream of this one read rec.args for the structured
         # fields of the log entry
         args, rec.args = rec.args, ()
